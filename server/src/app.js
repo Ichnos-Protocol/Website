@@ -15,6 +15,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import gdprRoutes from "./routes/gdprRoutes.js";
 import buildStatusPage from "./helpers/buildStatusPage.js";
+import { logError } from "./helpers/logError.js";
 import { ensureSeeded, seedStatus } from "../scripts/seedE2EOnPreview.js";
 
 const app = express();
@@ -50,8 +51,7 @@ app.use("/api/", limiter);
 
 // Root status page
 app.get("/", (_req, res) => {
-  const clientOrigin =
-    process.env.CORS_ORIGIN || "https://ichnos-protocol.com";
+  const clientOrigin = process.env.CORS_ORIGIN || "https://ichnos-protocol.com";
   const html = buildStatusPage({
     clientOrigin,
     env: process.env.NODE_ENV || "development",
@@ -95,18 +95,16 @@ app.use("/api/gdpr", gdprRoutes);
 
 // 404 handler for undefined routes
 app.use((_req, res) => {
-  res
-    .status(404)
-    .json({
-      error: "Not Found",
-      message: "The requested resource does not exist",
-    });
+  res.status(404).json({
+    error: "Not Found",
+    message: "The requested resource does not exist",
+  });
 });
 
 // Global error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
-  console.error("Error:", err);
+  logError(err);
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

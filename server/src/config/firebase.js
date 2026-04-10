@@ -19,13 +19,47 @@ function resolveStorageBucket() {
   );
 }
 
+function normalizePrivateKey(raw) {
+  return raw?.replace(/\\n/g, "\n");
+}
+
+function describePrivateKey(raw) {
+  if (!raw) return { present: false };
+  const normalized = normalizePrivateKey(raw);
+  return {
+    present: true,
+    rawLength: raw.length,
+    normalizedLength: normalized.length,
+    containsLiteralBackslashN: raw.includes("\\n"),
+    containsRealNewline: raw.includes("\n"),
+    startsWithPemHeader: normalized.startsWith("-----BEGIN PRIVATE KEY-----"),
+    endsWithPemFooter: normalized
+      .trimEnd()
+      .endsWith("-----END PRIVATE KEY-----"),
+  };
+}
+
+function logFirebaseDiagnostics() {
+  console.log("FIREBASE_DIAG project_id:", process.env.FIREBASE_PROJECT_ID);
+  console.log("FIREBASE_DIAG client_email:", process.env.FIREBASE_CLIENT_EMAIL);
+  console.log(
+    "FIREBASE_DIAG storage_bucket:",
+    process.env.FIREBASE_STORAGE_BUCKET,
+  );
+  console.log(
+    "FIREBASE_DIAG private_key:",
+    JSON.stringify(describePrivateKey(process.env.FIREBASE_PRIVATE_KEY)),
+  );
+}
+
 if (!globalThis.__firebaseAdmin) {
+  logFirebaseDiagnostics();
   const storageBucket = resolveStorageBucket();
   try {
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       }),
       storageBucket,
@@ -33,6 +67,7 @@ if (!globalThis.__firebaseAdmin) {
 
     globalThis.__firebaseAdmin = admin;
   } catch (error) {
+    console.error("FIREBASE_DIAG init_failed:", error.message);
     console.error("Firebase Admin SDK initialization failed:", error.message);
     throw error;
   }
