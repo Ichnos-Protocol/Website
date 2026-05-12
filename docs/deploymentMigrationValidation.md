@@ -60,26 +60,61 @@ These are env-var-only or browser-side and survive any Vercel-team move untouche
 - Calendly, LinkedIn, YouTube embeds (third-party browser widgets)
 - Resend / SendGrid / any transactional email (API-key env var)
 
-### Step 5 — When the integration install errors mid-flow
+### Step 5 — When the install wizard errors
 
-If the install wizard fails with **"Failed to set env vars"** → cause is step 1 above: stale env vars still on the project. Delete them, retry.
+Two distinct error messages with different root causes. Read carefully.
 
-If the install wizard fails with **"Request failed: unknown error"** after step 1 was done → integration state is corrupted on one side. Full reset:
+**"Failed to set env vars ... env_vars: [DATABASE_URL PGHOST ...]"** → cause is stale env vars still on the project from the old integration. The new integration cannot overwrite existing variables and refuses to clobber them. Fix: complete Step 1 (delete all the listed variables from every environment), then retry.
 
-1. **Vendor side (e.g., Neon dashboard)**: open Integrations → find the Vercel integration → **Uninstall** completely
-2. Wait 30 seconds for state to propagate
-3. **Vercel side**: team → Settings → Integrations → if the vendor still appears, click → **Remove**
-4. Refresh both browser tabs
-5. Reinstall from the Vercel team marketplace (step 2 of "For each missing integration")
-6. If the issue persists, sign out of both Vercel and the vendor, sign back in (resets OAuth session cookies that may be holding stale identity)
+**"Request failed: unknown error"** → integration state is corrupted on one side, usually OAuth identity drift from a prior failed attempt. Full reset, **in this exact order**:
 
-### Step 6 — Post-audit verification
+1. **Vendor side first** (e.g., Neon dashboard → Integrations) → find every Vercel integration entry → **Uninstall** each. After two failed attempts there are often two dangling entries; remove all of them.
+2. Wait 30 seconds for the vendor-to-Vercel webhook to propagate.
+3. **Vercel side** → team → Settings → Integrations → if the vendor still appears, click → **Remove**. Also check the affected project's own Integrations tab.
+4. **Sign out of both Vercel and the vendor.** This is the step most people skip and the one that actually unblocks the retry — OAuth session cookies hold stale identity from the failed attempts and a refresh alone does not clear them. Empirically: without the sign-out, the retry keeps producing "Request failed: unknown error". With it, the install succeeds on the next try.
+5. Sign back in to Vercel as a **Team Owner** (not just a Member).
+6. Reinstall from the Vercel team's Integrations marketplace (Step 2 of "For each missing integration").
+7. During OAuth, sign in to the vendor as the same identity that's a Team Owner on Vercel.
+
+### Step 6 — One install completes both sides
+
+The integration is bidirectional from a single OAuth grant. Installing it once from Vercel's marketplace creates the entry on **both** Vercel and the vendor automatically. **Do not also install from the vendor side** — that creates a duplicate configuration and reintroduces the state corruption you just cleaned up.
+
+After a successful install, you should still **verify** both sides see the same connection:
+
+- Vercel → team → Settings → Integrations → vendor entry present
+- Vendor dashboard (e.g., Neon → project → Integrations) → exactly one Vercel entry present, pointing at the right Vercel project
+
+If you see two Vercel entries on the vendor side, one is a leftover from a prior failed attempt — delete the older one (compare timestamps).
+
+### Step 7 — Post-audit verification
 
 After all integrations are reinstalled:
 
-- [ ] Hit the server preview's `/api/health` endpoint with the Vercel bypass header. Expect `seed.mode = seeded` (or `skipped` if seeding is configured off for the env).
-- [ ] Open Vercel → server project → Environment Variables → all expected integration variables present.
-- [ ] Vercel → team → Integrations — list matches the old account's list.
+- [ ] **Redeploy the server preview**. Existing preview deployments retain the env-var snapshot from when they were built — they will not see the newly-populated `DATABASE_URL` (or any other integration variable) until a fresh build runs. On the PR, click the Vercel bot comment's three-dot menu → Redeploy. Or push a trivial commit.
+- [ ] Hit the server preview's `/api/health` endpoint with the Vercel bypass header. Expect `seed.mode = seeded` (or `skipped` if seeding is configured off for the env). Anything else, especially `seed.error: password authentication failed`, means either the redeploy hasn't completed or the env var isn't actually present.
+- [ ] Vercel → server project → Environment Variables → all expected integration variables present with recent timestamps.
+- [ ] Vercel → team → Integrations — list matches the old account's inventory you took in Step 1.
+
+### Step 8 — What does NOT need to be added to GitHub Actions
+
+Integration-managed env vars (`DATABASE_URL`, `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, `POSTGRES_*`, etc.) are **runtime values** consumed by the deployed server on Vercel. They are **not** referenced by any GitHub Actions workflow — the workflows only test against the already-deployed preview. Do not duplicate these into GitHub Secrets.
+
+The only Neon-related GitHub Actions secrets that exist are:
+
+| GitHub Secret | Purpose | Affected by Vercel team migration? |
+|---|---|---|
+| `NEON_API_KEY` | Calling the Neon API from `e2e.yml`'s cleanup step to delete the ephemeral preview branch | **No** — keys are scoped to the Neon project, not to Vercel |
+| `NEON_PROJECT_ID` | Identifies which Neon project to clean up in | **No** — Neon project itself didn't move |
+
+Sanity-check both (don't blindly rotate):
+
+```bash
+curl -H "Authorization: Bearer $NEON_API_KEY" \
+  https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID
+```
+
+200 = both fine. 401 = key revoked, regenerate. 404 = project ID wrong.
 
 Then proceed to Tier 1.
 
@@ -217,7 +252,8 @@ If you only have time to verify three things first, do these in order:
 | Production deploy works but DB writes fail | post-merge | Stale `DATABASE_URL` | Re-pull from Neon (new branch slug perhaps) |
 | E2E client readiness step retries 36× with HTTP 401, then times out | 1 (E2E job) | `VERCEL_AUTOMATION_BYPASS_SECRET` stale, or the two Vercel projects hold *different* bypass values | The bypass secret is a single GitHub secret used to probe both `ichnos-client` and `ichnos-protocolserver`. Both Vercel projects must hold the **same** bypass value. Reveal both project bypass values in Vercel (Settings → Deployment Protection → Protection Bypass for Automation), ensure they match, then update the GitHub secret to that shared value. |
 | `/api/health` returns `seed.error: password authentication failed for user 'neondb_owner'` | 5 / 7 | Neon Vercel integration not (re)installed on the new team after migration; `DATABASE_URL` env var holds dead credentials | Tier 0, Step 2 — reinstall Neon integration on the team. First delete stale `DATABASE_URL`/`PG*` env vars (the integration cannot overwrite them), then install from the team's Integrations marketplace, then redeploy the server preview. |
-| Neon (or other) integration wizard fails with "Request failed: unknown error" | 0 | OAuth/integration state desync between vendor and Vercel sides | Tier 0, Step 5 — full reset: uninstall on vendor side, remove on Vercel side, refresh, reinstall from Vercel team marketplace. |
+| Neon (or other) integration wizard fails with "Request failed: unknown error" after the env-var cleanup succeeded | 0 | OAuth session cookies hold stale identity from the failed first attempt; refresh alone doesn't clear them | Tier 0, Step 5 — full reset, **including signing out of both Vercel and the vendor**. The sign-out is the unblocker; without it the retry keeps producing the same error. |
+| `DATABASE_URL` appears stale even after the Neon integration reinstall succeeded | 0 / 5 | Preview deployment was not redeployed after env vars were updated; the running preview still holds the build-time snapshot | Tier 0, Step 7 — redeploy the server preview on the PR. Existing builds do not pick up env-var changes. |
 
 ---
 
