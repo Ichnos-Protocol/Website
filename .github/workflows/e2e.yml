@@ -300,11 +300,22 @@ jobs:
           BYPASS_SECRET: ${{ env.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "Waiting for client at $BASE_URL to respond with HTTP 200..."
-          CURL_ARGS=("-sL" "-o" "/dev/null" "-w" "%{http_code}")
-          if [ -n "$BYPASS_SECRET" ]; then
-            CURL_ARGS+=("-H" "x-vercel-protection-bypass: ${BYPASS_SECRET}")
-            echo "Using Vercel protection bypass header."
+
+          # Fail fast if the bypass secret is missing — the staging client
+          # URL is behind Vercel deployment protection, so any probe without
+          # the header gets a 401 and the retry loop is just wasted time.
+          if [ -z "$BYPASS_SECRET" ]; then
+            echo "::error::VERCEL_AUTOMATION_BYPASS_SECRET is missing. The client readiness check cannot access a protected deployment."
+            exit 1
           fi
+
+          CURL_ARGS=(
+            "-sL"
+            "-o" "/dev/null"
+            "-w" "%{http_code}"
+            "-H" "x-vercel-protection-bypass: ${BYPASS_SECRET}"
+          )
+
           ATTEMPTS=0
           MAX_ATTEMPTS=36
           while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
@@ -313,6 +324,15 @@ jobs:
               echo "Client deployment is ready (HTTP $STATUS)."
               exit 0
             fi
+
+            # 401 indicates the bypass header was rejected — the secret is
+            # set but stale or scoped to a different project. Retrying won't
+            # help, so surface the diagnosis immediately.
+            if [ "$STATUS" = "401" ]; then
+              echo "::error::Client returned HTTP 401. The Vercel bypass secret is missing or invalid for $BASE_URL."
+              exit 1
+            fi
+
             ATTEMPTS=$((ATTEMPTS + 1))
             echo "Attempt $ATTEMPTS/$MAX_ATTEMPTS: HTTP $STATUS — retrying in 5s..."
             sleep 5
