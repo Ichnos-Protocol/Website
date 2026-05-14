@@ -1,11 +1,40 @@
 import { axe } from 'vitest-axe';
 import { within } from '@testing-library/react';
-import { renderWithProviders, screen, cleanup } from '../../test-utils';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import {
+  renderWithProviders,
+  screen,
+  cleanup,
+  fireEvent,
+} from '../../test-utils';
 import Footer from './Footer';
 import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
 
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <div data-testid="location-probe">
+      <span data-testid="probe-pathname">{location.pathname}</span>
+      <span data-testid="probe-scroll-to">
+        {location.state?.scrollTo ?? ''}
+      </span>
+    </div>
+  );
+}
+
+function FooterWithRouteProbe() {
+  return (
+    <>
+      <Footer />
+      <Routes>
+        <Route path="*" element={<LocationProbe />} />
+      </Routes>
+    </>
+  );
+}
+
 const ATTRIBUTION_TEXT =
-  '© 2026 Ichnos Protocol Pte. Ltd. — All rights reserved. · Photo: Unsplash';
+  '© 2026 Ichnos Protocol Pte. Ltd. — All rights reserved.';
 
 describe('Footer', () => {
   beforeEach(() => {
@@ -17,10 +46,19 @@ describe('Footer', () => {
     expect(attribution).toHaveTextContent(COMPANY_INFO.legalName);
   });
 
-  it('displays UEN number in brand column', () => {
+  it('displays UEN number in contact column', () => {
+    const contactCol = screen.getByTestId('footer-col-contact');
+    expect(
+      within(contactCol).getByText(`UEN: ${COMPANY_INFO.uen}`),
+    ).toBeInTheDocument();
+    const brandCol = screen.getByTestId('footer-col-brand');
+    expect(within(brandCol).queryByText(/UEN/i)).toBeNull();
+  });
+
+  it('brand column shows the exact tagline copy', () => {
     const brandCol = screen.getByTestId('footer-col-brand');
     expect(
-      within(brandCol).getByText(`UEN: ${COMPANY_INFO.uen}`),
+      within(brandCol).getByText('Engineering, compliance, circularity.'),
     ).toBeInTheDocument();
   });
 
@@ -67,27 +105,75 @@ describe('Footer', () => {
     );
   });
 
-  it('Company column links route to /services and /team and exclude /about', () => {
+  it('Company column contains Why Ichnos → / and Team → /team and excludes Services/About', () => {
     const companyCol = screen.getByTestId('footer-col-company');
     expect(
-      within(companyCol).getByRole('link', { name: 'Services' }),
-    ).toHaveAttribute('href', '/services');
+      within(companyCol).getByRole('link', { name: 'Why Ichnos' }),
+    ).toHaveAttribute('href', '/');
     expect(
       within(companyCol).getByRole('link', { name: 'Team' }),
     ).toHaveAttribute('href', '/team');
+    expect(
+      within(companyCol).queryByRole('link', { name: 'Why Ichnos Protocol' }),
+    ).toBeNull();
+    expect(
+      within(companyCol).queryByRole('link', { name: 'Services' }),
+    ).toBeNull();
     expect(
       within(companyCol).queryByRole('link', { name: 'About' }),
     ).toBeNull();
   });
 
-  it('Solutions column links route to /services and /passport', () => {
-    const solutionsCol = screen.getByTestId('footer-col-solutions');
+  it('Services column has exactly four locked links to /services', () => {
+    const servicesCol = screen.getByTestId('footer-col-services');
+    const labels = ['Engineering', 'Compliance', 'Circularity', 'Delivery Models'];
+    labels.forEach((label) => {
+      expect(
+        within(servicesCol).getByRole('link', { name: label }),
+      ).toHaveAttribute('href', '/services');
+    });
+    expect(within(servicesCol).getAllByRole('link')).toHaveLength(4);
+  });
+
+  it('Services column links navigate to /services with the locked scrollTo state', () => {
+    const cases = [
+      { label: 'Engineering', scrollTo: 'engineering' },
+      { label: 'Compliance', scrollTo: 'compliance' },
+      { label: 'Circularity', scrollTo: 'circularity' },
+      { label: 'Delivery Models', scrollTo: 'delivery-models' },
+    ];
+    cases.forEach(({ label, scrollTo }) => {
+      cleanup();
+      renderWithProviders(<FooterWithRouteProbe />);
+      const servicesCol = screen.getByTestId('footer-col-services');
+      const link = within(servicesCol).getByRole('link', { name: label });
+      fireEvent.click(link);
+      expect(screen.getByTestId('probe-pathname')).toHaveTextContent(
+        '/services',
+      );
+      expect(screen.getByTestId('probe-scroll-to')).toHaveTextContent(
+        scrollTo,
+      );
+    });
+  });
+
+  it('Products column has Battery Passport → /passport', () => {
+    const productsCol = screen.getByTestId('footer-col-products');
     expect(
-      within(solutionsCol).getByRole('link', { name: 'Battery Advisory' }),
-    ).toHaveAttribute('href', '/services');
-    expect(
-      within(solutionsCol).getByRole('link', { name: 'Battery Passport' }),
+      within(productsCol).getByRole('link', { name: 'Battery Passport' }),
     ).toHaveAttribute('href', '/passport');
+  });
+
+  it('contact column has Submit an Inquiry link to /contact', () => {
+    const contactCol = screen.getByTestId('footer-col-contact');
+    expect(
+      within(contactCol).getByRole('link', { name: 'Submit an Inquiry' }),
+    ).toHaveAttribute('href', '/contact');
+  });
+
+  it('contact column does not render a text link labeled "LinkedIn Company"', () => {
+    const contactCol = screen.getByTestId('footer-col-contact');
+    expect(within(contactCol).queryByText('LinkedIn Company')).toBeNull();
   });
 
   it('attribution row contains exact text, year 2026, and legal name', () => {
@@ -95,6 +181,13 @@ describe('Footer', () => {
     expect(attribution).toHaveTextContent(ATTRIBUTION_TEXT);
     expect(attribution).toHaveTextContent('2026');
     expect(attribution).toHaveTextContent(COMPANY_INFO.legalName);
+  });
+
+  it('attribution row does not include any photo credit text', () => {
+    const attribution = screen.getByTestId('footer-attribution');
+    expect(attribution).not.toHaveTextContent('Photo:');
+    expect(attribution).not.toHaveTextContent('Photography:');
+    expect(attribution).not.toHaveTextContent('Unsplash');
   });
 
   it('has semantic <footer> element', () => {
