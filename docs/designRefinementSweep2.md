@@ -335,33 +335,61 @@ export function getDeliveryMethodServices() {
 
 ### Render strategy
 
-**`/services` page** (full depth view): grouped layout with H2 per pillar plus a "Delivery Models" section.
+**`/services` page** (full depth view): grouped layout with H2 per pillar plus a "Delivery Models" section. **Ownership is locked in §16.3**: a new `ServicesGroup` organism renders one labelled section; `ServicesPage` composes four `<ServicesGroup>` calls; the existing `ServicesList.jsx` organism is **deleted** as part of this migration.
 
+`ServicesGroup` contract:
+
+```jsx
+<ServicesGroup
+  id={anchor}              // "engineering" | "compliance" | "circularity" | "delivery-models"
+  label={string}           // "Engineering" | "Compliance" | "Circularity" | "Delivery Models"
+  intro={string?}          // optional — only Delivery Models has an intro paragraph (from DELIVERY_METHODS_HEADER.intro)
+  services={array}         // pre-filtered list from getServicesByPillar() or getDeliveryMethodServices()
+/>
 ```
-<h1>Services</h1>
-<p>{intro paragraph — battery-first positioning}</p>
 
-<section id="engineering">
-  <h2>Engineering</h2>
-  {2 cards: Battery Systems & Safety, Battery Mechanical Development}
-</section>
+Renders:
 
-<section id="compliance">
-  <h2>Compliance</h2>
-  {2 cards: EU–APAC Bridge, Battery Passport Implementation}
-</section>
-
-<section id="circularity">
-  <h2>Circularity</h2>
-  {1 card: Battery Remanufacturing, Recycling & Circular Economy}
-</section>
-
-<section id="delivery-models">
-  <h2>Delivery Models</h2>
-  <p>{DELIVERY_METHODS_HEADER.intro}</p>
-  {2 cards: Technical Lead, Agile Project Management}
+```jsx
+<section id={id} className="services-group">
+  <h2>{label}</h2>
+  {intro && <p>{intro}</p>}
+  <Row>
+    {services.map((s) => (
+      <Col key={s.id} md={6} lg={4}>
+        <ServiceCard service={s} />
+      </Col>
+    ))}
+  </Row>
 </section>
 ```
+
+`ServicesPage` composition:
+
+```jsx
+<>
+  <SeoHead meta={SERVICES_META} schemas={PAGE_STRUCTURED_DATA.services} />
+  <AdvisoryPageHero title="Services" subtitle="…" />
+  <Container>
+    {SERVICE_PILLARS.map((pillar) => (
+      <ServicesGroup
+        key={pillar.id}
+        id={pillar.anchor}
+        label={pillar.label}
+        services={getServicesByPillar(pillar.id)}
+      />
+    ))}
+    <ServicesGroup
+      id={DELIVERY_METHODS_HEADER.anchor}
+      label={DELIVERY_METHODS_HEADER.label}
+      intro={DELIVERY_METHODS_HEADER.intro}
+      services={getDeliveryMethodServices()}
+    />
+  </Container>
+</>
+```
+
+The page also calls `useScrollToSection()` (per §16.2) so that footer-driven `state: { scrollTo: 'engineering' }` requests resolve to the matching anchor.
 
 Each pillar section gets the anchor ID for footer-link targeting.
 
@@ -404,7 +432,7 @@ Replace the current single "Battery Advisory" link with three pillar links **and
 },
 ```
 
-The `useScrollToSection` hook must already handle `state: { scrollTo: 'xxx' }` for landing anchors — extend it (or verify it works) for `/services` anchors. If the hook is landing-specific, generalise it to handle anchor scrolls on any route or add a sibling hook for the services page.
+The `useScrollToSection` hook is route-agnostic but `ServicesPage` does not currently call it. Per **§16.2 (locked)**: add `useScrollToSection()` as the first hook call in `ServicesPage`. Do not introduce a shared advisory wrapper for this — route-local ownership is the locked choice. If a third route ever needs anchor scrolling, promote the hook into a shared wrapper as a separate refactor.
 
 ### Schemas: structured data update
 
@@ -422,8 +450,9 @@ Append it to the `SERVICE_SCHEMAS` array. `PAGE_STRUCTURED_DATA.services` consum
 ### Tests
 
 - `services.js` helper-function tests: `getServicesByPillar('engineering')` returns 2; `getServicesByPillar('compliance')` returns 2; `getServicesByPillar('circularity')` returns 1; `getDeliveryMethodServices()` returns 2 (Technical Lead + Agile PM).
+- `ServicesGroup.test.jsx` (**new**): given a fixture pillar + services array, asserts the section renders with the correct `id` anchor, H2 label, optional intro paragraph (only when provided), and one `ServiceCard` per service in the array.
 - `ServicesSnapshot.test.jsx`: each rendered card displays the correct pillar badge text; the "Engineering" badge appears on 2 cards, "Compliance" on 2, "Circularity" on 1, "Delivery Method" on 2.
-- `ServicesPage.test.jsx`: the page renders four `<section>` regions with IDs `engineering`, `compliance`, `circularity`, `delivery-models`; each region contains the expected service titles.
+- `ServicesPage.test.jsx`: rewrite the current mock-the-list pattern. Assert that the page renders four `<ServicesGroup>` instances in order (Engineering → Compliance → Circularity → Delivery Models) with the correct props. `ServicesGroup` may be mocked at the page-test level; deep-render assertions belong in `ServicesGroup.test.jsx`.
 - `Footer.test.jsx`: the Services column has 4 links with the correct labels and `scrollTo` states.
 
 ---
@@ -456,7 +485,35 @@ The `ChatPanel` molecule (`client/src/components/molecules/ChatPanel.jsx`) is th
 - Modal mode should reuse these styles. The only difference between modal and inline modes is the outer wrapping (overlay + backdrop vs section card).
 - No emoji in welcome or disclaimer copy.
 
-### Verification
+### Required test IDs on `ChatPanel.jsx`
+
+Add the following stable selectors as `data-testid` attributes on the marked elements. They serve both the test suite (next subsection) and future E2E / debugging needs.
+
+| Selector | Element |
+|---|---|
+| `chat-panel` | Outer container |
+| `chat-panel-header` | Optional header strip |
+| `chat-messages` | Scrolling message area |
+| `chat-bubble-bot` | Each bot message bubble (welcome + responses) |
+| `chat-bubble-user` | Each user message bubble |
+| `chat-input` | Text input field |
+| `chat-send-btn` | Send button |
+| `chat-panel-disclaimer` | Disclaimer line beneath the input |
+
+### Component tests (locked per §16.4)
+
+New file `ChatPanel.test.jsx`. Six required cases — visual polish stays preview-only, but behavioural correctness is non-optional. Each case maps to a regression risk on the primary lead-gen surface.
+
+1. **First render — welcome bubble visible**. Render with default props. Assert one `chat-bubble-bot` exists and contains the locked welcome string.
+2. **Disclaimer present**. Assert `chat-panel-disclaimer` exists and contains the locked disclaimer text.
+3. **Send button disabled when input empty**. Render. Find `chat-send-btn`. Assert `disabled` attribute is `true`.
+4. **Send button enabled when input has content**. Type a character into `chat-input`. Assert `chat-send-btn` is no longer disabled.
+5. **User bubble rendered after send**. Type a message, click the send button. Assert a `chat-bubble-user` element exists with the message text.
+6. **`persistState={false}` resets between mounts**. Render with `persistState={false}`, send a message, unmount, re-mount. Assert only the welcome bubble exists (no carried-over user message).
+
+Optional 7th case if behaviour permits: `mode` prop controls modal wrapping (`"modal"` wraps in a modal frame; `"inline"` does not).
+
+### Visual / preview verification (preview-only)
 
 - Visual smoke on Vercel preview at desktop (≥ 1024px) and mobile (≤ 480px). Bubbles wrap correctly; input area stays fixed; send button is reachable on mobile keyboards.
 - Lighthouse contrast: user-bubble text on cyan background must pass AA (4.5:1). If `var(--color-accent-cyan)` is too light for white text, darken the bubble background by ~10% or switch text to `var(--color-text-primary)`. Test before merging.
@@ -466,21 +523,28 @@ The `ChatPanel` molecule (`client/src/components/molecules/ChatPanel.jsx`) is th
 
 ## 10. Phasing
 
-Phases of ≤3 source files each, per `CLAUDE.md` §17.23. Suggested grouping:
+Phases of ≤3 source files each per `CLAUDE.md` §17.23, **except** pure-deletion phases removing related dead-code surfaces — which may bundle up to 6 files (per §16.1 lock). Migrations and new-logic phases stay strictly ≤3.
 
-| # | Ticket | Files |
-|---|---|---|
-| 1 | F1 — Francesco timeline correction | `teamTimelines.js`, `CareerTimeline.test.jsx`, `TeamPage.test.jsx` (or `FounderProfile.test.jsx`) |
-| 2 | F2 + F3 — `landingContent.js` and `teamContent.js` cleanup | `landingContent.js`, `teamContent.js` (+ test files only if they reference deleted exports) |
-| 3 | F4 — `navigation.js` cleanup | `navigation.js`, any consumer file with stale imports |
-| 4 | F5 — Footer brand description | `Footer.jsx`, `Footer.test.jsx` |
-| 5 | M2 (a) — `services.js` data-model extension + new Agile PM service | `services.js`, `structuredData.js`, `services.test.js` (new if absent) |
-| 6 | M2 (b) — `ServicesSnapshot` pillar badges | `ServicesSnapshot.jsx`, `ServicesSnapshot.test.jsx`, `index.css` (badge styles only) |
-| 7 | M2 (c) — `ServicesPage` pillar grouping | `ServicesPage.jsx`, `ServicesPage.test.jsx`, `index.css` (section styles) |
-| 8 | M2 (d) — Footer Services column expansion + scroll behaviour | `Footer.jsx`, `Footer.test.jsx`, `useScrollToSection.js` (or sibling) |
-| 9 | M3 — `ChatPanel` visual polish | `ChatPanel.jsx`, `ChatBubble.jsx` (new if extracted), `index.css` (chat styles) |
+The F2/F3 cleanup is split into a **two-step deletion strategy** (per §16.1): consumers and dead organisms are removed first, then constants are deleted in a follow-up. Each intermediate state is independently CI-green.
+
+| # | Ticket | Files | Type |
+|---|---|---|---|
+| 1 | F1 — Francesco timeline correction | `teamTimelines.js`, `CareerTimeline.test.jsx` (or `FounderProfile.test.jsx`), `TeamPage.test.jsx` | Migration |
+| 2 | F2-a — Delete dead landing organisms | `ProblemStatement.jsx` (+ test), `SolutionOverview.jsx` (+ test), `WhyIchnos.jsx` (+ test) | Pure deletion (up to 6 files) |
+| 3 | F3-a — Delete dead team organism | `CoreCompetencies.jsx` (+ test if exists) | Pure deletion |
+| 4 | F3-b — Inline section headings into live components | `CareerTimeline.jsx` (+ test), `VisionStatement.jsx` (+ test) | Migration |
+| 5 | F2/F3/F4-final — Delete unused constants | `landingContent.js`, `teamContent.js`, `navigation.js` | Pure deletion |
+| 6 | F5 — Footer brand description | `Footer.jsx`, `Footer.test.jsx` | Copy |
+| 7 | M2 (a) — `services.js` data-model extension + new Agile PM service | `services.js`, `structuredData.js`, `services.test.js` (new if absent) | New logic |
+| 8 | M2 (b) — Introduce `ServicesGroup` organism | `ServicesGroup.jsx` (new), `ServicesGroup.test.jsx` (new), `index.css` (section styles) | New logic |
+| 9 | M2 (c) — Switch `ServicesPage` to `ServicesGroup`; add `useScrollToSection()`; delete `ServicesList` | `ServicesPage.jsx`, `ServicesPage.test.jsx`, `ServicesList.jsx` + `ServicesList.test.jsx` (deletions) | Migration + pure deletion |
+| 10 | M2 (d) — `ServicesSnapshot` pillar badges | `ServicesSnapshot.jsx`, `ServicesSnapshot.test.jsx`, `index.css` (badge styles only) | UI |
+| 11 | M2 (e) — Footer Services column expansion | `Footer.jsx`, `Footer.test.jsx` | UI |
+| 12 | M3 — `ChatPanel` visual polish + component tests | `ChatPanel.jsx`, `ChatPanel.test.jsx` (new), `index.css` (chat styles) | UI + tests |
 
 Each phase ends with a Conventional Commit. M1 ships no code, only the documented decision in this file.
+
+**Two-step deletion rationale**: tickets 2–4 remove all consumers of the stale constants (organisms + `SECTION_HEADINGS` references). After ticket 4 lands, the constants in `landingContent.js`, `teamContent.js`, and `navigation.js` are unimported. Ticket 5 then deletes them in a pure-deletion PR with no surrounding logic changes — easy to review, easy to bisect.
 
 ---
 
@@ -577,7 +641,57 @@ When a PR touches the surfaces in this sweep, add the following section checks a
 
 ---
 
-## 15. Notes for Traycer
+## 16. Round-2 validation locks
+
+After Traycer stress-tested the sweep against the live code, four execution-shape decisions were locked. They override anything in earlier sections that conflicts.
+
+### 16.1 F2/F3 deletion sequencing — two-step, with a pure-deletion file-budget exception
+
+The ≤3 source-files-per-phase rule from `CLAUDE.md` §17.23 holds for **migrations and new-logic phases**. For **pure-deletion phases** removing related dead-code surfaces (organism + its test, or multiple related stale organisms), the budget extends to **up to 6 files**, provided the change is one-direction, mechanical, and produces no behavioural change.
+
+Sequence is non-negotiable:
+1. First, remove consumers (dead organisms + tests).
+2. Then, migrate live consumers (`CareerTimeline`, `VisionStatement`) to inline strings per the locked content in §4 of this spec.
+3. Finally, delete the now-unimported constants from `landingContent.js`, `teamContent.js`, and `navigation.js` in a single pure-deletion PR.
+
+Each intermediate state must be CI-green. No atomic "delete the constant and all its consumers in one PR" approach — that creates large diffs that resist review and bisect.
+
+### 16.2 `/services` anchor-scroll handling — route-local in `ServicesPage`
+
+Add `useScrollToSection()` directly as the first hook call inside `ServicesPage`. Do **not** introduce a shared advisory-level wrapper for navigation behaviour. The two routes that need anchor scrolling (`/` and `/services`) own it locally.
+
+`AdvisoryThemeLayout` continues to own theme cascading only; mixing navigation responsibilities into it is rejected. If a third route ever needs anchor scrolling, promote the hook into a shared wrapper as a separate, focused refactor at that time.
+
+The hook (`client/src/hooks/useScrollToSection.js`) is already route-agnostic — no changes required to the hook itself.
+
+### 16.3 Grouped-services rendering — page composes, new `ServicesGroup` organism, `ServicesList` deleted
+
+`ServicesPage` owns the four-section composition (Engineering → Compliance → Circularity → Delivery Models). A new organism `ServicesGroup` renders one labelled section. The previous `ServicesList` organism is removed as part of the migration.
+
+**File plan**:
+- **New**: `client/src/components/organisms/ServicesGroup.jsx` + `ServicesGroup.test.jsx`
+- **Rewritten**: `ServicesPage.jsx` composes four `<ServicesGroup>` calls (per §8); `ServicesPage.test.jsx` asserts the four sections in order
+- **Deleted**: `ServicesList.jsx` + `ServicesList.test.jsx` (consumed only by the old `ServicesPage`)
+
+This keeps `ServicesPage` thin (composition + data lookup), confines presentation to organisms, and gives each pillar/delivery-models section its own testable unit. Atomic-Design boundaries hold.
+
+`ServicesSnapshot` on the landing page **does not** use `ServicesGroup` — it iterates `SERVICES_LIST` directly with a flat grid plus pillar badges, per §8. The two surfaces (landing snapshot vs services depth view) have different visual treatments and remain separate.
+
+### 16.4 ChatPanel verification — component tests for behaviour, preview for visual polish
+
+The ChatPanel polish ticket lands with **six required component tests** in a new `ChatPanel.test.jsx` (locked in §9). Visual polish — bubble shapes, font rendering, mobile breakpoints, contrast — is validated by reviewer inspection of the Vercel preview, not by JSDOM assertions.
+
+**Why both**:
+- Component tests can't see CSS rendering, but they can catch behavioural regressions (welcome message dropped, send button stuck enabled, disclaimer removed) — the kinds of failures that silently leak leads.
+- Preview review catches CSS-level visual correctness (alignment, shadows, breakpoint behaviour) that JSDOM can't simulate.
+
+Skipping the component tests in favour of preview-only review is rejected: the ChatPanel is the primary lead-generation surface; behavioural correctness must survive future refactors without depending on a reviewer remembering to open the preview.
+
+`data-testid` selectors specified in §9 are mandatory — they support both the test suite and any future E2E coverage.
+
+---
+
+## 17. Notes for Traycer
 
 - Do not re-ask anything answered in §12 of this document or in §18 of the parent `designRefinementEpic.md`.
 - Locked copy is locked: every quoted string in §2, §6, §8, and §9 is the final text. Do not paraphrase.
