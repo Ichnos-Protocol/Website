@@ -14,8 +14,23 @@ import {
 } from "../helpers/chatHelpers.js";
 
 const DAILY_LIMIT = 3;
-export const XAI_TIMEOUT_MS = 9500;
-const TOPIC_TIMEOUT_MS = 2000;
+
+// xAI streaming timeouts — sized for a growing RAG knowledge base where
+// retrieval + model prompt construction can produce long, high-quality
+// streams. Sit just under the Vercel Pro function ceiling (maxDuration: 300s
+// in vercel.json) so the server can clean up gracefully before Vercel kills
+// the function.
+//
+// TOTAL is the hard ceiling on the full stream lifecycle (request to last
+// token). IDLE is the maximum allowed silence between consecutive token
+// chunks; resets on every chunk. A stalled upstream gets caught quickly by
+// the idle timer; a healthy but long stream rides out under the total cap.
+export const XAI_STREAM_TOTAL_TIMEOUT_MS = 290_000;
+export const XAI_STREAM_IDLE_TIMEOUT_MS = 60_000;
+
+// Topic classification is a fire-and-forget short call (≈1–3 tokens of
+// output). Kept tight to avoid dragging the tail-work pipeline.
+const TOPIC_TIMEOUT_MS = 2_000;
 
 export function extractKeywords(text) {
   const tokens = text
