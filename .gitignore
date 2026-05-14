@@ -86,9 +86,17 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # ============================================
-# Claude CLI (local settings are machine-specific)
+# Claude CLI (local settings + per-feature worktrees are machine-specific)
 # ============================================
 .claude/settings.local.json
+.claude/worktrees/
+
+# ============================================
+# MCP server runtime artifacts (browser session captures, page snapshots,
+# console logs from automated browsing — never reproducible, may contain
+# session-specific data)
+# ============================================
+.playwright-mcp/
 
 # ============================================
 # Knowledge base PDFs (large binaries, proprietary sources)
