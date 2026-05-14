@@ -14,12 +14,15 @@ import { fileURLToPath } from "node:url";
  *
  * Invariants:
  *   - Total stream timeout sits just under the Vercel Pro function ceiling
- *     (maxDuration: 300_000 in server/vercel.json), so the server gets a
- *     chance to clean up before Vercel kills the function.
+ *     (maxDuration: 300 in server/api/index.js), so the server gets a chance
+ *     to clean up before Vercel kills the function.
  *   - Idle timeout (max silence between chunks) is generous enough for
  *     Grok with long RAG context to pause noticeably between tokens.
- *   - vercel.json explicitly declares maxDuration so the runtime budget
- *     is locked, not inherited from defaults that have shifted historically.
+ *   - api/index.js explicitly exports `config.maxDuration = 300` so the
+ *     runtime budget is locked. (maxDuration is declared in the entry file,
+ *     not in vercel.json, because the project uses the legacy `builds`
+ *     configuration and Vercel rejects a `functions` block alongside `builds`
+ *     with the "Conflicting Functions and Builds Configuration" error.)
  *
  * This test reads the source files as text rather than importing them so
  * that the assertion does not pull in Firebase config initialisation as a
@@ -29,7 +32,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CHAT_SERVICE_PATH = path.resolve(__dirname, "./chatService.js");
-const VERCEL_JSON_PATH = path.resolve(__dirname, "../../vercel.json");
+const API_ENTRY_PATH = path.resolve(__dirname, "../../api/index.js");
 
 function readConstantValue(source, constantName) {
   const re = new RegExp(
@@ -40,6 +43,16 @@ function readConstantValue(source, constantName) {
     throw new Error(`Could not find constant ${constantName} in chatService.js`);
   }
   return Number(match[1].replace(/_/g, ""));
+}
+
+function readMaxDuration(source) {
+  // Matches `maxDuration: 300` inside the exported config object.
+  const re = /maxDuration\s*:\s*(\d+)/;
+  const match = source.match(re);
+  if (!match) {
+    throw new Error("Could not find maxDuration in api/index.js");
+  }
+  return Number(match[1]);
 }
 
 describe("chat service streaming timeouts", () => {
@@ -63,8 +76,8 @@ describe("chat service streaming timeouts", () => {
     expect(idleTimeout).toBeLessThan(totalTimeout);
   });
 
-  it("vercel.json declares maxDuration: 300 on the api function", () => {
-    const config = JSON.parse(fs.readFileSync(VERCEL_JSON_PATH, "utf8"));
-    expect(config.functions?.["api/index.js"]?.maxDuration).toBe(300);
+  it("api/index.js exports config.maxDuration: 300 (Vercel Pro ceiling)", () => {
+    const apiSource = fs.readFileSync(API_ENTRY_PATH, "utf8");
+    expect(readMaxDuration(apiSource)).toBe(300);
   });
 });
