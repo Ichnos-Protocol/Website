@@ -5,7 +5,12 @@
  * Delegates all business logic to chatService.
  */
 import { waitUntil } from "@vercel/functions";
-import { prepareChat, persistChat, XAI_TIMEOUT_MS } from "../services/chatService.js";
+import {
+  prepareChat,
+  persistChat,
+  XAI_STREAM_TOTAL_TIMEOUT_MS,
+  XAI_STREAM_IDLE_TIMEOUT_MS,
+} from "../services/chatService.js";
 import * as chatService from "../services/chatService.js";
 import { formatResponse } from "../helpers/formatResponse.js";
 import { createXaiStream } from "../helpers/xaiStreamAdapter.js";
@@ -57,8 +62,9 @@ export async function sendMessage(req, res, next) {
 
   let fullAnswer = "";
   try {
-    const stream = createXaiStream(messages, XAI_TIMEOUT_MS, {
+    const stream = createXaiStream(messages, XAI_STREAM_TOTAL_TIMEOUT_MS, {
       signal: abortController.signal,
+      idleTimeoutMs: XAI_STREAM_IDLE_TIMEOUT_MS,
     });
     for await (const { delta } of stream) {
       if (interrupted) break;

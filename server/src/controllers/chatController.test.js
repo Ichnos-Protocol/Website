@@ -12,7 +12,8 @@ const mockWaitUntil = vi.fn();
 vi.mock("../services/chatService.js", () => ({
   prepareChat: (...args) => mockPrepareChat(...args),
   persistChat: (...args) => mockPersistChat(...args),
-  XAI_TIMEOUT_MS: 9500,
+  XAI_STREAM_TOTAL_TIMEOUT_MS: 290_000,
+  XAI_STREAM_IDLE_TIMEOUT_MS: 60_000,
 }));
 
 vi.mock("../helpers/xaiStreamAdapter.js", () => ({
