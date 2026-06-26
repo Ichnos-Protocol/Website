@@ -55,11 +55,21 @@ describe('Footer', () => {
     expect(within(brandCol).queryByText(/UEN/i)).toBeNull();
   });
 
-  it('brand column shows the exact tagline copy', () => {
+  it('brand column shows the compliance-sensitive positioning copy', () => {
     const brandCol = screen.getByTestId('footer-col-brand');
     expect(
-      within(brandCol).getByText('Engineering, compliance, circularity.'),
+      within(brandCol).getByText(
+        (content) =>
+          /Catena-X consultant qualification in progress/.test(content) &&
+          /ASEAN data layer/.test(content),
+      ),
     ).toBeInTheDocument();
+  });
+
+  it('footer copy contains no Solana/blockchain wording', () => {
+    const footer = document.querySelector('footer');
+    expect(footer.textContent).not.toMatch(/Solana/i);
+    expect(footer.textContent).not.toMatch(/blockchain/i);
   });
 
   it('displays registered address in contact column', () => {
@@ -124,9 +134,9 @@ describe('Footer', () => {
     ).toBeNull();
   });
 
-  it('Services column has exactly three locked pillar links to /services', () => {
+  it('Services column has exactly three locked section links to /services', () => {
     const servicesCol = screen.getByTestId('footer-col-services');
-    const labels = ['Engineering', 'Compliance', 'Circularity'];
+    const labels = ['Data services', 'Catena-X consulting', 'Engineering advisory'];
     labels.forEach((label) => {
       expect(
         within(servicesCol).getByRole('link', { name: label }),
@@ -143,9 +153,9 @@ describe('Footer', () => {
 
   it('Services column links navigate to /services with the locked scrollTo state', () => {
     const cases = [
-      { label: 'Engineering', scrollTo: 'engineering' },
-      { label: 'Compliance', scrollTo: 'compliance' },
-      { label: 'Circularity', scrollTo: 'circularity' },
+      { label: 'Data services', scrollTo: 'data-services' },
+      { label: 'Catena-X consulting', scrollTo: 'catena-x-consulting' },
+      { label: 'Engineering advisory', scrollTo: 'engineering-advisory' },
     ];
     cases.forEach(({ label, scrollTo }) => {
       cleanup();
@@ -162,11 +172,14 @@ describe('Footer', () => {
     });
   });
 
-  it('Products column has Battery Passport → /data', () => {
+  it('Products column has Data → /data and Catena-X → /catena-x', () => {
     const productsCol = screen.getByTestId('footer-col-products');
     expect(
-      within(productsCol).getByRole('link', { name: 'Battery Passport' }),
+      within(productsCol).getByRole('link', { name: 'Data' }),
     ).toHaveAttribute('href', '/data');
+    expect(
+      within(productsCol).getByRole('link', { name: 'Catena-X' }),
+    ).toHaveAttribute('href', '/catena-x');
   });
 
   it('contact column has Submit an Inquiry link to /contact', () => {

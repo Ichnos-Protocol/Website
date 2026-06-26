@@ -25,7 +25,7 @@ vi.mock('../organisms/CompanySnapshot', () => ({
 }));
 
 vi.mock('../organisms/PassportTeaser', () => ({
-  default: () => <div data-testid="passport-teaser">PassportTeaser</div>,
+  default: () => <div data-testid="data-teaser">PassportTeaser</div>,
 }));
 
 vi.mock('../organisms/ContactSection', () => ({
@@ -156,7 +156,7 @@ describe('LandingPage', () => {
   });
 
   it('renders PassportTeaser component', () => {
-    expect(screen.getByTestId('passport-teaser')).toBeInTheDocument();
+    expect(screen.getByTestId('data-teaser')).toBeInTheDocument();
   });
 
   it('renders ContactSection component', () => {
@@ -167,7 +167,7 @@ describe('LandingPage', () => {
     const hero = screen.getByTestId('hero');
     const services = screen.getByTestId('services-snapshot');
     const company = screen.getByTestId('company-snapshot');
-    const passport = screen.getByTestId('passport-teaser');
+    const passport = screen.getByTestId('data-teaser');
     const contact = screen.getByTestId('contact-section');
 
     expect(

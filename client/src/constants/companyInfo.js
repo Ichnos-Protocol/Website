@@ -3,7 +3,7 @@ export const COMPANY_INFO = {
   uen: "202606052196",
   registeredAddress:
     "160 Robinson Road, #14-04 Singapore Business Federation Centre, Singapore 068914",
-  tagline: "Traceability. Trust. Transparency.",
+  tagline: "The ASEAN data layer for the European battery passport.",
 };
 
 export const CONTACT_INFO = {

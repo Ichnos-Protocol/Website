@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from "react-router-dom";
 
 import LandingPage from "./components/pages/LandingPage";
 import ServicesPage from "./components/pages/ServicesPage";
+import CatenaXPage from "./components/pages/CatenaXPage";
 import TeamPage from "./components/pages/TeamPage";
 import ContactPage from "./components/pages/ContactPage";
 import PrivacyPage from "./components/pages/PrivacyPage";
@@ -40,6 +41,7 @@ export default function App() {
           >
             <Route path="/" element={<LandingPage />} />
             <Route path="/services" element={<ServicesPage />} />
+            <Route path="/catena-x" element={<CatenaXPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route

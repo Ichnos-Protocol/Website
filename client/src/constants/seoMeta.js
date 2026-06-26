@@ -10,7 +10,7 @@ const SITE_NAME = "Ichnos Protocol";
 const LOCALE = "en_US";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 const DEFAULT_OG_IMAGE_ALT =
-  "Ichnos Protocol — battery advisory and Battery Passport implementation";
+  "Ichnos Protocol — Catena-X-compatible ASEAN data layer for the European battery passport";
 
 function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
   const url = `${BASE_URL}${path}`;
@@ -43,47 +43,57 @@ function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) 
 
 export const LANDING_META = buildMeta({
   path: "/",
-  title: "Ichnos Protocol — Battery Advisory & Battery Passport",
+  title:
+    "Ichnos Protocol — ASEAN data layer for the European battery passport",
   description:
-    "Battery advisory for OEMs, Tier-1 suppliers, and recyclers — systems engineering, safety, mechanical development, EU 2023/1542 and APAC compliance.",
+    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Kuala Lumpur · Singapore · Europe.",
   keywords:
-    "battery advisory, battery systems engineering, battery safety, mechanical development, EU Battery Regulation, battery passport, MS 2818, APAC battery compliance, ASEAN, circular economy",
+    "battery passport, Catena-X, EU Battery Regulation 2023/1542, ASEAN battery data, carbon footprint data, supply-chain provenance, battery materials, battery systems advisory, MS 2818, Kuala Lumpur, Singapore",
 });
 
 export const SERVICES_META = buildMeta({
   path: "/services",
-  title: "Services — Ichnos Protocol Battery Advisory",
+  title: "Services — Ichnos Protocol",
   description:
-    "Battery systems & safety, mechanical development, technical lead, EU–APAC compliance, remanufacturing & circular economy, Battery Passport implementation.",
+    "Catena-X-compatible data services (materials to modules) for EU importers and passport issuers, Catena-X consulting for ASEAN onboarding, and battery-systems advisory. Singapore + Kuala Lumpur.",
   keywords:
-    "battery systems engineering, FMEA, battery safety, battery mechanical development, battery technical lead, EU 2023/1542, MS 2818, remanufacturing, design for recycling, battery passport implementation",
+    "Catena-X data services, battery passport data, ASEAN Catena-X onboarding, battery systems advisory, EU Battery Regulation, carbon footprint data, battery materials data, Singapore, Kuala Lumpur",
 });
 
 export const TEAM_META = buildMeta({
   path: "/team",
-  title: "Meet the Team — Ichnos Protocol",
+  title: "Team — Ichnos Protocol",
   description:
-    "Dr.-Ing. Francesco Maltoni (Founder, ex-FEV Lead Expert — Battery Systems) and Ihsan Ahmad (Co-Founder, AI & quantitative modelling).",
+    "Founders of Ichnos Protocol. Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, Catena-X consultant qualification in progress) and Ihsan Ahmad (AI, quantitative modelling).",
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, RWTH Aachen PEM, FEV Battery Systems, battery passport expert, EU Battery Regulation, Singapore battery consulting, APAC battery advisory",
+    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X consultant, battery passport, ASEAN battery advisory, AI, quantitative modelling",
 });
 
-export const PASSPORT_META = buildMeta({
-  path: "/passport",
-  title: "Battery Passport — Ichnos Protocol",
+export const DATA_META = buildMeta({
+  path: "/data",
+  title: "Data services for the battery passport — Ichnos Protocol",
   description:
-    "Digital Battery Passport aligned with EU Regulation 2023/1542 and Malaysian MS 2818 (MARI). Built for OEMs exporting between Europe and ASEAN.",
+    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made materials, cells, and modules — passport-ready for EU importers. We feed your passport; we do not replace it. EU 2023/1542, EDC, DIN DKE SPEC 99100, MS 2818.",
   keywords:
-    "battery passport, EU Battery Regulation 2023/1542, MS 2818, MARI, digital product passport, Solana, supply chain transparency, circular economy, ASEAN battery compliance",
+    "battery passport data, Catena-X-compatible data, carbon footprint data, provenance data, composition data, ASEAN battery materials, EU Battery Regulation 2023/1542, EDC, DIN DKE SPEC 99100, MS 2818",
+});
+
+export const CATENAX_META = buildMeta({
+  path: "/catena-x",
+  title: "Catena-X consulting for ASEAN — Ichnos Protocol",
+  description:
+    "Catena-X consulting focused on onboarding ASEAN battery manufacturers and their EU partners: data readiness, onboarding steps, business cases, use-case and Tractus-X implementation, bilateral data relationships, release changes, and EU Battery Regulation compliance. Consultant qualification in progress.",
+  keywords:
+    "Catena-X consulting, ASEAN onboarding, Tractus-X implementation, battery data readiness, bilateral data relationships, EU Battery Regulation compliance, battery passport, data spaces",
 });
 
 export const CONTACT_META = buildMeta({
   path: "/contact",
-  title: "Contact — Ichnos Protocol Battery Advisory",
+  title: "Contact — Ichnos Protocol",
   description:
-    "Talk to Ichnos Protocol — chat with our AI assistant, send an inquiry, or book a call. Battery advisory and Battery Passport implementation, Singapore + EU.",
+    "Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. AI assistant, email, LinkedIn, Calendly. Kuala Lumpur + Singapore + EU.",
   keywords:
-    "contact battery advisory, battery consulting Singapore, battery passport consultation, schedule battery engineering call",
+    "contact Ichnos Protocol, Catena-X data services, ASEAN Catena-X onboarding, battery systems advisory, battery passport consultation, Kuala Lumpur, Singapore",
 });
 
 export const PRIVACY_META = buildMeta({
@@ -99,7 +109,8 @@ export const ALL_META = [
   LANDING_META,
   SERVICES_META,
   TEAM_META,
-  PASSPORT_META,
+  DATA_META,
+  CATENAX_META,
   CONTACT_META,
   PRIVACY_META,
 ];

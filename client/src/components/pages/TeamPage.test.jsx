@@ -144,6 +144,12 @@ describe('TeamPage', () => {
     });
   });
 
+  it("renders Francesco's repositioned Catena-X copy", () => {
+    expect(
+      screen.getByText(/Catena-X consultant qualification/),
+    ).toBeInTheDocument();
+  });
+
   it('renders the recognition block for Francesco', () => {
     const blocks = screen.getAllByTestId('recognition-block');
     expect(blocks).toHaveLength(1);

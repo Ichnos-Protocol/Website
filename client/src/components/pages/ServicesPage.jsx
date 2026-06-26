@@ -4,8 +4,7 @@ import { SERVICES_META } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 import {
   SERVICES_PAGE_CONTENT,
-  SERVICE_PILLARS,
-  getServicesByPillar,
+  SERVICES_SECTIONS,
 } from "../../constants/services";
 import { useScrollToSection } from "../../hooks/useScrollToSection";
 import PageTransition from "../templates/PageTransition";
@@ -25,16 +24,8 @@ const servicesSkeleton = (
   </>
 );
 
-const LOCKED_PILLAR_ORDER = ["engineering", "compliance", "circularity"];
-
-function getPillarById(pillarId) {
-  return SERVICE_PILLARS.find((pillar) => pillar.id === pillarId);
-}
-
 export default function ServicesPage() {
   useScrollToSection();
-
-  const orderedPillars = LOCKED_PILLAR_ORDER.map(getPillarById).filter(Boolean);
 
   return (
     <div>
@@ -47,12 +38,15 @@ export default function ServicesPage() {
         />
 
         <Container>
-          {orderedPillars.map((pillar) => (
+          {SERVICES_SECTIONS.map((section) => (
             <ServicesGroup
-              key={pillar.id}
-              id={pillar.anchor}
-              label={pillar.label}
-              services={getServicesByPillar(pillar.id)}
+              key={section.id}
+              id={section.id}
+              label={section.label}
+              intro={section.intro}
+              items={section.items}
+              teaser={section.teaser}
+              cta={section.cta}
             />
           ))}
           <ContactSection />

@@ -1,13 +1,15 @@
 import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, waitFor, cleanup, within } from '../../test-utils';
+import { renderWithProviders, screen, waitFor, cleanup } from '../../test-utils';
 import ServicesPage from './ServicesPage';
 import { SERVICES_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
-import {
-  SERVICES_PAGE_CONTENT,
-  SERVICE_PILLARS,
-  getServicesByPillar,
-} from '../../constants/services';
+import { SERVICES_PAGE_CONTENT } from '../../constants/services';
+
+const SECTION_IDS = [
+  'data-services',
+  'catena-x-consulting',
+  'engineering-advisory',
+];
 
 vi.mock('../../hooks/useReducedMotion', () => ({
   useReducedMotion: vi.fn(() => true),
@@ -152,13 +154,13 @@ describe('ServicesPage', () => {
     expect(useScrollToSection).toHaveBeenCalled();
   });
 
-  it('renders all three section ids: engineering, compliance, circularity', () => {
-    ['engineering', 'compliance', 'circularity'].forEach((sectionId) => {
+  it('renders all three section ids: data-services, catena-x-consulting, engineering-advisory', () => {
+    SECTION_IDS.forEach((sectionId) => {
       expect(document.getElementById(sectionId)).not.toBeNull();
     });
   });
 
-  it('does not render a delivery-models section any more (Technical Lead now lives in Engineering)', () => {
+  it('does not render a delivery-models section', () => {
     expect(document.getElementById('delivery-models')).toBeNull();
   });
 
@@ -167,75 +169,38 @@ describe('ServicesPage', () => {
     expect(sections.length).toBe(3);
   });
 
-  it('does not render service cards under the wrong pillar section', () => {
-    const pillarIds = ['engineering', 'compliance', 'circularity'];
-    pillarIds.forEach((pillarId) => {
-      const section = document.getElementById(pillarId);
-      const ownTitles = new Set(
-        getServicesByPillar(pillarId).map((s) => s.title),
-      );
-      const foreignServices = SERVICE_PILLARS.flatMap((p) =>
-        p.id === pillarId ? [] : getServicesByPillar(p.id),
-      );
-      foreignServices.forEach((service) => {
-        if (ownTitles.has(service.title)) return;
-        expect(
-          within(section).queryByText(service.title, {
-            selector: '.service-card-title',
-          }),
-        ).toBeNull();
-      });
-    });
-  });
-
   it('renders the three sections in locked order', () => {
-    const engineering = document.getElementById('engineering');
-    const compliance = document.getElementById('compliance');
-    const circularity = document.getElementById('circularity');
+    const [data, catenaX, advisory] = SECTION_IDS.map((id) =>
+      document.getElementById(id),
+    );
 
     expect(
-      engineering.compareDocumentPosition(compliance) &
+      data.compareDocumentPosition(catenaX) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      compliance.compareDocumentPosition(circularity) &
+      catenaX.compareDocumentPosition(advisory) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
   it('renders ContactSection after the three section groups', () => {
-    const circularity = document.getElementById('circularity');
+    const advisory = document.getElementById('engineering-advisory');
     const contact = screen.getByTestId('contact-section');
     expect(
-      circularity.compareDocumentPosition(contact) &
+      advisory.compareDocumentPosition(contact) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('renders Technical Lead under the Engineering pillar section', () => {
-    const engineering = document.getElementById('engineering');
+  it('links the data-services section to /data and the consulting section to /catena-x', () => {
     expect(
-      within(engineering).getByText('Technical Lead — Battery Systems', {
-        selector: '.service-card-title',
-      }),
-    ).toBeInTheDocument();
+      screen.getByRole('link', { name: 'Explore data services →' }),
+    ).toHaveAttribute('href', '/data');
+    expect(
+      screen.getByRole('link', { name: 'Catena-X consulting →' }),
+    ).toHaveAttribute('href', '/catena-x');
   });
-
-  it.each(SERVICE_PILLARS)(
-    'renders the correct service titles under the $anchor section',
-    (pillar) => {
-      const section = document.getElementById(pillar.anchor);
-      expect(section).not.toBeNull();
-      const services = getServicesByPillar(pillar.id);
-      services.forEach((service) => {
-        expect(
-          within(section).getByText(service.title, {
-            selector: '.service-card-title',
-          }),
-        ).toBeInTheDocument();
-      });
-    },
-  );
 
   it('has no accessibility violations', async () => {
     cleanup();

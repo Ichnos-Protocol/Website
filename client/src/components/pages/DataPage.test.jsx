@@ -1,34 +1,14 @@
 import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, waitFor, cleanup } from '../../test-utils';
 import DataPage from './DataPage';
-import { PASSPORT_META } from '../../constants/seoMeta';
+import { DATA_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import {
-  PASSPORT_NARRATIVE_CONTENT,
-  PASSPORT_VALUE_PROPS,
-} from '../../constants/passportContent';
-
-vi.mock('../organisms/PassportHero', () => ({
-  default: () => (
-    <div data-testid="passport-hero">
-      <h1>Battery Passport</h1>
-    </div>
-  ),
-}));
-
-vi.mock('../organisms/FeatureMaturityMatrix', () => ({
-  default: () => <div data-testid="feature-maturity-matrix" />,
-}));
-
-vi.mock('../organisms/TechnologyRoadmap', () => ({
-  default: () => <div data-testid="technology-roadmap" />,
-}));
-
-vi.mock('../organisms/PassportContactCta', () => ({
-  default: () => <div data-testid="passport-contact-cta" />,
-}));
-
-const PRECEDES = 0x04; // Node.DOCUMENT_POSITION_FOLLOWING
+  DATA_HERO,
+  DATA_STATUS_BADGE,
+  DATA_SCHEMA_MAPPING,
+  DATA_FOUNDER,
+} from '../../constants/dataContent';
 
 describe('DataPage', () => {
   beforeEach(() => {
@@ -37,7 +17,7 @@ describe('DataPage', () => {
 
   it('sets document title', async () => {
     await waitFor(() => {
-      expect(document.title).toBe(PASSPORT_META.title);
+      expect(document.title).toBe(DATA_META.title);
     });
   });
 
@@ -46,7 +26,7 @@ describe('DataPage', () => {
       const meta = document.querySelector(
         'meta[name="description"][data-rh="true"]',
       );
-      expect(meta).toHaveAttribute('content', PASSPORT_META.description);
+      expect(meta).toHaveAttribute('content', DATA_META.description);
     });
   });
 
@@ -55,7 +35,7 @@ describe('DataPage', () => {
       const meta = document.querySelector(
         'meta[name="keywords"][data-rh="true"]',
       );
-      expect(meta).toHaveAttribute('content', PASSPORT_META.keywords);
+      expect(meta).toHaveAttribute('content', DATA_META.keywords);
     });
   });
 
@@ -64,7 +44,7 @@ describe('DataPage', () => {
       const link = document.querySelector(
         'link[rel="canonical"][data-rh="true"]',
       );
-      expect(link).toHaveAttribute('href', PASSPORT_META.canonical);
+      expect(link).toHaveAttribute('href', DATA_META.canonical);
     });
   });
 
@@ -72,34 +52,34 @@ describe('DataPage', () => {
     await waitFor(() => {
       expect(
         document.querySelector('meta[property="og:title"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.title);
+      ).toHaveAttribute('content', DATA_META.og.title);
       expect(
         document.querySelector(
           'meta[property="og:description"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', PASSPORT_META.og.description);
+      ).toHaveAttribute('content', DATA_META.og.description);
       expect(
         document.querySelector('meta[property="og:type"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.type);
+      ).toHaveAttribute('content', DATA_META.og.type);
       expect(
         document.querySelector('meta[property="og:url"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.url);
+      ).toHaveAttribute('content', DATA_META.og.url);
       expect(
         document.querySelector(
           'meta[property="og:site_name"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', PASSPORT_META.og.siteName);
+      ).toHaveAttribute('content', DATA_META.og.siteName);
       expect(
         document.querySelector('meta[property="og:locale"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.locale);
+      ).toHaveAttribute('content', DATA_META.og.locale);
       expect(
         document.querySelector('meta[property="og:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.image);
+      ).toHaveAttribute('content', DATA_META.og.image);
       expect(
         document.querySelector(
           'meta[property="og:image:alt"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', PASSPORT_META.og.imageAlt);
+      ).toHaveAttribute('content', DATA_META.og.imageAlt);
     });
   });
 
@@ -107,112 +87,116 @@ describe('DataPage', () => {
     await waitFor(() => {
       expect(
         document.querySelector('meta[name="twitter:card"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.card);
+      ).toHaveAttribute('content', DATA_META.twitter.card);
       expect(
         document.querySelector('meta[name="twitter:title"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.title);
+      ).toHaveAttribute('content', DATA_META.twitter.title);
       expect(
         document.querySelector(
           'meta[name="twitter:description"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.description);
+      ).toHaveAttribute('content', DATA_META.twitter.description);
       expect(
         document.querySelector('meta[name="twitter:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.image);
+      ).toHaveAttribute('content', DATA_META.twitter.image);
       expect(
         document.querySelector(
           'meta[name="twitter:image:alt"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.imageAlt);
+      ).toHaveAttribute('content', DATA_META.twitter.imageAlt);
     });
   });
 
-  it('emits JSON-LD schemas from PAGE_STRUCTURED_DATA.passport', async () => {
+  it('emits JSON-LD schemas from PAGE_STRUCTURED_DATA.data', async () => {
     await waitFor(() => {
       const scripts = document.querySelectorAll(
         'script[type="application/ld+json"][data-rh="true"]',
       );
-      expect(scripts.length).toBe(PAGE_STRUCTURED_DATA.passport.length);
+      expect(scripts.length).toBe(PAGE_STRUCTURED_DATA.data.length);
       expect(JSON.parse(scripts[0].textContent)).toEqual(
-        PAGE_STRUCTURED_DATA.passport[0],
+        PAGE_STRUCTURED_DATA.data[0],
       );
     });
   });
 
-  it('renders PassportHero component', () => {
-    expect(screen.getByTestId('passport-hero')).toBeInTheDocument();
-  });
-
-  it('renders FeatureMaturityMatrix component', () => {
-    expect(screen.getByTestId('feature-maturity-matrix')).toBeInTheDocument();
-  });
-
-  it('renders TechnologyRoadmap component', () => {
-    expect(screen.getByTestId('technology-roadmap')).toBeInTheDocument();
-  });
-
-  it('renders PassportContactCta component', () => {
-    expect(screen.getByTestId('passport-contact-cta')).toBeInTheDocument();
-  });
-
-  it('renders sections in the correct order: narrative → value-props → cta', () => {
-    const narrative = screen.getByTestId('passport-narrative');
-    const valueProps = screen.getByTestId('passport-value-props');
-    const cta = screen.getByTestId('passport-contact-cta');
-    expect(narrative.compareDocumentPosition(valueProps) & PRECEDES).toBeTruthy();
-    expect(valueProps.compareDocumentPosition(cta) & PRECEDES).toBeTruthy();
-  });
-
-  it('renders the narrative heading and body from passport content', () => {
-    const narrative = screen.getByTestId('passport-narrative');
-    expect(narrative).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: PASSPORT_NARRATIVE_CONTENT.heading,
-      }),
-    ).toBeInTheDocument();
-    expect(narrative).toHaveTextContent(PASSPORT_NARRATIVE_CONTENT.body);
-  });
-
-  it('renders the value-props heading and subtext', () => {
-    const valueProps = screen.getByTestId('passport-value-props');
-    expect(valueProps).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: PASSPORT_VALUE_PROPS.heading,
-      }),
-    ).toBeInTheDocument();
-    expect(valueProps).toHaveTextContent(PASSPORT_VALUE_PROPS.subtext);
-  });
-
-  it('renders the OEM audience value card with its headline and points', () => {
-    const [oem, recycler] = PASSPORT_VALUE_PROPS.audiences;
-    const oemCard = screen.getByTestId(`passport-value-${oem.id}`);
-    expect(oemCard).toBeInTheDocument();
-    expect(oemCard).toHaveTextContent(oem.audience);
-    expect(oemCard).toHaveTextContent(oem.headline);
-    oem.points.forEach((point) => {
-      expect(oemCard).toHaveTextContent(point);
-    });
-    expect(oemCard).not.toHaveTextContent(recycler.headline);
-  });
-
-  it('renders the recycler audience value card with its headline and points', () => {
-    const [, recycler] = PASSPORT_VALUE_PROPS.audiences;
-    const recyclerCard = screen.getByTestId(`passport-value-${recycler.id}`);
-    expect(recyclerCard).toBeInTheDocument();
-    expect(recyclerCard).toHaveTextContent(recycler.audience);
-    expect(recyclerCard).toHaveTextContent(recycler.headline);
-    recycler.points.forEach((point) => {
-      expect(recyclerCard).toHaveTextContent(point);
-    });
-  });
-
-  it('has proper heading hierarchy with h1', () => {
+  it('renders the hero headline as the h1', () => {
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('Battery Passport');
+    expect(heading).toHaveTextContent(DATA_HERO.headline);
+  });
+
+  it('renders all page sections', () => {
+    expect(screen.getByTestId('data-hero')).toBeInTheDocument();
+    expect(screen.getByTestId('data-problem')).toBeInTheDocument();
+    expect(screen.getByTestId('data-solution')).toBeInTheDocument();
+    expect(screen.getByTestId('data-schema-mapping')).toBeInTheDocument();
+    expect(screen.getByTestId('data-founder')).toBeInTheDocument();
+    expect(screen.getByTestId('data-closing-cta')).toBeInTheDocument();
+  });
+
+  it('renders a schema-mapping row for every mapping entry', () => {
+    const table = screen.getByTestId('data-schema-mapping');
+    DATA_SCHEMA_MAPPING.rows.forEach((row) => {
+      expect(table).toHaveTextContent(row.source);
+      expect(table).toHaveTextContent(row.target);
+    });
+  });
+
+  it('renders all four founder pillars', () => {
+    DATA_FOUNDER.pillars.forEach((pillar) => {
+      expect(
+        screen.getByTestId(`data-pillar-${pillar.id}`),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('includes the mandatory Catena-X messaging phrases', () => {
+    expect(document.body).toHaveTextContent(
+      'We feed your passport; we do not replace it',
+    );
+    expect(document.body).toHaveTextContent(
+      'Catena-X consultant qualification: application in progress',
+    );
+    expect(document.body).toHaveTextContent(
+      'Committed to onboarding ASEAN into Catena-X',
+    );
+    expect(DATA_STATUS_BADGE).toContain(
+      'Catena-X consultant qualification: application in progress',
+    );
+  });
+
+  it('uses the approved Catena-X status wording in the closing CTA and credibility row', () => {
+    const closingCta = screen.getByTestId('data-closing-cta');
+    expect(closingCta).toHaveTextContent(
+      'Catena-X consultant qualification: application in progress',
+    );
+    expect(closingCta).not.toHaveTextContent(
+      'Catena-X consultant qualification in progress',
+    );
+    expect(document.body).not.toHaveTextContent(
+      'Catena-X consultant qualification in progress',
+    );
+    expect(DATA_FOUNDER.credibilityRow).toContain(
+      'Catena-X consultant qualification: application in progress',
+    );
+  });
+
+  it('describes the full upstream chain including precursors and electrodes', () => {
+    expect(document.body).toHaveTextContent('precursors');
+    expect(document.body).toHaveTextContent('electrodes');
+  });
+
+  it('states the full problem chain without the materials-to-modules shorthand', () => {
+    const problem = screen.getByTestId('data-problem');
+    expect(problem).toHaveTextContent(
+      'materials · precursors · electrodes · cells · modules',
+    );
+    expect(problem).not.toHaveTextContent('materials-to-modules');
+  });
+
+  it('contains no Solana or blockchain messaging', () => {
+    expect(document.body.textContent).not.toMatch(
+      /solana|blockchain|crypto|token/i,
+    );
   });
 
   it('has no accessibility violations', async () => {

@@ -1,3 +1,4 @@
+/* global process */
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -19,6 +20,11 @@ describe('vercel.json routing', () => {
   it('preserves the /api proxy route', () => {
     const apiRoute = config.routes?.find((entry) => entry.src === '/api/(.*)');
     expect(apiRoute).toBeDefined();
+    // The route must keep proxying to the configured backend host, not just
+    // exist. Assert the dest shape and the VITE_API_HOST binding so a removed
+    // or retargeted proxy fails the D6/R10 invariant.
+    expect(apiRoute.dest).toBe('https://$VITE_API_HOST/api/$1');
+    expect(apiRoute.env).toContain('VITE_API_HOST');
   });
 
   it('preserves the SPA rewrite catch-all', () => {
