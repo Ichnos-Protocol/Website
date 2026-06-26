@@ -112,6 +112,14 @@ server/knowledge-base/markdown_output/
 .logs/
 
 # ============================================
+# Knowledge base downloader — persistent Playwright/Chrome profile.
+# Created by `downloadKnowledgeBase.mjs` (launchPersistentContext) so the
+# CloudFlare CAPTCHA cookie survives across runs. Contains transient browser
+# state (cookies, cache, BrowserMetrics, crashpad) that must not be committed.
+# ============================================
+server/knowledge-base/.playwright-profile/
+
+# ============================================
 # Misc
 # ============================================
 *.tsbuildinfo
