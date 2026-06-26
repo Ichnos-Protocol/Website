@@ -5,11 +5,11 @@ import ServicesPage from "./components/pages/ServicesPage";
 import TeamPage from "./components/pages/TeamPage";
 import ContactPage from "./components/pages/ContactPage";
 import PrivacyPage from "./components/pages/PrivacyPage";
-import PassportPage from "./components/pages/PassportPage";
+import DataPage from "./components/pages/DataPage";
 import AdminPage from "./components/pages/AdminPage";
 import PublicLayout from "./components/templates/PublicLayout";
 import AdvisoryThemeLayout from "./components/templates/AdvisoryThemeLayout";
-import PassportThemeLayout from "./components/templates/PassportThemeLayout";
+import DataThemeLayout from "./components/templates/DataThemeLayout";
 import AdminRoute from "./routes/AdminRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ApiSanityWarning from "./components/atoms/ApiSanityWarning";
@@ -53,7 +53,7 @@ export default function App() {
             <Route path="*" element={null} />
           </Route>
         </Route>
-        <Route element={<PassportThemeLayout />}>
+        <Route element={<DataThemeLayout />}>
           <Route
             element={
               <PublicLayout>
@@ -61,7 +61,7 @@ export default function App() {
               </PublicLayout>
             }
           >
-            <Route path="/passport" element={<PassportPage />} />
+            <Route path="/data" element={<DataPage />} />
           </Route>
         </Route>
       </Routes>

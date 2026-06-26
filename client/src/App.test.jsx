@@ -13,8 +13,8 @@ vi.mock('./components/pages/AdminPage', () => ({
 vi.mock('./components/pages/LandingPage', () => ({
   default: () => <div>Landing Page</div>,
 }));
-vi.mock('./components/pages/PassportPage', () => ({
-  default: () => <div>Passport Page</div>,
+vi.mock('./components/pages/DataPage', () => ({
+  default: () => <div>Data Page</div>,
 }));
 vi.mock('./components/templates/PublicLayout', () => ({
   default: ({ children }) => (
@@ -123,25 +123,25 @@ describe('App route theme wrappers', () => {
     expect(container.querySelector('.theme-passport')).toBeNull();
   });
 
-  it('renders passport theme wrapper containing chrome at /passport', async () => {
-    const { container } = renderWithProviders(<App />, { route: '/passport' });
+  it('renders data theme wrapper containing chrome at /data', async () => {
+    const { container } = renderWithProviders(<App />, { route: '/data' });
 
     await waitFor(() => {
-      expect(screen.getByText('Passport Page')).toBeInTheDocument();
+      expect(screen.getByText('Data Page')).toBeInTheDocument();
     });
 
-    const passportWrapper = container.querySelector('.theme-passport');
-    expect(passportWrapper).toBeInTheDocument();
+    const dataWrapper = container.querySelector('.theme-passport');
+    expect(dataWrapper).toBeInTheDocument();
     expect(
-      passportWrapper.querySelector('[data-testid="public-layout"]'),
+      dataWrapper.querySelector('[data-testid="public-layout"]'),
     ).toBeInTheDocument();
     expect(
-      passportWrapper.querySelector('[data-testid="navbar"]'),
+      dataWrapper.querySelector('[data-testid="navbar"]'),
     ).toBeInTheDocument();
     expect(
-      passportWrapper.querySelector('[data-testid="footer"]'),
+      dataWrapper.querySelector('[data-testid="footer"]'),
     ).toBeInTheDocument();
-    expect(passportWrapper).toHaveTextContent('Passport Page');
+    expect(dataWrapper).toHaveTextContent('Data Page');
     expect(container.querySelector('.theme-advisory')).toBeNull();
   });
 });

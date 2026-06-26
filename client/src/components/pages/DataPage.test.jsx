@@ -1,6 +1,6 @@
 import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, waitFor, cleanup } from '../../test-utils';
-import PassportPage from './PassportPage';
+import DataPage from './DataPage';
 import { PASSPORT_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import {
@@ -30,9 +30,9 @@ vi.mock('../organisms/PassportContactCta', () => ({
 
 const PRECEDES = 0x04; // Node.DOCUMENT_POSITION_FOLLOWING
 
-describe('PassportPage', () => {
+describe('DataPage', () => {
   beforeEach(() => {
-    renderWithProviders(<PassportPage />);
+    renderWithProviders(<DataPage />);
   });
 
   it('sets document title', async () => {
@@ -217,7 +217,7 @@ describe('PassportPage', () => {
 
   it('has no accessibility violations', async () => {
     cleanup();
-    const { container } = renderWithProviders(<PassportPage />);
+    const { container } = renderWithProviders(<DataPage />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

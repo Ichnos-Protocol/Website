@@ -33,7 +33,7 @@ function ValueCard({ audience }) {
   );
 }
 
-export default function PassportPage() {
+export default function DataPage() {
   return (
     <>
       <SeoHead meta={PASSPORT_META} schemas={PAGE_STRUCTURED_DATA.passport} />

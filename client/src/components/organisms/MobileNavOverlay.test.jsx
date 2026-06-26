@@ -127,7 +127,7 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on / homepage, clicking Battery Passport navigates to /passport", () => {
+  it("on / homepage, clicking Battery Passport navigates to /data", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
@@ -135,7 +135,7 @@ describe("MobileNavOverlay", () => {
     );
 
     fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/passport");
+    expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 
   it("on /services route, clicking flat links and Company.Team navigates to their paths", () => {
@@ -158,7 +158,7 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on /services route, Battery Passport still navigates to /passport", () => {
+  it("on /services route, Battery Passport still navigates to /data", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
@@ -166,7 +166,7 @@ describe("MobileNavOverlay", () => {
     );
 
     fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/passport");
+    expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 
   it("renders nav links with default token-aware classes on non-matching route", () => {

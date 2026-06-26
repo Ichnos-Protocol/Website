@@ -320,14 +320,14 @@ describe('Navbar', () => {
     expect(screen.getByRole('button', { name: 'Company' })).not.toHaveClass('active');
   });
 
-  it('on /passport, the brand Logo renders the passport white mark (/logo.png)', () => {
+  it('on /data, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-      route: '/passport',
+      route: '/data',
       preloadedState: loggedOutState,
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/logo.png');
+    expect(img).toHaveAttribute('src', '/logo-dark.png');
   });
 
   it('on /, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
@@ -356,7 +356,7 @@ describe('Navbar', () => {
     });
   });
 
-  it('on / homepage, clicking Battery Passport navigates to /passport', () => {
+  it('on / homepage, clicking Battery Passport navigates to /data', () => {
     mockNavigate.mockClear();
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/',
@@ -364,13 +364,13 @@ describe('Navbar', () => {
     });
 
     fireEvent.click(screen.getByRole('link', { name: 'Battery Passport' }));
-    expect(mockNavigate).toHaveBeenCalledWith('/passport');
+    expect(mockNavigate).toHaveBeenCalledWith('/data');
   });
 
   it('on /services route, clicking each flat nav link navigates to its path', () => {
     const expected = {
       Services: '/services',
-      'Battery Passport': '/passport',
+      'Battery Passport': '/data',
       Contact: '/contact',
     };
 

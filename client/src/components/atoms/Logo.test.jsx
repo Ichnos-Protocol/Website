@@ -22,14 +22,14 @@ describe('Logo', () => {
     renderWithProviders(<Logo theme="dark" />);
 
     const img = screen.getByAltText('Ichnos Protocol');
-    expect(img).toHaveAttribute('src', '/logo.png');
+    expect(img).toHaveAttribute('src', '/logo-dark.png');
   });
 
   it('remains backwards-compatible with legacy theme="passport"', () => {
     renderWithProviders(<Logo theme="passport" />);
 
     const img = screen.getByAltText('Ichnos Protocol');
-    expect(img).toHaveAttribute('src', '/logo.png');
+    expect(img).toHaveAttribute('src', '/logo-dark.png');
   });
 
   it('falls back to text when image fails to load', () => {

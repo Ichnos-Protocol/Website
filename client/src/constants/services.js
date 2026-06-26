@@ -39,8 +39,8 @@ export const SERVICES_LIST = [
     tagline:
       "EU 2023/1542 and MS 2818 readiness audits, gap analyses, and end-to-end implementation.",
     description:
-      "EU 2023/1542 and Malaysian MS 2818 readiness audits, gap analyses, and end-to-end implementation: data model design, supplier data collection workflows, and carbon-footprint pipelines. Tied directly to the digital Battery Passport platform Ichnos Protocol is building — see /passport.",
-    passportLink: "/passport",
+      "EU 2023/1542 and Malaysian MS 2818 readiness audits, gap analyses, and end-to-end implementation: data model design, supplier data collection workflows, and carbon-footprint pipelines. Tied directly to the digital Battery Passport platform Ichnos Protocol is building — see /data.",
+    passportLink: "/data",
     pillar: "compliance",
     deliveryMethod: false,
   },

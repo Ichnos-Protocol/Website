@@ -162,11 +162,11 @@ describe('Footer', () => {
     });
   });
 
-  it('Products column has Battery Passport → /passport', () => {
+  it('Products column has Battery Passport → /data', () => {
     const productsCol = screen.getByTestId('footer-col-products');
     expect(
       within(productsCol).getByRole('link', { name: 'Battery Passport' }),
-    ).toHaveAttribute('href', '/passport');
+    ).toHaveAttribute('href', '/data');
   });
 
   it('contact column has Submit an Inquiry link to /contact', () => {

@@ -23,7 +23,7 @@ const FIXTURE_SERVICES = [
     title: "Test Service C",
     tagline: "Tagline C",
     description: "Description C.",
-    passportLink: "/passport",
+    passportLink: "/data",
   },
 ];
 

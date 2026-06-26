@@ -15,7 +15,7 @@ export const NAV_ITEMS = [
     ],
   },
   { label: 'Services', path: '/services', sectionId: 'services', activeSectionId: 'services' },
-  { label: 'Battery Passport', path: '/passport' },
+  { label: 'Battery Passport', path: '/data' },
   { label: 'Contact', path: '/contact', sectionId: 'contact', activeSectionId: 'contact' },
 ];
 

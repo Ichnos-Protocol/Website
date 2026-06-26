@@ -10,6 +10,9 @@
       "env": ["VITE_API_HOST"]
     }
   ],
+  "redirects": [
+    { "source": "/passport", "destination": "/data", "statusCode": 301 }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

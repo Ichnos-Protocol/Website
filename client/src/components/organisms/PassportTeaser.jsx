@@ -29,7 +29,7 @@ export default function PassportTeaser() {
                 <Card.Body>
                   <h2 className="h3 mb-3">{PASSPORT_TEASER_HEADING}</h2>
                   <p className="mb-4">{PASSPORT_TEASER_BODY}</p>
-                  <Link to="/passport" className="fw-semibold link-light">
+                  <Link to="/data" className="fw-semibold link-light">
                     {PASSPORT_TEASER_CTA}
                   </Link>
                 </Card.Body>
