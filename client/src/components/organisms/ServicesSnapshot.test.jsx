@@ -1,84 +1,42 @@
 import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, cleanup } from '../../test-utils';
 import ServicesSnapshot from './ServicesSnapshot';
-import { SERVICES_LIST } from '../../constants/services';
+import { HOMEPAGE_OFFER_CARDS } from '../../constants/landingContent';
 
 describe('ServicesSnapshot', () => {
-  it('renders one card for each entry in SERVICES_LIST', () => {
+  it('renders one card for each entry in HOMEPAGE_OFFER_CARDS', () => {
     renderWithProviders(<ServicesSnapshot />);
     const cardHeadings = screen.getAllByRole('heading', { level: 3 });
-    expect(cardHeadings).toHaveLength(SERVICES_LIST.length);
+    expect(cardHeadings).toHaveLength(HOMEPAGE_OFFER_CARDS.length);
   });
 
-  it('renders the service cards in the locked order', () => {
+  it('renders the three offer-card titles', () => {
     renderWithProviders(<ServicesSnapshot />);
-    const titles = screen
-      .getAllByRole('heading', { level: 3 })
-      .map((h) => h.textContent);
-    expect(titles).toEqual(SERVICES_LIST.map((s) => s.title));
+    HOMEPAGE_OFFER_CARDS.forEach((card) => {
+      expect(
+        screen.getByRole('heading', { level: 3, name: card.title }),
+      ).toBeInTheDocument();
+    });
   });
 
-  it('renders the "See full services →" link to /services', () => {
+  it('links each card to /data, /catena-x, and /services', () => {
     renderWithProviders(<ServicesSnapshot />);
-    const cta = screen.getByTestId('services-snapshot-cta');
-    expect(cta).toHaveAttribute('href', '/services');
-    expect(cta).toHaveTextContent('See full services →');
+    expect(
+      screen.getByRole('link', { name: /explore data services/i }),
+    ).toHaveAttribute('href', '/data');
+    expect(
+      screen.getByRole('link', { name: /catena-x consulting/i }),
+    ).toHaveAttribute('href', '/catena-x');
+    expect(
+      screen.getByRole('link', { name: /explore advisory/i }),
+    ).toHaveAttribute('href', '/services');
   });
 
-  it('renders exactly one pillar badge per card', () => {
+  it('describes the full upstream chain in the data card copy', () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
-    const cards = container.querySelectorAll('.service-card');
-    expect(cards).toHaveLength(SERVICES_LIST.length);
-    cards.forEach((card) => {
-      const badges = card.querySelectorAll('.pillar-badge');
-      expect(badges).toHaveLength(1);
-    });
-  });
-
-  it('renders the expected badge label on each card in SERVICES_LIST order', () => {
-    const { container } = renderWithProviders(<ServicesSnapshot />);
-    const cards = container.querySelectorAll('.service-card');
-    expect(cards).toHaveLength(SERVICES_LIST.length);
-
-    const expectedBadgeFor = (service) => {
-      if (service.deliveryMethod === true) return 'DELIVERY METHOD';
-      if (service.pillar === 'engineering') return 'ENGINEERING';
-      if (service.pillar === 'compliance') return 'COMPLIANCE';
-      if (service.pillar === 'circularity') return 'CIRCULARITY';
-      return null;
-    };
-
-    SERVICES_LIST.forEach((service, index) => {
-      const card = cards[index];
-      const title = card.querySelector('.service-card-title');
-      expect(title).not.toBeNull();
-      expect(title.textContent).toBe(service.title);
-
-      const badge = card.querySelector('.pillar-badge');
-      const actualLabel = badge ? badge.textContent : null;
-      expect(actualLabel).toBe(expectedBadgeFor(service));
-    });
-  });
-
-  it('renders the exact badge label distribution', () => {
-    const { container } = renderWithProviders(<ServicesSnapshot />);
-    const labels = Array.from(container.querySelectorAll('.pillar-badge')).map(
-      (b) => b.textContent,
-    );
-    const counts = labels.reduce((acc, label) => {
-      acc[label] = (acc[label] || 0) + 1;
-      return acc;
-    }, {});
-    expect(counts).toEqual({
-      ENGINEERING: 3,
-      COMPLIANCE: 2,
-      CIRCULARITY: 1,
-    });
-  });
-
-  it('does not mention "Sustainability" anywhere', () => {
-    const { container } = renderWithProviders(<ServicesSnapshot />);
-    expect(container.textContent).not.toMatch(/Sustainability/i);
+    expect(container.textContent).toContain('precursors');
+    expect(container.textContent).toContain('electrodes');
+    expect(container.textContent).toContain('pCAM/CAM');
   });
 
   it('has no accessibility violations', async () => {

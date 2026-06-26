@@ -5,60 +5,32 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
 
-import { SERVICES_LIST } from '../../constants/services';
-
-function getBadge({ pillar, deliveryMethod }) {
-  if (deliveryMethod === true) {
-    return { label: 'DELIVERY METHOD', variant: 'delivery-method' };
-  }
-  if (pillar === 'engineering') return { label: 'ENGINEERING', variant: 'pillar' };
-  if (pillar === 'compliance') return { label: 'COMPLIANCE', variant: 'pillar' };
-  if (pillar === 'circularity') return { label: 'CIRCULARITY', variant: 'pillar' };
-  return null;
-}
-
-const SnapshotCard = ({ icon, title, tagline, badge }) => (
-  <Card className="h-100 service-card">
-    <Card.Body>
-      <i className={`bi ${icon} fs-2 mb-3 text-accent d-block`} aria-hidden="true" />
-      {badge ? (
-        <span className={`pillar-badge pillar-badge--${badge.variant}`}>
-          {badge.label}
-        </span>
-      ) : null}
-      <h3 className="h5 mb-2 service-card-title">{title}</h3>
-      <p className="mb-0 service-card-text">{tagline}</p>
-    </Card.Body>
-  </Card>
-);
+import { HOMEPAGE_OFFER_CARDS } from '../../constants/landingContent';
 
 export default function ServicesSnapshot() {
   return (
     <Element name="services">
       <section className="py-5">
         <Container>
-          <h2 className="text-center fw-bold mb-5">Our Services</h2>
+          <h2 className="text-center fw-bold mb-5">What we do</h2>
           <Row className="g-4">
-            {SERVICES_LIST.map((service) => (
-              <Col key={service.id} md={6} lg={4}>
-                <SnapshotCard
-                  icon={service.icon}
-                  title={service.title}
-                  tagline={service.tagline}
-                  badge={getBadge(service)}
-                />
+            {HOMEPAGE_OFFER_CARDS.map((card) => (
+              <Col key={card.id} md={6} lg={4}>
+                <Card className="h-100 service-card">
+                  <Card.Body className="d-flex flex-column">
+                    <h3 className="h5 mb-2 service-card-title">{card.title}</h3>
+                    <p className="mb-4 service-card-text">{card.description}</p>
+                    <Link
+                      to={card.linkTo}
+                      className="fw-semibold mt-auto"
+                    >
+                      {card.linkLabel}
+                    </Link>
+                  </Card.Body>
+                </Card>
               </Col>
             ))}
           </Row>
-          <div className="text-center mt-4">
-            <Link
-              to="/services"
-              className="fw-semibold"
-              data-testid="services-snapshot-cta"
-            >
-              See full services →
-            </Link>
-          </div>
         </Container>
       </section>
     </Element>

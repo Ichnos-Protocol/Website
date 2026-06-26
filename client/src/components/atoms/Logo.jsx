@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 const LOGO_SOURCES = {
   light: '/logo-dark.png',
-  dark: '/logo.png',
+  dark: '/logo-dark.png',
   advisory: '/logo-dark.png',
-  passport: '/logo.png',
+  passport: '/logo-dark.png',
 };
 
 export default function Logo({ className = '', theme = 'light' }) {

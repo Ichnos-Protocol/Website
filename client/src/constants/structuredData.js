@@ -18,7 +18,7 @@ export const ORGANIZATION_SCHEMA = {
   logo: LOGO_URL,
   email: "francesco@ichnos-protocol.com",
   description:
-    "Battery advisory practice and Battery Passport platform builder, based in Singapore and operating across Europe and APAC.",
+    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Kuala Lumpur · Singapore · Europe.",
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",
@@ -35,7 +35,15 @@ export const ORGANIZATION_SCHEMA = {
     { "@type": "Person", name: "Francesco Maltoni" },
     { "@type": "Person", name: "Ihsan Ahmad" },
   ],
-  areaServed: ["EU", "APAC", "ASEAN"],
+  areaServed: ["EU", "ID", "MY", "SG"],
+  knowsAbout: [
+    "Battery Passport",
+    "EU Battery Regulation 2023/1542",
+    "Catena-X",
+    "Battery Carbon Footprint",
+    "Supply-Chain Due Diligence",
+    "Malaysian Standard MS 2818",
+  ],
 };
 
 export const WEBSITE_SCHEMA = {
@@ -65,6 +73,8 @@ export const FOUNDER_PERSON_SCHEMA = {
     "EU Battery Regulation 2023/1542",
     "Battery Passport (DIN DKE SPEC 99100)",
     "Malaysian Standard MS 2818",
+    "Catena-X",
+    "ASEAN Catena-X Onboarding",
   ],
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
@@ -99,28 +109,36 @@ function service(name, description) {
 
 export const SERVICE_SCHEMAS = [
   service(
-    "Battery Systems & Safety Engineering",
-    "System architecture, requirement and test management, and full FMEA discipline (S-FMEA, D-FMEA, P-FMEA) across cell, module, and pack levels.",
+    "Material, electrode, cell, module & pack data — Catena-X-compatible",
+    "Source-level data across the ASEAN chain (materials, precursors, electrodes, cells, modules): chemistry, composition by mass percentage of cobalt, lithium, nickel, lead, manufacturer identity under ISO/IEC 15459, manufacturing site, and batch. The Annex XIII data set, delivered via Eclipse Dataspace Connector (EDC) into your passport stack.",
   ),
   service(
-    "Battery Mechanical Development",
-    "Pack and module mechanical design, cell housing, thermal hardware integration, and design-for-manufacture.",
+    "Site-level carbon footprint data — EU-methodology-compliant",
+    "Per-model, per-site, per-batch carbon footprint on the actual site grid mix, real process energy, and raw-materials transport, calculated under the EU's harmonised rules for EV batteries (Article 7 / Annex II, JRC CFB-EV).",
   ),
   service(
-    "EU–APAC Battery Compliance Bridge",
-    "Translating European battery regulation into APAC (incl. ASEAN) supply-chain reality and vice versa. Covers EU 2023/1542, Malaysian MS 2818, regional certification, and supplier alignment.",
+    "Due-diligence and ESG data — OECD- and CSDDD-aligned",
+    "On-site-verified indicators on labour, environmental management, and provenance traceability of cobalt, lithium, natural graphite, and nickel. Ties to Articles 47–53 / Annex XIV under EU 2023/1542 and to the CSDDD (EU 2024/1760).",
   ),
   service(
-    "Battery Remanufacturing, Recycling & Circular Economy",
-    "Second-life pathways, design for remanufacturing, design for recycling, and design for cost.",
+    "Optional quality data",
+    "Incoming-quality and supplier-quality indicators captured at source alongside the passport data, where the EU importer or OEM wants more than the regulatory minimum.",
   ),
   service(
-    "Battery Passport Implementation",
-    "EU 2023/1542 and Malaysian MS 2818 readiness audits, gap analyses, and end-to-end implementation including data model, supplier data collection workflows, and carbon-footprint pipelines.",
+    "Catena-X consulting (ASEAN onboarding)",
+    "Guiding ASEAN manufacturers and their European partners through Catena-X: data readiness, onboarding steps, business cases, use-case and Tractus-X implementation, bilateral data relationships, and the regulatory requirements behind it all.",
   ),
   service(
-    "Technical Lead — Battery Systems",
-    "Embedded technical leadership combined with agile project management for battery systems development programs. PSM I certified; thirteen years of cross-functional project engineering.",
+    "Supplier diligence and qualification (ASEAN)",
+    "On-the-ground site visits, qualification reports, process reviews, and qualification-test witnessing across Indonesia, Malaysia, Thailand, and Vietnam.",
+  ),
+  service(
+    "Regulatory readiness and supply-chain liaison",
+    "EU 2023/1542, MS 2818, TKDN, and ASEAN certification briefings; liaison with MARii, SIRIM, BKPM, KEMENPERIN; quarterly briefings and on-call retainer.",
+  ),
+  service(
+    "System architecture, project management, and expert witness",
+    "Battery-systems engineering from the FEV practice — architecture, BMS, cybersecurity, second-life; named subcontractor and expert witness for EU–ASEAN battery transactions.",
   ),
 ];
 
@@ -157,11 +175,18 @@ export const PAGE_STRUCTURED_DATA = {
     FOUNDER_PERSON_SCHEMA,
     COFOUNDER_PERSON_SCHEMA,
   ],
-  passport: [
+  data: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
       { name: "Home", path: "/" },
-      { name: "Battery Passport", path: "/passport" },
+      { name: "Data", path: "/data" },
+    ]),
+  ],
+  catenaX: [
+    ORGANIZATION_SCHEMA,
+    breadcrumb([
+      { name: "Home", path: "/" },
+      { name: "Catena-X", path: "/catena-x" },
     ]),
   ],
   contact: [

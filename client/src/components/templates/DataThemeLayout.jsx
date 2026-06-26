@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 
-export default function PassportThemeLayout() {
+export default function DataThemeLayout() {
   return (
     <div className="theme-passport">
       <Outlet />

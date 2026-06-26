@@ -2,34 +2,42 @@ import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, cleanup } from '../../test-utils';
 import CompanySnapshot from './CompanySnapshot';
 
-const LOCKED_PARAGRAPH =
-  'Ichnos Protocol helps OEMs, Tier-1 suppliers, and recyclers build battery systems and battery passports that work in production — not just on paper. We bring practitioner-led depth across systems engineering, safety, mechanical development, remanufacturing, and EU/APAC compliance — so your program clears the regulation and survives the factory floor.';
-
-const DIFFERENTIATOR_LABELS = [
-  'PhD-level circular-economy depth',
-  'EU regulation, APAC supply chains',
-  'Practitioner-led',
-];
-
 describe('CompanySnapshot', () => {
-  it('renders the "Why Ichnos" heading', () => {
+  it('renders the "Where we sit in the stack" heading', () => {
     renderWithProviders(<CompanySnapshot />);
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Why Ichnos' }),
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'Where we sit in the stack',
+      }),
     ).toBeInTheDocument();
   });
 
-  it('renders the positioning paragraph verbatim', () => {
-    renderWithProviders(<CompanySnapshot />);
-    const paragraph = screen.getByTestId('company-snapshot-paragraph');
-    expect(paragraph.textContent).toBe(LOCKED_PARAGRAPH);
+  it('renders the stack-band key phrases', () => {
+    const { container } = renderWithProviders(<CompanySnapshot />);
+    expect(container.textContent).toContain('Ichnos');
+    expect(container.textContent).toContain('Minespider');
+    expect(container.textContent).toContain('Path.Era');
   });
 
-  it('renders all three differentiator cards', () => {
+  it('renders the full upstream chain in the Ichnos layer label', () => {
+    const { container } = renderWithProviders(<CompanySnapshot />);
+    expect(container.textContent).toContain('precursors');
+    expect(container.textContent).toContain('electrodes');
+  });
+
+  it('renders the summary sentence with the positioning phrase', () => {
     renderWithProviders(<CompanySnapshot />);
-    DIFFERENTIATOR_LABELS.forEach((label) => {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    });
+    const paragraph = screen.getByTestId('company-snapshot-paragraph');
+    expect(paragraph.textContent).toContain(
+      'between the refinery and the finished passport',
+    );
+  });
+
+  it('no longer mentions the old advisory positioning', () => {
+    const { container } = renderWithProviders(<CompanySnapshot />);
+    expect(container.textContent).not.toMatch(/Tier-1/i);
+    expect(container.textContent).not.toMatch(/recyclers/i);
   });
 
   it('renders the "Meet the team →" link to /team', () => {

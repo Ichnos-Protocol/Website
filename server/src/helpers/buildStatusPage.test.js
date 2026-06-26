@@ -54,7 +54,7 @@ describe("buildStatusPage", () => {
 
   it("includes the logo src from a valid https origin", () => {
     const html = buildStatusPage(defaults);
-    expect(html).toContain('src="https://example.com/logo.png"');
+    expect(html).toContain('src="https://example.com/logo-dark.png"');
   });
 
   it("includes the website link from a valid https origin", () => {

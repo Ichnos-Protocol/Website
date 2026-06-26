@@ -1,31 +1,73 @@
 import { describe, it, expect } from "vitest";
 
-import { SERVICES_LIST, getServicesByPillar } from "./services";
+import * as servicesModule from "./services";
+import { SERVICES_SECTIONS } from "./services";
 
-describe("SERVICES_LIST", () => {
-  it("has six entries", () => {
-    expect(SERVICES_LIST.length).toBe(6);
+const FORBIDDEN_TERMS = /solana|blockchain|crypto|token/i;
+
+describe("services module API", () => {
+  it("no longer exposes the legacy flat-list API", () => {
+    expect(servicesModule).not.toHaveProperty("SERVICES_LIST");
+    expect(servicesModule).not.toHaveProperty("SERVICE_PILLARS");
+    expect(servicesModule).not.toHaveProperty("getServicesByPillar");
   });
 
-  it("has no services flagged as deliveryMethod (Delivery Models pillar dropped)", () => {
-    expect(SERVICES_LIST.every((s) => s.deliveryMethod === false)).toBe(true);
+  it("exposes only the section-based service content exports", () => {
+    expect(Object.keys(servicesModule).sort()).toEqual([
+      "SERVICES_PAGE_CONTENT",
+      "SERVICES_SECTIONS",
+    ]);
+  });
+
+  it("carries no stale homepage/passport-platform copy", () => {
+    const allText = JSON.stringify(servicesModule);
+    expect(allText).not.toMatch(/Battery Passport platform Ichnos Protocol/);
   });
 });
 
-describe("getServicesByPillar", () => {
-  it("returns three engineering services (including Technical Lead)", () => {
-    const engineering = getServicesByPillar("engineering");
-    expect(engineering.length).toBe(3);
-    expect(engineering.map((s) => s.id)).toContain(
-      "technical-lead-battery-systems",
-    );
+describe("SERVICES_SECTIONS", () => {
+  it("has exactly three sections in the expected order", () => {
+    expect(SERVICES_SECTIONS.map((s) => s.id)).toEqual([
+      "data-services",
+      "catena-x-consulting",
+      "engineering-advisory",
+    ]);
   });
 
-  it("returns two compliance services", () => {
-    expect(getServicesByPillar("compliance").length).toBe(2);
+  it("Section A (data services) has four items linking to /data", () => {
+    const section = SERVICES_SECTIONS[0];
+    expect(section.id).toBe("data-services");
+    expect(section.items).toHaveLength(4);
+    expect(section.cta.to).toBe("/data");
+    const titles = section.items.map((i) => i.title).join(" ");
+    expect(titles).toMatch(/Optional: quality data/);
   });
 
-  it("returns one circularity service", () => {
-    expect(getServicesByPillar("circularity").length).toBe(1);
+  it("Section B (Catena-X consulting) is a teaser linking to /catena-x", () => {
+    const section = SERVICES_SECTIONS[1];
+    expect(section.id).toBe("catena-x-consulting");
+    expect(section.teaser).toBeTruthy();
+    expect(section.items).toBeUndefined();
+    expect(section.cta.to).toBe("/catena-x");
+  });
+
+  it("Section C (engineering advisory) has three items", () => {
+    const section = SERVICES_SECTIONS[2];
+    expect(section.id).toBe("engineering-advisory");
+    expect(section.items).toHaveLength(3);
+  });
+
+  it("carries the expected key phrases", () => {
+    const allText = JSON.stringify(SERVICES_SECTIONS);
+    expect(allText).toMatch(/Catena-X-compatible/);
+    expect(allText).toMatch(/carbon footprint/);
+    expect(allText).toMatch(/Due-diligence/);
+    expect(allText).toMatch(/Supplier diligence/);
+    expect(allText).toMatch(/application in progress/);
+  });
+
+  it("contains no forbidden blockchain/crypto terms", () => {
+    const allText = JSON.stringify(SERVICES_SECTIONS);
+    expect(allText).not.toMatch(FORBIDDEN_TERMS);
   });
 });

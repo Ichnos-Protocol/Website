@@ -11,7 +11,7 @@ function mountLandingSections() {
     <>
       <section id="company">Company</section>
       <section id="services">Services</section>
-      <section id="passport">Battery Passport</section>
+      <section id="data">Data</section>
       <section id="contact">Contact</section>
     </>
   );
@@ -67,7 +67,7 @@ describe("useActiveSection", () => {
       observerCallback?.([
         { target: document.getElementById("company"), intersectionRatio: 0.3 },
         { target: document.getElementById("services"), intersectionRatio: 0.8 },
-        { target: document.getElementById("passport"), intersectionRatio: 0.2 },
+        { target: document.getElementById("data"), intersectionRatio: 0.2 },
         { target: document.getElementById("contact"), intersectionRatio: 0.1 },
       ]);
     });

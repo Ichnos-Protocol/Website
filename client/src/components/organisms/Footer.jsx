@@ -7,7 +7,8 @@ import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
 import SocialLinks from '../molecules/SocialLinks';
 import Logo from '../atoms/Logo';
 
-const BRAND_DESCRIPTION = 'Engineering, compliance, circularity.';
+const BRAND_DESCRIPTION =
+  'Catena-X-aligned ASEAN data layer for the European battery passport — Catena-X consultant qualification in progress. Kuala Lumpur · Singapore · Europe.';
 
 const MENUS = [
   {
@@ -27,26 +28,29 @@ const MENUS = [
     testId: 'footer-col-services',
     links: [
       {
-        label: 'Engineering',
+        label: 'Data services',
         to: '/services',
-        state: { scrollTo: 'engineering' },
+        state: { scrollTo: 'data-services' },
       },
       {
-        label: 'Compliance',
+        label: 'Catena-X consulting',
         to: '/services',
-        state: { scrollTo: 'compliance' },
+        state: { scrollTo: 'catena-x-consulting' },
       },
       {
-        label: 'Circularity',
+        label: 'Engineering advisory',
         to: '/services',
-        state: { scrollTo: 'circularity' },
+        state: { scrollTo: 'engineering-advisory' },
       },
     ],
   },
   {
     heading: 'Products',
     testId: 'footer-col-products',
-    links: [{ label: 'Battery Passport', to: '/passport' }],
+    links: [
+      { label: 'Data', to: '/data' },
+      { label: 'Catena-X', to: '/catena-x' },
+    ],
   },
 ];
 
