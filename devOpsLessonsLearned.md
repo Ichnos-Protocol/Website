@@ -498,6 +498,76 @@ back to prompting.
 The unhelpful error message is a feature of how Actions exposes empty
 secrets, not of the workflow. Don't waste time debugging the workflow file.
 
+### C10. Vercel's Webhook Filter Silently Drops CI-Driven PAT Pushes — Use Deploy Hooks
+
+**What went wrong**: After the team migration and after we'd fixed `SYNC_PAT`,
+the staging sync workflow showed ✓ green and the staging branch updated on
+GitHub on every run — but the Vercel Deployments tab showed no new builds.
+For hours. `staging-client.ichnos-protocol.com` kept serving a pre-migration
+build. Every diagnostic surface insisted everything was healthy:
+
+| Surface | What it showed | Reality |
+|---|---|---|
+| GitHub Actions run | ✓ Success | Push completed |
+| `git log origin/staging` | New commit at the right SHA | Branch was updated |
+| Vercel Settings → Git | "Connected to `Ichnos-Protocol/Website`" | Project knows the repo |
+| GitHub Apps page on the org | Vercel installed, full repo access | Webhooks should be sent |
+| Vercel Deployments tab | Latest build was hours/days old | Filter dropped the event |
+
+Disconnect/reconnect of the Git integration in Vercel did **not** fix it —
+that resets project↔repo metadata but the filter applies after webhook
+receipt, downstream of the subscription.
+
+**Why it happened**: Vercel rejects webhook events from certain push
+identities. The `sync-staging.yml` header comment had documented one layer
+of this years ago ("`GITHUB_TOKEN` pushes don't trigger Vercel, use a PAT").
+After the team migration there's a second layer: even `SYNC_PAT`-attributed
+force-pushes get filtered. The exact filter logic is undocumented, but
+empirically: a `git push` from a developer terminal triggers a build; the
+same push via a CI runner using a PAT does not. The diagnostic that
+proves it is a head-to-head:
+
+```bash
+# Should trigger a Vercel build (recognised as user identity):
+git checkout -b test/vercel-webhook
+git commit --allow-empty -m "test"
+git push -u origin HEAD
+
+# Should NOT trigger if you're in this trap (PAT-driven, filtered):
+gh workflow run "Sync main → staging" --ref main
+```
+
+If only the first builds, the filter is the problem.
+
+**The simple rule** — when you can't reason your way through a webhook
+filter, route around it with Deploy Hooks:
+
+1. Create a Deploy Hook on each Vercel project for the affected branch
+   (Settings → Git → Deploy Hooks → name, branch → Create).
+2. Save the URL as a repo secret (e.g. `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`).
+3. Append a curl step to the workflow after the push:
+   ```yaml
+   - name: Trigger Vercel build via Deploy Hook
+     env:
+       DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_STAGING_CLIENT }}
+     run: |
+       HTTP_CODE=$(curl -s -o /tmp/deploy.json -w "%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+       test "$HTTP_CODE" = "201" || test "$HTTP_CODE" = "200"
+   ```
+4. The Deploy Hook is a direct trigger URL that bypasses webhook routing
+   and filtering entirely. It always builds.
+
+**Deploy Hook URLs are write credentials** — anyone with the URL can
+trigger a build. Treat them like API tokens: don't paste in chat or
+screenshots, never commit them, rotate on suspected exposure (Vercel
+can't regenerate; revoke and create a new one, then update the secret).
+
+**Repeat for every branch that needs builds** — staging *and* main, in our
+case. Production promotion via `vercel promote` reads "the latest READY
+preview on main", so main previews fall under the same filter. Without
+the Deploy Hook on main too, production stays stuck on the pre-migration
+build even after staging starts updating correctly.
+
 ---
 
 ## Part D — Database & Seeding
