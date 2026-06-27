@@ -46,18 +46,18 @@ export const LANDING_META = buildMeta({
   title:
     "Ichnos Protocol — ASEAN data layer for the European battery passport",
   description:
-    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Kuala Lumpur · Singapore · Europe.",
+    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Singapore · Europe.",
   keywords:
-    "battery passport, Catena-X, EU Battery Regulation 2023/1542, ASEAN battery data, carbon footprint data, supply-chain provenance, battery materials, battery systems advisory, MS 2818, Kuala Lumpur, Singapore",
+    "battery passport, Catena-X, EU Battery Regulation 2023/1542, ASEAN battery data, carbon footprint data, supply-chain provenance, battery materials, battery systems advisory, MS 2818, Singapore",
 });
 
 export const SERVICES_META = buildMeta({
   path: "/services",
   title: "Services — Ichnos Protocol",
   description:
-    "Catena-X-compatible data services (materials to modules) for EU importers and passport issuers, Catena-X consulting for ASEAN onboarding, and battery-systems advisory. Singapore + Kuala Lumpur.",
+    "Catena-X-compatible data services (materials to modules) for EU importers and passport issuers, Catena-X consulting for ASEAN onboarding, and battery-systems advisory. Singapore-incorporated.",
   keywords:
-    "Catena-X data services, battery passport data, ASEAN Catena-X onboarding, battery systems advisory, EU Battery Regulation, carbon footprint data, battery materials data, Singapore, Kuala Lumpur",
+    "Catena-X data services, battery passport data, ASEAN Catena-X onboarding, battery systems advisory, EU Battery Regulation, carbon footprint data, battery materials data, Singapore",
 });
 
 export const TEAM_META = buildMeta({
@@ -91,9 +91,9 @@ export const CONTACT_META = buildMeta({
   path: "/contact",
   title: "Contact — Ichnos Protocol",
   description:
-    "Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. AI assistant, email, LinkedIn, Calendly. Kuala Lumpur + Singapore + EU.",
+    "Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. AI assistant, email, LinkedIn, Calendly. Singapore + EU.",
   keywords:
-    "contact Ichnos Protocol, Catena-X data services, ASEAN Catena-X onboarding, battery systems advisory, battery passport consultation, Kuala Lumpur, Singapore",
+    "contact Ichnos Protocol, Catena-X data services, ASEAN Catena-X onboarding, battery systems advisory, battery passport consultation, Singapore",
 });
 
 export const PRIVACY_META = buildMeta({
