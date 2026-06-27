@@ -75,18 +75,26 @@ describe("MobileNavOverlay", () => {
     expect(closeBtn).toHaveFocus();
   });
 
-  it("renders all flat NAV_ITEMS as links and exposes no Company section", () => {
+  it("renders all flat NAV_ITEMS as links", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />);
 
-    // All six items render as direct links with their route href.
     FLAT_NAV_ITEMS.forEach((item) => {
       const link = screen.getByRole("link", { name: item.label });
       expect(link).toHaveAttribute("href", item.path);
     });
+  });
 
-    // The former Company dropdown section is gone entirely.
-    expect(screen.queryByText("Company")).toBeNull();
-    expect(screen.queryByRole("link", { name: "Company" })).toBeNull();
+  it("renders the Company section label and its dropdown children", () => {
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />);
+
+    // Company appears as a section label (the mobile overlay expands dropdown
+    // children inline rather than rendering them behind a click).
+    expect(screen.getByText("Company")).toBeInTheDocument();
+
+    // Children — "Why Ichnos" (homepage scroll target) and "Team" (route).
+    expect(
+      screen.getByRole("link", { name: "Team" }),
+    ).toHaveAttribute("href", "/team");
   });
 
   it("clicking any flat NAV_ITEMS entry calls onClose", () => {
@@ -118,23 +126,21 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on / homepage, clicking Data navigates to /data", () => {
+  it("on / homepage, clicking Battery Passport navigates to /data", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
       { route: "/" },
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Data" }));
+    fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
     expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 
   it("on /services route, clicking each flat link navigates to its path", () => {
     const expected = {
-      Home: "/",
-      Team: "/team",
       Services: "/services",
-      "Catena-X": "/catena-x",
+      "Battery Passport": "/data",
       Contact: "/contact",
     };
 
@@ -151,14 +157,14 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on /services route, Data still navigates to /data", () => {
+  it("on /services route, Battery Passport still navigates to /data", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
       { route: "/services" },
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Data" }));
+    fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
     expect(mockNavigate).toHaveBeenCalledWith("/data");
   });
 
@@ -191,7 +197,7 @@ describe("MobileNavOverlay", () => {
     expect(servicesLink).toHaveClass("py-2");
     expect(servicesLink).not.toHaveClass("nav-link-default");
 
-    ["Home", "Data", "Catena-X", "Team", "Contact"].forEach((label) => {
+    ["Battery Passport", "Contact"].forEach((label) => {
       const link = screen.getByRole("link", { name: label });
       expect(link).toHaveClass("nav-link-default");
       expect(link).not.toHaveClass("active");
