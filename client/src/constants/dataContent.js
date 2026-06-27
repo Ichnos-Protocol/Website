@@ -153,8 +153,8 @@ export const DATA_FOUNDER = {
     },
     {
       id: "on-the-ground",
-      title: "On-the-ground in ASEAN, on site whenever needed.",
-      body: "Based in Kuala Lumpur (MM2H); visa-free/visa-on-arrival access across Indonesia, Vietnam, Thailand, Singapore, the Philippines; Singapore-incorporated for clean EUR/SGD/USD invoicing. At a Penang site within hours, Karawang or Cikarang within a day — and at European client sites when needed. For carbon and due-diligence verification, someone has to be physically at the site. That is the difference between data services and data theatre.",
+      title: "On site whenever needed.",
+      body: "Singapore-incorporated, working across the ASEAN supply chain and at European client sites when needed. For carbon and due-diligence verification, someone has to be physically at the site. That is the difference between data services and data theatre.",
     },
     {
       id: "catena-x-commitment",
