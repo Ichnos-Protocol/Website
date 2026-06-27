@@ -13,9 +13,21 @@
 #
 # Why SYNC_PAT instead of GITHUB_TOKEN:
 #   Pushes made with the default GITHUB_TOKEN do not trigger Vercel's native
-#   git integration. Using a Personal Access Token (SYNC_PAT) ensures that the
-#   force-push to `staging` is detected by Vercel, which then creates a preview
-#   deployment with branch-scoped environment overrides.
+#   git integration. Using a Personal Access Token (SYNC_PAT) lets the force-
+#   push appear under a real user identity. Historically that alone was enough
+#   to trigger Vercel — but after the Ichnos-Protocol team migration Vercel's
+#   webhook filter started silently rejecting these PAT-driven force-pushes
+#   too (direct user pushes from a terminal still trigger builds; PAT-driven
+#   pushes from CI do not). To guarantee Vercel deploys the new staging tip,
+#   we curl the project Deploy Hooks after the push. The hooks are direct API
+#   triggers that bypass webhook routing entirely.
+#
+# Required secrets:
+#   - SYNC_PAT: PAT with Contents + Workflows write on Ichnos-Protocol/Website
+#   - VERCEL_DEPLOY_HOOK_STAGING_CLIENT: Deploy Hook URL for client project
+#     (Vercel → ichnos-protocol → Settings → Git → Deploy Hooks, branch=staging)
+#   - VERCEL_DEPLOY_HOOK_STAGING_SERVER: Deploy Hook URL for server project
+#     (Vercel → ichnos-protocol_server → Settings → Git → Deploy Hooks, branch=staging)
 name: Sync main → staging
 
 on:
@@ -51,3 +63,31 @@ jobs:
         run: |
           echo "Force-pushing main to staging..."
           git push origin main:staging --force
+
+      - name: Trigger Vercel client staging build via Deploy Hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_STAGING_CLIENT }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_STAGING_CLIENT secret is empty"
+            exit 1
+          fi
+          echo "Triggering client staging deploy hook..."
+          HTTP_CODE=$(curl -s -o /tmp/client-deploy.json -w "%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+          echo "Deploy hook responded with HTTP $HTTP_CODE"
+          cat /tmp/client-deploy.json | head -1
+          test "$HTTP_CODE" = "201" || test "$HTTP_CODE" = "200"
+
+      - name: Trigger Vercel server staging build via Deploy Hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_STAGING_SERVER }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_STAGING_SERVER secret is empty"
+            exit 1
+          fi
+          echo "Triggering server staging deploy hook..."
+          HTTP_CODE=$(curl -s -o /tmp/server-deploy.json -w "%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+          echo "Deploy hook responded with HTTP $HTTP_CODE"
+          cat /tmp/server-deploy.json | head -1
+          test "$HTTP_CODE" = "201" || test "$HTTP_CODE" = "200"
