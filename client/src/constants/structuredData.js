@@ -7,7 +7,7 @@
 
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
 
-const LOGO_URL = `${SEO_BASE_URL}/logo-dark.png`;
+const LOGO_URL = `${SEO_BASE_URL}/Ichnos-protocol_logo_transparent.png`;
 
 export const ORGANIZATION_SCHEMA = {
   "@context": "https://schema.org",
@@ -18,7 +18,7 @@ export const ORGANIZATION_SCHEMA = {
   logo: LOGO_URL,
   email: "francesco@ichnos-protocol.com",
   description:
-    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Kuala Lumpur · Singapore · Europe.",
+    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Singapore · Europe.",
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",

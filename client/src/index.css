@@ -103,11 +103,13 @@ body {
 }
 
 /* ========== Logo ========== */
-/* Source PNGs (logo.png, logo-dark.png) are tight-cropped to the lockup
-   itself (~3:1 aspect, 1080×354). At 56px height the navbar grows to
-   ~72px total, giving the brand mark proper presence without dominating. */
+/* Source PNG (Ichnos-protocol_logo_transparent.png) is tight-cropped to the
+   lockup itself (~3:1 aspect). Per the founder's spec, the navbar lockup is
+   sized for full presence — 168px height (3× the previous 56px). The navbar
+   accommodates this with vertical padding tuning; do not raise it further
+   without confirming responsive behaviour at narrow viewports. */
 .logo-img {
-  height: 56px;
+  height: 168px;
   width: auto;
   display: block;
 }
