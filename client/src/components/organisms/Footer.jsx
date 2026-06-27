@@ -8,7 +8,7 @@ import SocialLinks from '../molecules/SocialLinks';
 import Logo from '../atoms/Logo';
 
 const BRAND_DESCRIPTION =
-  'Catena-X-aligned ASEAN data layer for the European battery passport — Catena-X consultant qualification in progress. Kuala Lumpur · Singapore · Europe.';
+  'Catena-X-aligned ASEAN data layer for the European battery passport — Catena-X consultant qualification in progress. Singapore · Europe.';
 
 const MENUS = [
   {

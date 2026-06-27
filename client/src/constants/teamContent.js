@@ -11,7 +11,7 @@ export const TEAM_MEMBERS = [
     photo: "/founder.png",
     bio: [
       "Dr.-Ing. Francesco Maltoni is the founder of Ichnos Protocol. He spent his engineering career at FEV in Germany as lead battery expert in battery-system engineering — owning sustainability requirements with customers, leading a battery digital-product-passport pilot on the in-house BMS/cloud-BMS practice, and presenting at Advanced Battery Power Europe 2025.",
-      "He is the author of a published three-part analysis of Malaysia's MS 2818 battery-passport standard, and is completing the Catena-X consultant qualification to lead ASEAN onboarding into the Catena-X data space. Based in Kuala Lumpur.",
+      "He is the author of a published three-part analysis of Malaysia's MS 2818 battery-passport standard, and is completing the Catena-X consultant qualification to lead ASEAN onboarding into the Catena-X data space.",
     ],
     skillsChips: [
       "Battery Systems & Safety (FMEA · requirements · test management)",

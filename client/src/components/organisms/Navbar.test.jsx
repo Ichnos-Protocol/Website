@@ -282,7 +282,7 @@ describe('Navbar', () => {
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/logo-dark.png');
+    expect(img).toHaveAttribute('src', '/Ichnos-protocol_logo_transparent.png');
   });
 
   it('on /, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
@@ -292,7 +292,7 @@ describe('Navbar', () => {
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/logo-dark.png');
+    expect(img).toHaveAttribute('src', '/Ichnos-protocol_logo_transparent.png');
   });
 
   it('on / homepage, clicking Services/Contact navigates with scrollTo state to the matching section', () => {
