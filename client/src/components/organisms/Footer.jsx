@@ -48,8 +48,7 @@ const MENUS = [
     heading: 'Products',
     testId: 'footer-col-products',
     links: [
-      { label: 'Data', to: '/data' },
-      { label: 'Catena-X', to: '/catena-x' },
+      { label: 'Battery Passport', to: '/data' },
     ],
   },
 ];

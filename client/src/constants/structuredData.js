@@ -103,7 +103,7 @@ function service(name, description) {
     name,
     description,
     provider: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
-    areaServed: ["EU", "APAC", "ASEAN"],
+    areaServed: ["EU", "ASEAN"],
   };
 }
 

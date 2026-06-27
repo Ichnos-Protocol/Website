@@ -4,8 +4,10 @@ import { renderWithProviders, screen, fireEvent } from '../../test-utils';
 import Navbar from './Navbar';
 import { NAV_ITEMS } from '../../constants/navigation';
 
-// All NAV_ITEMS are now flat <a> links in the navbar (no dropdowns).
+// NAV_ITEMS mix dropdowns and flat links — Company is a dropdown
+// (Why Ichnos / Team), the rest are flat (Services, Battery Passport, Contact).
 const FLAT_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.children);
+const DROPDOWN_NAV_ITEMS = NAV_ITEMS.filter((item) => item.children);
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -79,7 +81,7 @@ describe('Navbar', () => {
     expect(logoLink).toBeInTheDocument();
   });
 
-  it('renders all flat NAV_ITEMS as links and exposes no Company dropdown', () => {
+  it('renders all flat NAV_ITEMS as links', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       preloadedState: loggedOutState,
     });
@@ -88,21 +90,18 @@ describe('Navbar', () => {
       const link = screen.getByRole('link', { name: item.label });
       expect(link).toHaveAttribute('href', item.path);
     });
-
-    // The former Company dropdown is gone — no toggle button remains.
-    expect(screen.queryByRole('button', { name: 'Company' })).toBeNull();
   });
 
-  it('clicking the Team flat link navigates to /team', async () => {
-    const user = userEvent.setup();
-    mockNavigate.mockClear();
+  it('renders the Company dropdown as a toggle button (not a link)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       preloadedState: loggedOutState,
     });
 
-    await user.click(screen.getByRole('link', { name: 'Team' }));
-
-    expect(mockNavigate).toHaveBeenCalledWith('/team');
+    DROPDOWN_NAV_ITEMS.forEach((item) => {
+      expect(
+        screen.getByRole('button', { name: item.label }),
+      ).toBeInTheDocument();
+    });
   });
 
   it('renders Contact navigation item', () => {
@@ -211,17 +210,17 @@ describe('Navbar', () => {
     const servicesLink = screen.getByRole('link', { name: 'Services' });
     expect(servicesLink).toHaveClass('active');
 
-    ['Home', 'Data', 'Catena-X', 'Team', 'Contact'].forEach((label) => {
+    ['Battery Passport', 'Contact'].forEach((label) => {
       expect(screen.getByRole('link', { name: label })).not.toHaveClass('active');
     });
   });
 
-  it('marks the Team flat link active on /team', () => {
+  it('marks the Company dropdown toggle active on /team (Team is a dropdown child)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/team',
       preloadedState: loggedOutState,
     });
-    expect(screen.getByRole('link', { name: 'Team' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: 'Company' })).toHaveClass('active');
   });
 
   it('on / homepage, applies the active class only to the entry whose section is currently visible', () => {
@@ -236,7 +235,7 @@ describe('Navbar', () => {
     expect(servicesLink).toHaveClass('active');
     expect(servicesLink).toHaveClass('nav-link-active');
 
-    ['Home', 'Data', 'Catena-X', 'Team', 'Contact'].forEach((label) => {
+    ['Battery Passport', 'Contact'].forEach((label) => {
       const link = screen.getByRole('link', { name: label });
       expect(link).not.toHaveClass('active');
       expect(link).not.toHaveClass('nav-link-active');
@@ -260,7 +259,7 @@ describe('Navbar', () => {
     });
   });
 
-  it('on / homepage, Data is NEVER scrollspy-active (route-only)', () => {
+  it('on / homepage, Battery Passport is NEVER scrollspy-active (route-only)', () => {
     mockUseActiveSection.mockReturnValue('data');
 
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
@@ -312,24 +311,21 @@ describe('Navbar', () => {
     });
   });
 
-  it('on / homepage, clicking Data navigates to /data', () => {
+  it('on / homepage, clicking Battery Passport navigates to /data', () => {
     mockNavigate.mockClear();
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/',
       preloadedState: loggedOutState,
     });
 
-    fireEvent.click(screen.getByRole('link', { name: 'Data' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Battery Passport' }));
     expect(mockNavigate).toHaveBeenCalledWith('/data');
   });
 
   it('on /services route, clicking each flat nav link navigates to its path', () => {
     const expected = {
-      Home: '/',
       Services: '/services',
-      Data: '/data',
-      'Catena-X': '/catena-x',
-      Team: '/team',
+      'Battery Passport': '/data',
       Contact: '/contact',
     };
 
