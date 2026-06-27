@@ -223,15 +223,44 @@ Only when Tiers 1-6 are green:
 
 **Where**: After `Promote to Production` workflow succeeds, open https://ichnos-protocol.com in a browser.
 
-Staging passing does **not** validate production. Vercel env vars have **independent scopes** (Production / Preview / Development) — staging runs on Preview scope (with a `staging` branch override), so a Preview-only env var configuration sails through Tier 1-7 and explodes on Tier 8. The two specific failure modes we've hit:
+Staging passing does **not** validate production. Vercel env vars have **independent scopes** (Production / Preview / Development) — staging runs on Preview scope (with a `staging` branch override), so a Preview-only env var configuration sails through Tier 1-7 and explodes on Tier 8. The three specific failure modes we've hit:
 
 ### 8a. Production client → `502 DNS_HOSTNAME_NOT_FOUND` on `/api/*`
 
 **Symptom**: Site loads, but `<ApiSanityWarning>` banner fires with "API health check returned an error". `curl https://ichnos-protocol.com/api/health` returns HTTP 502 with body `DNS_HOSTNAME_NOT_FOUND`.
 
-**Cause**: `client/vercel.json` rewrites `/api/(.*)` to `https://$VITE_API_HOST/api/$1`. If `VITE_API_HOST` is set only on Preview scope (with branch overrides for `staging`/`e2e`) and **NOT** on Production scope, the variable resolves to the empty string. The rewrite then tries `https:///api/health`, which DNS-fails.
+**Cause** — the real one, after a full regression cycle:
 
-**Fix**: Vercel → ichnos-client → Settings → Environment Variables → add `VITE_API_HOST` with value `api.ichnos-protocol.com` scoped to **Production**. Redeploy the current production client with "Use existing Build Cache" **off**.
+`client/vercel.json` rewrites `/api/(.*)` to `https://$VITE_API_HOST/api/$1`. The value substituted at request time is **whatever was captured when the deployment was built** — Vercel snapshots env vars into the deployment at build time and doesn't read them live from project settings afterwards.
+
+`promote-to-production.yml` uses `vercel promote <deployment-id>`, which **re-aliases an existing preview build** to be the production deployment. It does **not** rebuild. So the env-var scope that matters is the one used when the original preview was built — **Preview**, not Production.
+
+When `main` is built as a preview (no `staging` branch override applies), the variable comes from the **Preview default** scope. If that's empty, the build captures `""`, the rewrite resolves to `https:///api/health`, DNS-fails, 502.
+
+**This means**: setting `VITE_API_HOST` only on **Production** scope looks correct, passes a manual "Redeploy" test (which does rebuild against Production scope), and then silently regresses the next time the workflow promotes — because the workflow promotes a preview build that never read the Production-scope value.
+
+| Vercel action | Env-var scope read at build time |
+|---|---|
+| PR / push to non-prod branch → auto preview | **Preview** scope |
+| Push to production branch (auto-deploy) | **Production** scope |
+| Manual "Redeploy" on a Production deployment | **Production** scope |
+| `vercel promote <id>` (our workflow) | **Whatever the original build used** — i.e. Preview |
+
+**Fix** — the durable one:
+
+Vercel → ichnos-client → Settings → Environment Variables → ensure `VITE_API_HOST=api.ichnos-protocol.com` is set on **Production AND Preview (default)**. The cleanest expression is a single entry with **Environments: Production and Preview** and no custom branch override. The existing `staging`-branch override stays (branch-scoped overrides outrank the default).
+
+| Scope | Resolved value |
+|---|---|
+| Production | `api.ichnos-protocol.com` |
+| Preview (default — `main`, feature branches) | `api.ichnos-protocol.com` |
+| Preview / branch=`staging` | `staging-api.ichnos-protocol.com` (override) |
+
+After saving, the **next preview build will capture the correct value at build time**, and the workflow's `vercel promote` will land a working deployment.
+
+**Triage shortcut to restore the live site immediately**: Vercel → ichnos-client → Deployments → current Production → ⋯ → **Redeploy** with "Use existing Build Cache" **off**. This forces a fresh build using **Production** scope env vars, which works as a one-off but will regress on the next workflow-driven promotion unless Preview default is also set. Use this for triage; do not stop there.
+
+**Caveat — PR previews now hit production API**: with Preview default pointing at `api.ichnos-protocol.com`, feature-branch PR previews will route `/api/*` to production. This is consistent with staging (which already runs against production DB) but worth knowing. If you ever stand up a dedicated preview-server environment, give it a Preview/`main` branch override.
 
 ### 8b. `promote-to-production.yml` `Promote client` step → 403 "Trying to access resource under scope X"
 
@@ -251,6 +280,26 @@ You must re-authenticate to this scope or use a token with access to this scope.
 
 Either fix alone is sufficient; both together protect any future workflow that might miss the `--scope` flag.
 
+### 8c. `Sync main → staging` fails first run: `fatal: could not read Username for 'https://github.com': terminal prompts disabled`
+
+**Symptom**: The first time you run the manual `Sync main → staging` workflow on the new repo (after merging the first PR to `main`), the `Checkout main (full clone with SYNC_PAT)` step fails immediately. Log shows three `fatal: could not read Username for 'https://github.com'` errors and exit code 128. The workflow never even reaches the `git push` step.
+
+**Cause**: `sync-staging.yml` deliberately uses a Personal Access Token (`secrets.SYNC_PAT`) instead of the default `GITHUB_TOKEN` — pushes made by `GITHUB_TOKEN` do **not** trigger Vercel's git-integration redeploy, so the staging branch wouldn't actually rebuild. After a repo migration, `SYNC_PAT` is **empty** on the new repo. `actions/checkout@v4` receives an empty token, attempts to clone with no credentials, and `git` prompts for a username — which the GitHub Actions runner has no interactive terminal for. Result: the cryptic "terminal prompts disabled" error.
+
+The same root cause can also produce the error if `SYNC_PAT` is set but its token was scoped to the *old* repo's owner (e.g. a fine-grained PAT that listed `Khorolev/Ichnos_Protocol` as the only allowed repository) — `git` gets credentials but the push is rejected and falls back to prompting.
+
+**Fix**:
+
+1. Create a Personal Access Token scoped to the new repo:
+   - Fine-grained PAT preferred: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained
+   - Resource owner: the **new** org/user (`Ichnos-Protocol`)
+   - Repository access: Only select repositories → the new repo (`Website`)
+   - Permissions: **Contents: Read and write** + **Workflows: Read and write**
+2. Save the value as the `SYNC_PAT` secret on the new repo (Settings → Secrets and variables → Actions → New repository secret).
+3. Re-run the workflow: `gh workflow run "Sync main → staging" --ref main`. It should complete in ~10s.
+
+After the workflow succeeds, Vercel sees the push to `staging` and rebuilds within ~30-60s.
+
 ---
 
 ## Triage priorities by likelihood (post-Vercel-migration specifically)
@@ -260,8 +309,9 @@ If you only have time to verify these things first, do them in order:
 1. **Firebase Auth authorized domains** — add the new Vercel team's preview-URL pattern. This is the #1 thing that breaks after a Vercel team migration. **5-minute fix in Firebase Console.**
 2. **Server env vars on the new Vercel team** — `FIREBASE_*`, `DATABASE_URL`, `XAI_API_KEY`, `CORS_ORIGIN`. If they were copied during project transfer, you're already good — but verify with `vercel env ls preview --cwd server`.
 3. **GitHub Actions secrets** — `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_CLIENT`, `VERCEL_PROJECT_ID_SERVER`, `VERCEL_TOKEN`. These only matter for **post-merge** workflows (`promote-to-production.yml`, `sync-staging.yml`). PRs don't use them. Defer until you're about to merge. **`VERCEL_TOKEN` must be scoped to the new team at creation time** — see Tier 8b.
-4. **Client `VITE_API_HOST` Production scope** — staging-passing does NOT validate this. Tier 8a is silently broken until the moment you promote. Check Vercel → ichnos-client → Settings → Environment Variables shows three entries for `VITE_API_HOST`: Production, Preview, and the `staging` branch override.
-5. **Dead env vars from the old team** — e.g. `VITE_BASE_URL` from a prior deployment pattern. Audit `client/.env.example` and `server/.env.example` against the live Vercel env vars; delete anything in Vercel that isn't in the example files.
+4. **GitHub Actions secrets that secrets don't migrate** — `SYNC_PAT` for the staging sync workflow. Repo migrations preserve workflows and code but `Settings → Secrets and variables → Actions` starts empty on the new repo. Audit every secret referenced in `.github/workflows/*.yml` and replace any that were owner-scoped (PATs especially) — see Tier 8c.
+5. **Client `VITE_API_HOST` Preview-default scope** — the `vercel promote` workflow re-aliases a preview build, so **Preview-default** is what actually serves production traffic (not Production scope, despite the name). Set `VITE_API_HOST` on a combined **Production and Preview** entry with no custom branch override, value `api.ichnos-protocol.com`. The existing `staging`-branch override stays. Tier 8a explains the build-time-snapshot reasoning in detail.
+6. **Dead env vars from the old team** — e.g. `VITE_BASE_URL` from a prior deployment pattern. Audit `client/.env.example` and `server/.env.example` against the live Vercel env vars; delete anything in Vercel that isn't in the example files.
 
 ---
 
@@ -291,7 +341,8 @@ If you only have time to verify these things first, do them in order:
 | Neon (or other) integration wizard fails with "Request failed: unknown error" after the env-var cleanup succeeded | 0 | OAuth session cookies hold stale identity from the failed first attempt; refresh alone doesn't clear them | Tier 0, Step 5 — full reset, **including signing out of both Vercel and the vendor**. The sign-out is the unblocker; without it the retry keeps producing the same error. |
 | `DATABASE_URL` appears stale even after the Neon integration reinstall succeeded | 0 / 5 | Preview deployment was not redeployed after env vars were updated; the running preview still holds the build-time snapshot | Tier 0, Step 7 — redeploy the server preview on the PR. Existing builds do not pick up env-var changes. |
 | `Promote to Production` workflow fails with `403 Not authorized: Trying to access resource under scope "<old-account>"` | post-merge | Vercel CLI's `vercel promote <deployment-id>` does NOT read `VERCEL_ORG_ID` env var; falls back to the token's default scope, which after a team move is often still the personal account | Tier 8b — pass `--scope="$VERCEL_ORG_ID"` to `vercel promote` in the workflow AND regenerate `VERCEL_TOKEN` with the team selected as default scope at creation. |
-| Production loads but `<ApiSanityWarning>` banner shows; `curl https://<prod-domain>/api/health` returns `502 DNS_HOSTNAME_NOT_FOUND` | 8 | `VITE_API_HOST` was set on Preview scope (with `staging` branch override) but never explicitly on Production scope; resolves to empty string at request time | Tier 8a — add `VITE_API_HOST=api.ichnos-protocol.com` to Vercel client project, Production scope. Redeploy production with build cache disabled. |
+| Production loads but `<ApiSanityWarning>` banner shows; `curl https://<prod-domain>/api/health` returns `502 DNS_HOSTNAME_NOT_FOUND` | 8 | `vercel promote` re-aliases a preview build without rebuilding, so the build-time **Preview-default** snapshot of `VITE_API_HOST` is what serves production. If only Production scope is set, the variable is empty in the actual live deployment. | Tier 8a — set `VITE_API_HOST=api.ichnos-protocol.com` on a combined **Production and Preview** entry. Manual Redeploy (build cache off) restores the live site immediately; the Preview-default value prevents the next workflow promotion from regressing. |
+| `Sync main → staging` workflow fails at `Checkout main` step with `fatal: could not read Username for 'https://github.com': terminal prompts disabled` | 8 | `SYNC_PAT` secret is empty (or scoped to the old repo's owner) on the new repo. `actions/checkout` gets no credentials and falls back to interactive prompt that the runner can't satisfy. | Tier 8c — create a fine-grained PAT scoped to the new repo with Contents + Workflows write, save as `SYNC_PAT`, re-run the workflow. |
 
 ---
 
