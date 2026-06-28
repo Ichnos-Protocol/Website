@@ -12,10 +12,15 @@ function ServiceCard({
   eyebrow,
   passportLink,
   comingSoon,
+  lead,
 }) {
-  const cardClass = comingSoon
-    ? "h-100 service-card service-card--coming-soon"
-    : "h-100 service-card";
+  const cardClass = [
+    "h-100 service-card",
+    comingSoon && "service-card--coming-soon",
+    lead && "service-card--lead",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Col xs={12} md={6} lg={4} className="mb-4">

@@ -112,3 +112,53 @@ export const PASSPORT_OFFER = {
   ctaLabel: "See services →",
   ctaHref: "/services",
 };
+
+// §5.10–5.12 (spec v5). Copy is authoritative; render it verbatim. The
+// Catena-X credential is never hard-coded here — surfaces that show it derive
+// it from catenaXStatus.js via the runtime toggle (see PassportOffer organism).
+
+// §5.10 Build stack credibility
+export const PASSPORT_BUILD_STACK = {
+  heading: "The technical stack Ichnos works with",
+  body: "Ichnos works on the open Catena-X reference implementation maintained by the Eclipse Foundation as the Tractus-X project. The passport data model is the AAS + SAMM standard with the Catena-X CX-0143 sub-aspects; the carbon-footprint sub-model follows CX-0026 with the rulebook in CX-0029, computed against the JRC CFB-EV methodology. Bilateral data exchange runs over the Eclipse Dataspace Connector (EDC). For production go-live, Ichnos uses the Cofinity-X Dataspace OS managed connector and Business Partner Number (BPN) onboarding.",
+  standardsList: [
+    { label: "AAS + SAMM (CX-0003)", note: "Semantic model on the Asset Administration Shell" },
+    { label: "CX-0143", note: "Digital Product Passport sub-aspects for batteries" },
+    { label: "CX-0026 / CX-0029", note: "PCF data model and rulebook" },
+    { label: "CX-0136", note: "Use Case PCF" },
+    { label: "JRC CFB-EV / CFB-IND", note: "EU carbon-footprint methodology" },
+    { label: "Tractus-X EDC", note: "Eclipse Dataspace Connector reference implementation" },
+    { label: "Tractus-X Industry Core Hub", note: "Twin and submodel provisioning" },
+    { label: "Tractus-X SDK (Python)", note: "Programmatic EDC / DTR / submodel access" },
+    { label: "Cofinity-X Dataspace OS", note: "Managed connector + BPN for go-live" },
+  ],
+};
+
+// §5.11 Customer segmentation
+export const PASSPORT_CUSTOMERS = {
+  heading: "Who Ichnos works with",
+  intro: "Three groups, three different conversations. Ichnos works with each on its own terms.",
+  groups: [
+    {
+      id: "asean-suppliers",
+      label: "ASEAN battery suppliers — materials, electrodes, cells, modules",
+      body: "Manufacturers in Indonesia, Malaysia, Thailand, Vietnam and the rest of the region who need to put their data into a form a European importer can use as a passport. Ichnos works on the ground at the supplier site, then in schema and connector planning.",
+    },
+    {
+      id: "eu-importers",
+      label: "EU importers and OEMs",
+      body: "The economic operator legally responsible for placing the battery on the EU market. Ichnos works with the importer's existing passport stack and helps them source supplier data through an independent rail, not through opaque manufacturer self-declarations.",
+    },
+    {
+      id: "passport-app-partners",
+      label: "Battery-passport application vendors",
+      body: "Path.Era, Siemens, Spherity, AVL, and the other passport-application vendors. Ichnos feeds their passport stacks with the upstream data they need; the relationship is partner-and-channel, not competition.",
+    },
+  ],
+};
+
+// §5.12 Roadmap signal
+export const PASSPORT_ROADMAP = {
+  heading: "Ichnos in the Catena-X role model",
+  body: "Beyond the consultant qualification, Ichnos is working toward Enablement Service Provider (ESP) and Business Application Provider (BAP) status in the Catena-X role model. These are the open, certifiable roles that bridge supplier data into the data space. The path runs through the Eclipse Tractus-X reference implementation and a Conformity Assessment Body. There is no ESP/BAP presence in ASEAN today; being the first battery-focused one is a measured next step.",
+};

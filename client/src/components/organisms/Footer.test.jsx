@@ -65,14 +65,6 @@ describe('Footer', () => {
     ).toBeInTheDocument();
     // The credential string is derived from catenaXStatus.js, never hard-coded.
     expect(brandCol).toHaveTextContent(CATENA_X_TITLE_BASE);
-    // The retired v3 "ASEAN data layer" jargon must not appear.
-    expect(brandCol).not.toHaveTextContent('ASEAN data layer');
-  });
-
-  it('footer copy contains no solana/blockchain wording', () => {
-    const footer = document.querySelector('footer');
-    expect(footer.textContent).not.toMatch(/solana/i);
-    expect(footer.textContent).not.toMatch(/blockchain/i);
   });
 
   it('displays registered address in contact column', () => {

@@ -8,8 +8,11 @@ import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
 import PassportStatusTimeline from "../organisms/PassportStatusTimeline";
 import PassportValueChainCase from "../organisms/PassportValueChainCase";
 import PassportCatenaXStack from "../organisms/PassportCatenaXStack";
+import PassportBuildStack from "../organisms/PassportBuildStack";
 import PassportRoleBand from "../organisms/PassportRoleBand";
+import PassportCustomers from "../organisms/PassportCustomers";
 import PassportOffer from "../organisms/PassportOffer";
+import PassportRoadmap from "../organisms/PassportRoadmap";
 import ContactSection from "../organisms/ContactSection";
 
 export default function PassportPage() {
@@ -27,8 +30,11 @@ export default function PassportPage() {
         <PassportStatusTimeline />
         <PassportValueChainCase />
         <PassportCatenaXStack />
+        <PassportBuildStack />
         <PassportRoleBand />
+        <PassportCustomers />
         <PassportOffer />
+        <PassportRoadmap />
         <ContactSection />
       </Container>
     </div>

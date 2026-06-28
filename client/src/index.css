@@ -56,38 +56,22 @@ body {
   --color-shadow: rgba(15, 20, 25, 0.06);
 }
 
-/* ========== Theme: Passport (override) ========== */
-.theme-passport {
-  --color-bg-base: #0A1628;
-  --color-bg-alt: #1A2744;
-  --color-surface: #1A2744;
-  --color-accent-primary: #1E90FF;
-  --color-accent-cyan: #00D1C1;
-  --color-accent-warm: #C8A24E;
-  --color-gradient-start: #14F195;
-  --color-gradient-end: #9945FF;
-  --color-text-primary: #E8ECF1;
-  --color-text-secondary: #8B9DC3;
-  background-color: var(--color-bg-base);
-  color: var(--color-text-primary);
-}
-
 /* ========== Theme: Catena-X (override) ========== */
-/* Tractus-X blue palette. Both gradient stops point at the same blue so
-   the green→purple gradient can never surface under this theme. The two
-   solid overrides below force the CTA button and any .gradient-text to
-   render as flat Tractus-X blue. */
+/* Eclipse palette: deep-navy surfaces with a cyan accent. This theme
+   deliberately declares NO gradient vars — the green→purple gradient must
+   never surface here. Because those vars are absent, the two solid
+   overrides below force the CTA button and any .gradient-text to render as
+   flat cyan rather than a broken linear-gradient(... undefined ...). */
 .theme-catenax {
-  --color-bg-base: #0A1628;
-  --color-bg-alt: #1A2744;
-  --color-surface: #1A2744;
-  --color-accent-primary: #0f71cb;
-  --color-accent-cyan: #0f71cb;
-  --color-accent-warm: #C8A24E;
-  --color-gradient-start: #0f71cb;
-  --color-gradient-end: #0f71cb;
-  --color-text-primary: #E8ECF1;
-  --color-text-secondary: #8B9DC3;
+  --color-bg-base: #0F0F23;
+  --color-bg-alt: #1B1B3A;
+  --color-surface: #232347;
+  --color-accent-primary: #00B0E1;
+  --color-accent-cyan: #00C7CB;
+  --color-accent-warm: #FFC107;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #9CA3AF;
+  --color-border: rgba(241, 245, 249, 0.12);
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
 }
@@ -150,7 +134,7 @@ body {
 }
 
 /* ========== Logo ========== */
-/* Source PNG (Ichnos-protocol_logo_transparent.png) is tight-cropped to the
+/* Source PNGs (logo.png / logo-dark.png) are tight-cropped to the
    lockup itself (~3:1 aspect). Per the founder's spec, the navbar lockup is
    sized for full presence — 168px height (3× the previous 56px). The navbar
    accommodates this with vertical padding tuning; do not raise it further
@@ -171,7 +155,9 @@ body {
   top: 0;
   z-index: var(--z-sticky);
   background-color: var(--color-surface);
-  min-height: 64px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 176px;
 }
 
 .navbar-menu-btn {
@@ -316,13 +302,30 @@ body {
 
 /* ========== Landing Sections ========== */
 .hero-section {
+  position: relative;
   min-height: 85vh;
-  background: linear-gradient(
-    135deg,
-    var(--color-bg-base) 0%,
-    var(--color-surface) 100%
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(15, 20, 25, 0.45) 0%,
+      rgba(15, 20, 25, 0.70) 100%
+    ),
+    url('/bg-advisory.jpg') center / cover no-repeat;
   padding: var(--spacing-3xl) 0;
+  color: #FFFFFF;
+}
+
+.hero-section .gradient-text {
+  background: linear-gradient(135deg, #FFFFFF, var(--color-accent-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+}
+
+.hero-section .section-subtext {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
 
 .hero-cta-btn {
@@ -423,6 +426,17 @@ body {
   color: var(--color-accent-cyan);
 }
 
+/* Lead-offering accent: a subtle left border marks the card that leads
+   its pillar row (§4.3.2 Card 1). Kept deliberately quiet — no louder
+   treatments. */
+.service-card.service-card--lead {
+  border-left: 3px solid var(--color-accent-primary) !important;
+}
+
+.service-card.service-card--lead:hover {
+  border-left: 3px solid var(--color-accent-primary) !important;
+}
+
 /* "Coming soon" treatment: dashed lower-contrast border, muted body text
    and icon, and no hover lift — the desaturation plus the body copy is the
    entire signal (no ribbon graphic). */
@@ -453,12 +467,6 @@ h1.page-title,
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.theme-passport h1.page-title,
-.theme-passport .hero-headline,
-.theme-passport .section-display-heading {
-  font-family: var(--font-sans);
 }
 
 .page-title {
@@ -795,11 +803,6 @@ h1.page-title,
   font-size: var(--font-size-sm);
 }
 
-.theme-passport .user-avatar {
-  background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
-  color: var(--color-bg-base);
-}
-
 .user-menu-name {
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
@@ -986,9 +989,13 @@ h1.page-title,
 /* ========== Scaffold: Advisory Hero Variant (T04) ========== */
 .hero-section--advisory {
   background:
-    linear-gradient(rgba(245, 247, 250, 0.80), rgba(232, 236, 241, 0.92)),
+    linear-gradient(
+      to bottom,
+      rgba(15, 20, 25, 0.45) 0%,
+      rgba(15, 20, 25, 0.70) 100%
+    ),
     url('/bg-advisory.jpg') center / cover no-repeat;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
 }
 
 .hero-section--advisory .hero-cta-btn {
@@ -1013,14 +1020,14 @@ h1.page-title,
 
 /* Catena-X override: the /passport hero mounts under .theme-catenax, whose
    text tokens turn near-white. The light advisory gradient above would leave
-   that text unreadable, so swap in the dark navy surface with a Tractus-X
-   blue accent. Scoped to .theme-catenax so /services, /team, and other
+   that text unreadable, so swap in the dark navy surface with an Eclipse
+   cyan/teal accent. Scoped to .theme-catenax so /services, /team, and other
    advisory pages keep the original light hero. */
 .theme-catenax .advisory-page-hero {
   background:
     radial-gradient(
       circle at 50% 0%,
-      rgba(15, 113, 203, 0.25),
+      rgba(0, 176, 225, 0.25),
       transparent 60%
     ),
     linear-gradient(var(--color-bg-base), var(--color-bg-alt));

@@ -3,7 +3,10 @@ import { renderWithProviders, screen, waitFor, cleanup } from '../../test-utils'
 import PassportPage from './PassportPage';
 import { PASSPORT_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
-import { PASSPORT_HERO } from '../../constants/passportContent';
+import {
+  PASSPORT_HERO,
+  PASSPORT_CUSTOMERS,
+} from '../../constants/passportContent';
 import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
 vi.mock('../organisms/ContactSection', () => ({
@@ -68,19 +71,36 @@ describe('PassportPage', () => {
     expect(heading).toHaveTextContent(PASSPORT_HERO.title);
   });
 
-  it('renders the sections in locked order with ContactSection last', () => {
-    const status = screen.getByTestId('passport-status');
-    const valueCase = screen.getByTestId('passport-case');
-    const catenax = screen.getByTestId('passport-catenax');
-    const role = screen.getByTestId('passport-role');
-    const offer = screen.getByTestId('passport-offer');
-    const contact = screen.getByTestId('contact-section');
+  it('renders the ten sections in locked order with ContactSection last', () => {
+    const ordered = [
+      screen.getByRole('heading', { level: 1 }),
+      screen.getByTestId('passport-status'),
+      screen.getByTestId('passport-case'),
+      screen.getByTestId('passport-catenax'),
+      screen.getByTestId('passport-build-stack'),
+      screen.getByTestId('passport-role'),
+      screen.getByTestId('passport-customers'),
+      screen.getByTestId('passport-offer'),
+      screen.getByTestId('passport-roadmap'),
+      screen.getByTestId('contact-section'),
+    ];
 
-    expect(status.compareDocumentPosition(valueCase) & FOLLOWING).toBeTruthy();
-    expect(valueCase.compareDocumentPosition(catenax) & FOLLOWING).toBeTruthy();
-    expect(catenax.compareDocumentPosition(role) & FOLLOWING).toBeTruthy();
-    expect(role.compareDocumentPosition(offer) & FOLLOWING).toBeTruthy();
-    expect(offer.compareDocumentPosition(contact) & FOLLOWING).toBeTruthy();
+    for (let i = 0; i < ordered.length - 1; i += 1) {
+      expect(
+        ordered[i].compareDocumentPosition(ordered[i + 1]) & FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it('renders the three v5 sections with representative copy', () => {
+    expect(screen.getByTestId('passport-build-stack')).toBeInTheDocument();
+    expect(screen.getByTestId('passport-customers')).toBeInTheDocument();
+    expect(screen.getByTestId('passport-roadmap')).toBeInTheDocument();
+    const partnerGroup = PASSPORT_CUSTOMERS.groups.find(
+      (group) => group.id === 'passport-app-partners',
+    );
+    expect(document.body).toHaveTextContent(partnerGroup.body);
+    expect(document.body).toHaveTextContent('CX-0143');
   });
 
   it('renders the Catena-X outbound pointer with safe target/rel', () => {

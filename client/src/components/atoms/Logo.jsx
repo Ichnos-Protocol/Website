@@ -1,13 +1,14 @@
 import { useState } from 'react';
 
-// Single source of truth — the transparent-background lockup works against any
-// page background, so we point every theme key at the same file. The `theme`
-// prop is retained as a stable API for future divergent variants.
+// Per-surface logo mapping. The wordmark must contrast with the surface it sits
+// on: light surfaces get the dark wordmark, dark surfaces get the light one.
+// `advisory`/`passport` are semantic aliases for the two surface tones, kept as
+// a stable API so callers can name the context rather than the colour.
 const LOGO_SOURCES = {
-  light: '/Ichnos-protocol_logo_transparent.png',
-  dark: '/Ichnos-protocol_logo_transparent.png',
-  advisory: '/Ichnos-protocol_logo_transparent.png',
-  passport: '/Ichnos-protocol_logo_transparent.png',
+  light: '/logo-dark.png',
+  dark: '/logo.png',
+  advisory: '/logo-dark.png',
+  passport: '/logo.png',
 };
 
 export default function Logo({ className = '', theme = 'light' }) {

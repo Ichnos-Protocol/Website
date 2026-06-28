@@ -4,11 +4,11 @@ import ServicesSnapshot from './ServicesSnapshot';
 import { SERVICES_LIST } from '../../constants/services';
 
 describe('ServicesSnapshot', () => {
-  it('renders one card for each of the 8 services', () => {
+  it('renders one card for each of the 7 services', () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
     const cardTitles = container.querySelectorAll('.service-card-title');
     expect(cardTitles).toHaveLength(SERVICES_LIST.length);
-    expect(cardTitles).toHaveLength(8);
+    expect(cardTitles).toHaveLength(7);
   });
 
   it('renders the three pillar labels as headings', () => {

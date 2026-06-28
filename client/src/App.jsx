@@ -9,7 +9,7 @@ import PrivacyPage from "./components/pages/PrivacyPage";
 import AdminPage from "./components/pages/AdminPage";
 import PublicLayout from "./components/templates/PublicLayout";
 import AdvisoryThemeLayout from "./components/templates/AdvisoryThemeLayout";
-import CatenaThemeLayout from "./components/templates/CatenaThemeLayout";
+import CatenaXThemeLayout from "./components/templates/CatenaXThemeLayout";
 import AdminRoute from "./routes/AdminRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ApiSanityWarning from "./components/atoms/ApiSanityWarning";
@@ -63,7 +63,7 @@ export default function App() {
             <Route path="*" element={null} />
           </Route>
         </Route>
-        <Route element={<CatenaThemeLayout />}>
+        <Route element={<CatenaXThemeLayout />}>
           <Route
             element={
               <PublicLayout>

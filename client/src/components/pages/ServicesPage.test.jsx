@@ -180,6 +180,25 @@ describe('ServicesPage', () => {
     ).toBeTruthy();
   });
 
+  it('renders the Compliance pillar as 3 cards in order, lead card first', () => {
+    const compliance = document.getElementById('compliance');
+    const cards = compliance.querySelectorAll('.service-card');
+    expect(cards.length).toBe(3);
+
+    const titles = [...compliance.querySelectorAll('.service-card-title')].map(
+      (el) => el.textContent,
+    );
+    expect(titles).toEqual([
+      'Strategic Catena-X consulting — battery passport',
+      'Battery Passport Integration',
+      'EU–ASEAN Compliance Bridge',
+    ]);
+
+    const leadCards = compliance.querySelectorAll('.service-card--lead');
+    expect(leadCards.length).toBe(1);
+    expect(cards[0].classList.contains('service-card--lead')).toBe(true);
+  });
+
   it('renders ContactSection after the three pillar groups', () => {
     const circularity = document.getElementById('circularity');
     const contact = screen.getByTestId('contact-section');

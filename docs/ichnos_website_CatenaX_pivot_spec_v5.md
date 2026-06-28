@@ -48,14 +48,41 @@ unchanged. The deliberate changes:
      about the ESP / BAP certification pursuit, kept deliberately
      thin to avoid disclosing the PCF MVP plan publicly.
 
-4. **What v5 explicitly does NOT change (per Francesco's review of
+4. **Visual defects observed on the deployed staging build, fixed in v5:**
+   - **§1.1 Navbar height tightened.** Explicit `padding-top: 4px;
+     padding-bottom: 4px; min-height: 176px;` so the navbar reads as
+     "logo + minimal breathing room," not "logo floating in a band."
+   - **§1.1 + §1.1.1 Asset regression to Battery Advisory PNGs.** The
+     v4-era `Ichnos-protocol_logo_transparent.png` had white pixels
+     baked in (RGB without alpha) and no SVG source is available.
+     v5 restores the v3-era Battery Advisory two-version PNG set —
+     `logo.png` (light wordmark, 30KB, 1080×354 RGBA, alpha-verified)
+     and `logo-dark.png` (dark wordmark, 32KB, same dimensions and
+     alpha quality). The `Logo.jsx` `LOGO_SOURCES` map picks the right
+     variant per theme (light wordmark on dark surfaces, dark wordmark
+     on light surfaces). Both logos restored from commit `f2c44da`.
+   - **§3.1.1 Hero overlay (new sub-section).** Dark gradient over
+     the battery photo so the gradient headline reads at WCAG AA
+     contrast. Drop-shadow on the headline survives any photo region.
+
+5. **Compliance pillar restructured (§4.2 / §4.3.2).** Dropped from
+   4 cards to 3. Order: Strategic Catena-X Consulting (lead, includes
+   supplier onboarding scope per the §0a runtime toggle), Battery
+   Passport Integration, EU–ASEAN Compliance Bridge. The standalone
+   "Catena-X supplier onboarding services" card with "coming soon"
+   treatment is removed — claiming a standalone onboarding service
+   before the qualification is granted was the wrong positioning.
+   Total `SERVICES_LIST` drops from 8 to 7.
+
+6. **What v5 explicitly does NOT change (per Francesco's review of
    the strategy memo):**
    - The landing-page hero, Why Ichnos, and passport teaser stay in
      the advisory register. Advisory is the door; the product behind
      the door is built in stealth.
    - No new `/product` route is added. The PCF SaaS is built and
      tested without a public surface until a design partner is live.
-   - The `/services` page is NOT restructured. Eight cards stay.
+   - The `/services` page is NOT restructured beyond the §4.3.2 card
+     count reduction in item 5.
    - The `/passport` page does NOT mention pricing, subscriptions, or
      the PCF MVP timeline.
 
@@ -350,14 +377,150 @@ check without involving `staging`.
 
 ### 1.1 Top-nav logo — `client/src/components/atoms/Logo.jsx` + `client/src/index.css` **[A]**
 
-- Source: `/Ichnos-protocol_logo_transparent.png` (transparent background).
+**Asset choice — regression to the Battery Advisory lockup.** The
+v4-era `Ichnos-protocol_logo_transparent.png` was discovered to have
+white pixels baked in rather than alpha-channel transparency. Francesco
+does not have the SVG source for that lockup. v5 regresses to the
+**Battery Advisory two-version PNG set** that was retired in the v4
+rebrand:
+
+- `client/public/logo.png` — light version (1080×354 RGBA, 30KB,
+  verified alpha-true). Used on **dark surfaces** where a near-white
+  lockup is needed (was the v3 advisory navbar). Restored from
+  commit `f2c44da` ("tight-crop logo + bump navbar height").
+- `client/public/logo-dark.png` — dark version (1080×354 RGBA, 32KB,
+  verified alpha-true). Used on **light surfaces** where a near-black
+  lockup is needed (was the v3 advisory footer / light banners).
+  Restored from the same `f2c44da` commit.
+
+Both files are tight-cropped to the lockup itself (3:1 aspect ratio,
+4% padding margin around the wordmark). The 2000×2000 squares with
+massive transparent whitespace that v3 originally had are gone; these
+PNGs are the post-`f2c44da` tight versions and need no further
+processing.
+
+**Logo asset selection by theme (consumed by `Logo.jsx`).** The
+`theme` prop names the *surface* the logo sits on (the v4 convention,
+unchanged). A light surface needs the dark wordmark for contrast; a
+dark surface needs the light wordmark. The mapping:
+
+```js
+const LOGO_SOURCES = {
+  light:    "/logo-dark.png",  // LIGHT surface — dark wordmark reads against white/light backgrounds
+  dark:     "/logo.png",        // DARK  surface — light wordmark reads against dark backgrounds
+  advisory: "/logo-dark.png",  // alias: advisory pages have light backgrounds → dark wordmark
+  passport: "/logo.png",        // alias: /passport mounts under .theme-catenax → light wordmark
+};
+```
+
+Consumer mapping (so the implementer wires `theme` correctly):
+
+| Component / surface | `theme` prop value | Resolved file | Wordmark colour |
+| --- | --- | --- | --- |
+| Navbar on `/`, `/services`, `/team`, `/contact` (light surface) | `light` or `advisory` | `/logo-dark.png` | Dark |
+| Navbar on `/passport` (dark surface, `.theme-catenax`) | `passport` (or `dark`) | `/logo.png` | Light |
+| Footer (always dark, `.footer-dark`) | `dark` | `/logo.png` | Light |
+
+The previously-active `Ichnos-protocol_logo_transparent.png` is
+**retained on disk** at `client/public/Ichnos-protocol_logo_transparent.png`
+but **not referenced by any code**. Per Francesco's instruction, do
+not delete the file — it stays in the public folder as an archived
+asset against the day an SVG source becomes available or the lockup
+needs to be re-derived. The grep gate in §1.1.1 enforces "no live
+references"; the file's mere presence on disk is fine.
+
 - Class: `.logo-img`, height **168px** (3× the v3 56px).
-- All four `LOGO_SOURCES` theme keys point at the same transparent file.
 
-### 1.2 Footer logo — same component, different class
+**Navbar height = logo height + minimal padding.** Per Francesco's
+review of the deployed staging build: the navbar currently has visible
+whitespace above and below the logo. Tighten so the navbar reads as
+"logo-height + just enough breathing room", not "logo floating in a
+thick band."
 
-- Source: same transparent PNG as 1.1 **[A]**.
+Required CSS in `client/src/index.css`:
+
+```css
+/* Navbar tightened — the lockup IS the brand mark, the navbar exists
+   to host it. Vertical padding is the minimum that prevents the logo
+   from touching the navbar's bottom border on hover/focus states.
+   No more than 4px top / 4px bottom — the rendered navbar height is
+   then logo-height + 8px (~176px at the spec'd 168px logo). */
+.navbar-main {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 176px; /* = logo 168px + 4px + 4px */
+}
+```
+
+The existing Bootstrap utility `py-2` on the `<nav>` element (currently
+in `Navbar.jsx`) must be replaced or overridden by these rules. If
+Bootstrap utility classes still control padding after the CSS lands,
+strip `py-2` from the navbar JSX in the same commit.
+
+### 1.1.1 Asset-quality verification — alpha channel must be real
+
+The Battery Advisory PNGs restored in §1.1 already have alpha
+transparency (verified at restore time: both 1080×354 RGBA, real
+alpha channel). Before merging Phase D, the implementer must
+re-confirm with one command:
+
+```bash
+python -c "
+from PIL import Image
+for path in ['client/public/logo.png', 'client/public/logo-dark.png']:
+    im = Image.open(path)
+    print(f'{path}: {im.size} {im.mode} alpha={im.mode in (\"RGBA\",\"LA\")}')
+"
+# Expected output, both lines:
+#   client/public/logo.png: (1080, 354) RGBA alpha=True
+#   client/public/logo-dark.png: (1080, 354) RGBA alpha=True
+```
+
+If either line reports `RGB` (no alpha), the asset is wrong — restore
+again from commit `f2c44da` before merging.
+
+**The previously-active asset.**
+`client/public/Ichnos-protocol_logo_transparent.png` is **retained on
+disk** but **all live references to it are removed**: `Logo.jsx`
+`LOGO_SOURCES` (§1.1), `structuredData.js` `LOGO_URL`, and any
+component or test file. Per Francesco's instruction the PNG file
+itself stays in the public folder as an archived asset (potential
+future SVG-derivation reference). Run a grep to confirm nothing in
+source code still points at it:
+
+```bash
+grep -rE "Ichnos-protocol_logo_transparent|ichnos-protocol_logo_transparent" client/src/
+# Expected: no matches in the source tree.
+
+# It IS expected to find the asset file itself under client/public/:
+ls client/public/Ichnos-protocol_logo_transparent.png
+# Expected: file present (do not delete).
+```
+
+### 1.2 Footer logo — light-on-dark wordmark on the dark footer surface
+
+The footer renders against `.footer-dark` (a near-black gradient
+surface). The footer logo therefore uses the **light wordmark**
+(`logo.png`) so the lockup reads near-white against the dark
+gradient.
+
+- Source: `/logo.png` (light wordmark). Selected via
+  `<Logo theme="dark" />` in `Footer.jsx` — the `theme` prop names the
+  surface (dark) and `LOGO_SOURCES` in §1.1 resolves it to the light
+  wordmark for contrast.
 - Class: `.footer-logo`, height **64px** (unchanged from v3).
+- **No white box anymore.** The visible white rectangle around the
+  v4 footer logo on staging was the baked-in white background of
+  the retired `Ichnos-protocol_logo_transparent.png`. With the
+  Battery Advisory `logo.png` and its verified alpha channel, the
+  lockup sits cleanly on the dark gradient.
+
+**JSX change required in `Footer.jsx`.** The v4 branch likely has
+`<Logo theme="light" className="footer-logo" />` (consistent with
+v4's all-same-file `LOGO_SOURCES`). Update to
+`<Logo theme="dark" className="footer-logo" />` so the new
+`LOGO_SOURCES` mapping picks the light wordmark for the dark
+footer surface.
 
 ### 1.3 Brand tagline (footer attribution row) — `client/src/components/organisms/Footer.jsx` **[A]**
 
@@ -646,13 +809,74 @@ export const HERO_CONTENT = {
 
 - **Eyebrow** rendered with `.section-eyebrow` class (small uppercase, secondary
   text colour).
-- **Headline** rendered with `.gradient-text` class on a dark grey background.
+- **Headline** rendered with `.gradient-text` class.
   Period at the end is intentional.
 - **Subhead** rendered with `.section-subtext` class.
 - **CTA**: single button, no secondary CTA. Class `.hero-cta-btn`.
 
 `Hero.jsx` consumes `HERO_CONTENT.headline` (not `tagline`). The v3 field
 `tagline` is removed from the constant.
+
+### 3.1.1 Hero background contrast — dark overlay over the battery photo
+
+**Defect observed on staging.** The hero headline (white gradient text)
+renders over the light battery-production photo and disappears into it.
+Pure white text on a light-grey background fails WCAG contrast and is
+visibly unreadable. A browser auto-highlight (Google Translate, screen
+reader UI) produces the blue boxes Francesco saw, but the underlying
+problem is contrast.
+
+**Required CSS in `client/src/index.css`** (replacing the existing
+`.hero-section` block):
+
+```css
+/* Hero — dark overlay over the battery photo guarantees the headline
+   reads at AA contrast regardless of which area of the photo sits
+   under any given line of text. The overlay is darker at the bottom
+   than the top so the eyebrow up top stays airy while the multi-line
+   headline below sits on a near-black band. */
+.hero-section {
+  position: relative;
+  min-height: 85vh;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(15, 20, 25, 0.45) 0%,
+      rgba(15, 20, 25, 0.70) 100%
+    ),
+    url("/bg-advisory.jpg") center / cover no-repeat;
+  padding: var(--spacing-3xl) 0;
+  color: #FFFFFF;
+}
+
+/* The headline gradient must stay visible against the overlay.
+   Drop-shadow gives the gradient strokes a soft outline that survives
+   any photo region the gradient happens to render over. */
+.hero-section .gradient-text {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+}
+
+.hero-section .section-subtext {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+```
+
+**Why these specific values.** The overlay opacity range (0.45 → 0.70)
+was picked to keep the photo visibly present (you can still see the
+battery silhouettes) while pushing the perceived background luminance
+into the dark range a white-or-gradient headline needs. Lower values
+(< 0.4) re-expose the contrast defect; higher values (> 0.8) flatten
+the photo into a near-black panel and lose the visual texture.
+
+**Acceptance check on staging after deploy.** Open the live hero,
+take a screenshot, and read it on an external monitor at 50% browser
+zoom. The headline must remain legible. If it doesn't, raise the
+overlay's bottom value from 0.70 to 0.80 and retest.
+
+**Forbidden alternative.** Do NOT solve this by reverting the
+background photo to a solid colour. The photo is part of the brand
+recognition Francesco chose. The fix is the overlay, not the photo.
 
 ### 3.2 Why Ichnos block — id="company"
 
@@ -676,7 +900,7 @@ export const WHY_ICHNOS = {
 ### 3.3 Services snapshot block — id="services"
 
 - Component: existing `ServicesSnapshot.jsx` reused.
-- Data source: `SERVICES_LIST` from `services.js` (per §4.2.1) — all 8 cards.
+- Data source: `SERVICES_LIST` from `services.js` (per §4.2.1) — all 7 cards.
 - Layout: pillar-grouped grid in the order Engineering → Compliance →
   Circularity.
 - Footer link below the grid: `See full services →` linking to `/services`
@@ -740,9 +964,12 @@ Rendered as `<AdvisoryPageHero title={...} subtitle={...} />`.
 
 ### 4.2 Services data structure — `client/src/constants/services.js`
 
-`SERVICES_LIST` is an array of 8 cards. Pillar field values: `"engineering"`,
-`"compliance"`, `"circularity"`. ID strings are stable — they are used as
-DOM anchors and as keys in tests; do not change without updating
+`SERVICES_LIST` is an array of **7 cards** (down from 8 in earlier v5
+drafts — the standalone "Catena-X supplier onboarding services" card
+is dropped per Francesco's review; its content is absorbed into the
+Strategic Consulting card below). Pillar field values: `"engineering"`,
+`"compliance"`, `"circularity"`. ID strings are stable — they are used
+as DOM anchors and as keys in tests; do not change without updating
 `structuredData.js` and any consumer test.
 
 The full restored + extended `SERVICES_LIST`:
@@ -784,14 +1011,21 @@ export const SERVICES_LIST = [
     deliveryMethod: false,
   },
   // ── Compliance ──
+  // Order per Francesco's review: Strategic Consulting first (the lead
+  // Catena-X offering, includes the supplier-onboarding scope Ichnos
+  // can deliver in advisory form today and as full onboarding once the
+  // Catena-X qualification is granted via §0a toggle), then the
+  // narrower Battery Passport Integration card, then the regulatory
+  // Compliance Bridge.
   {
-    id: "eu-asean-compliance-bridge",
-    icon: "bi-globe-asia-australia",
-    title: "EU–ASEAN Battery Compliance Bridge",
+    id: "strategic-consulting-catena-x-battery-passport",
+    icon: "bi-diagram-3",
+    title: "Strategic Catena-X consulting — battery passport",
+    eyebrow: "Official Catena-X Qualified Advisory Provider",
     tagline:
-      "Translating European battery regulation into ASEAN supply-chain reality — and vice versa.",
+      "Catena-X battery-passport strategy: data architecture, schema mapping, and supplier onboarding into the data space.",
     description:
-      "Translating European battery regulation into ASEAN supply-chain reality — and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
+      "Strategic guidance for European importers and ASEAN manufacturers entering the Catena-X battery-passport data space. The engagement covers data-flow architecture, CX-0143 schema mapping, EDC connector planning, data sovereignty model, audit-trail strategy, and supplier onboarding into Catena-X (PCF first, then composition and due-diligence sub-models). Standards-grounded in Catena-X CX-0143, CX-0026, CX-0029, EU 2023/1542, DIN DKE SPEC 99100, and MS 2818. The lead offering on this pillar.",
     pillar: "compliance",
     deliveryMethod: false,
   },
@@ -802,34 +1036,21 @@ export const SERVICES_LIST = [
     tagline:
       "Provisioning supplier data into the Catena-X battery passport: schema mapping, supplier ingestion, and PCF pipelines.",
     description:
-      "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. The advisory engagement scopes and delivers a working provisioning flow that the EU importer's passport stack consumes natively.",
+      "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. Hands-on delivery of a working provisioning flow that the EU importer's passport stack consumes natively.",
     pillar: "compliance",
     deliveryMethod: false,
     passportLink: "/passport",
   },
   {
-    id: "strategic-consulting-passport-data-infrastructure",
-    icon: "bi-diagram-3",
-    title: "Strategic consulting — battery passport data infrastructure",
-    eyebrow: "Official Catena-X Qualified Advisory Provider",
+    id: "eu-asean-compliance-bridge",
+    icon: "bi-globe-asia-australia",
+    title: "EU–ASEAN Compliance Bridge",
     tagline:
-      "Architecting the data flows, schemas, and integration paths for an EU-compliant Catena-X battery-passport stack.",
+      "Translating European battery regulation into ASEAN supply-chain reality and vice versa.",
     description:
-      "Architecting the data flows, schemas, and integration paths for European importers and ASEAN manufacturers building a Catena-X-compatible battery passport stack from the ground up. Schema design, EDC connector planning, data sovereignty model, audit-trail strategy. Standards-grounded in Catena-X CX-0143, EU 2023/1542, DIN DKE SPEC 99100, MS 2818.",
+      "Translating European battery regulation into ASEAN supply-chain reality and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
     pillar: "compliance",
     deliveryMethod: false,
-  },
-  {
-    id: "catena-x-supplier-onboarding",
-    icon: "bi-clock-history",
-    title: "Catena-X supplier onboarding services",
-    tagline:
-      "Onboarding ASEAN battery manufacturers and their European partners into the Catena-X data space.",
-    description:
-      "Hands-on onboarding of ASEAN suppliers into Catena-X — operational delivery is being scaled up. Strategy, gap analysis, and integration architecture for the same supply chains are available today under strategic consulting.",
-    pillar: "compliance",
-    deliveryMethod: false,
-    comingSoon: true,
   },
   // ── Circularity ──
   {
@@ -881,33 +1102,43 @@ time — the heading alone is enough.
 
 Card visual: `ServiceCard` component, full description visible, no badge.
 
-#### 4.3.2 Compliance pillar (4 cards in order)
+#### 4.3.2 Compliance pillar (3 cards in order)
 
-| Position | Card id                                             | Title                                                       |
-| -------- | --------------------------------------------------- | ----------------------------------------------------------- |
-| 1        | `eu-asean-compliance-bridge`                        | EU–ASEAN Battery Compliance Bridge                          |
-| 2        | `battery-passport-integration`                      | Battery Passport Integration                                |
-| 3        | `strategic-consulting-passport-data-infrastructure` | Strategic consulting — battery passport data infrastructure |
-| 4        | `catena-x-supplier-onboarding`                      | Catena-X supplier onboarding services                       |
+| Position | Card id                                          | Title                                          |
+| -------- | ------------------------------------------------ | ---------------------------------------------- |
+| 1        | `strategic-consulting-catena-x-battery-passport` | Strategic Catena-X consulting — battery passport |
+| 2        | `battery-passport-integration`                   | Battery Passport Integration                   |
+| 3        | `eu-asean-compliance-bridge`                     | EU–ASEAN Compliance Bridge                     |
 
-Card 3 visual: standard card. The `eyebrow` field renders as a small uppercase
-chip above the title, class `.service-card-eyebrow` (new) or reuses `.section-eyebrow`.
+**Card 1 (Strategic Catena-X consulting)** — the lead Compliance
+offering, visually weighted to lead the row. Visual rules:
 
-Card 4 visual: **grayed / "coming soon" treatment**. Visual rules:
+- Standard card, no special border treatment.
+- The `eyebrow` field ("Official Catena-X Qualified Advisory Provider"
+  — runtime-toggled per §0a) renders as a small uppercase chip above
+  the title, class `.service-card-eyebrow` (new) or reuses
+  `.section-eyebrow`.
+- This card visually leads the Compliance row. If the implementer
+  needs to draw extra attention, a subtle `border-left: 3px solid
+  var(--color-accent-primary)` is acceptable. Avoid louder treatments.
+- Supplier onboarding into Catena-X is part of this card's scope, in
+  advisory form while the qualification is pending (per §0a toggle),
+  in full delivery form once the qualification flips.
 
-- `.service-card--coming-soon` class on the card root.
-- Card border: dashed, lighter shade (`var(--color-border)` at 60% opacity).
-- Card body text colour: `var(--color-text-secondary)` at 60% opacity.
-- Icon: lower contrast.
-- **No hover transform.**
-- **No CTA / no `passportLink`.**
-- No "Coming Soon" ribbon graphic — the visual desaturation plus the body
-  text (the §4.2 description, which now reads "Hands-on onboarding … is
-  being scaled up. Strategy … available today under Strategic consulting")
-  is the entire signal.
+**Card 2 (Battery Passport Integration)** — renders a `Learn more →`
+link to `/passport` (existing pattern from v2 was
+`passportLink: "/passport"`).
 
-Card 2 (`battery-passport-implementation`) renders a `Learn more →` link
-to `/passport` (existing pattern from v2 was `passportLink: "/passport"`).
+**Card 3 (EU–ASEAN Compliance Bridge)** — standard card, no special
+treatment.
+
+**Dropped from this pillar (was Card 4 in earlier v5 drafts):** the
+standalone `catena-x-supplier-onboarding` card with "coming soon"
+treatment. Per Francesco's review, claiming a standalone onboarding
+service before the Catena-X qualification is granted is the wrong
+positioning. The onboarding scope is absorbed into Card 1's
+description so Ichnos has a single Catena-X-fluent strategic
+offering, not two cards saying overlapping things.
 
 #### 4.3.3 Circularity pillar (1 card)
 
@@ -937,7 +1168,7 @@ export const SERVICES_META = buildMeta({
 
 ### 4.6 Structured data — `client/src/constants/structuredData.js`
 
-`SERVICE_SCHEMAS` array rebuilt to mirror the 8 cards in 4.2. Each entry uses
+`SERVICE_SCHEMAS` array rebuilt to mirror the 7 cards in 4.2. Each entry uses
 the helper `service(name, description)`. `areaServed: ["EU", "ASEAN"]` per §1.
 
 ---
@@ -1761,10 +1992,10 @@ For Traycer to call each phase complete:
 
 ### Phase C — Services restoration (depends on A, B merged)
 
-- [ ] `SERVICES_LIST` contains exactly 8 entries in the order specified in §4.2. The card count is **eight**, not nine: §4.2, the §4.3 pillar breakdown, and the 3/4/1 guardrail below all resolve to 8 (3 Engineering + 4 Compliance + 1 Circularity). The only "nine" in this spec is the unrelated `CAREER_TIMELINE_FRANCESCO` timeline; it does not govern the services contract.
+- [ ] `SERVICES_LIST` contains exactly **7 entries** in the order specified in §4.2 — three Engineering, three Compliance, one Circularity. The card count is **seven** as of this v5 refinement (the standalone Catena-X supplier onboarding card was removed; its scope is absorbed into Card 1 of the Compliance pillar — the Strategic Catena-X consulting card). The only "seven" / "nine" in this spec that does NOT govern the services contract is `CAREER_TIMELINE_FRANCESCO` (a 9-entry timeline).
 - [ ] All copy strings in §4.2 match verbatim (use the spec as the source of truth).
 - [ ] `SERVICE_PILLARS` contains 3 entries in the order Engineering / Compliance / Circularity.
-- [ ] `getServicesByPillar('engineering')` returns 3; `('compliance')` returns 4; `('circularity')` returns 1.
+- [ ] `getServicesByPillar('engineering')` returns 3; `('compliance')` returns 3; `('circularity')` returns 1.
 - [ ] Card 4 of Compliance renders with the `--coming-soon` visual treatment per §4.3.2.
 - [ ] Card 3 of Compliance renders with the eyebrow per §4.3.2.
 - [ ] `structuredData.js` `SERVICE_SCHEMAS` mirrors §4.2 entries.

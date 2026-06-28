@@ -275,14 +275,14 @@ describe('Navbar', () => {
     });
   });
 
-  it('on /passport, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
+  it('on /passport, the brand Logo renders the light-on-dark mark (/logo.png)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/passport',
       preloadedState: loggedOutState,
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/Ichnos-protocol_logo_transparent.png');
+    expect(img).toHaveAttribute('src', '/logo.png');
   });
 
   it('on /, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
@@ -292,7 +292,7 @@ describe('Navbar', () => {
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/Ichnos-protocol_logo_transparent.png');
+    expect(img).toHaveAttribute('src', '/logo-dark.png');
   });
 
   it('on / homepage, clicking Services/Contact navigates with scrollTo state to the matching section', () => {
