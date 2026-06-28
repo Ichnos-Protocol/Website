@@ -5,11 +5,7 @@ import { SERVICES_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import { SERVICES_PAGE_CONTENT } from '../../constants/services';
 
-const SECTION_IDS = [
-  'data-services',
-  'catena-x-consulting',
-  'engineering-advisory',
-];
+const SECTION_IDS = ['engineering', 'compliance', 'circularity'];
 
 vi.mock('../../hooks/useReducedMotion', () => ({
   useReducedMotion: vi.fn(() => true),
@@ -154,7 +150,7 @@ describe('ServicesPage', () => {
     expect(useScrollToSection).toHaveBeenCalled();
   });
 
-  it('renders all three section ids: data-services, catena-x-consulting, engineering-advisory', () => {
+  it('renders all three pillar section ids: engineering, compliance, circularity', () => {
     SECTION_IDS.forEach((sectionId) => {
       expect(document.getElementById(sectionId)).not.toBeNull();
     });
@@ -169,37 +165,36 @@ describe('ServicesPage', () => {
     expect(sections.length).toBe(3);
   });
 
-  it('renders the three sections in locked order', () => {
-    const [data, catenaX, advisory] = SECTION_IDS.map((id) =>
+  it('renders the three pillar sections in locked order', () => {
+    const [engineering, compliance, circularity] = SECTION_IDS.map((id) =>
       document.getElementById(id),
     );
 
     expect(
-      data.compareDocumentPosition(catenaX) &
+      engineering.compareDocumentPosition(compliance) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      catenaX.compareDocumentPosition(advisory) &
+      compliance.compareDocumentPosition(circularity) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('renders ContactSection after the three section groups', () => {
-    const advisory = document.getElementById('engineering-advisory');
+  it('renders ContactSection after the three pillar groups', () => {
+    const circularity = document.getElementById('circularity');
     const contact = screen.getByTestId('contact-section');
     expect(
-      advisory.compareDocumentPosition(contact) &
+      circularity.compareDocumentPosition(contact) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('links the data-services section to /data and the consulting section to /catena-x', () => {
-    expect(
-      screen.getByRole('link', { name: 'Explore data services →' }),
-    ).toHaveAttribute('href', '/data');
-    expect(
-      screen.getByRole('link', { name: 'Catena-X consulting →' }),
-    ).toHaveAttribute('href', '/catena-x');
+  it('does not link to the legacy /data or /catena-x routes', () => {
+    const hrefs = [...document.querySelectorAll('a[href]')].map((a) =>
+      a.getAttribute('href'),
+    );
+    expect(hrefs).not.toContain('/data');
+    expect(hrefs).not.toContain('/catena-x');
   });
 
   it('has no accessibility violations', async () => {

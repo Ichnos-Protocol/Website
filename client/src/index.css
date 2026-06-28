@@ -72,6 +72,53 @@ body {
   color: var(--color-text-primary);
 }
 
+/* ========== Theme: Catena-X (override) ========== */
+/* Tractus-X blue palette. Both gradient stops point at the same blue so
+   the green→purple gradient can never surface under this theme. The two
+   solid overrides below force the CTA button and any .gradient-text to
+   render as flat Tractus-X blue. */
+.theme-catenax {
+  --color-bg-base: #0A1628;
+  --color-bg-alt: #1A2744;
+  --color-surface: #1A2744;
+  --color-accent-primary: #0f71cb;
+  --color-accent-cyan: #0f71cb;
+  --color-accent-warm: #C8A24E;
+  --color-gradient-start: #0f71cb;
+  --color-gradient-end: #0f71cb;
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #8B9DC3;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+.theme-catenax .hero-cta-btn {
+  background: var(--color-accent-primary);
+  color: #FFFFFF;
+}
+
+.theme-catenax .gradient-text {
+  background: none;
+  -webkit-text-fill-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+/* ========== Theme: Reserved variant (override) ========== */
+.theme-solana {
+  --color-bg-base: #0A1628;
+  --color-bg-alt: #1A2744;
+  --color-surface: #1A2744;
+  --color-accent-primary: #1E90FF;
+  --color-accent-cyan: #00D1C1;
+  --color-accent-warm: #C8A24E;
+  --color-gradient-start: #14F195; /* Solana green */
+  --color-gradient-end: #9945FF; /* Solana purple */
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #8B9DC3;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
 /* ========== Surface: Footer Dark ========== */
 .footer-dark {
   --color-bg-base: #0F1419;
@@ -298,6 +345,20 @@ body {
   background-clip: text;
 }
 
+/* ========== Catena-X qualifier (toggle styling) ========== */
+/* While CATENA_X_QUALIFICATION_GRANTED is false, the helper wraps the
+   pending qualifier suffix (from getCatenaXQualifierText) in this class
+   so it reads as a subtle note next to the credential rather than
+   dominating the line. When the boolean flips to true, the helper
+   returns null and this class is unused — no other change required. */
+.catenax-qualifier-pending {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+  font-size: 0.85em;
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+}
+
 .problem-card {
   background-color: var(--color-surface);
   border: 1px solid rgba(139, 157, 195, 0.15);
@@ -350,6 +411,39 @@ body {
 
 .service-card a {
   color: var(--color-accent-cyan);
+}
+
+/* Small uppercase credential chip rendered above a service-card title
+   (e.g. the Strategic-consulting card's Catena-X advisory credential). */
+.service-card-eyebrow {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-cyan);
+}
+
+/* "Coming soon" treatment: dashed lower-contrast border, muted body text
+   and icon, and no hover lift — the desaturation plus the body copy is the
+   entire signal (no ribbon graphic). */
+.service-card--coming-soon {
+  border-style: dashed !important;
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
+}
+
+.service-card--coming-soon .card-text,
+.service-card--coming-soon .service-card-text {
+  color: color-mix(in srgb, var(--color-text-secondary) 60%, transparent);
+}
+
+.service-card--coming-soon .bi {
+  opacity: 0.6;
+}
+
+.service-card--coming-soon:hover {
+  transform: none;
+  border-style: dashed !important;
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
 }
 
 /* ========== Page & Section Headings ========== */
@@ -915,6 +1009,26 @@ h1.page-title,
   padding: var(--spacing-3xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-primary);
+}
+
+/* Catena-X override: the /passport hero mounts under .theme-catenax, whose
+   text tokens turn near-white. The light advisory gradient above would leave
+   that text unreadable, so swap in the dark navy surface with a Tractus-X
+   blue accent. Scoped to .theme-catenax so /services, /team, and other
+   advisory pages keep the original light hero. */
+.theme-catenax .advisory-page-hero {
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(15, 113, 203, 0.25),
+      transparent 60%
+    ),
+    linear-gradient(var(--color-bg-base), var(--color-bg-alt));
+  color: var(--color-text-primary);
+}
+
+.theme-catenax .advisory-page-hero .section-eyebrow {
+  color: var(--color-accent-primary);
 }
 
 /* ========== Cookie Consent Banner (replaces inline styles) ========== */

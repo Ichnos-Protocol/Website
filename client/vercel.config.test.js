@@ -8,12 +8,21 @@ const configPath = resolve(process.cwd(), 'vercel.json');
 const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 
 describe('vercel.json routing', () => {
-  it('redirects /passport to /data with a 301 status', () => {
+  it('redirects /data to /passport with a 301 status', () => {
     const redirect = config.redirects?.find(
-      (entry) => entry.source === '/passport',
+      (entry) => entry.source === '/data',
     );
     expect(redirect).toBeDefined();
-    expect(redirect.destination).toBe('/data');
+    expect(redirect.destination).toBe('/passport');
+    expect(redirect.statusCode).toBe(301);
+  });
+
+  it('redirects /catena-x to /passport with a 301 status', () => {
+    const redirect = config.redirects?.find(
+      (entry) => entry.source === '/catena-x',
+    );
+    expect(redirect).toBeDefined();
+    expect(redirect.destination).toBe('/passport');
     expect(redirect.statusCode).toBe(301);
   });
 

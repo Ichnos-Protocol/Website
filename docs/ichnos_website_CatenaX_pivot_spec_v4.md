@@ -630,7 +630,7 @@ export const WHY_ICHNOS = {
 ### 3.3 Services snapshot block — id="services"
 
 - Component: existing `ServicesSnapshot.jsx` reused.
-- Data source: `SERVICES_LIST` from `services.js` (per §4.2.1) — all 9 cards.
+- Data source: `SERVICES_LIST` from `services.js` (per §4.2.1) — all 8 cards.
 - Layout: pillar-grouped grid in the order Engineering → Compliance →
   Circularity.
 - Footer link below the grid: `See full services →` linking to `/services`
@@ -694,7 +694,7 @@ Rendered as `<AdvisoryPageHero title={...} subtitle={...} />`.
 
 ### 4.2 Services data structure — `client/src/constants/services.js`
 
-`SERVICES_LIST` is an array of 9 cards. Pillar field values: `"engineering"`,
+`SERVICES_LIST` is an array of 8 cards. Pillar field values: `"engineering"`,
 `"compliance"`, `"circularity"`. ID strings are stable — they are used as
 DOM anchors and as keys in tests; do not change without updating
 `structuredData.js` and any consumer test.
@@ -891,7 +891,7 @@ export const SERVICES_META = buildMeta({
 
 ### 4.6 Structured data — `client/src/constants/structuredData.js`
 
-`SERVICE_SCHEMAS` array rebuilt to mirror the 9 cards in 4.2. Each entry uses
+`SERVICE_SCHEMAS` array rebuilt to mirror the 8 cards in 4.2. Each entry uses
 the helper `service(name, description)`. `areaServed: ["EU", "ASEAN"]` per §1.
 
 ---
@@ -1535,7 +1535,7 @@ For Traycer to call each phase complete:
 
 ### Phase C — Services restoration (depends on A, B merged)
 
-- [ ] `SERVICES_LIST` contains exactly 9 entries in the order specified in §4.2.
+- [ ] `SERVICES_LIST` contains exactly 8 entries in the order specified in §4.2. The card count is **eight**, not nine: §4.2, the §4.3 pillar breakdown, and the 3/4/1 guardrail below all resolve to 8 (3 Engineering + 4 Compliance + 1 Circularity). The only "nine" in this spec is the unrelated `CAREER_TIMELINE_FRANCESCO` timeline; it does not govern the services contract.
 - [ ] All copy strings in §4.2 match verbatim (use the spec as the source of truth).
 - [ ] `SERVICE_PILLARS` contains 3 entries in the order Engineering / Compliance / Circularity.
 - [ ] `getServicesByPillar('engineering')` returns 3; `('compliance')` returns 4; `('circularity')` returns 1.

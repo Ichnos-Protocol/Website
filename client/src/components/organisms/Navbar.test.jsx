@@ -275,9 +275,9 @@ describe('Navbar', () => {
     });
   });
 
-  it('on /data, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
+  it('on /passport, the brand Logo renders the dark-on-light mark (/logo-dark.png)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-      route: '/data',
+      route: '/passport',
       preloadedState: loggedOutState,
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
@@ -311,7 +311,7 @@ describe('Navbar', () => {
     });
   });
 
-  it('on / homepage, clicking Battery Passport navigates to /data', () => {
+  it('on / homepage, clicking Battery Passport navigates to /passport', () => {
     mockNavigate.mockClear();
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/',
@@ -319,13 +319,13 @@ describe('Navbar', () => {
     });
 
     fireEvent.click(screen.getByRole('link', { name: 'Battery Passport' }));
-    expect(mockNavigate).toHaveBeenCalledWith('/data');
+    expect(mockNavigate).toHaveBeenCalledWith('/passport');
   });
 
   it('on /services route, clicking each flat nav link navigates to its path', () => {
     const expected = {
       Services: '/services',
-      'Battery Passport': '/data',
+      'Battery Passport': '/passport',
       Contact: '/contact',
     };
 

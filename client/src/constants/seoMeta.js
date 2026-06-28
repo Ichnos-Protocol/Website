@@ -5,12 +5,13 @@
 // Canonical domain is ichnos-protocol.com (hyphenated). The unhyphenated
 // variant is intentionally NOT used anywhere — see DEPLOYMENT_GITHUB_ACTIONS.md.
 
+import { getCatenaXFullTitle } from "./catenaXStatus";
+
 const BASE_URL = "https://ichnos-protocol.com";
 const SITE_NAME = "Ichnos Protocol";
 const LOCALE = "en_US";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
-const DEFAULT_OG_IMAGE_ALT =
-  "Ichnos Protocol — Catena-X-compatible ASEAN data layer for the European battery passport";
+const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol — Battery advisory and EU battery-passport integration for ASEAN. ${getCatenaXFullTitle()}.`;
 
 function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
   const url = `${BASE_URL}${path}`;
@@ -43,57 +44,46 @@ function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) 
 
 export const LANDING_META = buildMeta({
   path: "/",
-  title:
-    "Ichnos Protocol — ASEAN data layer for the European battery passport",
+  title: "Ichnos Protocol — Battery advisory & passport integration",
   description:
-    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made battery materials, cells, and modules — passport-ready for EU importers. Battery-systems advisory and Catena-X onboarding for ASEAN. Singapore · Europe.",
+    "Practitioner-led battery advisory: systems engineering, safety, mechanical development, remanufacturing, and EU battery-passport integration for ASEAN.",
   keywords:
-    "battery passport, Catena-X, EU Battery Regulation 2023/1542, ASEAN battery data, carbon footprint data, supply-chain provenance, battery materials, battery systems advisory, MS 2818, Singapore",
+    "battery advisory, battery systems engineering, EU Battery Regulation 2023/1542, battery passport, Catena-X, remanufacturing, battery safety, mechanical development, MS 2818, ASEAN, Singapore",
 });
 
 export const SERVICES_META = buildMeta({
   path: "/services",
   title: "Services — Ichnos Protocol",
   description:
-    "Catena-X-compatible data services (materials to modules) for EU importers and passport issuers, Catena-X consulting for ASEAN onboarding, and battery-systems advisory. Singapore-incorporated.",
+    "Battery systems engineering, mechanical development, technical leadership, EU 2023/1542 compliance, Catena-X battery-passport integration, remanufacturing, and circular-economy services. Singapore-incorporated.",
   keywords:
-    "Catena-X data services, battery passport data, ASEAN Catena-X onboarding, battery systems advisory, EU Battery Regulation, carbon footprint data, battery materials data, Singapore",
+    "battery systems engineering, FMEA, battery passport implementation, Catena-X consulting, EU 2023/1542, MS 2818, ASEAN battery, circular economy, remanufacturing",
 });
 
 export const TEAM_META = buildMeta({
   path: "/team",
   title: "Team — Ichnos Protocol",
-  description:
-    "Founders of Ichnos Protocol. Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, Catena-X consultant qualification in progress) and Ihsan Ahmad (AI, quantitative modelling).",
+  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X consultant, battery passport, ASEAN battery advisory, AI, quantitative modelling",
+    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Advisory Provider, battery passport, ASEAN battery advisory",
 });
 
-export const DATA_META = buildMeta({
-  path: "/data",
-  title: "Data services for the battery passport — Ichnos Protocol",
+export const PASSPORT_META = buildMeta({
+  path: "/passport",
+  title: "The European battery passport — Ichnos Protocol",
   description:
-    "Catena-X-compatible carbon, provenance, composition (and quality) data for ASEAN-made materials, cells, and modules — passport-ready for EU importers. We feed your passport; we do not replace it. EU 2023/1542, EDC, DIN DKE SPEC 99100, MS 2818.",
+    "Status quo and milestones of the EU 2023/1542 battery passport, the Catena-X network, custom translation of ASEAN battery passport into EU-compliant ones and the ASEAN ↔ EU value chain. Singapore-incorporated.",
   keywords:
-    "battery passport data, Catena-X-compatible data, carbon footprint data, provenance data, composition data, ASEAN battery materials, EU Battery Regulation 2023/1542, EDC, DIN DKE SPEC 99100, MS 2818",
-});
-
-export const CATENAX_META = buildMeta({
-  path: "/catena-x",
-  title: "Catena-X consulting for ASEAN — Ichnos Protocol",
-  description:
-    "Catena-X consulting focused on onboarding ASEAN battery manufacturers and their EU partners: data readiness, onboarding steps, business cases, use-case and Tractus-X implementation, bilateral data relationships, release changes, and EU Battery Regulation compliance. Consultant qualification in progress.",
-  keywords:
-    "Catena-X consulting, ASEAN onboarding, Tractus-X implementation, battery data readiness, bilateral data relationships, EU Battery Regulation compliance, battery passport, data spaces",
+    "battery passport, EU 2023/1542, Catena-X, EDC, AAS, SAMM, CX-0143, MS 2818, ASEAN battery, EU importer, value-chain data flow",
 });
 
 export const CONTACT_META = buildMeta({
   path: "/contact",
   title: "Contact — Ichnos Protocol",
   description:
-    "Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. AI assistant, email, LinkedIn, Calendly. Singapore + EU.",
+    "Talk to Ichnos Protocol about battery systems engineering, EU 2023/1542 battery-passport implementation, Catena-X integration consulting, or remanufacturing. Singapore + EU.",
   keywords:
-    "contact Ichnos Protocol, Catena-X data services, ASEAN Catena-X onboarding, battery systems advisory, battery passport consultation, Singapore",
+    "contact Ichnos Protocol, battery systems advisory, battery passport consultation, Catena-X integration, ASEAN battery, EU 2023/1542",
 });
 
 export const PRIVACY_META = buildMeta({
@@ -109,8 +99,7 @@ export const ALL_META = [
   LANDING_META,
   SERVICES_META,
   TEAM_META,
-  DATA_META,
-  CATENAX_META,
+  PASSPORT_META,
   CONTACT_META,
   PRIVACY_META,
 ];

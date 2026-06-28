@@ -11,7 +11,8 @@
     }
   ],
   "redirects": [
-    { "source": "/passport", "destination": "/data", "statusCode": 301 }
+    { "source": "/data", "destination": "/passport", "statusCode": 301 },
+    { "source": "/catena-x", "destination": "/passport", "statusCode": 301 }
   ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }

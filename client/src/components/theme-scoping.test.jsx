@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const EXPECTED_ADVISORY_BG = '#FAFBFC';
 const EXPECTED_PASSPORT_BG = '#0A1628';
+const EXPECTED_CATENAX_BG = '#0A1628';
 
 const INDEX_CSS_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -68,5 +69,23 @@ describe('theme-scoping (index.css token assertions)', () => {
     expect(block).toBeTruthy();
     const value = getDeclaredValue(block, '--color-bg-base');
     expect(value?.toUpperCase()).toBe(EXPECTED_PASSPORT_BG.toUpperCase());
+  });
+
+  it('declares --color-bg-base: #0A1628 in the .theme-catenax block', () => {
+    const block = extractBlockBySelector(CSS_SOURCE, '.theme-catenax');
+    expect(block).toBeTruthy();
+    const value = getDeclaredValue(block, '--color-bg-base');
+    expect(value?.toUpperCase()).toBe(EXPECTED_CATENAX_BG.toUpperCase());
+  });
+
+  it('overrides the advisory hero under .theme-catenax with the dark base surface', () => {
+    const block = extractBlockBySelector(
+      CSS_SOURCE,
+      '.theme-catenax .advisory-page-hero',
+    );
+    expect(block).toBeTruthy();
+    const background = getDeclaredValue(block, 'background');
+    expect(background).toContain('var(--color-bg-base)');
+    expect(background).not.toContain('bg-advisory.jpg');
   });
 });

@@ -13,14 +13,11 @@ vi.mock('./components/pages/AdminPage', () => ({
 vi.mock('./components/pages/LandingPage', () => ({
   default: () => <div>Landing Page</div>,
 }));
-vi.mock('./components/pages/DataPage', () => ({
-  default: () => <div>Data Page</div>,
+vi.mock('./components/pages/PassportPage', () => ({
+  default: () => <div>Passport Page</div>,
 }));
 vi.mock('./components/pages/ServicesPage', () => ({
   default: () => <div>Services Page</div>,
-}));
-vi.mock('./components/pages/CatenaXPage', () => ({
-  default: () => <div>Catena-X Page</div>,
 }));
 vi.mock('./components/pages/TeamPage', () => ({
   default: () => <div>Team Page</div>,
@@ -141,30 +138,30 @@ describe('App route theme wrappers', () => {
     expect(container.querySelector('.theme-passport')).toBeNull();
   });
 
-  it('renders data theme wrapper containing chrome at /data', async () => {
-    const { container } = renderWithProviders(<App />, { route: '/data' });
+  it('renders the Catena-X theme wrapper containing chrome at /passport', async () => {
+    const { container } = renderWithProviders(<App />, { route: '/passport' });
 
     await waitFor(() => {
-      expect(screen.getByText('Data Page')).toBeInTheDocument();
+      expect(screen.getByText('Passport Page')).toBeInTheDocument();
     });
 
-    const dataWrapper = container.querySelector('.theme-passport');
-    expect(dataWrapper).toBeInTheDocument();
+    const passportWrapper = container.querySelector('.theme-catenax');
+    expect(passportWrapper).toBeInTheDocument();
     expect(
-      dataWrapper.querySelector('[data-testid="public-layout"]'),
+      passportWrapper.querySelector('[data-testid="public-layout"]'),
     ).toBeInTheDocument();
     expect(
-      dataWrapper.querySelector('[data-testid="navbar"]'),
+      passportWrapper.querySelector('[data-testid="navbar"]'),
     ).toBeInTheDocument();
     expect(
-      dataWrapper.querySelector('[data-testid="footer"]'),
+      passportWrapper.querySelector('[data-testid="footer"]'),
     ).toBeInTheDocument();
-    expect(dataWrapper).toHaveTextContent('Data Page');
+    expect(passportWrapper).toHaveTextContent('Passport Page');
     expect(container.querySelector('.theme-advisory')).toBeNull();
   });
 });
 
-describe('App /passport route is not served in-app', () => {
+describe('App legacy route redirects', () => {
   beforeEach(async () => {
     const mod = await import('./hooks/useApiSanityCheck');
     mod.useApiSanityCheck.mockReturnValue({
@@ -173,29 +170,19 @@ describe('App /passport route is not served in-app', () => {
     });
   });
 
-  it('serves no public page from the React router at /passport', async () => {
-    renderWithProviders(<App />, { route: '/passport' });
+  it('redirects /data to the Passport page', async () => {
+    renderWithProviders(<App />, { route: '/data' });
 
-    // The catch-all still mounts the public chrome, but its content slot stays
-    // empty — /passport is handled exclusively by the vercel.json 301 redirect,
-    // never by the in-app route table. (The redirect shape itself is asserted
-    // separately in vercel.config.test.js.)
     await waitFor(() => {
-      expect(screen.getByTestId('public-layout')).toBeInTheDocument();
+      expect(screen.getByText('Passport Page')).toBeInTheDocument();
     });
+  });
 
-    const PAGE_MARKERS = [
-      'Landing Page',
-      'Services Page',
-      'Catena-X Page',
-      'Team Page',
-      'Contact Page',
-      'Privacy Page',
-      'Data Page',
-      'Admin Page',
-    ];
-    PAGE_MARKERS.forEach((marker) => {
-      expect(screen.queryByText(marker)).not.toBeInTheDocument();
+  it('redirects /catena-x to the Passport page', async () => {
+    renderWithProviders(<App />, { route: '/catena-x' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Passport Page')).toBeInTheDocument();
     });
   });
 });

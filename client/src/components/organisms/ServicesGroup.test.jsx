@@ -1,118 +1,102 @@
 import { axe } from "vitest-axe";
 import { renderWithProviders, screen, cleanup } from "../../test-utils";
 import ServicesGroup from "./ServicesGroup";
+import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
 
-const FIXTURE_ITEMS = [
+const FIXTURE_SERVICES = [
   {
-    id: "item-a",
-    title: "Item A",
-    description: "Description A.",
+    id: "card-plain",
+    icon: "bi-shield-check",
+    title: "Plain Card",
+    description: "Plain description.",
   },
   {
-    id: "item-b",
-    title: "Item B",
-    description: "Description B.",
+    id: "card-eyebrow",
+    icon: "bi-diagram-3",
+    title: "Eyebrow Card",
+    description: "Eyebrow description.",
+    eyebrow: CATENA_X_TITLE_BASE,
   },
   {
-    id: "item-c",
-    title: "Item C",
-    description: "Description C.",
+    id: "card-passport",
+    icon: "bi-shield-fill-check",
+    title: "Passport Card",
+    description: "Passport description.",
+    passportLink: "/passport",
+  },
+  {
+    id: "card-coming-soon",
+    icon: "bi-clock-history",
+    title: "Coming Soon Card",
+    description: "Coming soon description.",
+    passportLink: "/passport",
+    comingSoon: true,
   },
 ];
 
+function renderGroup(props = {}) {
+  return renderWithProviders(
+    <ServicesGroup
+      id="engineering"
+      label="Engineering"
+      services={FIXTURE_SERVICES}
+      {...props}
+    />,
+  );
+}
+
 describe("ServicesGroup", () => {
   it("renders an h2 heading with the provided label", () => {
-    renderWithProviders(
-      <ServicesGroup id="data-services" label="Data services" items={FIXTURE_ITEMS} />,
-    );
+    renderGroup();
     expect(
-      screen.getByRole("heading", { level: 2, name: "Data services" }),
+      screen.getByRole("heading", { level: 2, name: "Engineering" }),
     ).toBeInTheDocument();
   });
 
   it("renders a section element with the provided id", () => {
-    const { container } = renderWithProviders(
-      <ServicesGroup id="data-services" label="Data services" items={FIXTURE_ITEMS} />,
-    );
-    expect(container.querySelector("section#data-services")).not.toBeNull();
+    const { container } = renderGroup();
+    expect(container.querySelector("section#engineering")).not.toBeNull();
   });
 
-  it("renders one card per item with title and description", () => {
-    renderWithProviders(
-      <ServicesGroup id="data-services" label="Data services" items={FIXTURE_ITEMS} />,
-    );
-    FIXTURE_ITEMS.forEach((item) => {
+  it("renders one card per service with title and description", () => {
+    renderGroup();
+    FIXTURE_SERVICES.forEach((service) => {
       expect(
-        screen.getByText(item.title, { selector: ".service-card-title" }),
+        screen.getByText(service.title, { selector: ".service-card-title" }),
       ).toBeInTheDocument();
+      expect(screen.getByText(service.description)).toBeInTheDocument();
     });
-    expect(screen.getAllByText(/Description [A-C]\./)).toHaveLength(
-      FIXTURE_ITEMS.length,
-    );
   });
 
-  it("renders a section-level CTA link with the correct href for card sections", () => {
-    renderWithProviders(
-      <ServicesGroup
-        id="data-services"
-        label="Data services"
-        items={FIXTURE_ITEMS}
-        cta={{ label: "Explore data services →", to: "/data" }}
-      />,
-    );
-    const link = screen.getByRole("link", { name: "Explore data services →" });
-    expect(link).toHaveAttribute("href", "/data");
-  });
-
-  it("renders a teaser paragraph and CTA link instead of cards when teaser is provided", () => {
-    const teaser = "We guide ASEAN manufacturers through Catena-X.";
-    renderWithProviders(
-      <ServicesGroup
-        id="catena-x-consulting"
-        label="Catena-X consulting"
-        teaser={teaser}
-        cta={{ label: "Catena-X consulting →", to: "/catena-x" }}
-      />,
-    );
-    expect(screen.getByText(teaser)).toBeInTheDocument();
+  it("renders the credential eyebrow with the muted pending qualifier span", () => {
+    const { container } = renderGroup();
+    const eyebrow = container.querySelector(".service-card-eyebrow");
+    expect(eyebrow).not.toBeNull();
+    expect(eyebrow).toHaveTextContent(CATENA_X_TITLE_BASE);
     expect(
-      screen.queryByText("Item A", { selector: ".service-card-title" }),
-    ).toBeNull();
-    const link = screen.getByRole("link", { name: "Catena-X consulting →" });
-    expect(link).toHaveAttribute("href", "/catena-x");
+      eyebrow.querySelector(".catenax-qualifier-pending"),
+    ).not.toBeNull();
   });
 
-  it("renders the intro paragraph when the intro prop is provided", () => {
-    const intro = "An overview of these services.";
-    renderWithProviders(
-      <ServicesGroup
-        id="data-services"
-        label="Data services"
-        intro={intro}
-        items={FIXTURE_ITEMS}
-      />,
-    );
-    expect(screen.getByText(intro)).toBeInTheDocument();
+  it("renders a Learn more → link to /passport for a passportLink service", () => {
+    renderGroup();
+    const link = screen.getByRole("link", { name: "Learn more →" });
+    expect(link).toHaveAttribute("href", "/passport");
   });
 
-  it("does not render an intro paragraph when intro is omitted", () => {
-    const { container } = renderWithProviders(
-      <ServicesGroup id="data-services" label="Data services" items={FIXTURE_ITEMS} />,
-    );
-    expect(container.querySelector(".services-group-intro")).toBeNull();
+  it("applies the coming-soon class and renders no CTA for a coming-soon service", () => {
+    const { container } = renderGroup({
+      services: [FIXTURE_SERVICES[3]],
+    });
+    expect(
+      container.querySelector(".service-card--coming-soon"),
+    ).not.toBeNull();
+    expect(screen.queryByRole("link", { name: "Learn more →" })).toBeNull();
   });
 
   it("has no accessibility violations", async () => {
     cleanup();
-    const { container } = renderWithProviders(
-      <ServicesGroup
-        id="data-services"
-        label="Data services"
-        intro="An overview of these services."
-        items={FIXTURE_ITEMS}
-        cta={{ label: "Explore data services →", to: "/data" }}
-      />,
-    );
+    const { container } = renderGroup();
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

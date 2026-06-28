@@ -9,6 +9,7 @@ import {
 } from '../../test-utils';
 import Footer from './Footer';
 import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
 function LocationProbe() {
   const location = useLocation();
@@ -55,20 +56,22 @@ describe('Footer', () => {
     expect(within(brandCol).queryByText(/UEN/i)).toBeNull();
   });
 
-  it('brand column shows the compliance-sensitive positioning copy', () => {
+  it('brand column shows the v4 positioning line and the Catena-X credential', () => {
     const brandCol = screen.getByTestId('footer-col-brand');
     expect(
       within(brandCol).getByText(
-        (content) =>
-          /Catena-X consultant qualification in progress/.test(content) &&
-          /ASEAN data layer/.test(content),
+        'Battery advisory and EU battery-passport integration for ASEAN.',
       ),
     ).toBeInTheDocument();
+    // The credential string is derived from catenaXStatus.js, never hard-coded.
+    expect(brandCol).toHaveTextContent(CATENA_X_TITLE_BASE);
+    // The retired v3 "ASEAN data layer" jargon must not appear.
+    expect(brandCol).not.toHaveTextContent('ASEAN data layer');
   });
 
-  it('footer copy contains no Solana/blockchain wording', () => {
+  it('footer copy contains no solana/blockchain wording', () => {
     const footer = document.querySelector('footer');
-    expect(footer.textContent).not.toMatch(/Solana/i);
+    expect(footer.textContent).not.toMatch(/solana/i);
     expect(footer.textContent).not.toMatch(/blockchain/i);
   });
 
@@ -136,7 +139,7 @@ describe('Footer', () => {
 
   it('Services column has exactly three locked section links to /services', () => {
     const servicesCol = screen.getByTestId('footer-col-services');
-    const labels = ['Data services', 'Catena-X consulting', 'Engineering advisory'];
+    const labels = ['Engineering', 'Compliance', 'Circularity'];
     labels.forEach((label) => {
       expect(
         within(servicesCol).getByRole('link', { name: label }),
@@ -153,9 +156,9 @@ describe('Footer', () => {
 
   it('Services column links navigate to /services with the locked scrollTo state', () => {
     const cases = [
-      { label: 'Data services', scrollTo: 'data-services' },
-      { label: 'Catena-X consulting', scrollTo: 'catena-x-consulting' },
-      { label: 'Engineering advisory', scrollTo: 'engineering-advisory' },
+      { label: 'Engineering', scrollTo: 'engineering' },
+      { label: 'Compliance', scrollTo: 'compliance' },
+      { label: 'Circularity', scrollTo: 'circularity' },
     ];
     cases.forEach(({ label, scrollTo }) => {
       cleanup();
@@ -172,11 +175,11 @@ describe('Footer', () => {
     });
   });
 
-  it('Products column has a single Battery Passport link → /data', () => {
+  it('Products column has a single Battery Passport link → /passport', () => {
     const productsCol = screen.getByTestId('footer-col-products');
     expect(
       within(productsCol).getByRole('link', { name: 'Battery Passport' }),
-    ).toHaveAttribute('href', '/data');
+    ).toHaveAttribute('href', '/passport');
     // Old separate Data + Catena-X links are consolidated; the standalone
     // Catena-X entry should NOT exist in the footer either.
     expect(
