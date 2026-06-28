@@ -4,11 +4,13 @@ import Col from 'react-bootstrap/Col';
 import { Link } from 'react-router-dom';
 
 import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 import SocialLinks from '../molecules/SocialLinks';
 import Logo from '../atoms/Logo';
+import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
 
-const BRAND_DESCRIPTION =
-  'Catena-X-aligned ASEAN data layer for the European battery passport — Catena-X consultant qualification in progress. Singapore · Europe.';
+const BRAND_LINE =
+  'Battery advisory and EU battery-passport integration for ASEAN.';
 
 const MENUS = [
   {
@@ -28,19 +30,19 @@ const MENUS = [
     testId: 'footer-col-services',
     links: [
       {
-        label: 'Data services',
+        label: 'Engineering',
         to: '/services',
-        state: { scrollTo: 'data-services' },
+        state: { scrollTo: 'engineering' },
       },
       {
-        label: 'Catena-X consulting',
+        label: 'Compliance',
         to: '/services',
-        state: { scrollTo: 'catena-x-consulting' },
+        state: { scrollTo: 'compliance' },
       },
       {
-        label: 'Engineering advisory',
+        label: 'Circularity',
         to: '/services',
-        state: { scrollTo: 'engineering-advisory' },
+        state: { scrollTo: 'circularity' },
       },
     ],
   },
@@ -48,7 +50,7 @@ const MENUS = [
     heading: 'Products',
     testId: 'footer-col-products',
     links: [
-      { label: 'Battery Passport', to: '/data' },
+      { label: 'Battery Passport', to: '/passport' },
     ],
   },
 ];
@@ -81,7 +83,11 @@ export default function Footer() {
         <Row className="gy-4">
           <Col xs={12} lg={4} data-testid="footer-col-brand">
             <Logo theme="dark" className="footer-logo" />
-            <p className="footer-text footer-brand-desc">{BRAND_DESCRIPTION}</p>
+            <p className="footer-text footer-brand-desc">{BRAND_LINE}</p>
+            <p className="footer-text footer-brand-credential small">
+              {CATENA_X_TITLE_BASE}
+              <CatenaXQualifierSpan />
+            </p>
           </Col>
 
           {MENUS.map(({ heading, testId, links }) => (

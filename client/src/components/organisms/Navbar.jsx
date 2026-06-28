@@ -74,7 +74,7 @@ export default function Navbar({ onMenuToggle }) {
       <a href="/" className="text-decoration-none">
         <Logo
           className="logo-img"
-          theme={pathname === '/data' ? 'passport' : 'light'}
+          theme={pathname === '/passport' ? 'passport' : 'light'}
         />
       </a>
 

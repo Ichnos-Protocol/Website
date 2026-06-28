@@ -4,7 +4,8 @@ import { SERVICES_META } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 import {
   SERVICES_PAGE_CONTENT,
-  SERVICES_SECTIONS,
+  SERVICE_PILLARS,
+  getServicesByPillar,
 } from "../../constants/services";
 import { useScrollToSection } from "../../hooks/useScrollToSection";
 import PageTransition from "../templates/PageTransition";
@@ -38,15 +39,12 @@ export default function ServicesPage() {
         />
 
         <Container>
-          {SERVICES_SECTIONS.map((section) => (
+          {SERVICE_PILLARS.map((pillar) => (
             <ServicesGroup
-              key={section.id}
-              id={section.id}
-              label={section.label}
-              intro={section.intro}
-              items={section.items}
-              teaser={section.teaser}
-              cta={section.cta}
+              key={pillar.id}
+              id={pillar.anchor}
+              label={pillar.label}
+              services={getServicesByPillar(pillar.id)}
             />
           ))}
           <ContactSection />

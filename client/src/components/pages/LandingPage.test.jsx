@@ -12,24 +12,24 @@ vi.mock('../../hooks/useScrollToSection', () => ({
   useScrollToSection: vi.fn(),
 }));
 
+// Sibling organisms are mocked as bare <section> wrappers so the homepage
+// section count reflects exactly one landmark per organism. ServicesSnapshot
+// is rendered for real so the test catches any regression that nests pillar
+// <section> elements inside it.
 vi.mock('../organisms/Hero', () => ({
-  default: () => <div data-testid="hero">Hero</div>,
+  default: () => <section data-testid="hero">Hero</section>,
 }));
 
-vi.mock('../organisms/ServicesSnapshot', () => ({
-  default: () => <div data-testid="services-snapshot">ServicesSnapshot</div>,
-}));
-
-vi.mock('../organisms/CompanySnapshot', () => ({
-  default: () => <div data-testid="company-snapshot">CompanySnapshot</div>,
+vi.mock('../organisms/WhyIchnosSection', () => ({
+  default: () => <section data-testid="why-ichnos">WhyIchnosSection</section>,
 }));
 
 vi.mock('../organisms/PassportTeaser', () => ({
-  default: () => <div data-testid="data-teaser">PassportTeaser</div>,
+  default: () => <section data-testid="passport-teaser">PassportTeaser</section>,
 }));
 
 vi.mock('../organisms/ContactSection', () => ({
-  default: () => <div data-testid="contact-section">ContactSection</div>,
+  default: () => <section data-testid="contact-section">ContactSection</section>,
 }));
 
 import { useScrollToSection } from '../../hooks/useScrollToSection';
@@ -147,38 +147,44 @@ describe('LandingPage', () => {
     expect(screen.getByTestId('hero')).toBeInTheDocument();
   });
 
-  it('renders ServicesSnapshot component', () => {
-    expect(screen.getByTestId('services-snapshot')).toBeInTheDocument();
+  it('renders WhyIchnosSection component', () => {
+    expect(screen.getByTestId('why-ichnos')).toBeInTheDocument();
   });
 
-  it('renders CompanySnapshot component', () => {
-    expect(screen.getByTestId('company-snapshot')).toBeInTheDocument();
+  it('renders the real ServicesSnapshot services section', () => {
+    expect(document.querySelector('section#services')).toBeInTheDocument();
+  });
+
+  it('renders exactly five homepage sections with no nested services-group sections', () => {
+    const { container } = renderWithProviders(<LandingPage />);
+    expect(container.querySelectorAll('section')).toHaveLength(5);
+    expect(container.querySelectorAll('section.services-group')).toHaveLength(0);
   });
 
   it('renders PassportTeaser component', () => {
-    expect(screen.getByTestId('data-teaser')).toBeInTheDocument();
+    expect(screen.getByTestId('passport-teaser')).toBeInTheDocument();
   });
 
   it('renders ContactSection component', () => {
     expect(screen.getByTestId('contact-section')).toBeInTheDocument();
   });
 
-  it('renders sections in order: Hero, ServicesSnapshot, CompanySnapshot, PassportTeaser, ContactSection', () => {
+  it('renders sections in order: Hero, WhyIchnosSection, ServicesSnapshot, PassportTeaser, ContactSection', () => {
     const hero = screen.getByTestId('hero');
-    const services = screen.getByTestId('services-snapshot');
-    const company = screen.getByTestId('company-snapshot');
-    const passport = screen.getByTestId('data-teaser');
+    const company = screen.getByTestId('why-ichnos');
+    const services = document.querySelector('section#services');
+    const passport = screen.getByTestId('passport-teaser');
     const contact = screen.getByTestId('contact-section');
 
     expect(
-      hero.compareDocumentPosition(services) & Node.DOCUMENT_POSITION_FOLLOWING,
+      hero.compareDocumentPosition(company) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      services.compareDocumentPosition(company) &
+      company.compareDocumentPosition(services) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      company.compareDocumentPosition(passport) &
+      services.compareDocumentPosition(passport) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(

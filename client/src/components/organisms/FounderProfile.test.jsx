@@ -1,6 +1,10 @@
 import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, cleanup, fireEvent } from '../../test-utils';
 import FounderProfile from './FounderProfile';
+import {
+  CATENA_X_TITLE_BASE,
+  CATENA_X_QUALIFIER_CLASS,
+} from '../../constants/catenaXStatus';
 
 vi.mock('./CareerTimeline', () => ({
   default: ({ timeline }) => (
@@ -33,6 +37,20 @@ describe('FounderProfile', () => {
     expect(screen.getByText(MEMBER.title)).toBeInTheDocument();
     expect(screen.getByText('Para one.')).toBeInTheDocument();
     expect(screen.getByText('Para two.')).toBeInTheDocument();
+  });
+
+  it('renders the Catena-X credential in a bio paragraph with the pending qualifier span', () => {
+    const credentialed = {
+      ...MEMBER,
+      bio: [`He is an ${CATENA_X_TITLE_BASE}, leading the data space.`],
+    };
+    const { container } = renderWithProviders(
+      <FounderProfile member={credentialed} />,
+    );
+    expect(container.textContent).toContain(CATENA_X_TITLE_BASE);
+    expect(
+      container.querySelector(`.${CATENA_X_QUALIFIER_CLASS}`),
+    ).toBeInTheDocument();
   });
 
   it('renders the photo with src and alt from the member prop', () => {

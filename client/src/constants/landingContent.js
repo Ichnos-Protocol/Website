@@ -1,66 +1,24 @@
 export const HERO_CONTENT = {
-  headline: "The ASEAN data layer for the European battery passport.",
+  eyebrow: "EU BATTERY PASSPORT INTEGRATION FOR ASEAN",
+  headline:
+    "From regulatory compliance to seamless integration into the circular value chain.",
   subhead:
-    "We bring ASEAN battery manufacturers into Catena-X, and deliver Catena-X-compatible carbon, provenance, and composition data — from materials to modules — so European importers have a passport-ready dataset. Catena-X consultant qualification: application in progress.",
-  ctaText: "Talk to us",
-  ctaHref: "/contact",
+    "Practitioner-led advisory in battery systems engineering, safety, mechanical development, remanufacturing and integration into the Catena-X battery-passport ecosystem.",
+  ctaText: "Explore Our Services",
+  ctaHref: "/services",
 };
 
-export const HOMEPAGE_COMMITMENT = {
-  text: "Committed to onboarding ASEAN into Catena-X — from supplier data readiness to passport-ready data for EU importers. Catena-X consultant qualification in progress.",
-};
-
-export const HOMEPAGE_OFFER_CARDS = [
-  {
-    id: "data",
-    title: "Upstream data services",
-    description:
-      "Carbon, provenance, and composition data for ASEAN-made battery materials, precursors (pCAM/CAM), electrodes, cells, and modules — collected, structured, and delivered passport-ready via the Eclipse Dataspace Connector (EDC) in a Catena-X-compatible format your importers can drop straight into the passport.",
-    linkLabel: "Explore data services →",
-    linkTo: "/data",
-  },
-  {
-    id: "catena-x",
-    title: "Catena-X consulting (ASEAN onboarding)",
-    description:
-      "We get ASEAN manufacturers ready for Catena-X — assessing data readiness, mapping the gaps, and onboarding suppliers into the network so their data flows to European partners.",
-    linkLabel: "Catena-X consulting →",
-    linkTo: "/catena-x",
-  },
-  {
-    id: "advisory",
-    title: "Battery-systems advisory",
-    description:
-      "Practitioner-led advisory across battery systems engineering, safety, mechanical development, and remanufacturing — so the programs behind the data hold up in production.",
-    linkLabel: "Explore advisory →",
-    linkTo: "/services",
-  },
-];
-
-export const HOMEPAGE_STACK_BAND = {
-  heading: "Where we sit in the stack",
-  layers: [
-    {
-      id: "raw-materials",
-      label: "Raw materials",
-      providers: "Minespider · Circulor · Re|Source",
-    },
-    {
-      id: "ichnos",
-      label: "ASEAN materials → precursors → electrodes → cells → modules",
-      providers: "Ichnos",
-      highlight: true,
-    },
-    {
-      id: "passport-identity",
-      label: "Passport & identity",
-      providers: "Path.Era · Siemens · Spherity · AVL",
-    },
-    {
-      id: "eu-importer",
-      label: "EU importer / OEM",
-    },
+export const WHY_ICHNOS = {
+  heading: "Why Ichnos",
+  paragraphs: [
+    "Ichnos Protocol is a Singapore-incorporated battery advisory practice run by Dr.-Ing. Francesco Maltoni — ex-FEV lead battery expert in battery-system engineering, PhD at the Chair of Production Engineering of Electromobility Components (PEM) of the RWTH-Aachen University, with more than 20 years in R&D roles within the automotive industry.",
+    "The practice covers battery systems engineering, safety, mechanical development, and remanufacturing and extends into the EU battery-passport ecosystem as an Official Catena-X Qualified Advisory Provider. Ichnos brings ASEAN battery manufacturers into the European data flow so EU importers and customers get a compliant, traceable passport embedded in their supply chain infrastructure.",
   ],
-  summary:
-    "We sit between the refinery and the finished passport, where ASEAN-made supply currently has no data layer — and we onboard that supply into Catena-X.",
+};
+
+export const PASSPORT_TEASER = {
+  heading: "The European battery passport: what it means for ASEAN suppliers.",
+  body: "From 2027, every battery sold in Europe has to carry a digital passport: a structured record along the whole value chain, from raw-materials suppliers through cell makers and pack integrators into the European importers and OEMs. The chain only works if every supplier passes the passport-relevant data on to the next tier. The Catena-X network is establishing itself as a standard in the automotive, chemical and other industries, to enable suppliers to do that within a rich ecosystem of certified applications, maintaining their data ownership. Ichnos helps each supplier hand over exactly what their customer needs while keeping control of their own data.",
+  ctaLabel: "Read the passport overview →",
+  ctaHref: "/passport",
 };

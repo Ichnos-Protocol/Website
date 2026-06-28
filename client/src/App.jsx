@@ -1,16 +1,15 @@
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 
 import LandingPage from "./components/pages/LandingPage";
 import ServicesPage from "./components/pages/ServicesPage";
-import CatenaXPage from "./components/pages/CatenaXPage";
+import PassportPage from "./components/pages/PassportPage";
 import TeamPage from "./components/pages/TeamPage";
 import ContactPage from "./components/pages/ContactPage";
 import PrivacyPage from "./components/pages/PrivacyPage";
-import DataPage from "./components/pages/DataPage";
 import AdminPage from "./components/pages/AdminPage";
 import PublicLayout from "./components/templates/PublicLayout";
 import AdvisoryThemeLayout from "./components/templates/AdvisoryThemeLayout";
-import DataThemeLayout from "./components/templates/DataThemeLayout";
+import CatenaThemeLayout from "./components/templates/CatenaThemeLayout";
 import AdminRoute from "./routes/AdminRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ApiSanityWarning from "./components/atoms/ApiSanityWarning";
@@ -41,7 +40,6 @@ export default function App() {
           >
             <Route path="/" element={<LandingPage />} />
             <Route path="/services" element={<ServicesPage />} />
-            <Route path="/catena-x" element={<CatenaXPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route
@@ -52,10 +50,20 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Legacy SEO routes consolidated onto /passport (mirrored by the
+                301 redirects in vercel.json). */}
+            <Route
+              path="/data"
+              element={<Navigate replace to="/passport" />}
+            />
+            <Route
+              path="/catena-x"
+              element={<Navigate replace to="/passport" />}
+            />
             <Route path="*" element={null} />
           </Route>
         </Route>
-        <Route element={<DataThemeLayout />}>
+        <Route element={<CatenaThemeLayout />}>
           <Route
             element={
               <PublicLayout>
@@ -63,7 +71,7 @@ export default function App() {
               </PublicLayout>
             }
           >
-            <Route path="/data" element={<DataPage />} />
+            <Route path="/passport" element={<PassportPage />} />
           </Route>
         </Route>
       </Routes>

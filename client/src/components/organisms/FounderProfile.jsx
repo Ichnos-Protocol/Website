@@ -6,6 +6,21 @@ import Badge from 'react-bootstrap/Badge';
 import Icon from '../atoms/Icon';
 import CareerTimeline from './CareerTimeline';
 import RecognitionBlock from './RecognitionBlock';
+import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
+import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
+
+function renderBioParagraph(text) {
+  if (!text.includes(CATENA_X_TITLE_BASE)) return text;
+  const [before, after] = text.split(CATENA_X_TITLE_BASE);
+  return (
+    <>
+      {before}
+      {CATENA_X_TITLE_BASE}
+      <CatenaXQualifierSpan />
+      {after}
+    </>
+  );
+}
 
 const FounderPhoto = ({ photo, name }) => {
   const [imgError, setImgError] = useState(false);
@@ -55,7 +70,7 @@ const FounderBio = ({ name, title, bio, chips }) => (
     <p className="mb-3 text-accent fw-medium">{title}</p>
     {bio.map((paragraph, index) => (
       <p key={index} className="mb-3 founder-bio">
-        {paragraph}
+        {renderBioParagraph(paragraph)}
       </p>
     ))}
     <FounderSkills chips={chips} />

@@ -144,9 +144,9 @@ describe('TeamPage', () => {
     });
   });
 
-  it("renders Francesco's repositioned Catena-X copy", () => {
+  it("renders Francesco's Catena-X credential skill chip", () => {
     expect(
-      screen.getByText(/Catena-X consultant qualification/),
+      screen.getByText(TEAM_MEMBERS[0].skillsChips[2]),
     ).toBeInTheDocument();
   });
 
