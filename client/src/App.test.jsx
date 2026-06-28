@@ -135,7 +135,6 @@ describe('App route theme wrappers', () => {
       advisoryWrapper.querySelector('[data-testid="footer"]'),
     ).toBeInTheDocument();
     expect(advisoryWrapper).toHaveTextContent('Landing Page');
-    expect(container.querySelector('.theme-passport')).toBeNull();
   });
 
   it('renders the Catena-X theme wrapper containing chrome at /passport', async () => {

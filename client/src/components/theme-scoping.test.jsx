@@ -2,7 +2,7 @@
  * Theme-scoping token assertions.
  *
  * Reads client/src/index.css as plain text and asserts that the
- * .theme-advisory and .theme-passport rule blocks each declare the
+ * .theme-advisory and .theme-catenax rule blocks each declare the
  * expected --color-bg-base token value. No DOM, no stylesheet injection.
  */
 
@@ -11,8 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const EXPECTED_ADVISORY_BG = '#FAFBFC';
-const EXPECTED_PASSPORT_BG = '#0A1628';
-const EXPECTED_CATENAX_BG = '#0A1628';
+const EXPECTED_CATENAX_BG = '#0F0F23';
 
 const INDEX_CSS_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -64,14 +63,7 @@ describe('theme-scoping (index.css token assertions)', () => {
     expect(value?.toUpperCase()).toBe(EXPECTED_ADVISORY_BG.toUpperCase());
   });
 
-  it('declares --color-bg-base: #0A1628 in the .theme-passport block', () => {
-    const block = extractBlockBySelector(CSS_SOURCE, '.theme-passport');
-    expect(block).toBeTruthy();
-    const value = getDeclaredValue(block, '--color-bg-base');
-    expect(value?.toUpperCase()).toBe(EXPECTED_PASSPORT_BG.toUpperCase());
-  });
-
-  it('declares --color-bg-base: #0A1628 in the .theme-catenax block', () => {
+  it('declares --color-bg-base: #0F0F23 in the .theme-catenax block', () => {
     const block = extractBlockBySelector(CSS_SOURCE, '.theme-catenax');
     expect(block).toBeTruthy();
     const value = getDeclaredValue(block, '--color-bg-base');

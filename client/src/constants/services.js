@@ -43,52 +43,47 @@ export const SERVICES_LIST = [
     deliveryMethod: false,
   },
   // ── Compliance ──
+  // Order per Francesco's review: Strategic Consulting first (the lead
+  // Catena-X offering, includes the supplier-onboarding scope Ichnos
+  // can deliver in advisory form today and as full onboarding once the
+  // Catena-X qualification is granted via §0a toggle), then the
+  // narrower Battery Passport Integration card, then the regulatory
+  // Compliance Bridge.
   {
-    id: "eu-asean-compliance-bridge",
-    icon: "bi-globe-asia-australia",
-    title: "EU–ASEAN Battery Compliance Bridge",
+    id: "strategic-consulting-catena-x-battery-passport",
+    icon: "bi-diagram-3",
+    title: "Strategic Catena-X consulting — battery passport",
+    eyebrow: "Official Catena-X Qualified Advisory Provider",
     tagline:
-      "Translating European battery regulation into ASEAN supply-chain reality — and vice versa.",
+      "Catena-X battery-passport strategy: data architecture, schema mapping, and supplier onboarding into the data space.",
     description:
-      "Translating European battery regulation into ASEAN supply-chain reality — and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
+      "Strategic guidance for European importers and ASEAN manufacturers entering the Catena-X battery-passport data space. The engagement covers data-flow architecture, CX-0143 schema mapping, EDC connector planning, data sovereignty model, audit-trail strategy, and supplier onboarding into Catena-X (PCF first, then composition and due-diligence sub-models). Standards-grounded in Catena-X CX-0143, CX-0026, CX-0029, EU 2023/1542, DIN DKE SPEC 99100, and MS 2818. The lead offering on this pillar.",
     pillar: "compliance",
     deliveryMethod: false,
+    lead: true,
   },
   {
     id: "battery-passport-integration",
     icon: "bi-shield-fill-check",
     title: "Battery Passport Integration",
     tagline:
-      "Integration and gap-bridging across the value chain into the Catena-X EU digital battery passport.",
+      "Provisioning supplier data into the Catena-X battery passport: schema mapping, supplier ingestion, and PCF pipelines.",
     description:
-      "Identifying and closing the data gaps that block ASEAN-made batteries and components from being seamlessly integrated into a EU-compliant digital battery passport. Hands-on work on data model design, supplier data collection workflows, and carbon-footprint pipelines, connected to the Catena-X data space and to the EU importer's passport stack.",
+      "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. Hands-on delivery of a working provisioning flow that the EU importer's passport stack consumes natively.",
     pillar: "compliance",
     deliveryMethod: false,
     passportLink: "/passport",
   },
   {
-    id: "strategic-consulting-passport-data-infrastructure",
-    icon: "bi-diagram-3",
-    title: "Strategic consulting — battery passport data infrastructure",
-    eyebrow: "Official Catena-X Qualified Advisory Provider",
+    id: "eu-asean-compliance-bridge",
+    icon: "bi-globe-asia-australia",
+    title: "EU–ASEAN Compliance Bridge",
     tagline:
-      "Architecting the data flows, schemas, and integration paths for an EU-compliant Catena-X battery-passport stack.",
+      "Translating European battery regulation into ASEAN supply-chain reality and vice versa.",
     description:
-      "Architecting the data flows, schemas, and integration paths for European importers and ASEAN manufacturers building a Catena-X-compatible battery passport stack from the ground up. Schema design, EDC connector planning, data sovereignty model, audit-trail strategy. Standards-grounded in Catena-X CX-0143, EU 2023/1542, DIN DKE SPEC 99100, MS 2818.",
+      "Translating European battery regulation into ASEAN supply-chain reality and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
     pillar: "compliance",
     deliveryMethod: false,
-  },
-  {
-    id: "catena-x-supplier-onboarding",
-    icon: "bi-clock-history",
-    title: "Catena-X supplier onboarding services",
-    tagline:
-      "Onboarding ASEAN battery manufacturers and their European partners into the Catena-X data space.",
-    description:
-      "Hands-on onboarding of ASEAN suppliers into Catena-X — operational delivery is being scaled up. Strategy, gap analysis, and integration architecture for the same supply chains are available today under strategic consulting.",
-    pillar: "compliance",
-    deliveryMethod: false,
-    comingSoon: true,
   },
   // ── Circularity ──
   {
