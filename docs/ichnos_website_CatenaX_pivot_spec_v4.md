@@ -225,51 +225,78 @@ evaluators). The two audiences are not served by the same paragraph.
 
 ## 0d. Branching strategy for Traycer
 
-**Starting branch:** Traycer branches off **`main`**, but only after
-Phases A and B have been merged. Implementing C, D, or E from the
-current state of `main` without those merges produces a broken
-intermediate (Phase C's tests assume Phase B's nav restructure;
-Phase A's logo + KL/MM2H cleanup is referenced throughout C-E
-content).
+**Working branch:** `Catena-X_Pivot`. All Phase C, D, and E work
+happens on this one branch. It is already branched off the current
+`main` (which has Phases A and B merged in via PRs #148 and #149)
+and already carries this spec.
 
-**Required pre-merge state.** Before Traycer begins:
+**Why a single branch instead of branch-per-phase.** Francesco's
+explicit instruction. One PR at the end, one staging-QA cycle, no
+per-phase merge conflicts with `main` as `main` keeps moving. Phases
+C / D / E land as separate commits on the same branch in serial
+order so each step is reviewable in isolation, but they never split
+across branches.
 
-1. Merge PR #148 (Phase A — logo + KL/MM2H cleanup).
-2. Merge PR #149 (Phase B — nav consolidation + APAC→ASEAN).
-3. `git fetch origin && git checkout main && git pull`.
-4. Confirm `main` HEAD includes commits `cbcd408` and `105e508`.
+**Pre-Traycer setup (already complete):**
 
-**Branch-per-phase convention.** Each phase gets its own feature branch
-off the current `main`, opened as a PR against `main`, reviewed,
-merged. Phase ordering is serial because of consumer dependencies:
+1. PR #148 (Phase A — logo + KL/MM2H cleanup) merged into `main`.
+2. PR #149 (Phase B — nav consolidation + APAC→ASEAN) merged into `main`.
+3. `Catena-X_Pivot` branched off `main` HEAD with A and B included.
+4. v4 spec committed to `Catena-X_Pivot` at commit `291e719`.
 
-| Phase | Branch name | Branched from | Depends on |
+Verification:
+```bash
+git fetch origin
+git checkout Catena-X_Pivot
+git log --oneline -1                  # expect: 291e719 (or later)
+git merge-base --is-ancestor cbcd408 HEAD && echo "Phase A in branch ✓"
+git merge-base --is-ancestor 105e508 HEAD && echo "Phase B in branch ✓"
+ls docs/ichnos_website_CatenaX_pivot_spec_v4.md
+```
+
+**Commit pattern on `Catena-X_Pivot`.** Phases land in serial order
+as one or a small number of commits each. Lint and tests must pass
+after every commit; no commit may leave the working tree in a
+half-implemented state.
+
+| Phase | Commit subject prefix | Order | Depends on |
 | --- | --- | --- | --- |
-| C | `fix/website-cleanup-phase-c-services` | `main` (post-A, post-B) | A, B merged |
-| D | `fix/website-cleanup-phase-d-passport-page` | `main` (post-C) | A, B, C merged |
-| E | `fix/website-cleanup-phase-e-homepage-tone-down` | `main` (post-C, post-D) | A, B, C, D merged |
+| C | `feat(client): Phase C — services restoration` | First | A, B (already in branch) |
+| D | `feat(client): Phase D — passport page` | After C | C committed on branch |
+| E | `feat(client): Phase E — homepage tone-down` | After D | C and D committed on branch |
 
-**Why serial, not parallel.** Phase D's `/passport` page links back to
-the Services page by anchor (`#engineering`, `#compliance`,
-`#circularity`). Phase E's homepage Services snapshot consumes the
-data Phase C restores. Out-of-order implementation breaks tests and
-produces a half-implemented intermediate state on `main`.
+**Why serial.** Phase D's `/passport` page links back to the Services
+page by anchor (`#engineering`, `#compliance`, `#circularity`).
+Phase E's homepage Services snapshot consumes the data Phase C
+restores. Out-of-order implementation breaks tests.
 
-**Staging verification between phases.** After each phase merges to
-`main`:
+**Mid-flight staging verification (optional).** Between phase commits,
+the implementer can push `Catena-X_Pivot` to origin and trigger a
+preview deployment on its own URL (Vercel auto-builds the branch as a
+preview if Git integration is healthy). That gives a visual sanity
+check without involving `staging`.
 
-1. `gh workflow run "Sync main → staging" --ref main`.
-2. If PR #145 (sync-staging Deploy Hook patch) is merged, the sync
-   workflow auto-triggers Vercel builds. If not, curl the Deploy
-   Hooks manually — see `docs/deploymentMigrationValidation.md`
-   Tier 8d.
-3. Visual QA at `https://staging-client.ichnos-protocol.com` against
+**Final PR and promotion sequence:**
+
+1. After Phase E commits on `Catena-X_Pivot` and the full suite is
+   green, push: `git push origin Catena-X_Pivot`.
+2. Open the PR:
+   ```bash
+   gh pr create --base main --head Catena-X_Pivot \
+     --title "feat(client): Catena-X pivot — Phases C, D, E"
+   ```
+3. Review the diff, merge into `main`.
+4. Sync to staging:
+   ```bash
+   gh workflow run "Sync main → staging" --ref main
+   ```
+   (PR #145's Deploy Hook patch is already merged, so the sync
+   workflow auto-triggers Vercel builds.)
+5. Visual QA at `https://staging-client.ichnos-protocol.com` against
    the acceptance criteria in §11 of this spec.
-
-**Promotion to production.** Only after all of C, D, E are merged to
-`main` and visually verified on staging. Open `main → release` PR
-(matching the existing PR #146 pattern) and follow the standard
-promote-to-production workflow.
+6. Once all §11 criteria pass on staging, promote to production via
+   the `main → release` PR and the standard promote-to-production
+   workflow.
 
 ---
 
