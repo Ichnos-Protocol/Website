@@ -373,6 +373,136 @@ rule as §9.1.
 data layer"` must not appear anywhere in `client/src/`. The v3 phrasing
 is retired across the board.
 
+### 1.6 Page themes — Advisory (default), Catena-X (active for `/passport`), Solana (preserved, dormant)
+
+The site uses CSS-variable-driven theme scoping (the v3 mechanism is
+unchanged): a wrapper element gets a class like `.theme-X`, and the
+nested CSS variables override the defaults declared on `:root` /
+`body`. Three themes exist after v4 lands; only two are consumed by
+v4 routes.
+
+**1.6.1 Theme inventory.**
+
+| Class | Status in v4 | Consumed by | Look |
+| --- | --- | --- | --- |
+| (default — declared on `body`) | Active | All advisory routes (`/`, `/services`, `/team`, `/contact`) | Charcoal/light advisory palette per current v3 `index.css` |
+| `.theme-catenax` | **New, active** | `/passport` route via `CatenaXThemeLayout.jsx` | Deep navy / near-black backdrop with Eclipse-style cyan/teal accents. Inspired by the Eclipse Tractus-X open-source project (`github.com/eclipse-tractusx`) and the broader Catena-X data-space visual register. No neon gradients — explicitly NOT Solana-derived. |
+| `.theme-solana` | **Renamed, dormant** | None in v4. Layout file `SolanaThemeLayout.jsx` exists but no route uses it. | Dark navy + Solana neon green→purple gradient — exactly the v3 `.theme-passport` look, preserved for a future Battery Passport product page. |
+
+**1.6.2 New layout — `client/src/components/templates/CatenaXThemeLayout.jsx`.**
+
+A thin wrapper component, ≤30 lines, that renders `<div className="theme-catenax">{children}</div>`. Identical structure to the existing
+`AdvisoryThemeLayout.jsx`. Used in `App.jsx` only by the `/passport`
+route (see §5.1).
+
+**1.6.3 Renamed layout — `SolanaThemeLayout.jsx`.**
+
+The v3 `DataThemeLayout.jsx` renames to `SolanaThemeLayout.jsx` with
+the class name flipped from `.theme-passport` → `.theme-solana`. No
+route consumes it in v4. Kept on disk because the v3 visual identity
+is intentionally preserved as a future product-mode showroom theme.
+
+**1.6.4 CSS token blocks in `client/src/index.css`.**
+
+The existing `.theme-passport { … }` block is renamed to
+`.theme-solana { … }` with identical token values (no visual
+regression for the preserved theme). A new `.theme-catenax { … }`
+block is added. Starting palette for the Catena-X theme, to be
+refined against the live Eclipse Tractus-X visual identity
+(`github.com/eclipse-tractusx`) before ship — see §1.6.6:
+
+```css
+/* ========== Theme: Catena-X (active on /passport) ========== */
+/* Visual identity inspired by the Eclipse Tractus-X project
+   (github.com/eclipse-tractusx) and the broader Catena-X data-space
+   visual language: deep navy / near-black backdrop with Eclipse-
+   register cyan/teal accents. Intentionally NOT a Solana-derived
+   theme — no neon green→purple gradients, no high-saturation
+   midtones. The Solana-flavoured dark theme is preserved separately
+   as .theme-solana for a future product page.
+
+   Token values below are a starting point. Before the Phase D PR
+   merges, the implementer MUST inspect the Eclipse Tractus-X
+   organisation pages and a representative Tractus-X repo README
+   (rendered on github.com/eclipse-tractusx) in DevTools, copy the
+   actual hex values used for hero backgrounds, primary accents,
+   and link colours, and replace the placeholders below. */
+.theme-catenax {
+  --color-bg-base: #0F0F23;          /* deep navy, near-black (placeholder) */
+  --color-bg-alt: #1B1B3A;           /* slightly lighter for section variation */
+  --color-surface: #232347;          /* card / panel surface */
+  --color-accent-primary: #00B0E1;   /* Eclipse cyan (placeholder, verify) */
+  --color-accent-cyan: #00C7CB;      /* secondary Tractus-X teal (placeholder) */
+  --color-accent-warm: #FFC107;      /* subdued warm callout for notes/badges */
+  --color-text-primary: #F1F5F9;     /* near-white */
+  --color-text-secondary: #9CA3AF;   /* light gray */
+  --color-border: rgba(241, 245, 249, 0.12);
+  /* NO --color-gradient-start / --color-gradient-end exposed.
+     The Catena-X theme intentionally drops the Solana-style neon
+     gradient. If a /passport headline needs visual emphasis, use a
+     single accent colour or a subtle within-palette tonal shift —
+     never a high-saturation rainbow gradient. */
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+/* ========== Theme: Solana (renamed from .theme-passport, dormant) ========== */
+/* No route consumes this in v4. Preserved verbatim from v3
+   .theme-passport so a future Battery Passport product page can adopt
+   it again without re-deriving the palette. */
+.theme-solana {
+  --color-bg-base: #0A1628;
+  --color-bg-alt: #1A2744;
+  --color-surface: #1A2744;
+  --color-accent-primary: #1E90FF;
+  --color-accent-cyan: #00D1C1;
+  --color-accent-warm: #C8A24E;
+  --color-gradient-start: #14F195;
+  --color-gradient-end: #9945FF;
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #8B9DC3;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+```
+
+**1.6.5 Tests.**
+
+- `client/src/components/theme-scoping.test.jsx` — update assertions:
+  - Rename the existing `.theme-passport` test to `.theme-solana` and
+    verify the renamed class still resolves the same token values.
+  - Add a new test for `.theme-catenax` that verifies the new class
+    resolves the new token values (or at minimum that `--color-bg-base`
+    differs from the default and from `.theme-solana`).
+- The Navbar's logo-theme branching (`pathname === '/data'` in v3) is
+  removed; `/data` no longer exists as a live route in v4. The Logo
+  component currently routes every theme to the same transparent PNG
+  (per §1.1), so no per-theme logo swap is required.
+
+**1.6.6 Colour refinement before merge.**
+
+The `.theme-catenax` palette is a defensible starting point but is
+**not** the authoritative Catena-X / Tractus-X brand kit. Before the
+Phase D PR merges, the implementer must:
+
+1. Open `https://github.com/eclipse-tractusx` in a browser with
+   DevTools.
+2. Inspect the rendered GitHub organisation header, the project
+   README hero banners, and any docs-site links the org pages point
+   at (e.g., `eclipse-tractusx.github.io`).
+3. Copy the exact hex values used for hero backgrounds, primary
+   accents (link colour, button colour), and secondary accents
+   (badge fills, callout borders).
+4. Replace the placeholder hex values in `.theme-catenax` with the
+   verified Eclipse-register colours.
+5. Note any constraints in the comment block above the CSS so a
+   future implementer doesn't drift the palette back toward Solana
+   neon or some other off-brand mid-saturation accident.
+
+The intent is: when a Catena-X reviewer lands on `/passport`, the
+visual register should read as "this is a Catena-X-fluent practice",
+not "this is a generic dark-mode product page".
+
 ---
 
 ## 2. Navbar — `client/src/constants/navigation.js` + `client/src/components/organisms/Navbar.jsx`
@@ -772,15 +902,58 @@ Replaces v3's `/data` and `/catena-x` pages.
 
 ### 5.1 Route & redirects — `client/src/App.jsx` + `client/vercel.json`
 
-- New route: `<Route path="/passport" element={<PassportPage />} />` under the
-  advisory theme layout (not the dark Data theme — `/passport` is part of the
-  advisory site, not a product-mode showroom).
+- New route: `<Route path="/passport" element={<PassportPage />} />` under a
+  **new Catena-X theme layout** (`client/src/components/templates/CatenaXThemeLayout.jsx`,
+  newly authored). The layout applies the `.theme-catenax` token set,
+  styled per §1.6 to echo the Eclipse Tractus-X visual register —
+  deep navy backdrop, Eclipse-cyan accents, no Solana-style neon
+  gradients. The v3 `DataThemeLayout.jsx` is **renamed** to
+  `SolanaThemeLayout.jsx` and the `.theme-passport` CSS block is
+  **renamed** to `.theme-solana`. Both are preserved but no route
+  consumes them in v4 — retained for a future Battery Passport
+  product showroom.
 - Legacy redirects (preserve external SEO links):
   - `<Route path="/data" element={<Navigate replace to="/passport" />} />`
   - `<Route path="/catena-x" element={<Navigate replace to="/passport" />} />`
 - `client/vercel.json` rewrites add 301-equivalents:
   - `{ "source": "/data", "destination": "/passport", "permanent": true }`
   - `{ "source": "/catena-x", "destination": "/passport", "permanent": true }`
+
+**External-link dependency — why the 301s are business-critical, not
+just SEO hygiene (H5 answer).** Francesco has published LinkedIn
+posts and outreach material that point at `https://ichnos-protocol.com/data`
+and `https://ichnos-protocol.com/catena-x` as canonical landing pages.
+Real human traffic comes through those URLs from those posts. The
+redirects must therefore satisfy two requirements:
+
+1. **Correctness over cleverness.** Each 301 must land directly on
+   `/passport` (the consolidated page). Do not introduce a "landing
+   redirect" intermediate page, a query-string preservation, or a
+   modal pop-up. A click on a LinkedIn post should arrive at
+   `/passport` with no perceptible hop.
+2. **Forever-stable.** Once these 301s ship, they stay in
+   `client/vercel.json` indefinitely. Removing or repurposing them
+   later breaks the LinkedIn post archive. If `/passport` ever
+   itself moves (e.g., to `/battery-passport`), update the rewrite
+   `destination` rather than deleting the rule.
+
+Out-of-code dependencies the implementer should also flag (no code
+change required during Phases C-E, but documented here so future
+work picks them up):
+
+- **Google Search Console** — if `/data` or `/catena-x` were
+  submitted as verified URLs or had explicit index requests, the
+  redirect chain will gradually be honoured by Google but the
+  console may show "soft 404" warnings for ~2–4 weeks. Acceptable;
+  no action needed beyond the 301.
+- **Google Analytics / Plausible / any conversion tracking** — if
+  any conversion goals were keyed to the path `/data` or
+  `/catena-x`, those goals stop firing once visitors are
+  redirected. If the analytics setup matters, reconfigure goals to
+  trigger on `/passport` after the rename ships. Out of scope for
+  Phases C-E.
+- **LinkedIn post archive** — no action possible; the post URLs
+  are immutable. The 301 redirect IS the fix.
 
 ### 5.2 Page sections, top to bottom
 
@@ -1264,6 +1437,56 @@ the helper.
     "the space X occupies", and any other variant of the same
     metaphor.
 
+### 9.5 No fragile text-matching tests
+
+A general engineering-hygiene rule, derived from the
+`messagingGuardrails.test.jsx` failure mode that motivated H1:
+**never write a test whose assertion is a long literal string copied
+from user-facing copy.** Such tests:
+
+1. Fail loudly on every legitimate copy revision, costing review
+   time and creating false signals.
+2. Encode the same content twice (once in the constant, once in the
+   test), so a change to the canonical source still has to be
+   echoed in the test — pure duplication.
+3. Drift away from runtime truth — the test passes because the
+   string matches, not because the user sees the correct content.
+4. Block surgical credential changes (the H1 case) by treating the
+   credential text as a forbidden pattern.
+
+**The rule, in three parts:**
+
+- **Test behaviour, not copy strings.** Assert that a heading element
+  exists, that a link points at the right route, that a CTA dispatches
+  the right action — never that a paragraph contains a specific
+  29-word sentence.
+- **Import constants, do not duplicate them.** If a test genuinely
+  needs to check a piece of copy (e.g., "the footer attribution row
+  contains the company legal name"), import the constant from the
+  same module the component imports and assert against
+  `COMPANY_INFO.legalName`, not against a copy-pasted literal.
+- **For credential / regulatory / messaging policy, use the runtime
+  toggle.** The Catena-X title is rendered through
+  `getCatenaXFullTitle()` (§0a). The test asserts the helper is
+  consumed; it does not re-encode the helper's output.
+
+**Specifically banned patterns** (this list will grow as drift is
+observed):
+
+- A test that greps a rendered component for a long literal sentence
+  copied from a `constants/*.js` file.
+- A test that hard-codes the canonical credential string
+  (`"Official Catena-X Qualified Advisory Provider"`) anywhere
+  outside `catenaXStatus.js`.
+- A test that asserts a `forbidden words` list against rendered DOM
+  text — that work belongs to a build-time `grep` check (see §11
+  acceptance criteria), not to a runtime React test.
+
+**Triage rule when a test fails on a copy change.** If a test would
+have to be edited every time Francesco rewrites a paragraph, the test
+is the wrong shape. Delete or rewrite it to assert behaviour, not
+words.
+
 ---
 
 ## 10. Files to retire under Phase D
@@ -1280,12 +1503,29 @@ client/src/` returns no results.
 - `client/src/components/organisms/DataFounderPillars.jsx`
 - `client/src/components/organisms/DataSchemaMappingTable.jsx`
 - `client/src/components/organisms/DataClosingCta.jsx`
-- `client/src/components/templates/DataThemeLayout.jsx`
+- `client/src/components/templates/DataThemeLayout.jsx` — **rename, do
+  not delete.** Rename to `SolanaThemeLayout.jsx` (per §1.6.3). The
+  layout becomes dormant in v4 (no route consumes it) but is kept
+  alongside the renamed `.theme-solana` CSS block so a future Battery
+  Passport product page can adopt it without re-deriving the palette.
+- **NEW file** `client/src/components/templates/CatenaXThemeLayout.jsx`
+  (per §1.6.2). Thin wrapper that applies `.theme-catenax`. Consumed
+  by `/passport` in `App.jsx`.
 - `client/src/constants/dataContent.js` _(replaced by `passportContent.js`)_
 - `client/src/components/pages/DataPage.jsx` _(replaced by `PassportPage.jsx`)_
-- Corresponding `.test.jsx` files for each of the above.
-- `client/src/messagingGuardrails.test.jsx` — update or replace; assertions
-  were authored against v3 copy.
+- Corresponding `.test.jsx` files for each of the deleted organisms above
+  (DataHero, DataProblemSection, DataSolutionSection, DataFounderPillars,
+  DataSchemaMappingTable, DataClosingCta, CatenaXPage). The
+  `theme-scoping.test.jsx` test file **stays and gets updated** per
+  §1.6.5: the existing `.theme-passport` assertion renames to
+  `.theme-solana`; a new `.theme-catenax` assertion covers the
+  `/passport` route's active theme.
+- `client/src/messagingGuardrails.test.jsx` — **delete entirely.** Per
+  Francesco's decision (H1), the text-matching guardrail caused more
+  regressions than it prevented and now actively blocks the canonical
+  credential string. The runtime toggle in §0a is the single source of
+  truth for the Catena-X title; no separate string-matching test is
+  needed.
 
 ---
 
@@ -1305,7 +1545,7 @@ For Traycer to call each phase complete:
 - [ ] `SERVICES_META` matches §4.5 verbatim.
 - [ ] All client tests pass; lint clean.
 - [ ] `grep -r 'APAC' client/src/` returns zero.
-- [ ] Existing `messagingGuardrails.test.jsx` either passes or is updated to assert against §9.
+- [ ] `messagingGuardrails.test.jsx` is **deleted** (per §10 / H1). The runtime toggle in §0a remains the source of truth for the Catena-X title; no string-matching guardrail replaces it.
 
 ### Phase D — `/passport` page
 
@@ -1347,8 +1587,15 @@ For Traycer to call each phase complete:
   `landingContent.js` are the source of truth.
 - The repository-level migration housekeeping (PRs #145, #146, #147) is
   unrelated to this spec.
-- The `passport`-themed dark layout (`DataThemeLayout.jsx`) — `/passport`
-  in v4 uses the advisory theme; the dark passport theme retires.
+- The v3 dark `.theme-passport` theme — **renamed and preserved**
+  rather than consumed. Per Francesco's revised decision (Q: new
+  Catena-X theme on `/passport`, old theme renamed Solana for future
+  use), the dark theme renames to `.theme-solana` and stays in
+  `index.css` as a dormant block. The matching layout file renames
+  to `SolanaThemeLayout.jsx` and stays in the templates folder. No
+  route consumes either in v4. A new `.theme-catenax` block and
+  `CatenaXThemeLayout.jsx` are added and consume the `/passport`
+  route. Full spec in §1.6.
 
 ---
 
