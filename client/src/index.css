@@ -140,7 +140,7 @@ body {
    accommodates this with vertical padding tuning; do not raise it further
    without confirming responsive behaviour at narrow viewports. */
 .logo-img {
-  height: 168px;
+  height: 38px;
   width: auto;
   display: block;
 }
@@ -157,7 +157,7 @@ body {
   background-color: var(--color-surface);
   padding-top: 4px;
   padding-bottom: 4px;
-  min-height: 176px;
+  min-height: 48px;
 }
 
 .navbar-menu-btn {
@@ -461,7 +461,12 @@ body {
 }
 
 /* ========== Page & Section Headings ========== */
-h1.page-title,
+h1.page-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 .hero-headline,
 .section-display-heading {
   font-family: var(--font-display);

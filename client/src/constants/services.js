@@ -1,5 +1,5 @@
 export const SERVICES_PAGE_CONTENT = {
-  title: "Services & Solutions",
+  title: "Services and Solutions",
   subtitle:
     "Expert consulting for battery development, EU battery-passport readiness, and the circular value chain.",
 };
