@@ -1,9 +1,9 @@
 /* ========== Typography / Spacing / Transitions / Z-index ========== */
 :root {
   /* ========== Typography ========== */
-  --font-sans: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
+  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
   --font-size-base: 16px;
   --font-size-sm: 14px;
   --font-size-lg: 18px;
@@ -44,14 +44,14 @@
 /* ========== Theme: Advisory (default) ========== */
 .theme-advisory,
 body {
-  --color-bg-base: #fafbfc;
-  --color-bg-alt: #f0f3f7;
-  --color-surface: #ffffff;
-  --color-text-primary: #0f1419;
-  --color-text-secondary: #5b6b85;
-  --color-accent-primary: #00a89a;
-  --color-accent-cyan: #00a89a;
-  --color-accent-warm: #a87e1f;
+  --color-bg-base: #FAFBFC;
+  --color-bg-alt: #F0F3F7;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #0F1419;
+  --color-text-secondary: #5B6B85;
+  --color-accent-primary: #00A89A;
+  --color-accent-cyan: #00A89A;
+  --color-accent-warm: #A87E1F;
   --color-border: rgba(15, 20, 25, 0.08);
   --color-shadow: rgba(15, 20, 25, 0.06);
 }
@@ -63,14 +63,14 @@ body {
    overrides below force the CTA button and any .gradient-text to render as
    flat cyan rather than a broken linear-gradient(... undefined ...). */
 .theme-catenax {
-  --color-bg-base: #0f0f23;
-  --color-bg-alt: #1b1b3a;
+  --color-bg-base: #0F0F23;
+  --color-bg-alt: #1B1B3A;
   --color-surface: #232347;
-  --color-accent-primary: #00b0e1;
-  --color-accent-cyan: #00c7cb;
-  --color-accent-warm: #ffc107;
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #9ca3af;
+  --color-accent-primary: #00B0E1;
+  --color-accent-cyan: #00C7CB;
+  --color-accent-warm: #FFC107;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #9CA3AF;
   --color-border: rgba(241, 245, 249, 0.12);
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
@@ -78,7 +78,7 @@ body {
 
 .theme-catenax .hero-cta-btn {
   background: var(--color-accent-primary);
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 .theme-catenax .gradient-text {
@@ -89,35 +89,33 @@ body {
 
 /* ========== Theme: Reserved variant (override) ========== */
 .theme-solana {
-  --color-bg-base: #0a1628;
-  --color-bg-alt: #1a2744;
-  --color-surface: #1a2744;
-  --color-accent-primary: #1e90ff;
-  --color-accent-cyan: #00d1c1;
-  --color-accent-warm: #c8a24e;
-  --color-gradient-start: #14f195; /* Solana green */
-  --color-gradient-end: #9945ff; /* Solana purple */
-  --color-text-primary: #e8ecf1;
-  --color-text-secondary: #8b9dc3;
+  --color-bg-base: #0A1628;
+  --color-bg-alt: #1A2744;
+  --color-surface: #1A2744;
+  --color-accent-primary: #1E90FF;
+  --color-accent-cyan: #00D1C1;
+  --color-accent-warm: #C8A24E;
+  --color-gradient-start: #14F195; /* Solana green */
+  --color-gradient-end: #9945FF; /* Solana purple */
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #8B9DC3;
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
 }
 
 /* ========== Surface: Footer Dark ========== */
 .footer-dark {
-  --color-bg-base: #0f1419;
-  --color-bg-alt: #1a2030;
-  --color-surface: #1a2030;
-  --color-text-primary: #e8ecf1;
-  --color-text-secondary: #9aa5b8;
+  --color-bg-base: #0F1419;
+  --color-bg-alt: #1A2030;
+  --color-surface: #1A2030;
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #9AA5B8;
   --color-border: rgba(232, 236, 241, 0.08);
   position: relative;
   padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
   border-top: 1px solid var(--color-surface);
   color: var(--color-text-primary);
-  background:
-    linear-gradient(rgba(15, 20, 25, 0.85), rgba(15, 20, 25, 0.92)),
-    url("/bg-footer.jpg") center/cover no-repeat;
+  background: linear-gradient(rgba(15, 20, 25, 0.85), rgba(15, 20, 25, 0.92)), url('/bg-footer.jpg') center/cover no-repeat;
 }
 
 /* ========== Base Styles ========== */
@@ -142,7 +140,7 @@ body {
    accommodates this with vertical padding tuning; do not raise it further
    without confirming responsive behaviour at narrow viewports. */
 .logo-img {
-  height: 48px;
+  height: 168px;
   width: auto;
   display: block;
 }
@@ -159,7 +157,7 @@ body {
   background-color: var(--color-surface);
   padding-top: 4px;
   padding-bottom: 4px;
-  min-height: 56px;
+  min-height: 176px;
 }
 
 .navbar-menu-btn {
@@ -195,8 +193,8 @@ body {
 
 /* ========== Mobile Nav Overlay ========== */
 .mobile-nav-overlay {
-  --color-text-primary: #e8ecf1;
-  --color-text-secondary: #8b9dc3;
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #8B9DC3;
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
@@ -310,15 +308,15 @@ body {
     linear-gradient(
       to bottom,
       rgba(15, 20, 25, 0.45) 0%,
-      rgba(15, 20, 25, 0.7) 100%
+      rgba(15, 20, 25, 0.70) 100%
     ),
-    url("/bg-advisory.jpg") center / cover no-repeat;
+    url('/bg-advisory.jpg') center / cover no-repeat;
   padding: var(--spacing-3xl) 0;
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 .hero-section .gradient-text {
-  background: linear-gradient(135deg, #ffffff, var(--color-accent-primary));
+  background: linear-gradient(135deg, #FFFFFF, var(--color-accent-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -331,11 +329,7 @@ body {
 }
 
 .hero-cta-btn {
-  background: linear-gradient(
-    135deg,
-    var(--color-gradient-start),
-    var(--color-gradient-end)
-  );
+  background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
   color: var(--color-bg-base);
   border: none;
   border-radius: 8px;
@@ -348,11 +342,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--color-gradient-start),
-    var(--color-gradient-end)
-  );
+  background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -452,11 +442,7 @@ body {
    entire signal (no ribbon graphic). */
 .service-card--coming-soon {
   border-style: dashed !important;
-  border-color: color-mix(
-    in srgb,
-    var(--color-border) 60%,
-    transparent
-  ) !important;
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
 }
 
 .service-card--coming-soon .card-text,
@@ -471,11 +457,7 @@ body {
 .service-card--coming-soon:hover {
   transform: none;
   border-style: dashed !important;
-  border-color: color-mix(
-    in srgb,
-    var(--color-border) 60%,
-    transparent
-  ) !important;
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
 }
 
 /* ========== Page & Section Headings ========== */
@@ -573,7 +555,7 @@ h1.page-title,
 
 .badge-status-updating {
   background-color: rgba(255, 165, 0, 0.15);
-  color: #ffa500;
+  color: #FFA500;
 }
 
 /* ========== Roadmap Cards ========== */
@@ -776,8 +758,7 @@ h1.page-title,
 .auth-modal-body .nav-link.active {
   background-color: transparent;
   color: var(--color-accent-primary);
-  border-color: rgba(139, 157, 195, 0.15) rgba(139, 157, 195, 0.15)
-    var(--color-bg-base);
+  border-color: rgba(139, 157, 195, 0.15) rgba(139, 157, 195, 0.15) var(--color-bg-base);
 }
 
 .auth-modal-body .form-label {
@@ -817,7 +798,7 @@ h1.page-title,
   height: 32px;
   border-radius: 50%;
   background: var(--color-accent-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-sm);
 }
@@ -908,7 +889,7 @@ h1.page-title,
 .chat-panel__bubble--user {
   align-self: flex-end;
   background-color: var(--color-accent-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border-bottom-right-radius: 4px;
 }
 
@@ -955,7 +936,7 @@ h1.page-title,
   border-radius: 50%;
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
-  color: #ffffff;
+  color: #FFFFFF;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -968,14 +949,14 @@ h1.page-title,
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
   filter: brightness(0.95);
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 .chat-panel__send-btn:disabled {
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
   opacity: 0.5;
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 @media (max-width: 480px) {
@@ -1011,15 +992,15 @@ h1.page-title,
     linear-gradient(
       to bottom,
       rgba(15, 20, 25, 0.45) 0%,
-      rgba(15, 20, 25, 0.7) 100%
+      rgba(15, 20, 25, 0.70) 100%
     ),
-    url("/bg-advisory.jpg") center / cover no-repeat;
-  color: #ffffff;
+    url('/bg-advisory.jpg') center / cover no-repeat;
+  color: #FFFFFF;
 }
 
 .hero-section--advisory .hero-cta-btn {
   background: var(--color-accent-primary);
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 .hero-section--advisory .hero-cta-btn:hover {
@@ -1031,7 +1012,7 @@ h1.page-title,
 .advisory-page-hero {
   background:
     linear-gradient(rgba(245, 247, 250, 0.85), rgba(232, 236, 241, 0.95)),
-    url("/bg-advisory.jpg") center / cover no-repeat;
+    url('/bg-advisory.jpg') center / cover no-repeat;
   padding: var(--spacing-3xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-primary);
@@ -1044,7 +1025,11 @@ h1.page-title,
    advisory pages keep the original light hero. */
 .theme-catenax .advisory-page-hero {
   background:
-    radial-gradient(circle at 50% 0%, rgba(0, 176, 225, 0.25), transparent 60%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(0, 176, 225, 0.25),
+      transparent 60%
+    ),
     linear-gradient(var(--color-bg-base), var(--color-bg-alt));
   color: var(--color-text-primary);
 }
