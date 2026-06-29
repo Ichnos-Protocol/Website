@@ -11,6 +11,7 @@
  * Requires: npx playwright install chromium (run once from e2e/)
  */
 import { chromium } from "playwright";
+import readline from "readline/promises";
 import {
   copyFileSync,
   existsSync,
@@ -20,12 +21,16 @@ import {
   writeFileSync,
 } from "fs";
 import { join, resolve } from "path";
+import { stdin as input, stdout as output } from "process";
 
 const BASE_DIR = resolve("server/knowledge-base/pdfs");
 const PDF_MANIFEST = resolve("server/knowledge-base/pdf-manifest.json");
+const BROWSER_PROFILE_DIR = resolve(
+  "server/knowledge-base/.playwright-profile",
+);
 const TIMEOUT = 90_000;
 const DELAY_BETWEEN = 2_500;
-const CAPTCHA_WAIT = 30_000; // 30s wait for human CAPTCHA solve
+const CAPTCHA_WAIT = 120_000; // 120s wait for human CAPTCHA solve
 
 // ── Download definitions organized by site ──
 
@@ -273,13 +278,13 @@ const OTHER = [
   },
   {
     dir: "battery-passport",
-    name: "JRC_Carbon_Footprint_EV_Batteries.pdf",
-    url: "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC134254/JRC134254_01.pdf",
+    name: "JRC_Carbon_Footprint_EV_Batteries_2023.pdf",
+    url: "https://eplca.jrc.ec.europa.eu/permalink/battery/GRB-CBF_CarbonFootprintRules-EV_June_2023.pdf",
   },
   {
     dir: "battery-passport",
-    name: "JRC_Carbon_Footprint_Industrial_Batteries.pdf",
-    url: "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC134519/JRC134519_01.pdf",
+    name: "JRC_Carbon_Footprint_Industrial_Batteries_2025.pdf",
+    url: "https://publications.jrc.ec.europa.eu/repository/handle/JRC141282",
   },
   {
     dir: "battery-passport",
@@ -299,22 +304,22 @@ const OTHER = [
   {
     dir: "functional-safety",
     name: "NHTSA_EV_Battery_Testing_Research.pdf",
-    url: "https://www.nhtsa.gov/sites/nhtsa.gov/files/documents/12848-lithiumionbatteryelectricvehicles_092717-v3-tag.pdf",
+    url: "https://www.nhtsa.gov/sites/nhtsa.gov/files/documents/12848-lithiumionsafetyhybrids_101217-v3-tag.pdf",
   },
   {
     dir: "functional-safety",
     name: "NREL_Battery_Thermal_Runaway.pdf",
-    url: "https://www.nrel.gov/docs/fy22osti/82330.pdf",
+    url: "https://docs.nrel.gov/docs/fy22osti/82410.pdf",
   },
   {
     dir: "functional-safety",
     name: "JRC_Li_Ion_Battery_Safety.pdf",
-    url: "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC113320/kjna29384enn.pdf",
+    url: "https://publications.jrc.ec.europa.eu/repository/handle/JRC113320",
   },
   {
     dir: "functional-safety",
     name: "Batteries_Europe_Strategic_Agenda.pdf",
-    url: "https://batterieseurope.eu/wp-content/uploads/2022/09/Batteries-Europe_Strategic-Research-Agenda_September-2022.pdf",
+    url: "https://www.horizon-europe.gouv.fr/sites/default/files/2024-02/t-l-charger-le-sria-batt4eu-f-vrier-2024--6449.pdf",
   },
   {
     dir: "supply-chain",
@@ -349,21 +354,141 @@ function ensureDir(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
+function isPdfBuffer(buffer) {
+  return (
+    buffer &&
+    buffer.length > 5000 &&
+    buffer[0] === 0x25 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x44 &&
+    buffer[3] === 0x46
+  );
+}
+
 function isValidPdf(path) {
   try {
     const stats = statSync(path);
     if (stats.size < 5000) return false;
     const buf = readFileSync(path, { encoding: null });
-    return (
-      buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46
-    );
+    return isPdfBuffer(buf);
   } catch {
     return false;
   }
 }
 
+function extractPdfUrlFromHtml(html, baseUrl) {
+  const match = html.match(/href=["']([^"']+\.pdf(?:\?[^"']*)?)["']/i);
+  if (!match) return null;
+
+  try {
+    return new URL(match[1], baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPdfBuffer(url, visited = new Set()) {
+  if (!url || visited.has(url)) return null;
+  visited.add(url);
+
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(TIMEOUT),
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "application/pdf,*/*",
+      },
+    });
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (response.ok && isPdfBuffer(buffer)) {
+      return buffer;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      const nestedUrl = extractPdfUrlFromHtml(
+        buffer.toString("utf-8"),
+        response.url,
+      );
+      if (nestedUrl) {
+        return fetchPdfBuffer(nestedUrl, visited);
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function fetchPdfBufferWithBrowser(context, url) {
+  const page = await context.newPage();
+
+  try {
+    const response = await page
+      .goto(url, { waitUntil: "domcontentloaded", timeout: TIMEOUT })
+      .catch(() => null);
+
+    if (response) {
+      const body = Buffer.from(
+        await response.body().catch(() => new Uint8Array()),
+      );
+      const contentType = response.headers()["content-type"] || "";
+
+      if (contentType.includes("pdf") || isPdfBuffer(body)) {
+        return body;
+      }
+    }
+
+    const html = await page.content().catch(() => "");
+    const nestedUrl = extractPdfUrlFromHtml(html, page.url());
+    if (!nestedUrl) {
+      return null;
+    }
+
+    const nestedResponse = await page
+      .goto(nestedUrl, { waitUntil: "commit", timeout: TIMEOUT })
+      .catch(() => null);
+
+    if (!nestedResponse) {
+      return null;
+    }
+
+    const buffer = Buffer.from(
+      await nestedResponse.body().catch(() => new Uint8Array()),
+    );
+    const nestedType = nestedResponse.headers()["content-type"] || "";
+
+    if (nestedType.includes("pdf") || isPdfBuffer(buffer)) {
+      return buffer;
+    }
+
+    return null;
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+async function waitForManualCaptchaSolve() {
+  if (!process.stdin.isTTY) {
+    await sleep(CAPTCHA_WAIT);
+    return;
+  }
+
+  const rl = readline.createInterface({ input, output });
+  try {
+    await rl.question(
+      "  Press Enter here after you solve the browser CAPTCHA and the PDF page finishes loading... ",
+    );
+  } finally {
+    rl.close();
+  }
 }
 
 function loadExpectedPdfCounts() {
@@ -388,6 +513,14 @@ async function downloadEurLex(context, item) {
     const size = statSync(destPath).size;
     console.log(`  SKIP (valid, ${(size / 1_048_576).toFixed(2)} MB)`);
     return { name: item.name, status: "skipped", size };
+  }
+
+  const fetchedBuffer = await fetchPdfBuffer(item.url);
+  if (fetchedBuffer) {
+    writeFileSync(destPath, fetchedBuffer);
+    const size = fetchedBuffer.length;
+    console.log(`  OK [fetch] (${(size / 1_048_576).toFixed(2)} MB)`);
+    return { name: item.name, status: "ok", size };
   }
 
   const page = await context.newPage();
@@ -419,9 +552,10 @@ async function downloadEurLex(context, item) {
   }
 }
 
-async function downloadUnece(context, item, isFirstInBatch) {
+async function downloadUnece(context, item, uneceSession) {
   const destDir = join(BASE_DIR, item.dir);
   const destPath = join(destDir, item.name);
+  const isFirstInBatch = !uneceSession.page;
   ensureDir(destDir);
 
   if (existsSync(destPath) && isValidPdf(destPath)) {
@@ -430,71 +564,50 @@ async function downloadUnece(context, item, isFirstInBatch) {
     return { name: item.name, status: "skipped", size };
   }
 
-  const page = await context.newPage();
+  const page = uneceSession.page || (await context.newPage());
+  if (!uneceSession.page) {
+    uneceSession.page = page;
+  }
+
   try {
-    // Navigate and wait for CloudFlare challenge
-    await page
-      .goto(item.url, { waitUntil: "commit", timeout: TIMEOUT })
-      .catch(() => null);
-
     if (isFirstInBatch) {
-      // First UNECE URL: pause for human to solve CAPTCHA
+      // Use the first URL to establish the CloudFlare-cleared browser session.
+      await page
+        .goto(item.url, { waitUntil: "commit", timeout: TIMEOUT })
+        .catch(() => null);
       console.log(
-        `  ⏳ CAPTCHA detected — please solve it in the browser (${CAPTCHA_WAIT / 1000}s)...`,
+        `  ⏳ CAPTCHA detected — solve it in the browser, then return here and press Enter...`,
       );
-      await sleep(CAPTCHA_WAIT);
-    } else {
-      // Subsequent: shorter wait — CloudFlare cookie should persist
-      await sleep(5_000);
+      await page.bringToFront().catch(() => null);
+      await waitForManualCaptchaSolve();
+      await page
+        .waitForLoadState("networkidle", { timeout: 30_000 })
+        .catch(() => null);
     }
 
-    // Check if download started
-    const download = await page
-      .waitForEvent("download", { timeout: 15_000 })
-      .catch(() => null);
-    if (download) {
-      const tmpPath = await download.path();
-      if (tmpPath) {
-        copyFileSync(tmpPath, destPath);
-        if (isValidPdf(destPath)) {
-          const size = statSync(destPath).size;
-          console.log(`  OK (${(size / 1_048_576).toFixed(2)} MB)`);
-          await page.close();
-          return { name: item.name, status: "ok", size };
-        }
-      }
-    }
-
-    // Try reading the response body directly (if PDF loaded inline)
+    // Reuse the CloudFlare-cleared session for all UNECE files to avoid
+    // forcing the user through the challenge on every PDF URL.
     try {
-      await page.waitForLoadState("networkidle", { timeout: 15_000 });
-      const content = await page.content();
-      if (content.includes("%PDF") || content.length < 1000) {
-        // Try fetching directly via page context (cookies should be set)
-        const resp = await page.evaluate(async (u) => {
-          const r = await fetch(u);
-          const buf = await r.arrayBuffer();
-          return Array.from(new Uint8Array(buf));
-        }, item.url);
+      const resp = await page.evaluate(async (u) => {
+        const r = await fetch(u);
+        const buf = await r.arrayBuffer();
+        return Array.from(new Uint8Array(buf));
+      }, item.url);
 
-        if (resp && resp.length > 5000 && resp[0] === 0x25) {
-          writeFileSync(destPath, Buffer.from(resp));
-          const size = resp.length;
-          console.log(`  OK [fetch] (${(size / 1_048_576).toFixed(2)} MB)`);
-          await page.close();
-          return { name: item.name, status: "ok", size };
-        }
+      if (resp && resp.length > 5000 && resp[0] === 0x25) {
+        writeFileSync(destPath, Buffer.from(resp));
+        const size = resp.length;
+        console.log(`  OK [fetch] (${(size / 1_048_576).toFixed(2)} MB)`);
+        return { name: item.name, status: "ok", size };
       }
     } catch {
       // ignore
     }
 
     console.log(`  FAIL (CAPTCHA not solved or download blocked)`);
-    await page.close();
     return { name: item.name, status: "failed" };
   } catch (err) {
     console.log(`  ERROR: ${err.message.slice(0, 80)}`);
-    await page.close().catch(() => {});
     return { name: item.name, status: "error" };
   }
 }
@@ -503,6 +616,9 @@ async function downloadDirect(context, item) {
   const destDir = join(BASE_DIR, item.dir);
   const destPath = join(destDir, item.name);
   ensureDir(destDir);
+  const shouldSkipBrowserFallback = item.url.includes(
+    "publications.jrc.ec.europa.eu/repository/handle/",
+  );
 
   if (existsSync(destPath) && isValidPdf(destPath)) {
     const size = statSync(destPath).size;
@@ -510,60 +626,26 @@ async function downloadDirect(context, item) {
     return { name: item.name, status: "skipped", size };
   }
 
-  const page = await context.newPage();
-  try {
-    // Try download event first
-    const [download] = await Promise.all([
-      page.waitForEvent("download", { timeout: TIMEOUT }),
-      page.goto(item.url, { timeout: TIMEOUT }).catch(() => null),
-    ]).catch(() => [null]);
-
-    if (download) {
-      const tmpPath = await download.path();
-      if (tmpPath) {
-        copyFileSync(tmpPath, destPath);
-        if (isValidPdf(destPath)) {
-          const size = statSync(destPath).size;
-          console.log(`  OK [download] (${(size / 1_048_576).toFixed(2)} MB)`);
-          await page.close();
-          return { name: item.name, status: "ok", size };
-        }
-      }
-    }
-
-    // Fallback: try reading body
-    const response = await page
-      .goto(item.url, {
-        waitUntil: "networkidle",
-        timeout: 60_000,
-      })
-      .catch(() => null);
-
-    if (response && response.ok()) {
-      try {
-        const body = await response.body();
-        if (body && body.length > 5000 && body[0] === 0x25) {
-          writeFileSync(destPath, body);
-          const size = body.length;
-          console.log(`  OK [body] (${(size / 1_048_576).toFixed(2)} MB)`);
-          await page.close();
-          return { name: item.name, status: "ok", size };
-        }
-      } catch {
-        // body not available
-      }
-      console.log(`  FAIL (${response.status()}, not PDF content)`);
-    } else {
-      console.log(`  FAIL (${response?.status() ?? "no response"})`);
-    }
-
-    await page.close();
-    return { name: item.name, status: "failed" };
-  } catch (err) {
-    console.log(`  ERROR: ${err.message.slice(0, 80)}`);
-    await page.close().catch(() => {});
-    return { name: item.name, status: "error" };
+  const fetchedBuffer = await fetchPdfBuffer(item.url);
+  if (fetchedBuffer) {
+    writeFileSync(destPath, fetchedBuffer);
+    const size = fetchedBuffer.length;
+    console.log(`  OK [fetch] (${(size / 1_048_576).toFixed(2)} MB)`);
+    return { name: item.name, status: "ok", size };
   }
+
+  if (!shouldSkipBrowserFallback) {
+    const browserBuffer = await fetchPdfBufferWithBrowser(context, item.url);
+    if (browserBuffer) {
+      writeFileSync(destPath, browserBuffer);
+      const size = browserBuffer.length;
+      console.log(`  OK [browser] (${(size / 1_048_576).toFixed(2)} MB)`);
+      return { name: item.name, status: "ok", size };
+    }
+  }
+
+  console.log(`  FAIL (no recoverable PDF response)`);
+  return { name: item.name, status: "failed" };
 }
 
 // ── Main ──
@@ -619,15 +701,17 @@ async function main() {
 
   if (strategy === "unece" || strategy === "mixed") {
     console.log("NOTE: UNECE uses CloudFlare CAPTCHA. A browser will open.");
-    console.log("      When prompted, solve the CAPTCHA within 30 seconds.\n");
+    console.log(
+      "      Solve it once in the persistent browser profile, then press Enter.\n",
+    );
   }
 
-  const browser = await chromium.launch({
-    headless: false,
-    args: ["--disable-blink-features=AutomationControlled", "--no-sandbox"],
-  });
+  ensureDir(BROWSER_PROFILE_DIR);
 
-  const context = await browser.newContext({
+  const context = await chromium.launchPersistentContext(BROWSER_PROFILE_DIR, {
+    headless: false,
+    channel: "chrome",
+    args: ["--disable-blink-features=AutomationControlled", "--no-sandbox"],
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     acceptDownloads: true,
@@ -641,7 +725,7 @@ async function main() {
 
   const results = { ok: 0, failed: 0, skipped: 0, error: 0 };
   const details = [];
-  let firstUnece = true;
+  const uneceSession = { page: null };
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -654,8 +738,7 @@ async function main() {
     if (isEurLexUrl) {
       result = await downloadEurLex(context, item);
     } else if (isUneceUrl) {
-      result = await downloadUnece(context, item, firstUnece);
-      if (firstUnece) firstUnece = false;
+      result = await downloadUnece(context, item, uneceSession);
     } else {
       result = await downloadDirect(context, item);
     }
@@ -666,7 +749,8 @@ async function main() {
     if (i < items.length - 1) await sleep(DELAY_BETWEEN);
   }
 
-  await browser.close();
+  await uneceSession.page?.close().catch(() => {});
+  await context.close();
 
   // ── Summary ──
   console.log(`\n${"=".repeat(50)}`);

@@ -3,10 +3,8 @@ import { renderWithProviders, screen, fireEvent } from "../../test-utils";
 import MobileNavOverlay from "./MobileNavOverlay";
 import { NAV_ITEMS } from "../../constants/navigation";
 
-// Mobile overlay renders flat NAV_ITEMS as links; dropdown items (Company)
-// expand to a section label + child links inline. These helpers reflect that.
+// Mobile overlay renders all NAV_ITEMS as flat links (no dropdowns remain).
 const FLAT_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.children);
-const COMPANY_ITEM = NAV_ITEMS.find((item) => item.label === "Company");
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -77,35 +75,36 @@ describe("MobileNavOverlay", () => {
     expect(closeBtn).toHaveFocus();
   });
 
-  it("renders flat NAV_ITEMS as links and Company children (Why Ichnos, Team) as nested links", () => {
+  it("renders all flat NAV_ITEMS as links", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />);
 
-    // Flat items: Services, Battery Passport, Contact — each is a direct link.
     FLAT_NAV_ITEMS.forEach((item) => {
       const link = screen.getByRole("link", { name: item.label });
       expect(link).toHaveAttribute("href", item.path);
     });
-
-    // Company appears as a non-link section label; its children render as links.
-    expect(screen.queryByRole("link", { name: "Company" })).toBeNull();
-    COMPANY_ITEM.children.forEach((child) => {
-      expect(screen.getByRole("link", { name: child.label })).toBeInTheDocument();
-    });
   });
 
-  it("clicking any flat NAV_ITEMS entry or any Company child calls onClose", () => {
-    const allClickableLabels = [
-      ...FLAT_NAV_ITEMS.map((item) => item.label),
-      ...COMPANY_ITEM.children.map((child) => child.label),
-    ];
+  it("renders the Company section label and its dropdown children", () => {
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />);
 
-    allClickableLabels.forEach((label) => {
+    // Company appears as a section label (the mobile overlay expands dropdown
+    // children inline rather than rendering them behind a click).
+    expect(screen.getByText("Company")).toBeInTheDocument();
+
+    // Children — "Why Ichnos" (homepage scroll target) and "Team" (route).
+    expect(
+      screen.getByRole("link", { name: "Team" }),
+    ).toHaveAttribute("href", "/team");
+  });
+
+  it("clicking any flat NAV_ITEMS entry calls onClose", () => {
+    FLAT_NAV_ITEMS.forEach((item) => {
       const onClose = vi.fn();
       const { unmount } = renderWithProviders(
         <MobileNavOverlay isOpen={true} onClose={onClose} />,
       );
 
-      fireEvent.click(screen.getByRole("link", { name: label }));
+      fireEvent.click(screen.getByRole("link", { name: item.label }));
       expect(onClose).toHaveBeenCalled();
       unmount();
     });
@@ -138,10 +137,10 @@ describe("MobileNavOverlay", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/passport");
   });
 
-  it("on /services route, clicking flat links and Company.Team navigates to their paths", () => {
+  it("on /services route, clicking each flat link navigates to its path", () => {
     const expected = {
-      Team: "/team",
       Services: "/services",
+      "Battery Passport": "/passport",
       Contact: "/contact",
     };
 
@@ -171,7 +170,7 @@ describe("MobileNavOverlay", () => {
 
   it("renders nav links with default token-aware classes on non-matching route", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
-      route: "/",
+      route: "/catalog",
     });
 
     FLAT_NAV_ITEMS.forEach(({ label }) => {
@@ -203,28 +202,19 @@ describe("MobileNavOverlay", () => {
       expect(link).toHaveClass("nav-link-default");
       expect(link).not.toHaveClass("active");
     });
-    // Company section: children render as flat links; none should be active here.
-    COMPANY_ITEM.children.forEach((child) => {
-      const link = screen.getByRole("link", { name: child.label });
-      expect(link).not.toHaveClass("active");
-    });
   });
 
-  it("on /team route, the Team child link inside Company section is marked active", () => {
+  it("on /team route, the Team flat link is marked active", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
       route: "/team",
     });
     expect(screen.getByRole("link", { name: "Team" })).toHaveClass("active");
   });
 
-  it("all navigation links are keyboard accessible (flat items + Company children)", () => {
+  it("all navigation links are keyboard accessible (flat items)", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />);
 
-    const allLabels = [
-      ...FLAT_NAV_ITEMS.map((item) => item.label),
-      ...COMPANY_ITEM.children.map((child) => child.label),
-    ];
-    allLabels.forEach((label) => {
+    FLAT_NAV_ITEMS.forEach(({ label }) => {
       const link = screen.getByRole("link", { name: label });
       link.focus();
       expect(link).toHaveFocus();

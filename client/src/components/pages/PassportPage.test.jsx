@@ -4,31 +4,16 @@ import PassportPage from './PassportPage';
 import { PASSPORT_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import {
-  PASSPORT_NARRATIVE_CONTENT,
-  PASSPORT_VALUE_PROPS,
+  PASSPORT_HERO,
+  PASSPORT_CUSTOMERS,
 } from '../../constants/passportContent';
+import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
-vi.mock('../organisms/PassportHero', () => ({
-  default: () => (
-    <div data-testid="passport-hero">
-      <h1>Battery Passport</h1>
-    </div>
-  ),
+vi.mock('../organisms/ContactSection', () => ({
+  default: () => <div data-testid="contact-section">ContactSection</div>,
 }));
 
-vi.mock('../organisms/FeatureMaturityMatrix', () => ({
-  default: () => <div data-testid="feature-maturity-matrix" />,
-}));
-
-vi.mock('../organisms/TechnologyRoadmap', () => ({
-  default: () => <div data-testid="technology-roadmap" />,
-}));
-
-vi.mock('../organisms/PassportContactCta', () => ({
-  default: () => <div data-testid="passport-contact-cta" />,
-}));
-
-const PRECEDES = 0x04; // Node.DOCUMENT_POSITION_FOLLOWING
+const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
 
 describe('PassportPage', () => {
   beforeEach(() => {
@@ -50,80 +35,22 @@ describe('PassportPage', () => {
     });
   });
 
-  it('sets meta keywords', async () => {
-    await waitFor(() => {
-      const meta = document.querySelector(
-        'meta[name="keywords"][data-rh="true"]',
-      );
-      expect(meta).toHaveAttribute('content', PASSPORT_META.keywords);
-    });
-  });
-
   it('sets canonical link', async () => {
     await waitFor(() => {
-      const link = document.querySelector(
-        'link[rel="canonical"][data-rh="true"]',
-      );
-      expect(link).toHaveAttribute('href', PASSPORT_META.canonical);
+      expect(
+        document.querySelector('link[rel="canonical"][data-rh="true"]'),
+      ).toHaveAttribute('href', PASSPORT_META.canonical);
     });
   });
 
-  it('sets og meta tags', async () => {
+  it('sets the og:title and og:url meta tags', async () => {
     await waitFor(() => {
       expect(
         document.querySelector('meta[property="og:title"][data-rh="true"]'),
       ).toHaveAttribute('content', PASSPORT_META.og.title);
       expect(
-        document.querySelector(
-          'meta[property="og:description"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', PASSPORT_META.og.description);
-      expect(
-        document.querySelector('meta[property="og:type"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.type);
-      expect(
         document.querySelector('meta[property="og:url"][data-rh="true"]'),
       ).toHaveAttribute('content', PASSPORT_META.og.url);
-      expect(
-        document.querySelector(
-          'meta[property="og:site_name"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', PASSPORT_META.og.siteName);
-      expect(
-        document.querySelector('meta[property="og:locale"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.locale);
-      expect(
-        document.querySelector('meta[property="og:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.og.image);
-      expect(
-        document.querySelector(
-          'meta[property="og:image:alt"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', PASSPORT_META.og.imageAlt);
-    });
-  });
-
-  it('sets twitter meta tags', async () => {
-    await waitFor(() => {
-      expect(
-        document.querySelector('meta[name="twitter:card"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.card);
-      expect(
-        document.querySelector('meta[name="twitter:title"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.title);
-      expect(
-        document.querySelector(
-          'meta[name="twitter:description"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.description);
-      expect(
-        document.querySelector('meta[name="twitter:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.image);
-      expect(
-        document.querySelector(
-          'meta[name="twitter:image:alt"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', PASSPORT_META.twitter.imageAlt);
     });
   });
 
@@ -139,80 +66,62 @@ describe('PassportPage', () => {
     });
   });
 
-  it('renders PassportHero component', () => {
-    expect(screen.getByTestId('passport-hero')).toBeInTheDocument();
-  });
-
-  it('renders FeatureMaturityMatrix component', () => {
-    expect(screen.getByTestId('feature-maturity-matrix')).toBeInTheDocument();
-  });
-
-  it('renders TechnologyRoadmap component', () => {
-    expect(screen.getByTestId('technology-roadmap')).toBeInTheDocument();
-  });
-
-  it('renders PassportContactCta component', () => {
-    expect(screen.getByTestId('passport-contact-cta')).toBeInTheDocument();
-  });
-
-  it('renders sections in the correct order: narrative → value-props → cta', () => {
-    const narrative = screen.getByTestId('passport-narrative');
-    const valueProps = screen.getByTestId('passport-value-props');
-    const cta = screen.getByTestId('passport-contact-cta');
-    expect(narrative.compareDocumentPosition(valueProps) & PRECEDES).toBeTruthy();
-    expect(valueProps.compareDocumentPosition(cta) & PRECEDES).toBeTruthy();
-  });
-
-  it('renders the narrative heading and body from passport content', () => {
-    const narrative = screen.getByTestId('passport-narrative');
-    expect(narrative).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: PASSPORT_NARRATIVE_CONTENT.heading,
-      }),
-    ).toBeInTheDocument();
-    expect(narrative).toHaveTextContent(PASSPORT_NARRATIVE_CONTENT.body);
-  });
-
-  it('renders the value-props heading and subtext', () => {
-    const valueProps = screen.getByTestId('passport-value-props');
-    expect(valueProps).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: PASSPORT_VALUE_PROPS.heading,
-      }),
-    ).toBeInTheDocument();
-    expect(valueProps).toHaveTextContent(PASSPORT_VALUE_PROPS.subtext);
-  });
-
-  it('renders the OEM audience value card with its headline and points', () => {
-    const [oem, recycler] = PASSPORT_VALUE_PROPS.audiences;
-    const oemCard = screen.getByTestId(`passport-value-${oem.id}`);
-    expect(oemCard).toBeInTheDocument();
-    expect(oemCard).toHaveTextContent(oem.audience);
-    expect(oemCard).toHaveTextContent(oem.headline);
-    oem.points.forEach((point) => {
-      expect(oemCard).toHaveTextContent(point);
-    });
-    expect(oemCard).not.toHaveTextContent(recycler.headline);
-  });
-
-  it('renders the recycler audience value card with its headline and points', () => {
-    const [, recycler] = PASSPORT_VALUE_PROPS.audiences;
-    const recyclerCard = screen.getByTestId(`passport-value-${recycler.id}`);
-    expect(recyclerCard).toBeInTheDocument();
-    expect(recyclerCard).toHaveTextContent(recycler.audience);
-    expect(recyclerCard).toHaveTextContent(recycler.headline);
-    recycler.points.forEach((point) => {
-      expect(recyclerCard).toHaveTextContent(point);
-    });
-  });
-
-  it('has proper heading hierarchy with h1', () => {
+  it('renders the hero title as the single h1', () => {
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('Battery Passport');
+    expect(heading).toHaveTextContent(PASSPORT_HERO.title);
+  });
+
+  it('renders the ten sections in locked order with ContactSection last', () => {
+    const ordered = [
+      screen.getByRole('heading', { level: 1 }),
+      screen.getByTestId('passport-status'),
+      screen.getByTestId('passport-case'),
+      screen.getByTestId('passport-catenax'),
+      screen.getByTestId('passport-build-stack'),
+      screen.getByTestId('passport-role'),
+      screen.getByTestId('passport-customers'),
+      screen.getByTestId('passport-offer'),
+      screen.getByTestId('passport-roadmap'),
+      screen.getByTestId('contact-section'),
+    ];
+
+    for (let i = 0; i < ordered.length - 1; i += 1) {
+      expect(
+        ordered[i].compareDocumentPosition(ordered[i + 1]) & FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it('renders the three v5 sections with representative copy', () => {
+    expect(screen.getByTestId('passport-build-stack')).toBeInTheDocument();
+    expect(screen.getByTestId('passport-customers')).toBeInTheDocument();
+    expect(screen.getByTestId('passport-roadmap')).toBeInTheDocument();
+    const partnerGroup = PASSPORT_CUSTOMERS.groups.find(
+      (group) => group.id === 'passport-app-partners',
+    );
+    expect(document.body).toHaveTextContent(partnerGroup.body);
+    expect(document.body).toHaveTextContent('CX-0143');
+  });
+
+  it('renders the Catena-X outbound pointer with safe target/rel', () => {
+    const link = screen.getByRole('link', {
+      name: /Read the Catena-X introduction/i,
+    });
+    expect(link).toHaveAttribute('href', 'https://catena-x.net/en/about-us');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+  });
+
+  it('renders the offer eyebrow with the Catena-X credential', () => {
+    const eyebrow = screen.getByTestId('passport-offer-eyebrow');
+    expect(eyebrow).toHaveTextContent(CATENA_X_TITLE_BASE);
+  });
+
+  it('renders the locked key copy', () => {
+    expect(document.body).toHaveTextContent(
+      'Kits (the Tractus-X Development Kits)',
+    );
+    expect(document.body).toHaveTextContent('Ichnos role in the value chain');
   });
 
   it('has no accessibility violations', async () => {

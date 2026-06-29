@@ -1,5 +1,9 @@
 import { useState } from 'react';
 
+// Per-surface logo mapping. The wordmark must contrast with the surface it sits
+// on: light surfaces get the dark wordmark, dark surfaces get the light one.
+// `advisory`/`passport` are semantic aliases for the two surface tones, kept as
+// a stable API so callers can name the context rather than the colour.
 const LOGO_SOURCES = {
   light: '/logo-dark.png',
   dark: '/logo.png',

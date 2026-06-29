@@ -1,7 +1,7 @@
 {
   "name": "Ichnos Protocol",
   "short_name": "Ichnos",
-  "description": "Battery advisory and Battery Passport implementation.",
+  "description": "Catena-X-compatible ASEAN data layer for the European battery passport.",
   "start_url": "/",
   "display": "minimal-ui",
   "background_color": "#FAFBFC",

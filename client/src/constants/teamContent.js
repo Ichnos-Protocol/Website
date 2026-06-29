@@ -2,6 +2,7 @@ import {
   CAREER_TIMELINE_FRANCESCO,
   CAREER_TIMELINE_IHSAN,
 } from "./teamTimelines";
+import { CATENA_X_TITLE_BASE, getCatenaXFullTitle } from "./catenaXStatus";
 
 export const TEAM_MEMBERS = [
   {
@@ -10,20 +11,17 @@ export const TEAM_MEMBERS = [
     title: "Founder",
     photo: "/founder.png",
     bio: [
-      "Dr. Francesco Maltoni is the Founder of Ichnos Protocol. He helps OEMs, Tier-1 suppliers, and recyclers build battery systems and battery passports that work in production — not just on paper.",
-      "Francesco's expertise spans battery system architecture and safety, mechanical development, remanufacturing, and EU/APAC compliance. Since 2022, his focus has extended into the operational reality of EU Regulation 2023/1542 and DIN DKE SPEC 99100: what the data actually has to look like, where it comes from in the supply chain, and how to move it between systems that were never designed to talk to each other. At FEV Europe, he led a battery passport pilot project as Lead Expert — Battery Systems, and directed the internal software work that turned real-time battery data into passport-compliant output. He has also contributed to Horizon EU grant proposals on adjacent topics.",
-      "His doctorate (Dr.-Ing., RWTH Aachen PEM) was on automotive battery systems for the circular economy, with a focus on remanufacturing — recognised with the 3rd-place RWTH Innovation Award. During his doctoral years he also lectured on battery recycling at the RWTH Aachen Chair of Production Engineering of E-Mobility Components (PEM). Before the doctorate, thirteen years in engineering roles across Ducati, Technogym, and FEV — spanning engine design, motorcycle design, electrification, and vehicle battery design.",
-      "In 2026 he founded Ichnos Protocol (Singapore) as a battery advisory practice that also builds a digital Battery Passport platform aligned with EU Regulation 2023/1542 and Malaysian MS 2818.",
+      "Dr.-Ing. Francesco Maltoni is the founder of Ichnos Protocol. He spent his engineering career at FEV in Aachen as lead battery expert in battery-system engineering, owning sustainability requirements with customers, leading a battery digital-product-passport pilot on the in-house BMS/cloud-BMS practice, and presenting at Advanced Battery Power Europe 2025.",
+      "His doctorate at the RWTH-Aachen University Chair of Production Engineering of Electromobility Components (PEM) covered circular-economy battery systems and was recognised with the 3rd-place RWTH Innovation Award. He authored four peer-reviewed publications on remanufacturing, recycling, and cell housing design, and lectured on battery recycling at the PEM Chair.",
+      `He is an ${CATENA_X_TITLE_BASE}, working to bring ASEAN battery manufacturers into the Catena-X data space alongside their European importer customers, bridging the data-flow gap up the value chain without forcing any party to give up data sovereignty.`,
     ],
     skillsChips: [
       "Battery Systems & Safety (FMEA · requirements · test management)",
-      "Mechanical Development",
+      "Battery Passport integration (EU 2023/1542 · MS 2818)",
+      `Catena-X integration (${getCatenaXFullTitle()})`,
+      "EU ↔ ASEAN value-chain data flow",
+      "EDC / data-space integration",
       "Remanufacturing & Circular Economy",
-      "EU–APAC Compliance (incl. ASEAN)",
-      "Battery Passport (EU 2023/1542 · DIN DKE SPEC 99100 · MS 2818)",
-      "Project Management & Agile (Scrum, PSM I)",
-      "AI Integration",
-      "Languages: IT · DE · EN",
     ],
     showTimeline: true,
     timeline: CAREER_TIMELINE_FRANCESCO,
@@ -56,6 +54,7 @@ export const VISION_STATEMENT = {
 };
 
 export const TEAM_PAGE_HEADER = {
-  title: "Meet the Team",
-  subtitle: "The expertise and vision behind Ichnos Protocol.",
+  title: "Team",
+  subtitle:
+    "Practitioners building battery passport data flows between ASEAN manufacturing and the European market.",
 };

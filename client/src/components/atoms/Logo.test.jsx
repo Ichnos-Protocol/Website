@@ -25,6 +25,13 @@ describe('Logo', () => {
     expect(img).toHaveAttribute('src', '/logo.png');
   });
 
+  it('renders dark-on-light logo when theme="advisory"', () => {
+    renderWithProviders(<Logo theme="advisory" />);
+
+    const img = screen.getByAltText('Ichnos Protocol');
+    expect(img).toHaveAttribute('src', '/logo-dark.png');
+  });
+
   it('remains backwards-compatible with legacy theme="passport"', () => {
     renderWithProviders(<Logo theme="passport" />);
 

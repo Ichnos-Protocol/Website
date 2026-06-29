@@ -11,15 +11,11 @@ export default function Hero() {
       <Container>
         <Row className="justify-content-center text-center">
           <Col lg={8} md={10}>
-            <p className="text-uppercase small fw-semibold text-muted-custom mb-3 hero-eyebrow">
-              {HERO_CONTENT.eyebrow}
-            </p>
-            <h1 className="display-4 fw-bold mb-4 hero-headline">
-              {HERO_CONTENT.tagline}
+            <p className="section-eyebrow">{HERO_CONTENT.eyebrow}</p>
+            <h1 className="display-4 fw-bold mb-4 gradient-text">
+              {HERO_CONTENT.headline}
             </h1>
-            <p className="lead mb-5 text-muted-custom">
-              {HERO_CONTENT.subhead}
-            </p>
+            <p className="lead mb-5 section-subtext">{HERO_CONTENT.subhead}</p>
             <Link
               to={HERO_CONTENT.ctaHref}
               className="btn btn-lg px-5 py-3 fw-semibold hero-cta-btn"

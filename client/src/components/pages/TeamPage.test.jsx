@@ -144,6 +144,12 @@ describe('TeamPage', () => {
     });
   });
 
+  it("renders Francesco's Catena-X credential skill chip", () => {
+    expect(
+      screen.getByText(TEAM_MEMBERS[0].skillsChips[2]),
+    ).toBeInTheDocument();
+  });
+
   it('renders the recognition block for Francesco', () => {
     const blocks = screen.getAllByTestId('recognition-block');
     expect(blocks).toHaveLength(1);

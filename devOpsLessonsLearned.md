@@ -411,6 +411,163 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, '../../.env.e2e');
 ```
 
+### C8. Vercel CLI `promote` Ignores `VERCEL_ORG_ID` — Use `--scope` or the Token's Default
+
+**What went wrong**: After migrating Vercel projects from a personal account to
+a team, the first production promotion failed at the `vercel promote` step:
+
+```
+Error: Not authorized: Trying to access resource under scope "khorolevs-projects".
+You must re-authenticate to this scope or use a token with access to this scope. (403)
+```
+
+The `Discover` step right before it had succeeded — it found the deployment
+correctly in the new team. So the secrets (token, org ID, project ID) were not
+wrong. Yet the very next CLI step failed with a scope error.
+
+**Why it happened**: The two steps use different paths to talk to Vercel:
+
+| Step | Mechanism | Team scope source |
+|---|---|---|
+| `Discover` | `curl` with `teamId=$VERCEL_ORG_ID` query param | Explicit query param |
+| `Promote` | `npx vercel@latest promote <deployment-id>` | **Token's default scope** |
+
+The Vercel CLI reads `VERCEL_ORG_ID` env var only when there is a linked
+project (`.vercel/project.json`) or for project-context commands. For a bare
+`vercel promote <id>` call the deployment ID is the only operand, so the CLI
+falls back to the token's default scope to resolve which API team to hit. After
+a team migration, the token's default scope is often still the personal account.
+
+**The simple rule** — two complementary defences:
+
+1. **Always pass `--scope` explicitly to `vercel promote` in CI**:
+   ```bash
+   npx vercel@latest promote "$DEPLOYMENT_ID" --yes \
+     --token="$VERCEL_TOKEN" \
+     --scope="$VERCEL_ORG_ID"
+   ```
+   Modern CLI accepts a team ID or slug here, so reusing the existing
+   `VERCEL_ORG_ID` secret keeps the team identifier out of the workflow file.
+
+2. **Create the token with the team selected as default scope.** Vercel's
+   "Create Token" form defaults the scope dropdown to "Full Account" — pick
+   the actual team. A token whose default scope is the team Just Works for
+   every CLI command without `--scope`.
+
+Either fix alone resolves the 403; both together also protect any future
+workflow run if the token's default scope ever drifts.
+
+### C9. GitHub Secrets Do NOT Migrate When the Repo Moves
+
+**What went wrong**: After transferring the repo from a personal account to a
+GitHub organisation, the first manual run of the `Sync main → staging`
+workflow failed immediately at the `actions/checkout@v4` step with three
+identical errors:
+
+```
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+The workflow had run cleanly dozens of times on the old repo. Nothing about
+the workflow YAML had changed.
+
+**Why it happened**: GitHub repository transfer preserves code, history,
+issues, PRs, releases, and workflows — but **NOT** repository-level secrets.
+`Settings → Secrets and variables → Actions` starts empty on the new owner.
+The `SYNC_PAT` secret that the workflow expected was simply not present:
+`secrets.SYNC_PAT` evaluated to the empty string, `actions/checkout` passed
+an empty token to git, git tried interactive prompt, runner has no TTY.
+
+The error message is famously unhelpful — "terminal prompts disabled" sounds
+like a runner config issue, when the real cause is an empty secret three
+layers up.
+
+Even when `SYNC_PAT` is populated, the same error reappears if the token was
+a fine-grained PAT scoped to the *old* repo's owner. The PAT exists, git gets
+credentials, but the push to the new owner's repo is rejected and git falls
+back to prompting.
+
+**The simple rule** — treat every repo transfer as a secret-replay event:
+
+1. Before transferring (or immediately after), `grep -hoE 'secrets\.[A-Z_]+' .github/workflows/*.yml | sort -u` to enumerate every secret the workflows expect.
+2. For each one, ask: is this a PAT (likely owner-scoped, must be regenerated for the new owner), an API token to an external service (usually survives), or a literal value (always survives)?
+3. PATs especially: recreate them with the new owner as resource owner and the new repo as the allowed repository. Set the right write scopes (`Contents` and `Workflows` are the usual minimum for sync workflows).
+4. Re-populate **all** of them on the new repo's secrets page before the first post-migration workflow run.
+5. Test each affected workflow once manually before relying on it for production traffic.
+
+The unhelpful error message is a feature of how Actions exposes empty
+secrets, not of the workflow. Don't waste time debugging the workflow file.
+
+### C10. Vercel's Webhook Filter Silently Drops CI-Driven PAT Pushes — Use Deploy Hooks
+
+**What went wrong**: After the team migration and after we'd fixed `SYNC_PAT`,
+the staging sync workflow showed ✓ green and the staging branch updated on
+GitHub on every run — but the Vercel Deployments tab showed no new builds.
+For hours. `staging-client.ichnos-protocol.com` kept serving a pre-migration
+build. Every diagnostic surface insisted everything was healthy:
+
+| Surface | What it showed | Reality |
+|---|---|---|
+| GitHub Actions run | ✓ Success | Push completed |
+| `git log origin/staging` | New commit at the right SHA | Branch was updated |
+| Vercel Settings → Git | "Connected to `Ichnos-Protocol/Website`" | Project knows the repo |
+| GitHub Apps page on the org | Vercel installed, full repo access | Webhooks should be sent |
+| Vercel Deployments tab | Latest build was hours/days old | Filter dropped the event |
+
+Disconnect/reconnect of the Git integration in Vercel did **not** fix it —
+that resets project↔repo metadata but the filter applies after webhook
+receipt, downstream of the subscription.
+
+**Why it happened**: Vercel rejects webhook events from certain push
+identities. The `sync-staging.yml` header comment had documented one layer
+of this years ago ("`GITHUB_TOKEN` pushes don't trigger Vercel, use a PAT").
+After the team migration there's a second layer: even `SYNC_PAT`-attributed
+force-pushes get filtered. The exact filter logic is undocumented, but
+empirically: a `git push` from a developer terminal triggers a build; the
+same push via a CI runner using a PAT does not. The diagnostic that
+proves it is a head-to-head:
+
+```bash
+# Should trigger a Vercel build (recognised as user identity):
+git checkout -b test/vercel-webhook
+git commit --allow-empty -m "test"
+git push -u origin HEAD
+
+# Should NOT trigger if you're in this trap (PAT-driven, filtered):
+gh workflow run "Sync main → staging" --ref main
+```
+
+If only the first builds, the filter is the problem.
+
+**The simple rule** — when you can't reason your way through a webhook
+filter, route around it with Deploy Hooks:
+
+1. Create a Deploy Hook on each Vercel project for the affected branch
+   (Settings → Git → Deploy Hooks → name, branch → Create).
+2. Save the URL as a repo secret (e.g. `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`).
+3. Append a curl step to the workflow after the push:
+   ```yaml
+   - name: Trigger Vercel build via Deploy Hook
+     env:
+       DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_STAGING_CLIENT }}
+     run: |
+       HTTP_CODE=$(curl -s -o /tmp/deploy.json -w "%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+       test "$HTTP_CODE" = "201" || test "$HTTP_CODE" = "200"
+   ```
+4. The Deploy Hook is a direct trigger URL that bypasses webhook routing
+   and filtering entirely. It always builds.
+
+**Deploy Hook URLs are write credentials** — anyone with the URL can
+trigger a build. Treat them like API tokens: don't paste in chat or
+screenshots, never commit them, rotate on suspected exposure (Vercel
+can't regenerate; revoke and create a new one, then update the secret).
+
+**Repeat for every branch that needs builds** — staging *and* main, in our
+case. Production promotion via `vercel promote` reads "the latest READY
+preview on main", so main previews fall under the same filter. Without
+the Deploy Hook on main too, production stays stuck on the pre-migration
+build even after staging starts updating correctly.
+
 ---
 
 ## Part D — Database & Seeding
@@ -545,6 +702,81 @@ middleware, or build-time URL injection).
 first. Preview parity is a hardening task — document it, defer it. Previews
 can temporarily use direct API calls with bypass headers (like E2E tests
 already do). Don't block shipping on preview parity.
+
+### E5. Vercel Env Var Scopes Are Independent — Staging Passing Doesn't Validate Production
+
+**What went wrong**: After a Vercel team migration we promoted main → release.
+Both client and server deployments built successfully. Staging passed manual QA
+(staging runs against the production DB). But the moment the production site
+loaded, the `<ApiSanityWarning>` banner appeared, and:
+
+```
+$ curl -s -o /dev/null -w "%{http_code}\n" https://ichnos-protocol.com/api/health
+502
+```
+
+Body: `DNS_HOSTNAME_NOT_FOUND`.
+
+**Why it happened**: Vercel env vars have independent scopes (Production,
+Preview, Development), each subdivisible by branch overrides. After the team
+migration the client project had:
+
+| Scope | `VITE_API_HOST` |
+|---|---|
+| Preview (default) | empty |
+| Preview / branch `staging` | `staging-api.ichnos-protocol.com` |
+| Production | empty |
+
+Staging passed every check because the staging-branch override filled the
+variable correctly. There is no automatic propagation between scopes — and
+the `staging` override does not apply to other Preview branches.
+
+**The deeper trap — `vercel promote` does NOT rebuild**: a first-pass fix of
+adding `VITE_API_HOST=api.ichnos-protocol.com` to **Production scope** and
+clicking "Redeploy" worked — for one workflow cycle. The next merge to release
+regressed straight back to 502. Reason: `vercel promote <deployment-id>`
+**re-aliases an existing preview build** to be the production deployment, it
+does not rebuild. Vercel snapshots env-var values into the deployment at
+build time. The preview was built on the `main` branch, with **Preview**-scope
+env vars (no `staging` override applies on `main`). If Preview-default is
+empty, the snapshot is `""`, the rewrite resolves to `https:///api/health`,
+DNS-fails, 502 — regardless of what's set on Production scope.
+
+| Vercel action | Env-var scope read at build time |
+|---|---|
+| PR / push to non-prod branch → auto preview | **Preview** scope |
+| Push to production branch (auto-deploy) | **Production** scope |
+| Manual "Redeploy" on a Production deployment | **Production** scope |
+| `vercel promote <id>` (our workflow) | **Whatever the original build used** — i.e. Preview |
+
+Our workflow uses path 4. The Production scope is therefore **never read** in
+the normal promotion cycle.
+
+**The simple rule** — two layers:
+
+1. **For the `vercel promote` workflow model, Preview-default is what serves
+   production traffic.** Set every client env var that production needs on a
+   combined **Production and Preview** entry (single variable, both scopes
+   selected, no custom branch override). The `staging` branch override stays
+   because branch-scoped values outrank the default.
+
+2. **Smoke-test both origins after every promotion**:
+   ```bash
+   curl -s https://ichnos-protocol.com/api/health     # client + rewrite (validates Preview-default scope)
+   curl -s https://api.ichnos-protocol.com/api/health # server direct
+   ```
+   The first call is the one that catches scope misconfiguration. Without it,
+   you only know the server is up — not that the client can find it.
+
+3. **Triage shortcut, not a fix**: if production is down and you need it up
+   in 2 minutes, manually Redeploy the active Production deployment with
+   "Use existing Build Cache" **off**. That uses Production-scope env vars at
+   build time and works as a one-off. But the next workflow promotion will
+   regress unless rule 1 is also done. So always follow up.
+
+This whole class (Tier 8a in `docs/deploymentMigrationValidation.md`) is
+silent until the moment you promote, and the obvious fix (Production scope)
+masks the deeper problem for one cycle.
 
 ---
 

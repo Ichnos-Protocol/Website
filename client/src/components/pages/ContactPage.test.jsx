@@ -211,7 +211,21 @@ describe("ContactPage", () => {
 
   it("renders the intro paragraph above the contact section", async () => {
     await renderPage();
-    expect(screen.getByText(/About contacting us/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Catena-X-compatible ASEAN data services/),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the four AI example prompts", async () => {
+    await renderPage();
+    [
+      "What data do you collect from ASEAN sites?",
+      "How do you onboard an ASEAN supplier into Catena-X?",
+      "Can you be on site for a supplier-diligence visit in Indonesia?",
+      "How do you connect to Catena-X / EDC?",
+    ].forEach((prompt) => {
+      expect(screen.getByText(prompt)).toBeInTheDocument();
+    });
   });
 
   it("renders exactly one h1 page-level heading", async () => {
@@ -223,7 +237,7 @@ describe("ContactPage", () => {
 
   it("renders the intro paragraph above the shared ContactSection", async () => {
     await renderPage();
-    const intro = screen.getByText(/About contacting us/);
+    const intro = screen.getByText(/Catena-X-compatible ASEAN data services/);
     const contactSection = screen.getByTestId("contact-section");
     expect(intro).toBeInTheDocument();
     expect(contactSection).toBeInTheDocument();

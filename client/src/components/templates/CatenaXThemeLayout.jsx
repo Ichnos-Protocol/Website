@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
 
-export default function PassportThemeLayout() {
+export default function CatenaXThemeLayout() {
   return (
-    <div className="theme-passport">
+    <div className="theme-catenax">
       <Outlet />
     </div>
   );

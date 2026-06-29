@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
+import ListGroup from 'react-bootstrap/ListGroup';
 import Spinner from 'react-bootstrap/Spinner';
 
 import { openModal as openContactModal } from '../../features/contact/contactSlice';
@@ -17,7 +18,13 @@ import CalendlyModal from '../organisms/CalendlyModal';
 
 const CONTACT_PAGE_TITLE = 'Contact Ichnos Protocol';
 const CONTACT_PAGE_INTRO =
-  'About contacting us — this page brings every Ichnos Protocol touchpoint into one place. Ask the AI assistant for instant answers on battery systems, EU 2023/1542 homologation, MS 2818 alignment, or the Battery Passport, then follow up by email, LinkedIn, or a Calendly call. Authenticated visitors keep their full conversation history and pending questions.';
+  'Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. Ask the AI assistant for instant answers, then follow up by email, LinkedIn, or a Calendly call. Authenticated visitors keep their full conversation history and pending questions.';
+const AI_EXAMPLE_PROMPTS = [
+  'What data do you collect from ASEAN sites?',
+  'How do you onboard an ASEAN supplier into Catena-X?',
+  'Can you be on site for a supplier-diligence visit in Indonesia?',
+  'How do you connect to Catena-X / EDC?',
+];
 
 export default function ContactPage() {
   const dispatch = useDispatch();
@@ -54,6 +61,17 @@ export default function ContactPage() {
             <h1 className="page-title">{CONTACT_PAGE_TITLE}</h1>
             <p className="lead mt-4">{CONTACT_PAGE_INTRO}</p>
           </header>
+
+          <div className="mt-4">
+            <p className="fw-bold mb-2 text-center">
+              Ask the AI assistant, for example:
+            </p>
+            <ListGroup>
+              {AI_EXAMPLE_PROMPTS.map((prompt) => (
+                <ListGroup.Item key={prompt}>{prompt}</ListGroup.Item>
+              ))}
+            </ListGroup>
+          </div>
 
           <ContactSection persistChat={true} />
 

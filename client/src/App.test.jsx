@@ -16,6 +16,21 @@ vi.mock('./components/pages/LandingPage', () => ({
 vi.mock('./components/pages/PassportPage', () => ({
   default: () => <div>Passport Page</div>,
 }));
+vi.mock('./components/pages/ServicesPage', () => ({
+  default: () => <div>Services Page</div>,
+}));
+vi.mock('./components/pages/TeamPage', () => ({
+  default: () => <div>Team Page</div>,
+}));
+vi.mock('./components/pages/ContactPage', () => ({
+  default: () => <div>Contact Page</div>,
+}));
+vi.mock('./components/pages/PrivacyPage', () => ({
+  default: () => <div>Privacy Page</div>,
+}));
+vi.mock('./routes/ProtectedRoute', () => ({
+  default: ({ children }) => children,
+}));
 vi.mock('./components/templates/PublicLayout', () => ({
   default: ({ children }) => (
     <div data-testid="public-layout">
@@ -120,17 +135,16 @@ describe('App route theme wrappers', () => {
       advisoryWrapper.querySelector('[data-testid="footer"]'),
     ).toBeInTheDocument();
     expect(advisoryWrapper).toHaveTextContent('Landing Page');
-    expect(container.querySelector('.theme-passport')).toBeNull();
   });
 
-  it('renders passport theme wrapper containing chrome at /passport', async () => {
+  it('renders the Catena-X theme wrapper containing chrome at /passport', async () => {
     const { container } = renderWithProviders(<App />, { route: '/passport' });
 
     await waitFor(() => {
       expect(screen.getByText('Passport Page')).toBeInTheDocument();
     });
 
-    const passportWrapper = container.querySelector('.theme-passport');
+    const passportWrapper = container.querySelector('.theme-catenax');
     expect(passportWrapper).toBeInTheDocument();
     expect(
       passportWrapper.querySelector('[data-testid="public-layout"]'),
@@ -143,5 +157,31 @@ describe('App route theme wrappers', () => {
     ).toBeInTheDocument();
     expect(passportWrapper).toHaveTextContent('Passport Page');
     expect(container.querySelector('.theme-advisory')).toBeNull();
+  });
+});
+
+describe('App legacy route redirects', () => {
+  beforeEach(async () => {
+    const mod = await import('./hooks/useApiSanityCheck');
+    mod.useApiSanityCheck.mockReturnValue({
+      warning: null,
+      isChecking: false,
+    });
+  });
+
+  it('redirects /data to the Passport page', async () => {
+    renderWithProviders(<App />, { route: '/data' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Passport Page')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects /catena-x to the Passport page', async () => {
+    renderWithProviders(<App />, { route: '/catena-x' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Passport Page')).toBeInTheDocument();
+    });
   });
 });

@@ -6,6 +6,7 @@
 // Reference: https://schema.org/
 
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
+import { getCatenaXFullTitle } from "./catenaXStatus";
 
 const LOGO_URL = `${SEO_BASE_URL}/logo-dark.png`;
 
@@ -17,8 +18,7 @@ export const ORGANIZATION_SCHEMA = {
   url: SEO_BASE_URL,
   logo: LOGO_URL,
   email: "francesco@ichnos-protocol.com",
-  description:
-    "Battery advisory practice and Battery Passport platform builder, based in Singapore and operating across Europe and APAC.",
+  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()}.`,
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",
@@ -35,7 +35,15 @@ export const ORGANIZATION_SCHEMA = {
     { "@type": "Person", name: "Francesco Maltoni" },
     { "@type": "Person", name: "Ihsan Ahmad" },
   ],
-  areaServed: ["EU", "APAC", "ASEAN"],
+  areaServed: ["EU", "ID", "MY", "SG"],
+  knowsAbout: [
+    "Battery Passport",
+    "EU Battery Regulation 2023/1542",
+    "Catena-X",
+    "Battery Carbon Footprint",
+    "Supply-Chain Due Diligence",
+    "Malaysian Standard MS 2818",
+  ],
 };
 
 export const WEBSITE_SCHEMA = {
@@ -51,6 +59,7 @@ export const FOUNDER_PERSON_SCHEMA = {
   "@type": "Person",
   name: "Dr.-Ing. Francesco Maltoni",
   jobTitle: "Founder",
+  description: `Ex-FEV lead battery expert in battery-system engineering, working to bring ASEAN battery manufacturers into the Catena-X data space alongside their European importer customers. ${getCatenaXFullTitle()}.`,
   worksFor: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
   alumniOf: [
     { "@type": "CollegeOrUniversity", name: "RWTH Aachen University" },
@@ -65,6 +74,8 @@ export const FOUNDER_PERSON_SCHEMA = {
     "EU Battery Regulation 2023/1542",
     "Battery Passport (DIN DKE SPEC 99100)",
     "Malaysian Standard MS 2818",
+    "Catena-X",
+    "ASEAN Catena-X Onboarding",
   ],
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
@@ -93,34 +104,42 @@ function service(name, description) {
     name,
     description,
     provider: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
-    areaServed: ["EU", "APAC", "ASEAN"],
+    areaServed: ["EU", "ASEAN"],
   };
 }
 
+// Mirrors the pillar-grouped SERVICES_LIST in services.js (§4.2 / §4.6),
+// one-for-one in order: 7 cards, split 3 (Engineering) / 3 (Compliance) /
+// 1 (Circularity). Each entry's name is the card title and description is
+// the card description.
 export const SERVICE_SCHEMAS = [
   service(
     "Battery Systems & Safety Engineering",
-    "System architecture, requirement and test management, and full FMEA discipline (S-FMEA, D-FMEA, P-FMEA) across cell, module, and pack levels.",
+    "System architecture, requirement and test management, and full FMEA discipline — S-FMEA, D-FMEA, P-FMEA — across cell, module, and pack levels. Test planning, traceability, and design-review support for battery development programs that need rigorous engineering process from concept to SOP.",
   ),
   service(
     "Battery Mechanical Development",
-    "Pack and module mechanical design, cell housing, thermal hardware integration, and design-for-manufacture.",
-  ),
-  service(
-    "EU–APAC Battery Compliance Bridge",
-    "Translating European battery regulation into APAC (incl. ASEAN) supply-chain reality and vice versa. Covers EU 2023/1542, Malaysian MS 2818, regional certification, and supplier alignment.",
-  ),
-  service(
-    "Battery Remanufacturing, Recycling & Circular Economy",
-    "Second-life pathways, design for remanufacturing, design for recycling, and design for cost.",
-  ),
-  service(
-    "Battery Passport Implementation",
-    "EU 2023/1542 and Malaysian MS 2818 readiness audits, gap analyses, and end-to-end implementation including data model, supplier data collection workflows, and carbon-footprint pipelines.",
+    "Pack and module mechanical design, cell housing, thermal hardware integration, and design-for-manufacture. Drawing on a doctorate in Production Engineering of E-Mobility Components and patents on battery modules and aluminium cell housings.",
   ),
   service(
     "Technical Lead — Battery Systems",
-    "Embedded technical leadership combined with agile project management for battery systems development programs. PSM I certified; thirteen years of cross-functional project engineering.",
+    "Embedded senior battery expertise for early-stage teams and in-house programs that need experienced direction without a full-time hire — combined with sprint cadence, requirement traceability, milestone management, and cross-functional coordination. PSM I (Professional Scrum Master™ I) certified, backed by thirteen years of cross-functional project engineering across Ducati, Technogym, and FEV — from gasoline engines and motorcycle design through electrification and vehicle battery systems.",
+  ),
+  service(
+    "Strategic Catena-X consulting — battery passport",
+    "Strategic guidance for European importers and ASEAN manufacturers entering the Catena-X battery-passport data space. The engagement covers data-flow architecture, CX-0143 schema mapping, EDC connector planning, data sovereignty model, audit-trail strategy, and supplier onboarding into Catena-X (PCF first, then composition and due-diligence sub-models). Standards-grounded in Catena-X CX-0143, CX-0026, CX-0029, EU 2023/1542, DIN DKE SPEC 99100, and MS 2818. The lead offering on this pillar.",
+  ),
+  service(
+    "Battery Passport Integration",
+    "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. Hands-on delivery of a working provisioning flow that the EU importer's passport stack consumes natively.",
+  ),
+  service(
+    "EU–ASEAN Compliance Bridge",
+    "Translating European battery regulation into ASEAN supply-chain reality and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
+  ),
+  service(
+    "Battery Remanufacturing, Recycling & Circular Economy",
+    "Second-life pathways, design for remanufacturing, design for recycling, and design for cost. PhD-level expertise in circular-economy battery systems.",
   ),
 ];
 

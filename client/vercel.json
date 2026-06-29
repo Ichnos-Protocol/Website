@@ -10,6 +10,10 @@
       "env": ["VITE_API_HOST"]
     }
   ],
+  "redirects": [
+    { "source": "/data", "destination": "/passport", "statusCode": 301 },
+    { "source": "/catena-x", "destination": "/passport", "statusCode": 301 }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

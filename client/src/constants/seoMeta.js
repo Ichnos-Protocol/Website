@@ -5,12 +5,13 @@
 // Canonical domain is ichnos-protocol.com (hyphenated). The unhyphenated
 // variant is intentionally NOT used anywhere — see DEPLOYMENT_GITHUB_ACTIONS.md.
 
+import { getCatenaXFullTitle } from "./catenaXStatus";
+
 const BASE_URL = "https://ichnos-protocol.com";
 const SITE_NAME = "Ichnos Protocol";
 const LOCALE = "en_US";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
-const DEFAULT_OG_IMAGE_ALT =
-  "Ichnos Protocol — battery advisory and Battery Passport implementation";
+const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol — Battery advisory and EU battery-passport integration for ASEAN. ${getCatenaXFullTitle()}.`;
 
 function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
   const url = `${BASE_URL}${path}`;
@@ -43,47 +44,46 @@ function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) 
 
 export const LANDING_META = buildMeta({
   path: "/",
-  title: "Ichnos Protocol — Battery Advisory & Battery Passport",
+  title: "Ichnos Protocol — Battery advisory & passport integration",
   description:
-    "Battery advisory for OEMs, Tier-1 suppliers, and recyclers — systems engineering, safety, mechanical development, EU 2023/1542 and APAC compliance.",
+    "Practitioner-led battery advisory: systems engineering, safety, mechanical development, remanufacturing, and EU battery-passport integration for ASEAN.",
   keywords:
-    "battery advisory, battery systems engineering, battery safety, mechanical development, EU Battery Regulation, battery passport, MS 2818, APAC battery compliance, ASEAN, circular economy",
+    "battery advisory, battery systems engineering, EU Battery Regulation 2023/1542, battery passport, Catena-X, remanufacturing, battery safety, mechanical development, MS 2818, ASEAN, Singapore",
 });
 
 export const SERVICES_META = buildMeta({
   path: "/services",
-  title: "Services — Ichnos Protocol Battery Advisory",
+  title: "Services — Ichnos Protocol",
   description:
-    "Battery systems & safety, mechanical development, technical lead, EU–APAC compliance, remanufacturing & circular economy, Battery Passport implementation.",
+    "Battery systems engineering, mechanical development, technical leadership, EU 2023/1542 compliance, Catena-X battery-passport integration, remanufacturing, and circular-economy services. Singapore-incorporated.",
   keywords:
-    "battery systems engineering, FMEA, battery safety, battery mechanical development, battery technical lead, EU 2023/1542, MS 2818, remanufacturing, design for recycling, battery passport implementation",
+    "battery systems engineering, FMEA, battery passport implementation, Catena-X consulting, EU 2023/1542, MS 2818, ASEAN battery, circular economy, remanufacturing",
 });
 
 export const TEAM_META = buildMeta({
   path: "/team",
-  title: "Meet the Team — Ichnos Protocol",
-  description:
-    "Dr.-Ing. Francesco Maltoni (Founder, ex-FEV Lead Expert — Battery Systems) and Ihsan Ahmad (Co-Founder, AI & quantitative modelling).",
+  title: "Team — Ichnos Protocol",
+  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, RWTH Aachen PEM, FEV Battery Systems, battery passport expert, EU Battery Regulation, Singapore battery consulting, APAC battery advisory",
+    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Advisory Provider, battery passport, ASEAN battery advisory",
 });
 
 export const PASSPORT_META = buildMeta({
   path: "/passport",
-  title: "Battery Passport — Ichnos Protocol",
+  title: "The European battery passport — Ichnos Protocol",
   description:
-    "Digital Battery Passport aligned with EU Regulation 2023/1542 and Malaysian MS 2818 (MARI). Built for OEMs exporting between Europe and ASEAN.",
+    "Status quo and milestones of the EU 2023/1542 battery passport, the Catena-X network, custom translation of ASEAN battery passport into EU-compliant ones and the ASEAN ↔ EU value chain. Singapore-incorporated.",
   keywords:
-    "battery passport, EU Battery Regulation 2023/1542, MS 2818, MARI, digital product passport, Solana, supply chain transparency, circular economy, ASEAN battery compliance",
+    "battery passport, EU 2023/1542, Catena-X, EDC, AAS, SAMM, CX-0143, MS 2818, ASEAN battery, EU importer, value-chain data flow",
 });
 
 export const CONTACT_META = buildMeta({
   path: "/contact",
-  title: "Contact — Ichnos Protocol Battery Advisory",
+  title: "Contact — Ichnos Protocol",
   description:
-    "Talk to Ichnos Protocol — chat with our AI assistant, send an inquiry, or book a call. Battery advisory and Battery Passport implementation, Singapore + EU.",
+    "Talk to Ichnos Protocol about battery systems engineering, EU 2023/1542 battery-passport implementation, Catena-X integration consulting, or remanufacturing. Singapore + EU.",
   keywords:
-    "contact battery advisory, battery consulting Singapore, battery passport consultation, schedule battery engineering call",
+    "contact Ichnos Protocol, battery systems advisory, battery passport consultation, Catena-X integration, ASEAN battery, EU 2023/1542",
 });
 
 export const PRIVACY_META = buildMeta({

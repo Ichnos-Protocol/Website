@@ -25,16 +25,8 @@ const servicesSkeleton = (
   </>
 );
 
-const LOCKED_PILLAR_ORDER = ["engineering", "compliance", "circularity"];
-
-function getPillarById(pillarId) {
-  return SERVICE_PILLARS.find((pillar) => pillar.id === pillarId);
-}
-
 export default function ServicesPage() {
   useScrollToSection();
-
-  const orderedPillars = LOCKED_PILLAR_ORDER.map(getPillarById).filter(Boolean);
 
   return (
     <div>
@@ -47,7 +39,7 @@ export default function ServicesPage() {
         />
 
         <Container>
-          {orderedPillars.map((pillar) => (
+          {SERVICE_PILLARS.map((pillar) => (
             <ServicesGroup
               key={pillar.id}
               id={pillar.anchor}

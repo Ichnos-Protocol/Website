@@ -26,7 +26,7 @@ function sanitizeOrigin(origin) {
  */
 export default function buildStatusPage({ clientOrigin, env, nodeVersion }) {
   const safeOrigin = escapeHtml(sanitizeOrigin(clientOrigin));
-  const logoUrl = safeOrigin ? `${safeOrigin}/logo.png` : "";
+  const logoUrl = safeOrigin ? `${safeOrigin}/logo-dark.png` : "";
   const uptime = process.uptime();
   const hours = Math.floor(uptime / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);

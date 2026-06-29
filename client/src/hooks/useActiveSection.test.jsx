@@ -11,7 +11,7 @@ function mountLandingSections() {
     <>
       <section id="company">Company</section>
       <section id="services">Services</section>
-      <section id="passport">Battery Passport</section>
+      <section id="passport">Passport</section>
       <section id="contact">Contact</section>
     </>
   );
