@@ -11,6 +11,13 @@ const EXPECTED_CREDENTIAL_IDS = [
   'phd-pem-rwth',
 ];
 
+// Advisor label text is derived from the credentials constant, never
+// retyped: the tests locate the card by test id and the label node by
+// role, then compare rendered alt/text against this source of truth.
+const ADVISOR_CREDENTIAL = CREDENTIALS.find(
+  ({ id }) => id === 'catenax-qualified-advisor',
+);
+
 describe('CredentialStrip', () => {
   afterEach(() => {
     vi.resetModules();
@@ -32,7 +39,8 @@ describe('CredentialStrip', () => {
 
     it('renders the official Catena-X label image with lazy loading', () => {
       const card = screen.getByTestId('credential-catenax-qualified-advisor');
-      const img = within(card).getByAltText('Catena-X Qualified Advisor');
+      const img = within(card).getByRole('img');
+      expect(img).toHaveAttribute('alt', ADVISOR_CREDENTIAL.label);
       expect(img).toHaveAttribute('src', CATENA_X_LABEL_ASSET);
       expect(img).toHaveAttribute('loading', 'lazy');
       expect(img).toHaveAttribute('decoding', 'async');
@@ -91,11 +99,9 @@ describe('CredentialStrip', () => {
       render(<CredentialStripNull />);
 
       const card = screen.getByTestId('credential-catenax-qualified-advisor');
-      expect(
-        within(card).queryByAltText('Catena-X Qualified Advisor'),
-      ).toBeNull();
-      const textLabel = within(card).getByText('Catena-X Qualified Advisor');
-      const link = textLabel.closest('a');
+      expect(within(card).queryByRole('img')).toBeNull();
+      const link = within(card).getByRole('link');
+      expect(link).toHaveTextContent(ADVISOR_CREDENTIAL.label);
       expect(link).toHaveAttribute('href', 'https://catena-x.net');
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
