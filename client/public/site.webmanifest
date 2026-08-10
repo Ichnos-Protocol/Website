@@ -1,11 +1,11 @@
 {
   "name": "Ichnos Protocol",
   "short_name": "Ichnos",
-  "description": "Catena-X-compatible ASEAN data layer for the European battery passport.",
+  "description": "Ichnos Protocol makes companies across the ASEAN battery value chain ready for the EU Battery Passport by connecting them to Catena-X.",
   "start_url": "/",
   "display": "minimal-ui",
   "background_color": "#FAFBFC",
-  "theme_color": "#0F1419",
+  "theme_color": "#FAFBFC",
   "icons": [
     { "src": "/brand/favicon-32.png", "sizes": "32x32", "type": "image/png" },
     { "src": "/brand/apple-touch-icon-180.png", "sizes": "180x180", "type": "image/png" },
