@@ -46,7 +46,7 @@ export const PASSPORT_CASE = {
   paragraphs: [
     "The passport is not a document the importer fills in at the border. It is a dataset that must accompany the physical goods from raw-materials extraction, through refining, through the ASEAN-made materials, precursors, electrodes, cells, and modules, into the pack and system integrator, and finally into the EU importer's complete passport.",
     "The default state today is that this travel does not happen, so the data need to be gathered manually and aligned and aggregated painfully by hand. An EV battery containing an ASEAN-made cell starts a passport with no upstream data attached — the importer is legally responsible for a dataset they have no native way to source and rely on the cooperation of the supplier. This raises the costs and friction of onboarding new suppliers, because multiple lines of communication and trust need to be established.",
-    "The fix is not to build a parallel passport. It is to integrate the ASEAN supply chain's data into the same Catena-X-compatible data flows the European passport stack consumes, with the right schemas, the right exchange runtime, and the right chain-of-custody.",
+    "The fix is not to build a parallel passport. It is to integrate the ASEAN supply chain's data into the same Catena-X data flows the European passport stack consumes, with the right schemas, the right exchange runtime, and the right chain-of-custody.",
   ],
 };
 
