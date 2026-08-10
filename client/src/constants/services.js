@@ -4,7 +4,8 @@ export const SERVICES_PAGE_CONTENT = {
     "Expert consulting for battery development, EU battery-passport readiness, and the circular value chain.",
 };
 
-// Services grouped into three pillars (Engineering, Compliance, Circularity).
+// Services grouped into four pillars (Engineering, Catena-X, Compliance,
+// Circularity).
 // ID strings are stable — they are used as DOM anchors and as keys in tests;
 // do not change without updating structuredData.js and any consumer test.
 export const SERVICES_LIST = [
@@ -42,38 +43,98 @@ export const SERVICES_LIST = [
     pillar: "engineering",
     deliveryMethod: false,
   },
-  // ── Compliance ──
-  // Order per Francesco's review: Strategic Consulting first (the lead
-  // Catena-X offering, includes the supplier-onboarding scope Ichnos
-  // can deliver in advisory form today and as full onboarding once the
-  // Catena-X qualification is granted via §0a toggle), then the
-  // narrower Battery Passport Integration card, then the regulatory
-  // Compliance Bridge.
+  // ── Catena-X (SME-facing storefront cards, copy per docs §3.2 verbatim;
+  //    official terms live only in the microlines, linked to official pages) ──
   {
-    id: "strategic-consulting-catena-x-battery-passport",
+    id: "catenax-get-connected",
     icon: "bi-diagram-3",
-    title: "Strategic Catena-X consulting — battery passport",
-    eyebrow: "Official Catena-X Qualified Advisory Provider",
-    tagline:
-      "Catena-X battery-passport strategy: data architecture, schema mapping, and supplier onboarding into the data space.",
+    title: "Get connected to Catena-X",
     description:
-      "Strategic guidance for European importers and ASEAN manufacturers entering the Catena-X battery-passport data space. The engagement covers data-flow architecture, CX-0143 schema mapping, EDC connector planning, data sovereignty model, audit-trail strategy, and supplier onboarding into Catena-X (PCF first, then composition and due-diligence sub-models). Standards-grounded in Catena-X CX-0143, CX-0026, CX-0029, EU 2023/1542, DIN DKE SPEC 99100, and MS 2818. The lead offering on this pillar.",
-    pillar: "compliance",
-    deliveryMethod: false,
-    lead: true,
+      'Joining the network means registering your company, getting your network ID, and setting up the secure "mailbox" your customers\' systems talk to. We handle the whole path — registration through an official onboarding provider, identity and credentials, and the connector choice that fits your size (managed service or self-hosted). No dataspace team required.',
+    pillar: "catena-x",
+    passportLink: "/passport",
+    microline: [
+      {
+        text: "onboarding via an Onboarding Service Provider (OSP)",
+        href: "https://catena-x.net",
+      },
+      { text: "Business Partner Number (BPN)" },
+      {
+        text: "Eclipse Dataspace Connector (EDC)",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/connector-kit/adoption-view",
+      },
+    ],
   },
   {
-    id: "battery-passport-integration",
-    icon: "bi-shield-fill-check",
-    title: "Battery Passport Integration",
-    tagline:
-      "Provisioning supplier data into the Catena-X battery passport: schema mapping, supplier ingestion, and PCF pipelines.",
+    id: "catenax-digital-twins",
+    icon: "bi-boxes",
+    title: "Your products as digital twins",
     description:
-      "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. Hands-on delivery of a working provisioning flow that the EU importer's passport stack consumes natively.",
-    pillar: "compliance",
-    deliveryMethod: false,
+      "Every batch and every cell you ship gets a digital twin — a structured data record your customer can look up, if you allow it. We model your products in the formats the network understands, register the twins, and connect the pipeline to what you already run: ERP, MES, or spreadsheets. We meet your data where it is.",
+    pillar: "catena-x",
     passportLink: "/passport",
+    microline: [
+      {
+        text: "Industry Core KIT",
+        href: "https://eclipse-tractusx.github.io/docs-kits/category/industry-core-kit",
+      },
+      { text: "Digital Twin Registry (DTR)" },
+      { text: "SAMM aspect models" },
+    ],
   },
+  {
+    id: "catenax-battery-passport",
+    icon: "bi-file-earmark-text",
+    title: "Flow into the EU Battery Passport",
+    description:
+      "From 18 February 2027, batteries sold in the EU carry a digital passport — and if you make materials, electrodes or cells, part of that passport is your data. We map your production data to the passport fields, validate it against the official formats, and set up the flow to your customer's passport: correct, on time, and only what you choose to share.",
+    pillar: "catena-x",
+    passportLink: "/passport",
+    microline: [
+      {
+        text: "EcoPass KIT",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/eco-pass-kit/adoption-view/",
+      },
+      { text: "battery_pass aspect model" },
+      { text: "EU Battery Regulation 2023/1542" },
+    ],
+  },
+  {
+    id: "catenax-production-planning",
+    icon: "bi-calendar-week",
+    title: "Production planning & data exchange",
+    description:
+      "The same connection that feeds the passport can carry your day-to-day business data: demand forecasts and capacity requests from your customers, delivery and stock information from you — structured and automatic, instead of email chains and Excel versions. Being easy to plan with is a competitive advantage; we set it up.",
+    pillar: "catena-x",
+    passportLink: "/passport",
+    microline: [
+      {
+        text: "Demand & Capacity Management (DCM) KIT",
+        href: "https://eclipse-tractusx.github.io/docs-kits/category/dcm-kit",
+      },
+      {
+        text: "PURIS (short-interval production & stock data)",
+        href: "https://eclipse-tractusx.github.io/docs-kits/category/puris-kit",
+      },
+    ],
+  },
+  {
+    id: "catenax-pcf",
+    icon: "bi-cloud",
+    title: "Carbon footprint, per product",
+    description:
+      "EU customers increasingly ask for a carbon footprint per product, not per company. We help you calculate product carbon footprints from your real energy and material data and exchange them in the format the network verifies.",
+    pillar: "catena-x",
+    passportLink: "/passport",
+    microline: [
+      {
+        text: "PCF KIT",
+        href: "https://eclipse-tractusx.github.io/docs-kits/category/pcf-exchange-kit",
+      },
+      { text: "pcf aspect model" },
+    ],
+  },
+  // ── Compliance ──
   {
     id: "eu-asean-compliance-bridge",
     icon: "bi-globe-asia-australia",
@@ -101,8 +162,18 @@ export const SERVICES_LIST = [
 
 // Pillars in display order. `anchor` is the DOM id the page renders for each
 // pillar section and the scroll target the footer/nav links navigate to.
+// The catena-x pillar carries optional group-header copy (kicker/heading/lede,
+// docs §3.1 verbatim — the lede holds the single Catena-X® mention).
 export const SERVICE_PILLARS = [
   { id: "engineering", label: "Engineering", anchor: "engineering" },
+  {
+    id: "catena-x",
+    label: "Catena-X services",
+    anchor: "catena-x",
+    kicker: "Catena-X services",
+    heading: "Connect once. Answer every customer data request.",
+    lede: "Catena-X® is the automotive industry's shared data network — the channel through which EU customers will request battery data. Based in Singapore, we get ASEAN manufacturers connected and make the data flow: from your production floor into your customers' systems and the EU Battery Passport.",
+  },
   { id: "compliance", label: "Compliance", anchor: "compliance" },
   { id: "circularity", label: "Circularity", anchor: "circularity" },
 ];

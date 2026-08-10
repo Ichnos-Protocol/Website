@@ -11,7 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const EXPECTED_ADVISORY_BG = '#FAFBFC';
-const EXPECTED_CATENAX_BG = '#0F0F23';
+const EXPECTED_CATENAX_BG = '#FAFBFC';
 
 const INDEX_CSS_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -63,21 +63,32 @@ describe('theme-scoping (index.css token assertions)', () => {
     expect(value?.toUpperCase()).toBe(EXPECTED_ADVISORY_BG.toUpperCase());
   });
 
-  it('declares --color-bg-base: #0F0F23 in the .theme-catenax block', () => {
+  it('declares --color-bg-base: #FAFBFC in the .theme-catenax block', () => {
     const block = extractBlockBySelector(CSS_SOURCE, '.theme-catenax');
     expect(block).toBeTruthy();
     const value = getDeclaredValue(block, '--color-bg-base');
     expect(value?.toUpperCase()).toBe(EXPECTED_CATENAX_BG.toUpperCase());
   });
+});
 
-  it('overrides the advisory hero under .theme-catenax with the dark base surface', () => {
+describe('hero surface (index.css light-treatment assertions)', () => {
+  it.each(['.hero-section', '.hero-section--advisory'])(
+    '%s uses ink text on a light surface with no photo overlay',
+    (selector) => {
+      const block = extractBlockBySelector(CSS_SOURCE, selector);
+      expect(block).toBeTruthy();
+      expect(getDeclaredValue(block, 'color')).toBe('var(--color-text-primary)');
+      expect(getDeclaredValue(block, 'background')).not.toContain('url(');
+    },
+  );
+
+  it('.hero-section .section-subtext uses secondary ink without text-shadow', () => {
     const block = extractBlockBySelector(
       CSS_SOURCE,
-      '.theme-catenax .advisory-page-hero',
+      '.hero-section .section-subtext',
     );
     expect(block).toBeTruthy();
-    const background = getDeclaredValue(block, 'background');
-    expect(background).toContain('var(--color-bg-base)');
-    expect(background).not.toContain('bg-advisory.jpg');
+    expect(getDeclaredValue(block, 'color')).toBe('var(--color-text-secondary)');
+    expect(getDeclaredValue(block, 'text-shadow')).toBeNull();
   });
 });

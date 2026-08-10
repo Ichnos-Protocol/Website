@@ -5,10 +5,10 @@ import { useState } from 'react';
 // `advisory`/`passport` are semantic aliases for the two surface tones, kept as
 // a stable API so callers can name the context rather than the colour.
 const LOGO_SOURCES = {
-  light: '/logo-dark.png',
-  dark: '/logo.png',
-  advisory: '/logo-dark.png',
-  passport: '/logo.png',
+  light: '/brand/ichnos_mark_dualtone.svg',
+  dark: '/brand/ichnos_mark_white.svg',
+  advisory: '/brand/ichnos_mark_dualtone.svg',
+  passport: '/brand/ichnos_mark_white.svg',
 };
 
 export default function Logo({ className = '', theme = 'light' }) {

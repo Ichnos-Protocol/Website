@@ -10,26 +10,23 @@ import {
   getCatenaXFullTitle,
 } from './catenaXStatus';
 
-describe('catenaXStatus (pending state — real module)', () => {
-  it('ships with the qualification flag off', () => {
-    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(false);
+describe('catenaXStatus (granted state — real module)', () => {
+  it('ships with the qualification flag on', () => {
+    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(true);
   });
 
   it('exposes the stable qualifier class name', () => {
     expect(CATENA_X_QUALIFIER_CLASS).toBe('catenax-qualifier-pending');
   });
 
-  it('returns a non-empty qualifier suffix with a leading space while pending', () => {
-    const pending = getCatenaXQualifierText();
-    expect(pending).toBe(computeCatenaXQualifierText(false));
-    expect(pending.startsWith(' ')).toBe(true);
-    expect(pending.trim().length).toBeGreaterThan(0);
+  it('returns an empty qualifier suffix once granted', () => {
+    const granted = getCatenaXQualifierText();
+    expect(granted).toBe(computeCatenaXQualifierText(true));
+    expect(granted).toBe('');
   });
 
-  it('builds the full title as base + qualifier', () => {
-    expect(getCatenaXFullTitle()).toBe(
-      CATENA_X_TITLE_BASE + getCatenaXQualifierText(),
-    );
+  it('reduces the full title to the base credential', () => {
+    expect(getCatenaXFullTitle()).toBe(CATENA_X_TITLE_BASE);
   });
 });
 

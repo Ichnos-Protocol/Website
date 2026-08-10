@@ -222,4 +222,20 @@ describe("SYSTEM_PROMPT", () => {
     expect(typeof SYSTEM_PROMPT).toBe("string");
     expect(SYSTEM_PROMPT).toContain("Ichnos Protocol");
   });
+
+  it("states the Qualified Advisor status and pending membership", () => {
+    expect(SYSTEM_PROMPT).toContain("Catena-X Qualified Advisor");
+    expect(SYSTEM_PROMPT).toContain(
+      "Catena-X membership: application in progress",
+    );
+  });
+
+  it("omits the stale qualification line and retains the guardrail", () => {
+    expect(SYSTEM_PROMPT).not.toContain(
+      "consultant qualification: application in progress",
+    );
+    expect(SYSTEM_PROMPT).toContain(
+      "Do not claim Catena-X membership, certification, or partner status",
+    );
+  });
 });

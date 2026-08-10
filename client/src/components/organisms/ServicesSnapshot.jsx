@@ -16,6 +16,9 @@ export default function ServicesSnapshot() {
               key={pillar.id}
               id={pillar.anchor}
               label={pillar.label}
+              kicker={pillar.kicker}
+              heading={pillar.heading}
+              lede={pillar.lede}
               services={getServicesByPillar(pillar.id)}
               nested
             />

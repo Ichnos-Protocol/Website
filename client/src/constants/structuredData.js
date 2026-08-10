@@ -8,7 +8,7 @@
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
 import { getCatenaXFullTitle } from "./catenaXStatus";
 
-const LOGO_URL = `${SEO_BASE_URL}/logo-dark.png`;
+const LOGO_URL = `${SEO_BASE_URL}/brand/ichnos_mark_dualtone.svg`;
 
 export const ORGANIZATION_SCHEMA = {
   "@context": "https://schema.org",
@@ -109,9 +109,9 @@ function service(name, description) {
 }
 
 // Mirrors the pillar-grouped SERVICES_LIST in services.js (§4.2 / §4.6),
-// one-for-one in order: 7 cards, split 3 (Engineering) / 3 (Compliance) /
-// 1 (Circularity). Each entry's name is the card title and description is
-// the card description.
+// one-for-one in order: 10 cards, split 3 (Engineering) / 5 (Catena-X) /
+// 1 (Compliance) / 1 (Circularity). Each entry's name is the card title and
+// description is the card description.
 export const SERVICE_SCHEMAS = [
   service(
     "Battery Systems & Safety Engineering",
@@ -126,12 +126,24 @@ export const SERVICE_SCHEMAS = [
     "Embedded senior battery expertise for early-stage teams and in-house programs that need experienced direction without a full-time hire — combined with sprint cadence, requirement traceability, milestone management, and cross-functional coordination. PSM I (Professional Scrum Master™ I) certified, backed by thirteen years of cross-functional project engineering across Ducati, Technogym, and FEV — from gasoline engines and motorcycle design through electrification and vehicle battery systems.",
   ),
   service(
-    "Strategic Catena-X consulting — battery passport",
-    "Strategic guidance for European importers and ASEAN manufacturers entering the Catena-X battery-passport data space. The engagement covers data-flow architecture, CX-0143 schema mapping, EDC connector planning, data sovereignty model, audit-trail strategy, and supplier onboarding into Catena-X (PCF first, then composition and due-diligence sub-models). Standards-grounded in Catena-X CX-0143, CX-0026, CX-0029, EU 2023/1542, DIN DKE SPEC 99100, and MS 2818. The lead offering on this pillar.",
+    "Get connected to Catena-X",
+    'Joining the network means registering your company, getting your network ID, and setting up the secure "mailbox" your customers\' systems talk to. We handle the whole path — registration through an official onboarding provider, identity and credentials, and the connector choice that fits your size (managed service or self-hosted). No dataspace team required.',
   ),
   service(
-    "Battery Passport Integration",
-    "Getting an ASEAN supplier's source data through to a compliant EU digital battery passport. Schema mapping into the Catena-X passport data model (CX-0143 sub-aspects on AAS and SAMM), supplier ingestion workflows from Excel / MES / ERP into a canonical battery data model, carbon-footprint pipelines built to CX-0026 / CX-0029 (JRC CFB-EV methodology), and exchange via Eclipse Dataspace Connector. Hands-on delivery of a working provisioning flow that the EU importer's passport stack consumes natively.",
+    "Your products as digital twins",
+    "Every batch and every cell you ship gets a digital twin — a structured data record your customer can look up, if you allow it. We model your products in the formats the network understands, register the twins, and connect the pipeline to what you already run: ERP, MES, or spreadsheets. We meet your data where it is.",
+  ),
+  service(
+    "Flow into the EU Battery Passport",
+    "From 18 February 2027, batteries sold in the EU carry a digital passport — and if you make materials, electrodes or cells, part of that passport is your data. We map your production data to the passport fields, validate it against the official formats, and set up the flow to your customer's passport: correct, on time, and only what you choose to share.",
+  ),
+  service(
+    "Production planning & data exchange",
+    "The same connection that feeds the passport can carry your day-to-day business data: demand forecasts and capacity requests from your customers, delivery and stock information from you — structured and automatic, instead of email chains and Excel versions. Being easy to plan with is a competitive advantage; we set it up.",
+  ),
+  service(
+    "Carbon footprint, per product",
+    "EU customers increasingly ask for a carbon footprint per product, not per company. We help you calculate product carbon footprints from your real energy and material data and exchange them in the format the network verifies.",
   ),
   service(
     "EU–ASEAN Compliance Bridge",

@@ -129,15 +129,20 @@ describe('Footer', () => {
     ).toBeNull();
   });
 
-  it('Services column has exactly three locked section links to /services', () => {
+  it('Services column has exactly four locked section links to /services', () => {
     const servicesCol = screen.getByTestId('footer-col-services');
-    const labels = ['Engineering', 'Compliance', 'Circularity'];
+    const labels = [
+      'Engineering',
+      'Catena-X services',
+      'Compliance',
+      'Circularity',
+    ];
     labels.forEach((label) => {
       expect(
         within(servicesCol).getByRole('link', { name: label }),
       ).toHaveAttribute('href', '/services');
     });
-    expect(within(servicesCol).getAllByRole('link')).toHaveLength(3);
+    expect(within(servicesCol).getAllByRole('link')).toHaveLength(4);
     // Delivery Models is intentionally not surfaced in the footer — there is
     // only one delivery-method service (Technical Lead with agile PM merged),
     // and pillars are the canonical footer navigation primitives.
@@ -149,6 +154,7 @@ describe('Footer', () => {
   it('Services column links navigate to /services with the locked scrollTo state', () => {
     const cases = [
       { label: 'Engineering', scrollTo: 'engineering' },
+      { label: 'Catena-X services', scrollTo: 'catena-x' },
       { label: 'Compliance', scrollTo: 'compliance' },
       { label: 'Circularity', scrollTo: 'circularity' },
     ];
@@ -206,6 +212,27 @@ describe('Footer', () => {
     expect(attribution).not.toHaveTextContent('Photo:');
     expect(attribution).not.toHaveTextContent('Photography:');
     expect(attribution).not.toHaveTextContent('Unsplash');
+  });
+
+  it('renders the Recognitions block with the credential labels', () => {
+    const recognitions = screen.getByTestId('footer-recognitions');
+    expect(recognitions).toHaveTextContent('Recognitions');
+    expect(recognitions).toHaveTextContent('Catena-X Qualified Advisor');
+    expect(recognitions).toHaveTextContent('PhD, PEM — RWTH Aachen');
+  });
+
+  it('recognitions are text-only while CATENA_X_LABEL_ASSET_NEG is null', () => {
+    // The footer is dark: the pos label must never render here, and no
+    // negative variant exists yet — so no <img> at all.
+    const recognitions = screen.getByTestId('footer-recognitions');
+    expect(recognitions.querySelectorAll('img')).toHaveLength(0);
+  });
+
+  it('renders the site-wide Catena-X trademark notice once', () => {
+    const trademark = screen.getByTestId('footer-trademark');
+    expect(trademark).toHaveTextContent(
+      'registered trademark of Catena-X Automotive Network e.V.',
+    );
   });
 
   it('has semantic <footer> element', () => {

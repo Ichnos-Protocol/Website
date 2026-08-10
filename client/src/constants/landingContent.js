@@ -1,5 +1,7 @@
+import { CATENA_X_TITLE_BASE } from "./catenaXStatus";
+
 export const HERO_CONTENT = {
-  eyebrow: "EU BATTERY PASSPORT INTEGRATION FOR ASEAN",
+  eyebrow: `Based in Singapore · Serving ASEAN manufacturers · ${CATENA_X_TITLE_BASE}`,
   headline:
     "From regulatory compliance to seamless integration into the circular value chain.",
   subhead:
@@ -12,7 +14,7 @@ export const WHY_ICHNOS = {
   heading: "Why Ichnos",
   paragraphs: [
     "Ichnos Protocol is a Singapore-incorporated battery advisory practice run by Dr.-Ing. Francesco Maltoni — ex-FEV lead battery expert in battery-system engineering, PhD at the Chair of Production Engineering of Electromobility Components (PEM) of the RWTH-Aachen University, with more than 20 years in R&D roles within the automotive industry.",
-    "The practice covers battery systems engineering, safety, mechanical development, and remanufacturing and extends into the EU battery-passport ecosystem as an Official Catena-X Qualified Advisory Provider. Ichnos brings ASEAN battery manufacturers into the European data flow so EU importers and customers get a compliant, traceable passport embedded in their supply chain infrastructure.",
+    `The practice covers battery systems engineering, safety, mechanical development, and remanufacturing and extends into the EU battery-passport ecosystem as a ${CATENA_X_TITLE_BASE}. Ichnos brings ASEAN battery manufacturers into the European data flow so EU importers and customers get a compliant, traceable passport embedded in their supply chain infrastructure.`,
   ],
 };
 

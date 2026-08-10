@@ -10,13 +10,13 @@ describe('Hero', () => {
     expect(eyebrow).toHaveTextContent(HERO_CONTENT.eyebrow);
   });
 
-  it('renders the headline with the gradient-text class', () => {
+  it('renders the headline without the gradient-text class', () => {
     renderWithProviders(<Hero />);
     const headline = screen.getByRole('heading', {
       level: 1,
       name: HERO_CONTENT.headline,
     });
-    expect(headline).toHaveClass('gradient-text');
+    expect(headline).not.toHaveClass('gradient-text');
   });
 
   it('renders the subhead with the section-subtext class', () => {

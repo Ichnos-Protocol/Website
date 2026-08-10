@@ -3,16 +3,16 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
 
-import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
+import ServiceMicroline from "../molecules/ServiceMicroline";
 
 function ServiceCard({
   icon,
   title,
   description,
-  eyebrow,
   passportLink,
   comingSoon,
   lead,
+  microline,
 }) {
   const cardClass = [
     "h-100 service-card",
@@ -32,12 +32,6 @@ function ServiceCard({
               aria-hidden="true"
             />
           )}
-          {eyebrow && (
-            <span className="service-card-eyebrow d-block mb-2">
-              {eyebrow}
-              <CatenaXQualifierSpan />
-            </span>
-          )}
           <Card.Title className="h5 mb-2 service-card-title">
             {title}
           </Card.Title>
@@ -47,6 +41,7 @@ function ServiceCard({
               Learn more →
             </Link>
           )}
+          <ServiceMicroline segments={microline} />
         </Card.Body>
       </Card>
     </Col>
@@ -58,6 +53,9 @@ export default function ServicesGroup({
   label,
   services = [],
   nested = false,
+  kicker,
+  heading,
+  lede,
 }) {
   const Wrapper = nested ? "div" : "section";
   const Heading = nested ? "h3" : "h2";
@@ -65,7 +63,13 @@ export default function ServicesGroup({
 
   return (
     <Wrapper id={id} className={wrapperClass}>
-      <Heading className="fw-bold mb-3">{label}</Heading>
+      {kicker && (
+        <p className="services-group-kicker text-uppercase small fw-semibold text-accent mb-2">
+          {kicker}
+        </p>
+      )}
+      <Heading className="fw-bold mb-3">{heading || label}</Heading>
+      {lede && <p className="services-group-lede lead mb-4">{lede}</p>}
       <Row className="g-4">
         {services.map((service) => (
           <ServiceCard key={service.id} {...service} />

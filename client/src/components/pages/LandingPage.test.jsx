@@ -20,6 +20,12 @@ vi.mock('../organisms/Hero', () => ({
   default: () => <section data-testid="hero">Hero</section>,
 }));
 
+vi.mock('../organisms/CredentialStrip', () => ({
+  default: () => (
+    <section data-testid="credential-strip">CredentialStrip</section>
+  ),
+}));
+
 vi.mock('../organisms/WhyIchnosSection', () => ({
   default: () => <section data-testid="why-ichnos">WhyIchnosSection</section>,
 }));
@@ -155,10 +161,14 @@ describe('LandingPage', () => {
     expect(document.querySelector('section#services')).toBeInTheDocument();
   });
 
-  it('renders exactly five homepage sections with no nested services-group sections', () => {
+  it('renders exactly six homepage sections with no nested services-group sections', () => {
     const { container } = renderWithProviders(<LandingPage />);
-    expect(container.querySelectorAll('section')).toHaveLength(5);
+    expect(container.querySelectorAll('section')).toHaveLength(6);
     expect(container.querySelectorAll('section.services-group')).toHaveLength(0);
+  });
+
+  it('renders CredentialStrip component', () => {
+    expect(screen.getByTestId('credential-strip')).toBeInTheDocument();
   });
 
   it('renders PassportTeaser component', () => {
@@ -169,15 +179,19 @@ describe('LandingPage', () => {
     expect(screen.getByTestId('contact-section')).toBeInTheDocument();
   });
 
-  it('renders sections in order: Hero, WhyIchnosSection, ServicesSnapshot, PassportTeaser, ContactSection', () => {
+  it('renders sections in order: Hero, CredentialStrip, WhyIchnosSection, ServicesSnapshot, PassportTeaser, ContactSection', () => {
     const hero = screen.getByTestId('hero');
+    const strip = screen.getByTestId('credential-strip');
     const company = screen.getByTestId('why-ichnos');
     const services = document.querySelector('section#services');
     const passport = screen.getByTestId('passport-teaser');
     const contact = screen.getByTestId('contact-section');
 
     expect(
-      hero.compareDocumentPosition(company) & Node.DOCUMENT_POSITION_FOLLOWING,
+      hero.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      strip.compareDocumentPosition(company) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
       company.compareDocumentPosition(services) &

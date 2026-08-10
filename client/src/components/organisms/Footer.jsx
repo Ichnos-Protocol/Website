@@ -6,54 +6,14 @@ import { Link } from 'react-router-dom';
 import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
 import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 import SocialLinks from '../molecules/SocialLinks';
+import FooterNavColumns from '../molecules/FooterNavColumns';
+import FooterRecognitions from '../molecules/FooterRecognitions';
+import FooterTrademark from '../molecules/FooterTrademark';
 import Logo from '../atoms/Logo';
 import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
 
 const BRAND_LINE =
   'Battery advisory and EU battery-passport integration for ASEAN.';
-
-const MENUS = [
-  {
-    heading: 'Company',
-    testId: 'footer-col-company',
-    links: [
-      {
-        label: 'Why Ichnos',
-        to: '/',
-        state: { scrollTo: 'company' },
-      },
-      { label: 'Team', to: '/team' },
-    ],
-  },
-  {
-    heading: 'Services',
-    testId: 'footer-col-services',
-    links: [
-      {
-        label: 'Engineering',
-        to: '/services',
-        state: { scrollTo: 'engineering' },
-      },
-      {
-        label: 'Compliance',
-        to: '/services',
-        state: { scrollTo: 'compliance' },
-      },
-      {
-        label: 'Circularity',
-        to: '/services',
-        state: { scrollTo: 'circularity' },
-      },
-    ],
-  },
-  {
-    heading: 'Products',
-    testId: 'footer-col-products',
-    links: [
-      { label: 'Battery Passport', to: '/passport' },
-    ],
-  },
-];
 
 const SOCIAL_LINKS = [
   {
@@ -90,21 +50,7 @@ export default function Footer() {
             </p>
           </Col>
 
-          {MENUS.map(({ heading, testId, links }) => (
-            <Col xs={12} sm={6} lg={2} key={heading} data-testid={testId}>
-              <h6 className="footer-heading">{heading}</h6>
-              {links.map(({ label, to, state }) => (
-                <Link
-                  key={label}
-                  to={to}
-                  state={state}
-                  className="footer-link d-block"
-                >
-                  {label}
-                </Link>
-              ))}
-            </Col>
-          ))}
+          <FooterNavColumns />
 
           <Col xs={12} sm={6} lg={2} data-testid="footer-col-contact">
             <h6 className="footer-heading">Contact</h6>
@@ -127,12 +73,16 @@ export default function Footer() {
           </Col>
         </Row>
 
+        <FooterRecognitions />
+
         <div
           className="footer-attribution text-center"
           data-testid="footer-attribution"
         >
           {ATTRIBUTION_TEXT}
         </div>
+
+        <FooterTrademark />
       </Container>
     </footer>
   );

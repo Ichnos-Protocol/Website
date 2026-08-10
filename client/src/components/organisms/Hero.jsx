@@ -12,7 +12,7 @@ export default function Hero() {
         <Row className="justify-content-center text-center">
           <Col lg={8} md={10}>
             <p className="section-eyebrow">{HERO_CONTENT.eyebrow}</p>
-            <h1 className="display-4 fw-bold mb-4 gradient-text">
+            <h1 className="display-4 fw-bold mb-4">
               {HERO_CONTENT.headline}
             </h1>
             <p className="lead mb-5 section-subtext">{HERO_CONTENT.subhead}</p>
