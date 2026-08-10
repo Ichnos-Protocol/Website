@@ -12,7 +12,11 @@ export default function CredentialStrip() {
       <Container>
         <div className="credential-strip__items">
           {CREDENTIALS.map((credential) => (
-            <div className="credential-strip__item" key={credential.id}>
+            <div
+              className="credential-strip__item"
+              key={credential.id}
+              data-testid={`credential-${credential.id}`}
+            >
               <CredentialLabel
                 label={credential.label}
                 isCatenaXLabel={credential.isCatenaXLabel}
