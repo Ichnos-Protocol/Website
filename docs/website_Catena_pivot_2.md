@@ -254,7 +254,7 @@ Microline: In Catena-X terms: [PCF KIT](https://eclipse-tractusx.github.io/docs-
 
 - Ichnos sells **advisory and integration services**; the cards must never read as if Ichnos *is* Catena-X, operates it, or that these KITs are Ichnos products.
 - Official terms appear **only** in the microlines (plus the group lede's one ® mention), always by their exact official names, always linked.
-- Forbidden phrasings anywhere on the site: "Catena-X certified" (no certification held), "Catena-X member" (application in progress), "official Catena-X partner" (the correct term is *Qualified Advisor*), "we operate Catena-X in ASEAN", "powered by Catena-X", and v3's now-stale "consultant qualification — application in progress" (superseded — see §0.1).
+- Forbidden phrasings anywhere on the site: "Catena-X certified" (no certification held), "official Catena-X partner" (the correct term is *Qualified Advisor*), "we operate Catena-X in ASEAN", "powered by Catena-X", and v3's now-stale "consultant qualification — application in progress" (superseded — see §0.1). *Note: "Catena-X member" was previously listed here; membership was admitted Aug 2026, so it is now a held, permitted status per `website_Catena_pivot_3.md` §1.1/§1.2 — do not reinstate it as a prohibition.*
 - Approved phrasings: "Catena-X Qualified Advisor", "approved for the Catena-X expert committee on Battery Passport", "Catena-X membership: application in progress".
 
 ### 3.4 Geographic reframe (small copy sweeps, same PR)
@@ -272,7 +272,7 @@ Microline: In Catena-X terms: [PCF KIT](https://eclipse-tractusx.github.io/docs-
 Grep the repo for: `Solana`, `on-chain`, `onchain`, `web3`, `token` (asset sense), `NFT`, `mint`, `DeFi`, `crypto`, `wallet`.
 
 - **"Ichnos Protocol" (company name) stays.**
-- "Solana": keep at most one technical footnote in the architecture section, phrased: *"Each published passport version is fingerprinted and anchored on public infrastructure for tamper-evidence — hash only, never product data on-chain."* (Naming Solana explicitly is optional; if named, only in this footnote.)
+- "Solana": **zero occurrences.** The former allowance for a single architecture-section footnote about public-infrastructure anchoring is **withdrawn** by `website_Catena_pivot_3.md` §6. There is no exception clause: no footnote, no architecture aside, no "hash only" caveat, nowhere on the site and nowhere in the repo's shipped copy.
 - "wallet": allowed **only** as "identity wallet" in the Catena-X connector context; remove any crypto-wallet sense.
 - Remove/replace all others.
 
