@@ -57,7 +57,7 @@ export const SERVICES_META = buildMeta({
   description:
     "Battery systems engineering, mechanical development, technical leadership, EU 2023/1542 compliance, Catena-X battery-passport integration, remanufacturing, and circular-economy services. Singapore-incorporated.",
   keywords:
-    "battery systems engineering, FMEA, battery passport implementation, Catena-X consulting, EU 2023/1542, MS 2818, ASEAN battery, circular economy, remanufacturing",
+    "battery systems engineering, FMEA, battery passport implementation, Catena-X consulting, Catena-X member, EU 2023/1542, MS 2818, ASEAN battery, circular economy, remanufacturing",
 });
 
 export const TEAM_META = buildMeta({
@@ -65,7 +65,7 @@ export const TEAM_META = buildMeta({
   title: "Team — Ichnos Protocol",
   description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Advisory Provider, battery passport, ASEAN battery advisory",
+    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Qualified Advisor, battery passport, ASEAN battery advisory",
 });
 
 export const PASSPORT_META = buildMeta({

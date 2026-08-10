@@ -4,32 +4,30 @@ import {
   CATENA_X_QUALIFICATION_GRANTED,
   CATENA_X_QUALIFIER_CLASS,
   CATENA_X_TITLE_BASE,
+  TRADEMARK_NOTICE,
   computeCatenaXQualifierText,
   computeCatenaXFullTitle,
   getCatenaXQualifierText,
   getCatenaXFullTitle,
 } from './catenaXStatus';
 
-describe('catenaXStatus (pending state — real module)', () => {
-  it('ships with the qualification flag off', () => {
-    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(false);
+describe('catenaXStatus (granted state — real module)', () => {
+  it('ships with the qualification flag on', () => {
+    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(true);
   });
 
   it('exposes the stable qualifier class name', () => {
     expect(CATENA_X_QUALIFIER_CLASS).toBe('catenax-qualifier-pending');
   });
 
-  it('returns a non-empty qualifier suffix with a leading space while pending', () => {
-    const pending = getCatenaXQualifierText();
-    expect(pending).toBe(computeCatenaXQualifierText(false));
-    expect(pending.startsWith(' ')).toBe(true);
-    expect(pending.trim().length).toBeGreaterThan(0);
+  it('returns an empty qualifier suffix once granted', () => {
+    const granted = getCatenaXQualifierText();
+    expect(granted).toBe(computeCatenaXQualifierText(true));
+    expect(granted).toBe('');
   });
 
-  it('builds the full title as base + qualifier', () => {
-    expect(getCatenaXFullTitle()).toBe(
-      CATENA_X_TITLE_BASE + getCatenaXQualifierText(),
-    );
+  it('reduces the full title to the base credential', () => {
+    expect(getCatenaXFullTitle()).toBe(CATENA_X_TITLE_BASE);
   });
 });
 
@@ -46,6 +44,15 @@ describe('catenaXStatus (granted state — real computation)', () => {
     expect(computeCatenaXQualifierText(false)).not.toBe('');
     expect(computeCatenaXFullTitle(false)).toBe(
       CATENA_X_TITLE_BASE + computeCatenaXQualifierText(false),
+    );
+  });
+});
+
+describe('catenaXStatus (tier-3 exact strings)', () => {
+  it('matches the §2.1 trademark notice character for character', () => {
+    // The only legitimate place to restate this literal (§7.3 item 13) — comparing the constant to itself would assert nothing. The DOM-equals-constant half lives in Footer.test.jsx (T7).
+    expect(TRADEMARK_NOTICE).toBe(
+      'Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.',
     );
   });
 });

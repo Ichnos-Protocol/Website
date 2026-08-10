@@ -1,7 +1,6 @@
 import { axe } from "vitest-axe";
 import { renderWithProviders, screen, cleanup } from "../../test-utils";
 import ServicesGroup from "./ServicesGroup";
-import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
 
 const FIXTURE_SERVICES = [
   {
@@ -11,11 +10,14 @@ const FIXTURE_SERVICES = [
     description: "Plain description.",
   },
   {
-    id: "card-eyebrow",
+    id: "card-microline",
     icon: "bi-diagram-3",
-    title: "Eyebrow Card",
-    description: "Eyebrow description.",
-    eyebrow: CATENA_X_TITLE_BASE,
+    title: "Microline Card",
+    description: "Microline description.",
+    microline: [
+      { text: "Linked Term (LT)", href: "https://example.org/linked-term" },
+      { text: "Plain Term (PT)" },
+    ],
   },
   {
     id: "card-passport",
@@ -68,20 +70,73 @@ describe("ServicesGroup", () => {
     });
   });
 
-  it("renders the credential eyebrow with the muted pending qualifier span", () => {
+  it("renders the microline with prefix, linked term, and plain term", () => {
     const { container } = renderGroup();
-    const eyebrow = container.querySelector(".service-card-eyebrow");
-    expect(eyebrow).not.toBeNull();
-    expect(eyebrow).toHaveTextContent(CATENA_X_TITLE_BASE);
+    const microline = container.querySelector(".service-card-microline");
+    expect(microline).not.toBeNull();
+    expect(microline).toHaveTextContent("In Catena-X terms:");
+    expect(microline).toHaveTextContent("Plain Term (PT)");
+
+    const link = screen.getByRole("link", { name: "Linked Term (LT)" });
+    expect(link).toHaveAttribute("href", "https://example.org/linked-term");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+
+    // The plain segment renders as text, not a link.
     expect(
-      eyebrow.querySelector(".catenax-qualifier-pending"),
-    ).not.toBeNull();
+      screen.queryByRole("link", { name: "Plain Term (PT)" }),
+    ).toBeNull();
+  });
+
+  it("renders kicker and lede, and the heading override replaces the label", () => {
+    renderGroup({
+      kicker: "Catena-X services",
+      heading: "Connect once. Answer every customer data request.",
+      lede: "The lede paragraph.",
+    });
+    expect(screen.getByText("Catena-X services")).toHaveClass(
+      "services-group-kicker",
+    );
+    expect(screen.getByText("The lede paragraph.")).toHaveClass(
+      "services-group-lede",
+    );
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Connect once. Answer every customer data request.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Engineering" }),
+    ).toBeNull();
   });
 
   it("renders a Learn more → link to /passport for a passportLink service", () => {
     renderGroup();
     const link = screen.getByRole("link", { name: "Learn more →" });
     expect(link).toHaveAttribute("href", "/passport");
+  });
+
+  it("does not render an eyebrow even when a service carries a stale eyebrow prop", () => {
+    const { container } = renderGroup({
+      services: [
+        {
+          id: "card-stale-eyebrow",
+          icon: "bi-award",
+          title: "Stale Eyebrow Card",
+          description: "Stale eyebrow description.",
+          eyebrow: "Catena-X Qualified Advisor",
+        },
+      ],
+    });
+    expect(container.querySelector(".service-card-eyebrow")).toBeNull();
+    expect(screen.queryByText("Catena-X Qualified Advisor")).toBeNull();
+    expect(
+      screen.getByText("Stale Eyebrow Card", {
+        selector: ".service-card-title",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Stale eyebrow description.")).toBeInTheDocument();
   });
 
   it("applies the coming-soon class and renders no CTA for a coming-soon service", () => {

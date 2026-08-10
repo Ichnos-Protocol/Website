@@ -8,7 +8,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import chatReducer from "../../features/chat/chatSlice";
 import authReducer from "../../features/auth/authSlice";
 
-const WELCOME_TEXT = "Hi — ask me about Catena-X-compatible data services for ASEAN-made batteries, Catena-X onboarding, EU 2023/1542 compliance, or battery-systems advisory.";
+const WELCOME_TEXT = "Hi — ask me about Catena-X onboarding for ASEAN-made batteries, EU Battery Passport data flows, EU 2023/1542 compliance, or battery-systems advisory.";
 const DISCLAIMER_TEXT = "Responses are AI-generated. We follow up personally on every conversation that becomes a lead.";
 
 const mockSendStreamMessage = vi.fn().mockResolvedValue("completed");

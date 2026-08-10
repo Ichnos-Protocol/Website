@@ -5,7 +5,7 @@ import { SERVICES_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import { SERVICES_PAGE_CONTENT } from '../../constants/services';
 
-const SECTION_IDS = ['engineering', 'compliance', 'circularity'];
+const SECTION_IDS = ['engineering', 'catena-x', 'compliance', 'circularity'];
 
 vi.mock('../../hooks/useReducedMotion', () => ({
   useReducedMotion: vi.fn(() => true),
@@ -150,7 +150,7 @@ describe('ServicesPage', () => {
     expect(useScrollToSection).toHaveBeenCalled();
   });
 
-  it('renders all three pillar section ids: engineering, compliance, circularity', () => {
+  it('renders all four pillar section ids: engineering, catena-x, compliance, circularity', () => {
     SECTION_IDS.forEach((sectionId) => {
       expect(document.getElementById(sectionId)).not.toBeNull();
     });
@@ -160,18 +160,22 @@ describe('ServicesPage', () => {
     expect(document.getElementById('delivery-models')).toBeNull();
   });
 
-  it('renders exactly three services-group sections', () => {
+  it('renders exactly four services-group sections', () => {
     const sections = document.querySelectorAll('section.services-group');
-    expect(sections.length).toBe(3);
+    expect(sections.length).toBe(4);
   });
 
-  it('renders the three pillar sections in locked order', () => {
-    const [engineering, compliance, circularity] = SECTION_IDS.map((id) =>
-      document.getElementById(id),
+  it('renders the four pillar sections in locked order', () => {
+    const [engineering, catenaX, compliance, circularity] = SECTION_IDS.map(
+      (id) => document.getElementById(id),
     );
 
     expect(
-      engineering.compareDocumentPosition(compliance) &
+      engineering.compareDocumentPosition(catenaX) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      catenaX.compareDocumentPosition(compliance) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -180,26 +184,24 @@ describe('ServicesPage', () => {
     ).toBeTruthy();
   });
 
-  it('renders the Compliance pillar as 3 cards in order, lead card first', () => {
+  it('renders the Catena-X pillar as 5 cards', () => {
+    const catenaX = document.getElementById('catena-x');
+    const cards = catenaX.querySelectorAll('.service-card');
+    expect(cards.length).toBe(5);
+  });
+
+  it('renders the Compliance pillar as the single EU–ASEAN Compliance Bridge card', () => {
     const compliance = document.getElementById('compliance');
     const cards = compliance.querySelectorAll('.service-card');
-    expect(cards.length).toBe(3);
+    expect(cards.length).toBe(1);
 
     const titles = [...compliance.querySelectorAll('.service-card-title')].map(
       (el) => el.textContent,
     );
-    expect(titles).toEqual([
-      'Strategic Catena-X consulting — battery passport',
-      'Battery Passport Integration',
-      'EU–ASEAN Compliance Bridge',
-    ]);
-
-    const leadCards = compliance.querySelectorAll('.service-card--lead');
-    expect(leadCards.length).toBe(1);
-    expect(cards[0].classList.contains('service-card--lead')).toBe(true);
+    expect(titles).toEqual(['EU–ASEAN Compliance Bridge']);
   });
 
-  it('renders ContactSection after the three pillar groups', () => {
+  it('renders ContactSection after the four pillar groups', () => {
     const circularity = document.getElementById('circularity');
     const contact = screen.getByTestId('contact-section');
     expect(

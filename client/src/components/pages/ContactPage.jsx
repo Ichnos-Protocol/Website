@@ -18,7 +18,7 @@ import CalendlyModal from '../organisms/CalendlyModal';
 
 const CONTACT_PAGE_TITLE = 'Contact Ichnos Protocol';
 const CONTACT_PAGE_INTRO =
-  'Talk to Ichnos Protocol about Catena-X-compatible ASEAN data services, Catena-X onboarding, or battery-systems advisory. Ask the AI assistant for instant answers, then follow up by email, LinkedIn, or a Calendly call. Authenticated visitors keep their full conversation history and pending questions.';
+  'Talk to Ichnos Protocol about ASEAN battery data flows into Catena-X, Catena-X onboarding, or battery-systems advisory. Ask the AI assistant for instant answers, then follow up by email, LinkedIn, or a Calendly call. Authenticated visitors keep their full conversation history and pending questions.';
 const AI_EXAMPLE_PROMPTS = [
   'What data do you collect from ASEAN sites?',
   'How do you onboard an ASEAN supplier into Catena-X?',
@@ -59,7 +59,9 @@ export default function ContactPage() {
 
           <header className="text-center mt-4">
             <h1 className="page-title">{CONTACT_PAGE_TITLE}</h1>
-            <p className="lead mt-4">{CONTACT_PAGE_INTRO}</p>
+            <p className="lead mt-4" data-testid="contact-intro">
+              {CONTACT_PAGE_INTRO}
+            </p>
           </header>
 
           <div className="mt-4">

@@ -1,9 +1,9 @@
 /* ========== Typography / Spacing / Transitions / Z-index ========== */
 :root {
   /* ========== Typography ========== */
-  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'Fraunces', 'Georgia', 'Times New Roman', serif;
+  --font-display: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-size-base: 16px;
   --font-size-sm: 14px;
   --font-size-lg: 18px;
@@ -45,60 +45,33 @@
 .theme-advisory,
 body {
   --color-bg-base: #FAFBFC;
-  --color-bg-alt: #F0F3F7;
+  --color-bg-alt: #EAF1FE;
   --color-surface: #FFFFFF;
-  --color-text-primary: #0F1419;
-  --color-text-secondary: #5B6B85;
-  --color-accent-primary: #00A89A;
-  --color-accent-cyan: #00A89A;
-  --color-accent-warm: #A87E1F;
-  --color-border: rgba(15, 20, 25, 0.08);
+  --color-text-primary: #111111;
+  --color-text-secondary: #252525;
+  --color-accent-primary: #0F71CB;
+  --color-accent-cyan: #0F71CB;
+  --color-accent-warm: #FFA600;
+  --color-accent-green: #B3CB2D;
+  --color-border: #DCDCDC;
   --color-shadow: rgba(15, 20, 25, 0.06);
 }
 
 /* ========== Theme: Catena-X (override) ========== */
-/* Eclipse palette: deep-navy surfaces with a cyan accent. This theme
-   deliberately declares NO gradient vars — the green→purple gradient must
-   never surface here. Because those vars are absent, the two solid
-   overrides below force the CTA button and any .gradient-text to render as
-   flat cyan rather than a broken linear-gradient(... undefined ...). */
+/* Mirrors the advisory light palette: both scopes share one identical
+   Catena-X light token set, so pages render the same regardless of which
+   theme wrapper they mount under. */
 .theme-catenax {
-  --color-bg-base: #0F0F23;
-  --color-bg-alt: #1B1B3A;
-  --color-surface: #232347;
-  --color-accent-primary: #00B0E1;
-  --color-accent-cyan: #00C7CB;
-  --color-accent-warm: #FFC107;
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #9CA3AF;
-  --color-border: rgba(241, 245, 249, 0.12);
-  background-color: var(--color-bg-base);
-  color: var(--color-text-primary);
-}
-
-.theme-catenax .hero-cta-btn {
-  background: var(--color-accent-primary);
-  color: #FFFFFF;
-}
-
-.theme-catenax .gradient-text {
-  background: none;
-  -webkit-text-fill-color: var(--color-accent-primary);
-  color: var(--color-accent-primary);
-}
-
-/* ========== Theme: Reserved variant (override) ========== */
-.theme-solana {
-  --color-bg-base: #0A1628;
-  --color-bg-alt: #1A2744;
-  --color-surface: #1A2744;
-  --color-accent-primary: #1E90FF;
-  --color-accent-cyan: #00D1C1;
-  --color-accent-warm: #C8A24E;
-  --color-gradient-start: #14F195; /* Solana green */
-  --color-gradient-end: #9945FF; /* Solana purple */
-  --color-text-primary: #E8ECF1;
-  --color-text-secondary: #8B9DC3;
+  --color-bg-base: #FAFBFC;
+  --color-bg-alt: #EAF1FE;
+  --color-surface: #FFFFFF;
+  --color-accent-primary: #0F71CB;
+  --color-accent-cyan: #0F71CB;
+  --color-accent-warm: #FFA600;
+  --color-accent-green: #B3CB2D;
+  --color-text-primary: #111111;
+  --color-text-secondary: #252525;
+  --color-border: #DCDCDC;
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
 }
@@ -134,11 +107,11 @@ body {
 }
 
 /* ========== Logo ========== */
-/* Source PNGs (logo.png / logo-dark.png) are tight-cropped to the
-   lockup itself (~3:1 aspect). Per the founder's spec, the navbar lockup is
-   sized for full presence — 168px height (3× the previous 56px). The navbar
-   accommodates this with vertical padding tuning; do not raise it further
-   without confirming responsive behaviour at narrow viewports. */
+/* The authoritative mark files are /brand/ichnos_mark_dualtone.svg (light
+   surfaces) and /brand/ichnos_mark_white.svg (dark surfaces), served by
+   Logo.jsx. Both are tight-cropped to the mark itself. The navbar renders
+   them at 38px; do not raise that without confirming responsive behaviour
+   at narrow viewports. */
 .logo-img {
   height: 38px;
   width: auto;
@@ -193,12 +166,10 @@ body {
 
 /* ========== Mobile Nav Overlay ========== */
 .mobile-nav-overlay {
-  --color-text-primary: #E8ECF1;
-  --color-text-secondary: #8B9DC3;
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background-color: rgba(10, 22, 40, 0.95);
+  background-color: var(--color-surface);
   transition: var(--transition-base);
   overflow-y: auto;
   color: var(--color-text-primary);
@@ -300,37 +271,98 @@ body {
   text-align: center;
 }
 
+/* ---------- Footer recognitions: Catena-X label ---------- */
+/* The plaque exists only because no official negative (dark-surface)
+   variant of the Qualified Advisor label has been supplied. It gives the
+   positive file the light ground its original design requires, without
+   modifying the file itself. Delete this rule together with the wrapper
+   span in FooterRecognitions.jsx as soon as CATENA_X_LABEL_ASSET_NEG is
+   set. The 4px radius deliberately matches .credential-strip__item. */
+.footer-label-plaque {
+  display: inline-block;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+/* Official CX label: aspect-preserved, never cropped or covered. */
+.footer-label-img {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-recognition {
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+/* ========== Credential Strip ========== */
+/* Light-theme homepage strip under the hero. Inherits the light
+   Catena-X tokens — never rendered on the dark footer surface. */
+.credential-strip {
+  background: var(--color-bg-alt);
+  padding: var(--spacing-lg) 0;
+}
+
+/* auto-fit grid: 4 across in the 1140px container, wraps to fewer
+   columns on tablets and stacks to one column at 390px. */
+.credential-strip__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.credential-strip__item {
+  background: var(--color-surface, #fff);
+  border-top: 3px solid #0f71cb;
+  border-radius: 4px;
+  padding: var(--spacing-md);
+  min-height: 96px;
+}
+
+.credential-strip__label {
+  display: block;
+  font-weight: 600;
+}
+
+.credential-strip__note {
+  color: #666;
+  font-size: 0.85rem;
+  margin: var(--spacing-xs, 4px) 0 0;
+}
+
+/* Official CX label: aspect-preserved, never cropped or covered. */
+.credential-strip__label-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
 /* ========== Landing Sections ========== */
+/* Light Catena-X surface: flat ink headings on a subtle base→tint wash.
+   The footer is the only sanctioned dark surface — no photo overlay here. */
 .hero-section {
   position: relative;
   min-height: 85vh;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(15, 20, 25, 0.45) 0%,
-      rgba(15, 20, 25, 0.70) 100%
-    ),
-    url('/bg-advisory.jpg') center / cover no-repeat;
+  background: linear-gradient(
+    to bottom,
+    var(--color-bg-base) 0%,
+    var(--color-bg-alt) 100%
+  );
   padding: var(--spacing-3xl) 0;
-  color: #FFFFFF;
-}
-
-.hero-section .gradient-text {
-  background: linear-gradient(135deg, #FFFFFF, var(--color-accent-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+  color: var(--color-text-primary);
 }
 
 .hero-section .section-subtext {
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  color: var(--color-text-secondary);
 }
 
 .hero-cta-btn {
-  background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
-  color: var(--color-bg-base);
+  background: var(--color-accent-primary);
+  color: #FFFFFF;
   border: none;
   border-radius: 8px;
   transition: var(--transition-base);
@@ -339,13 +371,6 @@ body {
 .hero-cta-btn:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ========== Catena-X qualifier (toggle styling) ========== */
@@ -378,7 +403,7 @@ body {
 }
 
 .solution-section .bi-check-circle-fill {
-  color: var(--color-gradient-start);
+  color: var(--color-accent-primary);
 }
 
 .why-card-icon {
@@ -544,12 +569,12 @@ h1.page-title {
 
 /* ========== Status Badges ========== */
 .badge-status-live {
-  background-color: rgba(20, 241, 149, 0.15);
-  color: var(--color-gradient-start);
+  background-color: rgba(15, 113, 203, 0.12);
+  color: var(--color-accent-primary);
 }
 
 .badge-status-dev {
-  background-color: rgba(30, 144, 255, 0.15);
+  background-color: rgba(15, 113, 203, 0.15);
   color: var(--color-accent-primary);
 }
 
@@ -558,9 +583,10 @@ h1.page-title {
   color: var(--color-text-secondary);
 }
 
+/* Amber is graphic-only (tint fill); the label text stays readable ink. */
 .badge-status-updating {
   background-color: rgba(255, 165, 0, 0.15);
-  color: #FFA500;
+  color: var(--color-text-secondary);
 }
 
 /* ========== Roadmap Cards ========== */
@@ -587,13 +613,13 @@ h1.page-title {
 }
 
 .badge-roadmap-current {
-  background-color: rgba(20, 241, 149, 0.15);
-  color: var(--color-gradient-start);
+  background-color: rgba(15, 113, 203, 0.12);
+  color: var(--color-accent-primary);
 }
 
 .badge-roadmap-planned {
-  background-color: rgba(153, 69, 255, 0.15);
-  color: var(--color-gradient-end);
+  background-color: rgba(37, 37, 37, 0.08);
+  color: var(--color-text-secondary);
 }
 
 /* ========== Contact Section ========== */
@@ -667,7 +693,7 @@ h1.page-title {
 }
 
 .timeline-year {
-  background-color: rgba(30, 144, 255, 0.15);
+  background-color: rgba(15, 113, 203, 0.15);
   color: var(--color-accent-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -739,10 +765,6 @@ h1.page-title {
   border-bottom: 1px solid rgba(139, 157, 195, 0.15);
 }
 
-.auth-modal-header .btn-close {
-  filter: invert(1);
-}
-
 .auth-modal-title {
   font-weight: var(--font-weight-semibold);
 }
@@ -779,7 +801,7 @@ h1.page-title {
 
 .auth-modal-body .form-control:focus {
   border-color: var(--color-accent-primary);
-  box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(15, 113, 203, 0.25);
 }
 
 .auth-privacy-notice {
@@ -824,7 +846,7 @@ h1.page-title {
 }
 
 .user-menu-dropdown .dropdown-item:hover {
-  background-color: rgba(30, 144, 255, 0.1);
+  background-color: rgba(15, 113, 203, 0.1);
   color: var(--color-accent-primary);
 }
 
@@ -930,7 +952,7 @@ h1.page-title {
 
 .chat-panel__input:focus {
   border-color: var(--color-accent-cyan);
-  box-shadow: 0 0 0 0.2rem rgba(0, 168, 154, 0.15);
+  box-shadow: 0 0 0 0.2rem rgba(15, 113, 203, 0.15);
 }
 
 .chat-panel__send-btn {
@@ -992,15 +1014,14 @@ h1.page-title {
 }
 
 /* ========== Scaffold: Advisory Hero Variant (T04) ========== */
+/* Mirrors the light .hero-section treatment — no dark photo overlay. */
 .hero-section--advisory {
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(15, 20, 25, 0.45) 0%,
-      rgba(15, 20, 25, 0.70) 100%
-    ),
-    url('/bg-advisory.jpg') center / cover no-repeat;
-  color: #FFFFFF;
+  background: linear-gradient(
+    to bottom,
+    var(--color-bg-base) 0%,
+    var(--color-bg-alt) 100%
+  );
+  color: var(--color-text-primary);
 }
 
 .hero-section--advisory .hero-cta-btn {
@@ -1021,26 +1042,6 @@ h1.page-title {
   padding: var(--spacing-3xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-primary);
-}
-
-/* Catena-X override: the /passport hero mounts under .theme-catenax, whose
-   text tokens turn near-white. The light advisory gradient above would leave
-   that text unreadable, so swap in the dark navy surface with an Eclipse
-   cyan/teal accent. Scoped to .theme-catenax so /services, /team, and other
-   advisory pages keep the original light hero. */
-.theme-catenax .advisory-page-hero {
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      rgba(0, 176, 225, 0.25),
-      transparent 60%
-    ),
-    linear-gradient(var(--color-bg-base), var(--color-bg-alt));
-  color: var(--color-text-primary);
-}
-
-.theme-catenax .advisory-page-hero .section-eyebrow {
-  color: var(--color-accent-primary);
 }
 
 /* ========== Cookie Consent Banner (replaces inline styles) ========== */
@@ -1085,7 +1086,7 @@ h1.page-title {
 }
 
 .pillar-badge--delivery-method {
-  color: var(--color-accent-warm);
+  color: var(--color-text-secondary);
 }
 
 /* ========== Reduced Motion ========== */
