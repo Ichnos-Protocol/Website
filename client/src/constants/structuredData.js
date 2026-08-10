@@ -6,7 +6,10 @@
 // Reference: https://schema.org/
 
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
-import { getCatenaXFullTitle } from "./catenaXStatus";
+import {
+  CATENA_X_EXPERT_GROUP_NOTE,
+  getCatenaXFullTitle,
+} from "./catenaXStatus";
 
 const LOGO_URL = `${SEO_BASE_URL}/brand/ichnos_mark_dualtone.svg`;
 
@@ -18,7 +21,7 @@ export const ORGANIZATION_SCHEMA = {
   url: SEO_BASE_URL,
   logo: LOGO_URL,
   email: "francesco@ichnos-protocol.com",
-  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()}.`,
+  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}.`,
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",
