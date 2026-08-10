@@ -50,7 +50,10 @@ export const FILES = [
 //    "standards and committees".
 export const FORBIDDEN = [
   /Catena-X\s+certified/i,
-  /official\s+Catena-X\s+partner/i,
+  // §1.2 prohibits the bare `Catena-X partner` and the `Solution Partner`
+  // variant, not only the `official` form — one pattern covers all three,
+  // since "official Catena-X partner" contains the bare claim.
+  /Catena-X\s+(?:Solution\s+)?Partner/i,
   /powered\s+by\s+Catena-X/i,
   /we\s+operate\s+Catena-X/i,
   /expert[\s-]*committee/i, // hyphen form catches the stale `expert-committee` credential id
@@ -61,6 +64,15 @@ export const FORBIDDEN = [
   /Catena-X[\s-]*(?:compatible|compliant|conformant|conforming)/i,
   /(?:compatible|compliant|conformant)\s+with\s+Catena-X/i,
   /(?:membership|application)[^.]{0,40}in\s+progress/i,
+  // Pending wording is prohibited in both word orders ("membership
+  // application pending" / "pending membership application"). `qualification`
+  // is deliberately absent from the noun set: it would match the
+  // `catenaXStatus.js` comment explaining the pending qualifier suffix, a
+  // false positive the `in progress` pattern above already covers for real
+  // claims. `\bpending\b` leaves `pendingSubmit` and the
+  // `catenax-qualifier-pending` class name untouched.
+  /(?:membership|application)[^.]{0,40}\bpending\b/i,
+  /\bpending\b[^.]{0,40}(?:membership|application)/i,
   /consultant\s+qualification[^.]{0,30}in\s+progress/i,
   // Solana sunset (§6). Bare \bcrypto\b is deliberately ABSENT — it would
   // match Node's own `import { createHash } from "crypto"`; §6 narrows the

@@ -120,6 +120,44 @@ describe("vocabulary corpus (prohibited expressions)", () => {
   });
 });
 
+// Probes: the corpus scan above proves only that today's copy is clean, which
+// a too-narrow pattern also satisfies. These assert the guard would actually
+// catch the §1.2 claims it exists for. The strings live here and nowhere else
+// — this file is dropped by SKIP_FILES, so a probe never enters the corpus.
+describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
+  function isForbidden(text) {
+    return FORBIDDEN.some((pattern) => findMatches(pattern, text).length > 0);
+  }
+
+  const PROBES = [
+    // Partner status: prohibited bare, not only in the `official` form.
+    "Ichnos Protocol is a Catena-X partner.",
+    "Ichnos Protocol is an official Catena-X partner.",
+    "Ichnos Protocol is a Catena-X Solution Partner.",
+    // Pending membership/application, both word orders.
+    "Catena-X membership application pending.",
+    "Our Catena-X membership application is pending review.",
+    "Ichnos has a pending Catena-X membership application.",
+  ];
+
+  it.each(PROBES)("matches the prohibited claim %j", (probe) => {
+    expect(isForbidden(probe)).toBe(true);
+  });
+
+  // Guards the probes above from being satisfied by an over-broad pattern:
+  // legitimate copy on live surfaces must still pass.
+  const PERMITTED = [
+    "Ordinary member — Catena-X Automotive Network e.V.",
+    "Catena-X member & Qualified Advisor",
+    "Business Partner Number (BPN)",
+    "the relationship is partner-and-channel, not competition",
+  ];
+
+  it.each(PERMITTED)("leaves permitted copy alone: %j", (permitted) => {
+    expect(isForbidden(permitted)).toBe(false);
+  });
+});
+
 describe("vocabulary corpus (required expressions)", () => {
   it("contains every REQUIRED expression somewhere in client source", () => {
     const missing = REQUIRED.filter((pattern) =>

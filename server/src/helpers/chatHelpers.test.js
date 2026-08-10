@@ -229,6 +229,15 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toContain("Catena-X Automotive Network e.V.");
   });
 
+  it("states the held Digital Product Passport Expert Group membership", () => {
+    expect(SYSTEM_PROMPT).toContain("Digital Product Passport Expert Group");
+    expect(SYSTEM_PROMPT).toMatch(
+      /member of the Catena-X Digital Product Passport Expert Group/,
+    );
+    // Expert Group, not committee — the two are distinct bodies.
+    expect(SYSTEM_PROMPT).not.toMatch(/expert[\s-]*committee/i);
+  });
+
   it("carries no pending-membership or conformance-adjective wording", () => {
     expect(SYSTEM_PROMPT).not.toMatch(/\bin\s+progress\b/i);
     expect(SYSTEM_PROMPT).not.toMatch(
