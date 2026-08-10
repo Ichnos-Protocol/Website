@@ -223,19 +223,25 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toContain("Ichnos Protocol");
   });
 
-  it("states the Qualified Advisor status and pending membership", () => {
+  it("states the held Qualified Advisor and ordinary-member statuses", () => {
     expect(SYSTEM_PROMPT).toContain("Catena-X Qualified Advisor");
-    expect(SYSTEM_PROMPT).toContain(
-      "Catena-X membership: application in progress",
-    );
+    expect(SYSTEM_PROMPT).toContain("ordinary member");
+    expect(SYSTEM_PROMPT).toContain("Catena-X Automotive Network e.V.");
   });
 
-  it("omits the stale qualification line and retains the guardrail", () => {
-    expect(SYSTEM_PROMPT).not.toContain(
-      "consultant qualification: application in progress",
+  it("carries no pending-membership or conformance-adjective wording", () => {
+    expect(SYSTEM_PROMPT).not.toMatch(/\bin\s+progress\b/i);
+    expect(SYSTEM_PROMPT).not.toMatch(
+      /Catena-X[\s-]*(?:compatible|compliant|conformant|conforming)/i,
     );
-    expect(SYSTEM_PROMPT).toContain(
-      "Do not claim Catena-X membership, certification, or partner status",
+    expect(SYSTEM_PROMPT).not.toMatch(
+      /(?:compatible|compliant|conformant|conforming)\s+with\s+Catena-X/i,
     );
+    expect(SYSTEM_PROMPT).not.toMatch(/\bnot\s+claim\b[^.]*\bmembership\b/i);
+  });
+
+  it("retains the certification and partner guardrail", () => {
+    expect(SYSTEM_PROMPT).toContain("Do not claim Catena-X certification");
+    expect(SYSTEM_PROMPT).toContain("partner status");
   });
 });
