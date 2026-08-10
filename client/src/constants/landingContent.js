@@ -1,7 +1,7 @@
-import { CATENA_X_TITLE_BASE } from "./catenaXStatus";
+import { CATENA_X_STATUS_LINE, CATENA_X_TITLE_BASE } from "./catenaXStatus";
 
 export const HERO_CONTENT = {
-  eyebrow: `Based in Singapore · Serving ASEAN manufacturers · ${CATENA_X_TITLE_BASE}`,
+  eyebrow: `Based in Singapore · Serving ASEAN manufacturers · ${CATENA_X_STATUS_LINE}`,
   headline:
     "From regulatory compliance to seamless integration into the circular value chain.",
   subhead:

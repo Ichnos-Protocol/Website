@@ -4,6 +4,7 @@ import {
   CATENA_X_QUALIFICATION_GRANTED,
   CATENA_X_QUALIFIER_CLASS,
   CATENA_X_TITLE_BASE,
+  TRADEMARK_NOTICE,
   computeCatenaXQualifierText,
   computeCatenaXFullTitle,
   getCatenaXQualifierText,
@@ -43,6 +44,15 @@ describe('catenaXStatus (granted state — real computation)', () => {
     expect(computeCatenaXQualifierText(false)).not.toBe('');
     expect(computeCatenaXFullTitle(false)).toBe(
       CATENA_X_TITLE_BASE + computeCatenaXQualifierText(false),
+    );
+  });
+});
+
+describe('catenaXStatus (tier-3 exact strings)', () => {
+  it('matches the §2.1 trademark notice character for character', () => {
+    // The only legitimate place to restate this literal (§7.3 item 13) — comparing the constant to itself would assert nothing. The DOM-equals-constant half lives in Footer.test.jsx (T7).
+    expect(TRADEMARK_NOTICE).toBe(
+      'Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.',
     );
   });
 });
