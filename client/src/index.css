@@ -107,11 +107,11 @@ body {
 }
 
 /* ========== Logo ========== */
-/* Source PNGs (logo.png / logo-dark.png) are tight-cropped to the
-   lockup itself (~3:1 aspect). Per the founder's spec, the navbar lockup is
-   sized for full presence — 168px height (3× the previous 56px). The navbar
-   accommodates this with vertical padding tuning; do not raise it further
-   without confirming responsive behaviour at narrow viewports. */
+/* The authoritative mark files are /brand/ichnos_mark_dualtone.svg (light
+   surfaces) and /brand/ichnos_mark_white.svg (dark surfaces), served by
+   Logo.jsx. Both are tight-cropped to the mark itself. The navbar renders
+   them at 38px; do not raise that without confirming responsive behaviour
+   at narrow viewports. */
 .logo-img {
   height: 38px;
   width: auto;
@@ -271,6 +271,33 @@ body {
   text-align: center;
 }
 
+/* ---------- Footer recognitions: Catena-X label ---------- */
+/* The plaque exists only because no official negative (dark-surface)
+   variant of the Qualified Advisor label has been supplied. It gives the
+   positive file the light ground its original design requires, without
+   modifying the file itself. Delete this rule together with the wrapper
+   span in FooterRecognitions.jsx as soon as CATENA_X_LABEL_ASSET_NEG is
+   set. The 4px radius deliberately matches .credential-strip__item. */
+.footer-label-plaque {
+  display: inline-block;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+/* Official CX label: aspect-preserved, never cropped or covered. */
+.footer-label-img {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-recognition {
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
 /* ========== Credential Strip ========== */
 /* Light-theme homepage strip under the hero. Inherits the light
    Catena-X tokens — never rendered on the dark footer surface. */
@@ -344,10 +371,6 @@ body {
 .hero-cta-btn:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-}
-
-.gradient-text {
-  color: var(--color-text-primary);
 }
 
 /* ========== Catena-X qualifier (toggle styling) ========== */
