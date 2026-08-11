@@ -126,3 +126,7 @@ server/knowledge-base/.playwright-profile/
 .eslintcache
 *.local
 nul
+
+# Claude Code worktree metadata and bridge scratch — never commit
+.claude/worktrees/
+_to_delete/
