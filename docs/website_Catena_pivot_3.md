@@ -748,3 +748,14 @@ Page-fit audit of the live constants (`landingContent`, `services`, `passportCon
 - **Minor redundancy (backlog, NOT this run):** landing `PASSPORT_TEASER.body` (~90 words) re-explains passport + Catena-X + Ichnos role, overlapping `/passport` hero and the services lede — tighten to two sentences post-deploy. Naming consistency sweep: site alternates "European battery passport" (descriptive, legal) and "EU Battery Passport" — converge on the latter where the instrument is meant (§1.4 spirit; no guard violation today).
 - **Gaps (all backlog):** FAQ (§9.6) · an insights/"recent thinking" surface (MS 2818 series, LinkedIn posts) · a demo/proof block on `/passport` once the Kamran demo is presentable · every deep page ends in a contact CTA (verify in §7.4).
 - **Why no copy edits now:** the §4.5 fence, the vocabulary guard, and a green suite argue for restraint; nothing found is wrong, only polishable. Ship §9.1–9.2, then polish.
+
+### 9.8 Structure & links audit (2026-08-11 PM) + "Recognitions" → "Credentials"
+
+**Audit verdict — coherent, ship as-is:** nav = Company (Why Ichnos scroll + Team) · Services · Battery Passport · Contact; `/privacy` footer-linked; `/data`→`/passport` 301 preserves old inbound. Internal CTAs resolve (hero→/services, teaser→/passport, snapshot→/services, contact×2). External links all official and correct: five microline KIT links (Industry Core, EcoPass, DCM, PURIS, PCF-exchange, Connector), strip label + "Catena-X introduction" → catena-x.net (§4-compliant text links), Calendly, LinkedIn ×2. No dead or misdirected links found.
+
+**Wording change (this run, Francesco 2026-08-11):** the visible word "Recognitions" is replaced by **"Credentials"**:
+- `molecules/FooterRecognitions.jsx:60` — `<h6 className="footer-heading">Recognitions</h6>` → `Credentials`.
+- `organisms/CredentialStrip.jsx:10` — `aria-label="Credentials and recognitions"` → `aria-label="Credentials"`.
+- Comments in `credentials.js` MAY say "credentials" throughout.
+- **Unchanged (stable, not user-visible):** the `footer-recognition-` test-id prefix (§2, §7.1-6 API), the `FooterRecognitions` component/file name, and `data-testid="footer-recognitions"`. Renaming those is churn without user value; §7.0 locates by testid precisely so display copy can change freely — this change is the payoff.
+- §2.2's rule name ("recognitions of Ichnos") is unaffected in meaning; the heading the user sees says Credentials.
