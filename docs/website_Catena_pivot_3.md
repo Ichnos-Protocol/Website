@@ -418,6 +418,8 @@ Two obligations attach instead:
   **If the answer is narrower**, amend §4 in a new version before touching any copy, and treat the services pillar naming, not the card bodies, as the first thing to give up.
   Until an answer arrives, §4 stands and the copy **MUST NOT** be changed.
 
+  > **STANDING AUTHORITY — CONFIRMED, 2026-08-11.** Dr. Carina Gliese (Director Operations, Catena-X Automotive Network e.V.), replying on Sabrina's behalf to the recorded question, in writing: *"yes, it is perfectly acceptable to state on your website that you help suppliers connect to Catena-X. The primary intention of the trademark rules is to prevent organizations from promoting services under Catena-X branding in a way that could imply official certification, qualification, endorsement, or services provided directly by the association. Based on the description you provided, your intended wording would not raise concerns."* The §4 reading is confirmed; the services pillar naming and card copy stand. She also confirmed the Logo Use Agreement + Brand Governance are the governing documents (now both on file).
+
 ---
 
 ## 5. Brand asset invariants
@@ -687,3 +689,62 @@ Outside this repository but subject to the same §1 vocabulary: `EU_Battery_Pass
 - Ichnos SVG fill values in §5 extracted directly from `client/public/brand/ichnos_*.svg`
 - Raster icons pixel-audited 2026-08-10: `favicon-32.png`, `apple-touch-icon-180.png`, `icon-512.png` are 91–100 % exact Catena-X palette (`#FFA600` / `#B3CB2D`), zero Solana-era pixels; `site.webmanifest` icon paths all point to `/brand/`
 - Vocabulary regex stress-test 2026-08-10: zero false positives on §2 required strings; all probed §1.2 violations caught; conformance-adjective gap found via the live `site.webmanifest` instance and closed in this version
+
+---
+
+## 9. FINAL RUN — pre-deploy build list (added 2026-08-11 PM · normative · one Traycer pass)
+
+Official label SVGs landed in `client/public/brand/` on 2026-08-11 (QA pos/neg 16:9, Association member pos/neg). This section supersedes, for the build state, every "while null" clause above. Ship items 9.1–9.4 in one pass, then deploy per the P0 path in `docs/pivot3_remaining_todo.md`.
+
+### 9.1 Label wiring (supersedes §2 dormant rows; activates §3.5)
+
+- `CATENA_X_LABEL_ASSET` → `"/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg"` (official vector master of the same artwork; **update tier-3 item 15's exact-filename assertion**). Then **delete** `client/public/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9@300.png` — obsolete raster duplicate; zero references may remain.
+- `CATENA_X_LABEL_ASSET_NEG` → `"/brand/CX_Logo_Qualified-Advisor_RGB_neg_16x9.svg"` — footer renders the neg **bare** (§3.3 precedence 1). **Amendment to §3.4's comment: do NOT delete the plaque branch or its CSS.** The three-state precedence and `.footer-label-plaque` stay in place as the lapse-resilience mechanism (§3.3 explicitly keeps three states); with neg set they are dormant, not dead. Update the CSS comment to say "dormant while the negative variant is present" instead of "delete once set".
+- `CATENA_X_MEMBER_LABEL_ASSET` → `"/brand/Association_member_Logo_RGB_pos.svg"`, `CATENA_X_MEMBER_LABEL_ASSET_NEG` → `"/brand/Association_member_Logo_RGB_neg.svg"`. Both non-null ⇒ **§3.5 `CX_LABEL_ASSETS` label-keyed model is now REQUIRED**: credentials carry `cxLabel: 'advisor' | 'member'`, `isCatenaXLabel` becomes derived, the `catenax-member` credential renders the member label (pos in the strip, neg in the footer recognitions).
+- **Member-label clear space (new CSS obligation):** unlike the QA 16:9 files, the member SVG is tight-cropped (`viewBox 0 0 1497.1 384`, no built-in margin). Brand Governance: clear space = figurative-mark height. Give the rendered member label padding ≈ 0.75× its rendered height on all sides; nothing else inside that zone; never over a busy background region.
+- **Link rule restated for two labels:** at most ONE linked Catena-X label per page, `https://catena-x.net` only — keep the link on the **advisor** label in the strip; the member label renders unlinked everywhere (`href` absent, no `<a>` wrapper — tier-1 item 5 still asserts exactly one link).
+- **Item 8 consumer scan:** the member constants lose their null-exemption in this same commit — consumers wired above satisfy it.
+- **Footer.test:** keep the three mocked precedence `describe`s; the DEFAULT-state expectations flip to state 1 (neg `<img>` present, bare, no `.footer-label-plaque` ancestor). The §3.3 replacement assertion (plaque-ancestor rule while neg is null) remains in its mocked describe.
+
+### 9.2 Battery imagery restoration (Francesco, 2026-08-11: "restore the battery background")
+
+- `client/public/bg-advisory.jpg` (light-grey EV-battery-pack assembly photo) is referenced only by `.advisory-page-hero` (`index.css` ~:1038) under `linear-gradient(rgba(245,247,250,.85), rgba(232,236,241,.95))` — effectively invisible. **Change the two stops to `.66` and `.80`.** Headline/body in that hero MUST still pass AA over the busiest image region — verify in the §7.4 pass; nudge back up by ≤.06 if a contrast check fails, never above the current values.
+- **Optional (Francesco taste call after preview):** apply the identical two-layer background to the landing `.hero-section` inside `.theme-catenax`. Not required for this pass; do not block on it.
+- While touching the file: re-export at ~1920 px width / q85 (target ≤ 400 KB, currently 4.0 MB), same filename, same aspect. Not a modification of any Catena-X asset — this is Ichnos-owned imagery.
+
+### 9.3 Explicitly NOT changed in the final run
+
+Hero gradient background on `/` (stays unless 9.2-optional is taken) · service cards, microlines, `/catena-x` focus list (§4.5 — confirmed by the association 2026-08-11) · fonts (Inter + Fraunces) · routes · the cookie-consent `!important` overrides (documented) · `.credential-strip__items` minmax floor (220px, §2.2).
+
+### 9.4 Conformance updates in the same pass
+
+- Tier-3 item 15: filename → the SVG (9.1).
+- §7.5 item 24 extends: the QA `@300.png` is now an orphan and MUST be absent.
+- Style verdict recorded 2026-08-11 (pre-run audit): palette invariants hold (teal + legacy hexes absent from `index.css`, tokens present), `.footer-label-img`/`.footer-label-plaque` defined, credential-strip grid conformant. Responsiveness is Bootstrap-carried — no custom mobile breakpoints in `index.css` — so the §7.4 three-viewport manual pass is the binding check, now including: member-label clear space at 390 px, neg labels legible on the dark footer, battery-hero text contrast at all three widths.
+
+### 9.5 After the run
+
+Deploy per P0 (PR → main → CI green → merge → "Sync main → staging"), then §7.4/§7.5 manual gates on the preview, then promote. Link-unfurl check for the regenerated `og-image.jpg` after DNS-visible deploy.
+
+### 9.6 Benchmark reevaluation — BASF PACIFIC (added 2026-08-11 PM)
+
+Benchmark: `automotive-transportation.basf.com/global/en/catena-x/PACIFIC` — a member company's offering page on Catena-X-native, equally technical content (PCF exchange app). Findings against our style:
+
+**Confirmed by the benchmark (no change):** the page runs entirely in BASF's own corporate design; **Catena-X appears as plain text only — zero CX logos or labels on the offering surface** (our §4.4 stance is market practice among serious members, not over-caution). Jargon-conscious technical copy with official terms named exactly (our card + microline register). Modular action cards, linear hierarchy, no gimmicks (our layout). Functional imagery only.
+
+**One upgrade in THIS run:** BASF leads with a full-bleed photographic hero (functional metaphor image). Our landing hero is a flat gradient. **§9.2-optional is upgraded to RECOMMENDED**: apply the battery-photo two-layer background to the landing `.hero-section` in the same pass, same `.66/.80` overlay, same AA guard. (Still reversible by taste after preview; the subpage restoration remains mandatory.)
+
+**Backlog (post-deploy, NOT this run):**
+- **Static FAQ section** (BASF pattern; SEO + answers-before-chat). Source it from the chatbot knowledge-pack tiers when that workstream runs — same content, two surfaces. Subject to §1/§4 vocabulary like all copy.
+- **Testimonial slot** — only when a real client quote exists; never fabricated, and not the association's own words.
+- Support-email visibility check on `/contact` (BASF pairs form + named inbox).
+
+### 9.7 Content reevaluation (2026-08-11 PM) — verdict: deploy-ready, no copy changes in this run
+
+Page-fit audit of the live constants (`landingContent`, `services`, `passportContent`, `teamContent`, `seoMeta`) against routes (`/`, `/services`, `/team`, `/contact`, `/passport`; `/data`→redirect):
+
+- **Right pages:** landing = positioning + credibility + teaser; `/services` = the offering in four pillars; `/passport` = the deep technical page (stack table CX-0003/0143/0026/0029/0136, JRC, Tractus-X, Cofinity-X — correct home for it); `/team` = credibility with the §1.5 asymmetry correctly implemented and commented. Nothing misplaced.
+- **Register is deliberately dual and correct:** engineering cards speak expert (FMEA vocabulary — EU buyer audience), Catena-X cards speak SME (ASEAN audience), `/passport` speaks data-architect. Matches the BASF benchmark's practice. Do not homogenize.
+- **Minor redundancy (backlog, NOT this run):** landing `PASSPORT_TEASER.body` (~90 words) re-explains passport + Catena-X + Ichnos role, overlapping `/passport` hero and the services lede — tighten to two sentences post-deploy. Naming consistency sweep: site alternates "European battery passport" (descriptive, legal) and "EU Battery Passport" — converge on the latter where the instrument is meant (§1.4 spirit; no guard violation today).
+- **Gaps (all backlog):** FAQ (§9.6) · an insights/"recent thinking" surface (MS 2818 series, LinkedIn posts) · a demo/proof block on `/passport` once the Kamran demo is presentable · every deep page ends in a contact CTA (verify in §7.4).
+- **Why no copy edits now:** the §4.5 fence, the vocabulary guard, and a green suite argue for restraint; nothing found is wrong, only polishable. Ship §9.1–9.2, then polish.

@@ -1,41 +1,53 @@
-# Pivot-3 — remaining to-do (audited 2026-08-11)
+# Pivot-3 — remaining to-do (updated 2026-08-11 PM, after Carina Gliese's onboarding reply)
 
-Audit basis: `website_Catena_pivot_3.md` v3.11 vs `origin/staging` (deployed) vs `Catena-X_Pivot` tip (pushed, = local HEAD).
+Audit basis: `website_Catena_pivot_3.md` v3.11 + Brand Governance v1.1 (now on file) + official label pack (now in repo).
 
-## Verdict in one line
+## P0 — go-live blockers
 
-**The implementation on `Catena-X_Pivot` conforms to pivot-3 on every machine-checkable item sampled — the obsolete logo is a DEPLOY GAP, not a code gap.** Staging serves the pre-logo-swap tip (PR #153); the branch is 20 commits ahead of it.
+1. **Redeploy staging from the current branch tip** (unchanged): pull → push → PR `Catena-X_Pivot` → `main` → merge on green CI → run "Sync main → staging". The obsolete navbar logo on staging-client is purely the stale deploy.
+2. **Wire the official label SVGs** (files committed to `client/public/brand/` on 2026-08-11 — Claude Code task, tests per pivot-3 §7):
+   - `CATENA_X_LABEL_ASSET` → `"/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg"` (replaces the 349 KB PNG with the official 6 KB SVG; **update tier-3 item 15's exact-filename assertion**). 16:9 canvas carries the mandated clear space — same sizing rules (height + `width:auto` + `contain`, never crop).
+   - `CATENA_X_LABEL_ASSET_NEG` → `"/brand/CX_Logo_Qualified-Advisor_RGB_neg_16x9.svg"` → **footer plaque retires automatically** (pivot-3 §3.3 precedence 1; Footer.test state 1 now becomes the live state). Delete the plaque CSS + wrapper per the comment once verified.
+   - `CATENA_X_MEMBER_LABEL_ASSET` → `"/brand/Association_member_Logo_RGB_pos.svg"`, `CATENA_X_MEMBER_LABEL_ASSET_NEG` → `"/brand/Association_member_Logo_RGB_neg.svg"`. **Both non-null ⇒ pivot-3 §3.5 label-keyed model (`CX_LABEL_ASSETS` + `cxLabel: 'advisor'|'member'`) is now REQUIRED** — the `catenax-member` credential renders the member label (pos in strip, neg in footer). ⚠ The member SVG is tight-cropped (1497×384, no built-in margin): give it CSS clear space ≈ 0.75× its rendered height on all sides (Brand Governance: clear space = figurative-mark height); never over busy background.
+   - Item-8 consumer scan: the two member constants lose their null-exemption the moment they are set — wire consumers in the same commit.
+   - Delete `client/public/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9@300.png` after the swap (obsolete duplicate of the official SVG).
+   - Link rule unchanged: at most one linked label per page, `https://catena-x.net` only.
+3. **Battery background restore (Francesco's request, 2026-08-11).** `bg-advisory.jpg` (the light-grey EV-battery-pack assembly photo, 5120×2880) still ships and is referenced only by `.advisory-page-hero` (`index.css:1038-1044`) under a nearly opaque overlay `linear-gradient(rgba(245,247,250,.85), rgba(232,236,241,.95))` — that is why it "disappeared". Options (Francesco to pick, both trivial):
+   - a) Make it visible again on the subpage heroes (`/services`, `/team`, `/passport`): lower the overlay to `rgba(245,247,250,.66) → rgba(232,236,241,.80)`.
+   - b) Also give the landing hero the same treatment: apply the identical two-layer background to the `.theme-catenax` hero section (keeps text on the pale wash, AA-safe since text sits on ≥.66 white overlay — re-check contrast in the §4.4 manual pass).
+   - Recommendation: (a) now, (b) as taste call after seeing (a) on preview. Perf note: 4 MB source — export a ~1920w/85q version (~300 KB) while touching it; same filename.
 
-Verified PASS on the branch tip: `Logo.jsx` → `/brand/` SVGs · full `/brand/` set incl. official QA label · all pivot-3 status constants (`CATENA_X_STATUS_LINE`, `TRADEMARK_NOTICE`, `CATENA_X_EXPERT_GROUP_NOTE`, member-label pair) · credentials (`catenax-member` first, `dpp-expert-group` renamed, `eu-passport-2027` removed) · `vocabulary.js` + test · `FooterRecognitions`/`FooterTrademark`/`CredentialLabel` + plaque CSS · webmanifest description/theme-color/icons · zero "Advisory Provider" in seoMeta · all 7 orphans deleted · wireframes/ deleted · index.css clean of teal/legacy hexes and gradient-text · hero eyebrow interpolates `CATENA_X_STATUS_LINE` · client/src clean of conformance-adjectives, "in progress" claims, "expert committee".
+## P1 — association actions from Carina's email (2026-08-11)
 
-## P0 — see it live (the obsolete logo)
+4. **⚠ PCF Architecture & Interoperability Expert Group — application form closes 14 Aug 2026 (3 days):** submit via the Microsoft Forms link in Carina's email.
+5. **Battery Pass Modelling Group:** await/answer intro from Johann Schütz (johann.schuetz@catena-x.net, group coordinator); group profile already on file.
+6. **Testimonial consent:** reply to Carina confirming (or declining) use of the quote + name/title/company/year/logo in the "Why Organizations Join Us" section on catena-x.net. Brief email suffices.
+7. **LinkedIn welcome post:** slot being coordinated by Carina with Comms — await date; post file: `Catena-X/Welcome/IchnosProtocol_CatenaX_LinkedInWelcomePost.pptx`. Any co-branded visual must follow Brand Governance "Cooperations" layout (CX logo left, partner right, fixed spacing, no custom lockups).
+8. **APJ Expert Group:** deferred by choice — revisit after network building (Carina: joining mid-term is possible).
 
-1. **Redeploy staging from the current branch tip.** Designed path: open **PR `Catena-X_Pivot` → `main`** (this is what triggers CI "Client/Server — Lint & Test", the Vercel preview, and E2E) → merge → run the **"Sync main → staging"** workflow (manual `workflow_dispatch`; it force-pushes main→staging and curls the two Vercel deploy hooks). Note: merging straight into `staging` again (as PR #153 did) works visually but runs no CI and is erased by the next sync.
-2. **Commit the two files written to the working tree today:** `client/public/og-image.jpg` (regenerated 2026-08-11: dual-tone lockup + live hero headline + status line, replaces the 14 May pre-pivot file — closes pivot-3 §5 item 1) and `docs/website_Catena_pivot_2.md` (approved-phrasings line reconciled with pivot-3 §1.1 + historical note; the two §6-mandated amendments were verified already applied).
+## P2 — conformance & docs
 
-## P1 — conformance items not yet verifiable
+9. **pivot-3 §4.5 standing authority: RECORDED 2026-08-11** (Carina Gliese confirmed the descriptive-use reading in writing: *"it is perfectly acceptable to state on your website that you help suppliers connect to Catena-X"*). Repo copy of `website_Catena_pivot_3.md` amended; §4 copy stays as-is with the confirmation date as authority.
+10. Server chatbot prompt sweep verification (unchanged from previous list).
+11. §6 manual sweep areas: `legal/` read in full, `e2e/`, `scripts/`, rest of `client/public/` (unchanged).
+12. Guard self-test (§7.1 items 9–10) (unchanged).
+13. og-image: **DONE** (regenerated 2026-08-11, committed in `35d9fc2`) — link-unfurl check after the staging/prod deploy remains (§7.4-20).
 
-3. **Server chatbot prompt sweep (pivot-3 §2 last row):** confirm the conformance-adjective cleanup in server prompt text landed (the sweep ticket). Could not be scanned remotely (OneDrive hydration). Grep: `catena-x[ -]?(compatible|compliant|conformant)` over `server/` excl. node_modules.
-4. **§6 manual sweep areas:** `legal/` read in full (not just grepped), `e2e/`, `scripts/`, rest of `client/public/`.
-5. **Guard self-test (§7.1 items 9–10):** full suite green incl. `vocabulary.test.js`; once, deliberately introduce a §1.2 term, watch it fail, revert.
+## P3 — manual gates before promotion (unchanged)
 
-## P2 — assets & external dependencies (Francesco-owned)
-
-6. **Advisor `_neg_` label:** check `catena-x.academy/lana-download/qualified-advisor-logo/` (account-gated) for a negative/reversed variant → drop in `/brand/`, set `CATENA_X_LABEL_ASSET_NEG` — footer plaque retires by itself (§3.3 precedence 1).
-7. **Member label:** countersign the *member* Logo Use Agreement (`cx-resources` → `info@catena-x.net`), download member label files → `CATENA_X_MEMBER_LABEL_ASSET(_NEG)`; then adopt the §3.5 label-keyed model (required only once the file exists).
-8. **⚠ PCF Architecture & Interoperability Expert Group tender closes 14 Aug 2026 — three days.** Submit if still intended (§1 NOT_YET_HELD). On confirmation of any pending group, move its regex out of `NOT_YET_HELD` and update pivot-3 §1 in the same commit.
-9. **Expert-group registered name:** when Stan Faldin confirms, verify the `dpp-expert-group` label; correction is one line in `credentials.js` (§1.1).
-10. **Trademark guideline answer** from the Management Office: if it confirms the §4 reading, append the date as standing authority; if narrower, amend §4 before touching copy (§4.5).
-
-## P3 — manual gates before promotion (§7.4–7.5)
-
-11. Viewport review at 1440/768/390: no Catena-X label near services/pricing (§4.4), plaque not over busy footer imagery, "Catena-X" always plain text.
-12. Lighthouse on the Vercel preview — not worse than baseline.
-13. **Link-unfurl check of the new og-image** after deploy (real unfurl, not opening the file) — §7.4 item 20.
-14. `seoMeta.js` / `structuredData.js` shared-claim parity read (§7.4 item 21).
+14. Viewport review 1440/768/390 — now including: no label near services/pricing (§4.4), member-label clear space respected, neg labels legible on the dark footer, battery-background text contrast if restored.
+15. Lighthouse on preview vs baseline. 16. seoMeta/structuredData parity read.
 
 ## P4 — housekeeping
 
-15. **Broken git worktree entry** `.claude/worktrees/inspiring-mirzakhani` (mangled Windows path) makes `git status` fatal — run `git worktree prune` in a terminal.
-16. **Out-of-repo vocabulary (§8):** `EU_Battery_Passport/docs/Catena-X/presentations/IBS2026_Day3_Lecture4_prep.md:42` still mandates "membership: application in progress" — obsolete guardrail; talk is 28 Aug 2026.
-17. **Qualification renewal by 2027-07-06** (attestation 868) — on lapse: `CATENA_X_LABEL_ASSET = null` + delete label file. A scheduled reminder ~May 2027 is recommended.
+17. Delete `_to_delete/` at repo root (git-ignored debris from the lock cleanup).
+18. Qualification renewal by **2027-07-06** (attestation 868); membership: ongoing, 3-months' notice to fiscal-year end. Scheduled reminder ~May 2027 recommended.
+19. IBS2026 briefing doc guardrail fix (out-of-repo) before the 28 Aug talk (unchanged).
+
+## P5 — backlog from the BASF PACIFIC benchmark (2026-08-11, post-deploy)
+
+20. Static FAQ section on `/` or `/catena-x`, generated from the chatbot knowledge pack (pending workstream) — BASF pattern, SEO value, §1/§4 vocabulary applies.
+21. Testimonial slot once a real client quote exists.
+22. `/contact`: show a named support inbox alongside the form.
+(§9.2-optional landing-hero battery image upgraded to RECOMMENDED in this run — see pivot-3 §9.6.)
+23. Content polish (post-deploy): tighten landing PASSPORT_TEASER to 2 sentences; converge "European battery passport"→"EU Battery Passport" where the instrument is meant; insights/"recent thinking" block; demo proof block on /passport when ready. (pivot-3 §9.7)
