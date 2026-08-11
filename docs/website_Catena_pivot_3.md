@@ -325,8 +325,8 @@ An image followed inline by `" — note"` is not acceptable presentation; the Ca
 ```css
 /* Catena-X label on the dark footer. The plaque exists only because no
    official negative variant has been supplied; it holds the UNMODIFIED
-   positive file on the light ground that artwork requires. Delete the
-   plaque and its wrapper span once CATENA_X_LABEL_ASSET_NEG is set. */
+   positive file on the light ground that artwork requires. The plaque is DORMANT once CATENA_X_LABEL_ASSET_NEG is set — do NOT delete it;
+   it is the lapse-resilience fallback (§9.1, supersedes the earlier deletion note). */
 .footer-label-plaque {
   display: inline-block;
   background: #ffffff;
@@ -759,3 +759,41 @@ Page-fit audit of the live constants (`landingContent`, `services`, `passportCon
 - Comments in `credentials.js` MAY say "credentials" throughout.
 - **Unchanged (stable, not user-visible):** the `footer-recognition-` test-id prefix (§2, §7.1-6 API), the `FooterRecognitions` component/file name, and `data-testid="footer-recognitions"`. Renaming those is churn without user value; §7.0 locates by testid precisely so display copy can change freely — this change is the payoff.
 - §2.2's rule name ("recognitions of Ichnos") is unaffected in meaning; the heading the user sees says Credentials.
+
+### 9.9 Final-run decisions on Traycer's review (2026-08-11 PM · closes all open questions)
+
+Traycer's four caveats are ACCEPTED and normative:
+
+1. **Tier-3 item 15 is a CREATE, not an update** — it was silently unmet since the tier model was written. Resolution below (Q3).
+2. **`CredentialLabel.jsx` restructure is an explicit §9.1 obligation:** with `isCatenaXLabel` derived, the link condition becomes **href-driven, not label-driven** (`href && <a…>`; member entry has no `href`, renders unwrapped — tier-1 item 5 keeps asserting exactly one link) and `alt` comes from `CX_LABEL_ASSETS[cxLabel].alt`, never hardcoded.
+3. **Footer test surface, restated:** with both labels wired the recognitions block renders TWO images. All singular assertions generalize (`getAllByRole('img')` length 2; per-label queries by alt from the imported map); `findUnplaquedImages` takes the set of neg assets; mocked precedence describes override BOTH label pairs.
+4. Plaque contradiction resolved doc-side this date: todo item 2 and the §3.4 reference comment now match §9.1 (dormant, never deleted). While touching `.footer-label-plaque`, reconcile its CSS to the §3.4 block (`padding: 6px 10px`; `margin-bottom`).
+
+Decisions on the five questions:
+
+- **Q1 landing hero → C.** Take it, as the FINAL phase in its own commit, trivially revertible after preview. §9.3 is amended accordingly: the landing gradient is replaced in this pass, last.
+- **Q2 item-8 mechanism → A.** New `ASSET_PATH_EXPORTS` array in `vocabulary.js` (the four label-path constants), scanned by the same walk with the same stripped-source ≥1-consumer contract. `STATUS_STRING_EXPORTS` keeps its name and meaning; §7.1's status/asset distinction survives.
+- **Q3 tier-3 width → C.** Assert ALL FOUR label constants exactly in `catenaXStatus.test.js`, and record the widening here as §7.3 requires: *items 15a–15d, reason: every label path is a Logo Use Agreement exposure — any other value means an unofficial file is served.* Tier 3 totals seven assertions; still near-empty.
+- **Q4 documents → A and B, both done 2026-08-11** (this commit of the docs). §9 remains the source of truth; the companions no longer contradict it.
+- **Q5 scope → all of §9.1/9.2/9.4/9.8 in this pass, phase-ordered:** (1) §9.8 wording (2 files, ships independently) → (2) §9.1 + §9.4 labels & conformance → (3) §9.2 subpage overlay → (4) §9.2 landing hero (Q1's revertible commit). Each phase its own commit under the 3-file cap.
+- **Owner items closed:** `bg-advisory.jpg` re-encode DONE (4.0 MB → 377 KB, 1920×1080 q85, same filename, committed 2026-08-11). Remaining manual gates unchanged: §9.4 AA check over the photo, §7.4 viewports, Lighthouse, og-image unfurl.
+
+### 9.10 Blast-radius decisions (2026-08-11 PM · answers Traycer's four approach questions)
+
+- **Q1 hero-vs-guard → A, with guard-first sequencing.** `theme-scoping.test.jsx:120` is the machine form of a real rule — *text never sits on raw photo* — and §3.3's own doctrine applies: never delete or side-step a guard (D is guard evasion; B drops protection), **replace it with the rule it stood for**. Relax the `.hero-section` assertion to: `url(` MUST be preceded by a `linear-gradient` whose two stops are ≥ `.66` alpha. Per the §7.2 guard-placement rule, the relaxed guard lands in the phase BEFORE the CSS change (it is green against both old and new CSS). The `index.css:308-310` prose comment is updated in the same commit so comment and guard agree. C is rejected consciously: the prior decision predates the benchmark, and §9.9-Q1 already decided take-it-revertible — the guard's *intent* survives, its literal form evolves.
+- **Q2 link decision → A.** `if (href)` wraps; `cxLabel` only selects the asset. The invariant reads exactly as §3.1 states it, and the decision lives in the data: `CREDENTIALS` carries `href` only where a link is permitted. Add B's guard comment **at the data**, not the component — a comment on the `href` field in `credentials.js` citing Logo Use Agreement §4 (only catena-x.net, at most one linked label per page).
+- **Q3 member clear space → B.** Surface-keyed modifiers (`.credential-strip__label-img--member`, `.footer-label-img--member`): the two surfaces render at different heights, so the ≥0.75×-height padding tunes per surface; matches the repo's BEM-modifier convention. C is rejected — the plaque span means "white ground required", overloading it to mean "spacing" muddies a legally meaningful pattern.
+- **Q4 unlinked-member assertion → A.** Assert the invariant as written, driven off `CREDENTIALS`: every credential without `href` renders no `<a>` — covers any future label entry, per §7.0 (assert rules, not instances). Tier-1 item 5's exactly-one-link count remains alongside; the two assertions fail on different halves of the same breach.
+
+### 9.11 Sequencing decisions (2026-08-11 PM · final four; approach drafting may begin)
+
+- **Q1 five-file group → B, atomic, documented deviation.** Traycer's own finding decides this: the by-surface split ships an intermediate commit where the footer renders the **advisor asset on the member card — green**. That state violates §2.2's explicit MUST NOT ("the Advisor asset MUST NOT stand in for it") — a Logo Use Agreement exposure, live on the deployed site if anything pauses between phases. The 3-file cap is a convention with a documented-deviation valve; §2.2 is a legal rule with none. One 5-file phase, deviation recorded in the PR description per the cap's own rule. C is rejected: building temporary machinery to make a forbidden intermediate state safe is effort spent legitimizing what should not exist.
+- **Q2 alt text → A.** Drop `alt` from the §3.5 map; both surfaces render `alt={credential.label}`. One home for the claim wording (§1.3 one-wording-per-claim — the alt and the visible label are the *same claim*, so a second string is exactly the near-duplicate drift §1.3 prohibits; C's different-presentation clause does not apply, nothing differs). §3.5's map shape is amended accordingly: `CX_LABEL_ASSETS = { advisor: {pos, neg}, member: {pos, neg} }`, no `alt` key. Fixes `CredentialLabel`'s hardcoded string as a side effect.
+- **Q3 `isCatenaXLabel` → A, remove entirely.** Each reader keys on what it actually means: `href` for link semantics, `cxLabel` for asset/layout semantics. A derived boolean with no reader is a defined-but-unread surface — the drift class item 8 exists to kill; a helper (C) wraps a one-expression truthiness test. §3.5's "becomes derived" is superseded: deleted, not derived. §2.2's "MUST NOT carry `isCatenaXLabel: true`" is satisfied in the strongest form — the field no longer exists.
+- **Q4 clear-space assertion → B.** `theme-scoping.test.jsx` asserts both modifier classes exist and declare non-zero padding; exact geometry stays a §7.4 review point. The 0.75× ratio is relative to *rendered* height, which §3.4 explicitly allows tuning ("Height MAY be tuned") — an exact-ratio assertion would break on every legitimate tune, guarding incidental state rather than intent (the §3.3 lesson). Non-zero padding catches the real regression class — clear space silently deleted — which is the same latent-defect shape as the undefined `.footer-label-img` §3.4 repaired.
+
+### 9.12 Architecture-validation decisions (2026-08-11 PM · unblocks ticket breakdown)
+
+- **Q1 flip sequencing → A.** The atomic set is SIX files: `credentials.js`, `CredentialLabel.jsx`, `CredentialStrip.jsx`, `FooterRecognitions.jsx`, + the two directly-red test files; `CredentialStrip.test.jsx` updates may land next phase if green. Rationale unchanged from §9.11-Q1: the flip's semantic boundary defines the commit, not the file count — Traycer found the sixth consumer, so the boundary grows. B re-introduces the temporary-compatibility machinery §9.11 already rejected; C violates green-before-commit outright. Documented deviation: six files, reason in the PR.
+- **Q2 member paths in P1 → A.** P1 shrinks to: advisor positive PNG → SVG repoint + `@300.png` deletion (+ its src-comparison update). Member paths AND the advisor negative land in the atomic flip phase together with `CX_LABEL_ASSETS` and `ASSET_PATH_EXPORTS` — §9.1's same-commit consumer rule applies to all three "new" paths, not only the member pair. The four-way tier-3 exact-filename assertions (items 15a–d, §9.9-Q3) are created in the flip phase, where all four constants hold their final values.
+- **Q3 hero guard coverage → A.** Guard BOTH effective photo selectors — `.advisory-page-hero` and `.theme-catenax .hero-section` — with the composite rule: a `url(` in `background` MUST be preceded by `linear-gradient` and every rgba alpha in that gradient MUST be ≥ `.66`. The intent is *text never sits on raw photo*, and it binds every surface that carries a photo, including §9.2's mandatory subpage one (B would leave it unguarded; C would force the implementation onto a selector that may lose the cascade — guards follow effective selectors, they do not dictate losing ones). Guard extraction keys on the exact compound selector strings; §9.10-Q1's guard-first placement holds: the widened guard lands green before any CSS change.
