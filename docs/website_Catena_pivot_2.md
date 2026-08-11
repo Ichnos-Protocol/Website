@@ -10,6 +10,8 @@
 
 ## 0.1 Deltas vs `ichnos_website_pivot_spec_v3.md` — STATUS UPGRADE (do this first)
 
+> **Historical note (2026-08-11):** the status table below reflects July 2026. Status vocabulary is now governed by `website_Catena_pivot_3.md` §1 — membership is HELD (ordinary member, Aug 2026), the expert-group wording of pivot-3 §1.4 applies, and any conflict resolves in pivot-3's favour. Do not implement status strings from this section.
+
 v3 was written while the qualification was pending. Facts changed; sweep the whole site:
 
 | v3 said (June 2026) | Now true (July 2026) — replace with |
@@ -255,7 +257,7 @@ Microline: In Catena-X terms: [PCF KIT](https://eclipse-tractusx.github.io/docs-
 - Ichnos sells **advisory and integration services**; the cards must never read as if Ichnos *is* Catena-X, operates it, or that these KITs are Ichnos products.
 - Official terms appear **only** in the microlines (plus the group lede's one ® mention), always by their exact official names, always linked.
 - Forbidden phrasings anywhere on the site: "Catena-X certified" (no certification held), "official Catena-X partner" (the correct term is *Qualified Advisor*), "we operate Catena-X in ASEAN", "powered by Catena-X", and v3's now-stale "consultant qualification — application in progress" (superseded — see §0.1). *Note: "Catena-X member" was previously listed here; membership was admitted Aug 2026, so it is now a held, permitted status per `website_Catena_pivot_3.md` §1.1/§1.2 — do not reinstate it as a prohibition.*
-- Approved phrasings: "Catena-X Qualified Advisor", "approved for the Catena-X expert committee on Battery Passport", "Catena-X membership: application in progress".
+- Approved phrasings (per `website_Catena_pivot_3.md` §1.1, which governs status vocabulary): "Catena-X Qualified Advisor" · "Catena-X member" / "ordinary member of Catena-X Automotive Network e.V." · "member of the Catena-X Digital Product Passport Expert Group" · "Catena-X member & Qualified Advisor" (composed hero form, from `CATENA_X_STATUS_LINE`). *Former entries "approved for the Catena-X expert committee on Battery Passport" and "Catena-X membership: application in progress" are retired — the first uses a governance term that does not exist (pivot-3 §1.4), the second asserts a pending state for a membership now held (admitted Aug 2026).*
 
 ### 3.4 Geographic reframe (small copy sweeps, same PR)
 
