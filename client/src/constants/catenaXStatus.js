@@ -56,19 +56,25 @@ export const CATENA_X_STATUS_LINE = "Catena-X member & Qualified Advisor";
 export const TRADEMARK_NOTICE =
   "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.";
 
-// Official Qualified Advisor label assets, the vector masters (SVG) of
-// the 16:9 artwork with the mandated clear space, in both the positive
-// and the negative/dark variant. Lifecycle/legal: use only while the
-// qualification holds — set to `null` (and drop the file) if it lapses;
+// Official Qualified Advisor label assets in the positive and the
+// negative/dark variant. The DISPLAY files are viewBox-trimmed derivatives
+// of the official 16:9 deliveries (which stay in /brand as the
+// `_16x9.svg` masters): the artwork itself is byte-identical — only the
+// empty canvas around it is trimmed, and the mandated clear space is
+// re-supplied as CSS padding, exactly the treatment the tight-cropped
+// member file below already receives. Trim recorded 2026-08-12
+// (Francesco: font-parity request — the 16:9 canvas made the label
+// illegible at card scale). Lifecycle/legal: use only while the
+// qualification holds — set to `null` (and drop the files) if it lapses;
 // renew by 2027-07-06. Governed by Logo Use Agreement §6.1 (revocation
 // with immediate effect, no notice), which is also cause to set these to
 // `null`. Now that the negative variant is present, the dark footer
 // renders it bare and the white plaque is dormant — dormant, not
 // deleted: nulling the negative falls the footer back to the plaque.
 export const CATENA_X_LABEL_ASSET =
-  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg";
+  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg";
 export const CATENA_X_LABEL_ASSET_NEG =
-  "/brand/CX_Logo_Qualified-Advisor_RGB_neg_16x9.svg";
+  "/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg";
 
 // Official ordinary-member label assets (not status strings), positive
 // and negative variants. These are live, so they are no longer exempt
