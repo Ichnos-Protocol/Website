@@ -115,15 +115,16 @@ describe('Footer', () => {
       expect(within(brandCol).queryByText(/UEN/i)).toBeNull();
     });
 
-    it('brand column shows the v4 positioning line and the Catena-X credential', () => {
+    it('brand column shows the positioning line and no duplicated credential', () => {
       const brandCol = screen.getByTestId('footer-col-brand');
+      // Single-sourced from companyInfo.js — never restated as a literal here.
       expect(
-        within(brandCol).getByText(
-          'Battery advisory and EU battery-passport integration for ASEAN.',
-        ),
+        within(brandCol).getByText(COMPANY_INFO.tagline),
       ).toBeInTheDocument();
-      // The credential string is derived from catenaXStatus.js, never hard-coded.
-      expect(brandCol).toHaveTextContent(CATENA_X_TITLE_BASE);
+      // 2026-08-12: the plain-text credential line was removed from the brand
+      // column — it duplicated the Credentials block, which now carries the
+      // visible titles. Guard the de-duplication.
+      expect(brandCol).not.toHaveTextContent(CATENA_X_TITLE_BASE);
     });
 
     it('displays registered address in contact column', () => {
@@ -287,6 +288,26 @@ describe('Footer', () => {
       ).toHaveLength(CREDENTIALS.length);
     });
 
+    it('every recognitions item leads with its visible title (footerLabel over label)', () => {
+      // 2026-08-12 layout: title first, official label image below it for the
+      // two Catena-X credentials; the member shows its formal grade via
+      // `footerLabel`. Titles come from the credentials constant, never
+      // restated as literals.
+      CREDENTIALS.forEach(({ id, label, footerLabel }) => {
+        const item = screen.getByTestId(`footer-recognition-${id}`);
+        expect(item).toHaveTextContent(footerLabel ?? label);
+      });
+    });
+
+    it('footer-omits the marketing notes of the two label credentials', () => {
+      // The strip cards carry MEMBER_CARD_NOTE / ADVISOR_CARD_NOTE; the footer
+      // pairs title + image only (Francesco, 2026-08-12).
+      const member = screen.getByTestId(MEMBER_TESTID);
+      const advisor = screen.getByTestId(ADVISOR_TESTID);
+      expect(member).not.toHaveTextContent(MEMBER_CREDENTIAL.note);
+      expect(advisor).not.toHaveTextContent(ADVISOR_CREDENTIAL.note);
+    });
+
     it('every recognitions image is either a negative variant or plaque-wrapped', () => {
       // The footer is dark. A positive label may only appear on the white
       // plaque that supplies its original light ground; a negative variant
@@ -415,7 +436,9 @@ describe('Footer', () => {
   });
 
   describe('when no label variant is available', () => {
-    it('falls back to the plain credential label text', async () => {
+    it('keeps the visible titles and renders no image', async () => {
+      // The visible title (footerLabel ?? label) carries the credential name,
+      // so the no-asset state renders nothing extra below it.
       await renderFooterWithAssets({
         advisor: { pos: null, neg: null },
         member: { pos: null, neg: null },
@@ -424,10 +447,10 @@ describe('Footer', () => {
       expect(recognitions.querySelectorAll('img')).toHaveLength(0);
       expect(document.querySelector('.footer-label-plaque')).toBeNull();
       expect(screen.getByTestId(ADVISOR_TESTID)).toHaveTextContent(
-        ADVISOR_CREDENTIAL.label,
+        ADVISOR_CREDENTIAL.footerLabel ?? ADVISOR_CREDENTIAL.label,
       );
       expect(screen.getByTestId(MEMBER_TESTID)).toHaveTextContent(
-        MEMBER_CREDENTIAL.label,
+        MEMBER_CREDENTIAL.footerLabel ?? MEMBER_CREDENTIAL.label,
       );
     });
   });

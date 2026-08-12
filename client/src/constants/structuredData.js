@@ -6,6 +6,7 @@
 // Reference: https://schema.org/
 
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
+import { COMPANY_INFO } from "./companyInfo";
 import {
   CATENA_X_EXPERT_GROUP_NOTE,
   CATENA_X_MEMBERSHIP_NOTE,
@@ -26,7 +27,8 @@ export const ORGANIZATION_SCHEMA = {
   // on this machine-readable corporate surface; the credential card carries marketing
   // copy instead. The constant is interpolated verbatim — its value is not edited here
   // (§12.1 exempts it) — and takes no closing period, since it ends with "e.V.".
-  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}. ${CATENA_X_MEMBERSHIP_NOTE}`,
+  // The opening sentence is the single-sourced positioning line (companyInfo.js).
+  description: `${COMPANY_INFO.tagline} Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}. ${CATENA_X_MEMBERSHIP_NOTE}`,
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",

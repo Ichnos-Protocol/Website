@@ -14,6 +14,11 @@ export const CREDENTIALS = [
     label: 'Catena-X Association member',
     note: MEMBER_CARD_NOTE,
     cxLabel: 'member',
+    // Footer-only display title (Francesco, 2026-08-12): the footer pairs
+    // each official label image with a visible text title, and the
+    // membership shows its formal grade there. The strip card keeps the
+    // shorter `label`, which also stays the alt text of every label image.
+    footerLabel: 'Catena-X Association ordinary member',
   },
   {
     id: 'catenax-qualified-advisor',
