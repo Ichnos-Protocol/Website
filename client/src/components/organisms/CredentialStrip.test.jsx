@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 
 import CredentialStrip from './CredentialStrip';
-import { CATENA_X_LABEL_ASSET } from '../../constants/catenaXStatus';
+import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
 import { CREDENTIALS } from '../../constants/credentials';
 
 const EXPECTED_CREDENTIAL_IDS = [
@@ -11,12 +11,14 @@ const EXPECTED_CREDENTIAL_IDS = [
   'phd-pem-rwth',
 ];
 
-// Advisor label text is derived from the credentials constant, never
-// retyped: the tests locate the card by test id and the label node by
-// role, then compare rendered alt/text against this source of truth.
+// Label text is derived from the credentials constant and asset paths
+// from the label-asset map, never retyped: the tests locate each card by
+// test id and its label node by role, then compare the rendered
+// alt/src/text against those sources of truth.
 const ADVISOR_CREDENTIAL = CREDENTIALS.find(
   ({ id }) => id === 'catenax-qualified-advisor',
 );
+const MEMBER_CREDENTIAL = CREDENTIALS.find(({ id }) => id === 'catenax-member');
 
 describe('CredentialStrip', () => {
   afterEach(() => {
@@ -24,26 +26,35 @@ describe('CredentialStrip', () => {
     vi.doUnmock('../../constants/catenaXStatus');
   });
 
-  describe('with the official label asset available', () => {
+  describe('with the official label assets available', () => {
     beforeEach(() => {
       render(<CredentialStrip />);
     });
 
     it('renders the section landmark with its accessible label', () => {
       expect(
-        screen.getByRole('region', {
-          name: 'Credentials and recognitions',
-        }),
+        screen.getByRole('region', { name: 'Credentials' }),
       ).toBeInTheDocument();
     });
 
-    it('renders the official Catena-X label image with lazy loading', () => {
+    it('renders the official Qualified Advisor label image with lazy loading', () => {
       const card = screen.getByTestId('credential-catenax-qualified-advisor');
       const img = within(card).getByRole('img');
       expect(img).toHaveAttribute('alt', ADVISOR_CREDENTIAL.label);
-      expect(img).toHaveAttribute('src', CATENA_X_LABEL_ASSET);
+      expect(img).toHaveAttribute('src', CX_LABEL_ASSETS.advisor.pos);
       expect(img).toHaveAttribute('loading', 'lazy');
       expect(img).toHaveAttribute('decoding', 'async');
+    });
+
+    it('renders the official Association member label image, unlinked', () => {
+      const card = screen.getByTestId('credential-catenax-member');
+      const img = within(card).getByRole('img');
+      expect(img).toHaveAttribute('alt', MEMBER_CREDENTIAL.label);
+      expect(img).toHaveAttribute('src', CX_LABEL_ASSETS.member.pos);
+      expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('decoding', 'async');
+      expect(img).toHaveClass('credential-strip__label-img--member');
+      expect(card.querySelector('a')).toBeNull();
     });
 
     it('exposes exactly the expected credential ids, in order', () => {
@@ -66,33 +77,43 @@ describe('CredentialStrip', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders a single external link, on the Qualified Advisor card only', () => {
+    it('renders a single external link, wrapping the Qualified Advisor label', () => {
       const links = screen.getAllByRole('link');
       expect(links).toHaveLength(1);
       const [link] = links;
       expect(link).toHaveAttribute('href', 'https://catena-x.net');
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-      expect(
-        screen.getByTestId('credential-catenax-qualified-advisor'),
-      ).toContainElement(link);
+      const card = screen.getByTestId('credential-catenax-qualified-advisor');
+      expect(card).toContainElement(link);
+      expect(link).toContainElement(within(card).getByRole('img'));
+    });
 
-      EXPECTED_CREDENTIAL_IDS.filter(
-        (id) => id !== 'catenax-qualified-advisor',
-      ).forEach((id) => {
+    it('renders no anchor at all on any credential without an href', () => {
+      // A raw querySelector, not queryByRole('link'): an <a> with no href
+      // carries no link role and would slip past a role query — which is
+      // exactly the regression this guards.
+      CREDENTIALS.filter(({ href }) => !href).forEach(({ id }) => {
         const card = screen.getByTestId(`credential-${id}`);
-        expect(within(card).queryByRole('link')).toBeNull();
+        expect(card.querySelector('a')).toBeNull();
       });
     });
   });
 
-  describe('when CATENA_X_LABEL_ASSET is null (lapsed qualification)', () => {
+  describe('when the advisor entry in CX_LABEL_ASSETS has no positive asset', () => {
     it('falls back to a text label kept inside the catena-x.net link', async () => {
       vi.resetModules();
-      vi.doMock('../../constants/catenaXStatus', async (orig) => ({
-        ...(await orig()),
-        CATENA_X_LABEL_ASSET: null,
-      }));
+      vi.doMock('../../constants/catenaXStatus', async (orig) => {
+        const actual = await orig();
+        return {
+          ...actual,
+          CATENA_X_LABEL_ASSET: null,
+          CX_LABEL_ASSETS: {
+            ...actual.CX_LABEL_ASSETS,
+            advisor: { ...actual.CX_LABEL_ASSETS.advisor, pos: null },
+          },
+        };
+      });
       const { default: CredentialStripNull } = await import(
         './CredentialStrip'
       );
@@ -107,20 +128,27 @@ describe('CredentialStrip', () => {
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     });
 
-    it('keeps every non-CX credential as non-link text', async () => {
+    it('keeps every credential without an href free of anchors', async () => {
       vi.resetModules();
-      vi.doMock('../../constants/catenaXStatus', async (orig) => ({
-        ...(await orig()),
-        CATENA_X_LABEL_ASSET: null,
-      }));
+      vi.doMock('../../constants/catenaXStatus', async (orig) => {
+        const actual = await orig();
+        return {
+          ...actual,
+          CATENA_X_LABEL_ASSET: null,
+          CX_LABEL_ASSETS: {
+            ...actual.CX_LABEL_ASSETS,
+            advisor: { ...actual.CX_LABEL_ASSETS.advisor, pos: null },
+          },
+        };
+      });
       const { default: CredentialStripNull } = await import(
         './CredentialStrip'
       );
       render(<CredentialStripNull />);
 
-      ['catenax-member', 'dpp-expert-group', 'phd-pem-rwth'].forEach((id) => {
+      CREDENTIALS.filter(({ href }) => !href).forEach(({ id }) => {
         const card = screen.getByTestId(`credential-${id}`);
-        expect(within(card).queryByRole('link')).toBeNull();
+        expect(card.querySelector('a')).toBeNull();
       });
       expect(screen.getAllByRole('link')).toHaveLength(1);
     });

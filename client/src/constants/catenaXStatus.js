@@ -38,25 +38,50 @@ export const CATENA_X_STATUS_LINE = "Catena-X member & Qualified Advisor";
 export const TRADEMARK_NOTICE =
   "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.";
 
-// Official Qualified Advisor label asset. Lifecycle/legal: use only
-// while the qualification holds — set to `null` (and drop the file) if
-// it lapses; renew by 2027-07-06. The negative/dark variant lights up
-// once that asset file lands.
+// Official Qualified Advisor label assets, the vector masters (SVG) of
+// the 16:9 artwork with the mandated clear space, in both the positive
+// and the negative/dark variant. Lifecycle/legal: use only while the
+// qualification holds — set to `null` (and drop the file) if it lapses;
+// renew by 2027-07-06. Governed by Logo Use Agreement §6.1 (revocation
+// with immediate effect, no notice), which is also cause to set these to
+// `null`. Now that the negative variant is present, the dark footer
+// renders it bare and the white plaque is dormant — dormant, not
+// deleted: nulling the negative falls the footer back to the plaque.
 export const CATENA_X_LABEL_ASSET =
-  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9@300.png";
-export const CATENA_X_LABEL_ASSET_NEG = null;
+  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg";
+export const CATENA_X_LABEL_ASSET_NEG =
+  "/brand/CX_Logo_Qualified-Advisor_RGB_neg_16x9.svg";
 
-// Dormant landing zone for the ordinary-member label file (not status
-// strings): while `null` they are exempt from conformance item 8 (§7.1).
-// The member label right runs with ordinary membership (ongoing,
-// terminable on 3 months' notice to fiscal-year end) — an independent
-// lifecycle from the Advisor label's 2027-07-06 renewal, so per §3.1 the
-// two must never share a constant. Governed by Logo Use Agreement §6.1
-// (revocation with immediate effect, no notice). Setting either back to
-// `null` removes the image everywhere and falls back to text, with no
-// other code change.
-export const CATENA_X_MEMBER_LABEL_ASSET = null;
-export const CATENA_X_MEMBER_LABEL_ASSET_NEG = null;
+// Official ordinary-member label assets (not status strings), positive
+// and negative variants. These are live, so they are no longer exempt
+// from conformance item 8 (§7.1). The member label right runs with
+// ordinary membership (ongoing, terminable on 3 months' notice to
+// fiscal-year end) — an independent lifecycle from the Advisor label's
+// 2027-07-06 renewal, so per §3.1 the two must never share a constant.
+// Governed by Logo Use Agreement §6.1 (revocation with immediate effect,
+// no notice). Setting either back to `null` removes the image everywhere
+// and falls back to text, with no other code change.
+export const CATENA_X_MEMBER_LABEL_ASSET =
+  "/brand/Association_member_Logo_RGB_pos.svg";
+export const CATENA_X_MEMBER_LABEL_ASSET_NEG =
+  "/brand/Association_member_Logo_RGB_neg.svg";
+
+// Label-keyed view over the four constants above, keyed by the
+// credential's `cxLabel`. It *reads* those constants rather than
+// replacing them — each label keeps its own independent lifecycle, and
+// nulling a constant still empties the corresponding entry here. No
+// `alt` key: alt text always comes from the credential `label`, so the
+// asset map never becomes a second source of truth for copy.
+export const CX_LABEL_ASSETS = {
+  advisor: {
+    pos: CATENA_X_LABEL_ASSET,
+    neg: CATENA_X_LABEL_ASSET_NEG,
+  },
+  member: {
+    pos: CATENA_X_MEMBER_LABEL_ASSET,
+    neg: CATENA_X_MEMBER_LABEL_ASSET_NEG,
+  },
+};
 
 // Pure computation of the qualifier suffix from an explicit granted
 // flag. This literal is the only place the pending qualifier text lives

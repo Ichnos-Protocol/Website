@@ -1,54 +1,54 @@
 import { CREDENTIALS } from '../../constants/credentials';
-import {
-  CATENA_X_LABEL_ASSET,
-  CATENA_X_LABEL_ASSET_NEG,
-} from '../../constants/catenaXStatus';
+import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
+
+// Pure: the member label is a different aspect ratio from the 16:9
+// advisor label and gets its own sizing modifier.
+function composeImgClass(cxLabel) {
+  const base = 'footer-label-img';
+  return cxLabel === 'member' ? `${base} ${base}--member` : base;
+}
 
 /*
-  Catena-X Qualified Advisor label on the dark footer, in three states
-  evaluated in this order:
+  Official Catena-X labels (Qualified Advisor and Association member) on
+  the dark footer, in three states evaluated in this order, per label:
 
   1. A negative (dark-surface) variant exists — render it bare; the dark
      footer is already the ground its original design expects.
-  2. Only the positive variant exists (today) — render it unmodified
-     inside a white plaque. "All labels are to be used in their original
-     design only": the plaque supplies the light ground the file was
-     drawn for and is not a modification of the file. Never invert,
-     tint, recolour or fade the image, never crop the clear space baked
-     into it, and never object-fit: cover it.
-  3. Neither constant is set — fall back to the plain label text.
+  2. Only the positive variant exists — render it unmodified inside a
+     white plaque. "All labels are to be used in their original design
+     only": the plaque supplies the light ground the file was drawn for
+     and is not a modification of the file. Never invert, tint, recolour
+     or fade the image, never crop the clear space baked into it, and
+     never object-fit: cover it. Both negatives are supplied today, so
+     this branch is dormant — dormant, not dead: nulling a negative
+     brings the plaque straight back.
+  3. Neither variant is set — fall back to the plain label text.
 
-  Lifecycle: the usage right must be renewed by 2027-07-06, and Logo Use
-  Agreement §6.1 allows revocation with immediate effect. On lapse or
-  revocation, set the constant in catenaXStatus.js to null — this falls
-  through to text with no other code change.
+  Lifecycle: the advisor usage right must be renewed by 2027-07-06, the
+  member right runs with ordinary membership, and Logo Use Agreement
+  §6.1 allows revocation with immediate effect. On lapse or revocation,
+  set the matching constant in catenaXStatus.js to null — this falls
+  through with no other code change. The footer never links a label.
 */
-function renderCatenaXLabel(label) {
-  if (CATENA_X_LABEL_ASSET_NEG) {
-    return (
-      <img
-        alt={label}
-        src={CATENA_X_LABEL_ASSET_NEG}
-        loading="lazy"
-        decoding="async"
-        className="footer-label-img"
-      />
-    );
+function renderCatenaXLabel(cxLabel, label) {
+  const assets = CX_LABEL_ASSETS[cxLabel];
+  const src = assets?.neg ?? assets?.pos;
+  if (!src) {
+    return label;
   }
-  if (CATENA_X_LABEL_ASSET) {
-    return (
-      <span className="footer-label-plaque">
-        <img
-          alt={label}
-          src={CATENA_X_LABEL_ASSET}
-          loading="lazy"
-          decoding="async"
-          className="footer-label-img"
-        />
-      </span>
-    );
+  const img = (
+    <img
+      alt={label}
+      src={src}
+      loading="lazy"
+      decoding="async"
+      className={composeImgClass(cxLabel)}
+    />
+  );
+  if (assets.neg) {
+    return img;
   }
-  return label;
+  return <span className="footer-label-plaque">{img}</span>;
 }
 
 export default function FooterRecognitions() {
@@ -57,15 +57,15 @@ export default function FooterRecognitions() {
      and duplicate test ids would break getByTestId in both suites. */
   return (
     <div data-testid="footer-recognitions">
-      <h6 className="footer-heading">Recognitions</h6>
-      {CREDENTIALS.map(({ id, label, note, isCatenaXLabel }) =>
-        isCatenaXLabel ? (
+      <h6 className="footer-heading">Credentials</h6>
+      {CREDENTIALS.map(({ id, label, note, cxLabel }) =>
+        cxLabel ? (
           <div
             className="footer-recognition"
             data-testid={`footer-recognition-${id}`}
             key={id}
           >
-            {renderCatenaXLabel(label)}
+            {renderCatenaXLabel(cxLabel, label)}
             <p className="footer-text small mb-1">{note}</p>
           </div>
         ) : (
