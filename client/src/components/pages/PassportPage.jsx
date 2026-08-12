@@ -5,7 +5,7 @@ import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 import { PASSPORT_HERO } from "../../constants/passportContent";
 import SeoHead from "../molecules/SeoHead";
 import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
-import PassportStatusTimeline from "../organisms/PassportStatusTimeline";
+import RegulatoryTimeline from "../organisms/RegulatoryTimeline";
 import PassportValueChainCase from "../organisms/PassportValueChainCase";
 import PassportCatenaXStack from "../organisms/PassportCatenaXStack";
 import PassportBuildStack from "../organisms/PassportBuildStack";
@@ -27,7 +27,7 @@ export default function PassportPage() {
       />
 
       <Container>
-        <PassportStatusTimeline />
+        <RegulatoryTimeline />
         <PassportValueChainCase />
         <PassportCatenaXStack />
         <PassportBuildStack />

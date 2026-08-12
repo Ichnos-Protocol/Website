@@ -23,7 +23,7 @@ function ServiceCard({
     .join(" ");
 
   return (
-    <Col xs={12} md={6} lg={4} className="mb-4">
+    <Col xs={12} lg={4} className="mb-4">
       <Card className={cardClass}>
         <Card.Body>
           {icon && (
@@ -53,8 +53,7 @@ export default function ServicesGroup({
   label,
   services = [],
   nested = false,
-  kicker,
-  heading,
+  subtitle,
   lede,
 }) {
   const Wrapper = nested ? "div" : "section";
@@ -63,12 +62,8 @@ export default function ServicesGroup({
 
   return (
     <Wrapper id={id} className={wrapperClass}>
-      {kicker && (
-        <p className="services-group-kicker text-uppercase small fw-semibold text-accent mb-2">
-          {kicker}
-        </p>
-      )}
-      <Heading className="fw-bold mb-3">{heading || label}</Heading>
+      <Heading className="fw-bold mb-3">{label}</Heading>
+      {subtitle && <p className="pillar-subtitle mb-3">{subtitle}</p>}
       {lede && <p className="services-group-lede lead mb-4">{lede}</p>}
       <Row className="g-4">
         {services.map((service) => (

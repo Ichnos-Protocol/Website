@@ -71,10 +71,13 @@ export default function Navbar({ onMenuToggle }) {
 
   return (
     <nav className="navbar-main d-flex justify-content-between align-items-center px-3 px-md-4" data-testid="navbar">
-      <a href="/" className="text-decoration-none">
+      {/* `text-reset` keeps the wordmark on the theme's text token instead of
+          inheriting Bootstrap's link colour. */}
+      <a href="/" className="text-decoration-none text-reset">
         <Logo
           className="logo-img"
           theme={pathname === '/passport' ? 'passport' : 'light'}
+          withWordmark
         />
       </a>
 

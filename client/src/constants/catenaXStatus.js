@@ -17,11 +17,29 @@ export const CATENA_X_TITLE_BASE = "Catena-X Qualified Advisor";
 // Companion status notes for surfaces that distinguish the granted
 // Qualified Advisor credential from the association membership and the
 // expert-group participation. Both statuses are held as of Aug 2026;
-// these are consumed by `credentials.js` and `structuredData.js`.
+// their sole consumer is `structuredData.js`.
 export const CATENA_X_MEMBERSHIP_NOTE =
   "Ordinary member — Catena-X Automotive Network e.V.";
 export const CATENA_X_EXPERT_GROUP_NOTE =
   "member of the Catena-X Digital Product Passport Expert Group";
+
+// Displayed card copy for the member and advisor credential cards,
+// single-sourced here so no card hardcodes its own text (consumer:
+// `credentials.js`). This is the §12-Q1-B split: the formal registration
+// wording (`CATENA_X_MEMBERSHIP_NOTE`) stays on the machine-readable
+// schema.org surface, while the card carries the marketing copy — the
+// different-presentation clause of §1.3, not a second source of truth.
+// Content rule (§1.1/§1.2): "well connected" states the member's own
+// network activity, NOT a status or conformance claim. It must never
+// escalate to "official", "endorsed" or "preferred partner".
+// The expiry date is deliberately absent (§5.4): public copy is
+// renewal-agnostic, and the `renew by 2027-07-06` obligation lives in the
+// ops calendar (and stays recorded in the `CATENA_X_LABEL_ASSET` comment
+// below), not on the site.
+export const MEMBER_CARD_NOTE =
+  "Well connected across the network, especially with European OEMs and their supply chains.";
+export const ADVISOR_CARD_NOTE =
+  "Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.";
 
 // One-line status summary for the hero eyebrow (wired in T4 via
 // `landingContent.js`). Deliberately a plain constant, NOT derived from

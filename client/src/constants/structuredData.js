@@ -8,6 +8,7 @@
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
 import {
   CATENA_X_EXPERT_GROUP_NOTE,
+  CATENA_X_MEMBERSHIP_NOTE,
   getCatenaXFullTitle,
 } from "./catenaXStatus";
 
@@ -21,7 +22,11 @@ export const ORGANIZATION_SCHEMA = {
   url: SEO_BASE_URL,
   logo: LOGO_URL,
   email: "francesco@ichnos-protocol.com",
-  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}.`,
+  // Per §12-Q1-B, the formal registration wording (CATENA_X_MEMBERSHIP_NOTE) lives
+  // on this machine-readable corporate surface; the credential card carries marketing
+  // copy instead. The constant is interpolated verbatim — its value is not edited here
+  // (§12.1 exempts it) — and takes no closing period, since it ends with "e.V.".
+  description: `Battery advisory and EU battery-passport integration for ASEAN. Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}. ${CATENA_X_MEMBERSHIP_NOTE}`,
   address: {
     "@type": "PostalAddress",
     streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",

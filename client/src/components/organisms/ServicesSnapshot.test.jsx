@@ -11,21 +11,20 @@ describe('ServicesSnapshot', () => {
     expect(cardTitles).toHaveLength(10);
   });
 
-  it('renders the pillar labels as headings, with the Catena-X kicker and heading override', () => {
-    renderWithProviders(<ServicesSnapshot />);
+  it('renders the pillar labels as headings, with the Catena-X subtitle beneath', () => {
+    const { container } = renderWithProviders(<ServicesSnapshot />);
     ['Engineering', 'Compliance', 'Circularity'].forEach((label) => {
       expect(
         screen.getByRole('heading', { name: label }),
       ).toBeInTheDocument();
     });
-    expect(screen.getByText('Catena-X services')).toHaveClass(
-      'services-group-kicker',
-    );
     expect(
-      screen.getByRole('heading', {
-        name: 'Connect once. Answer every customer data request.',
-      }),
+      screen.getByRole('heading', { name: 'Catena-X services' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText('Connect once. Answer every customer data request.'),
+    ).toHaveClass('pillar-subtitle');
+    expect(container.querySelector('.services-group-kicker')).toBeNull();
   });
 
   it('renders a single services section with no nested services-group sections', () => {

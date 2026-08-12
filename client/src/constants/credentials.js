@@ -1,21 +1,24 @@
-import { CATENA_X_MEMBERSHIP_NOTE } from './catenaXStatus';
+import { ADVISOR_CARD_NOTE, MEMBER_CARD_NOTE } from './catenaXStatus';
 
 // Shared credentials/recognitions list, consumed by CredentialStrip
 // (homepage) and the Footer recognitions block. Two credentials carry an
 // official Catena-X label, selected by `cxLabel` ('member' | 'advisor');
 // only the Qualified Advisor is linkable. Array order is meaningful:
-// association membership comes first.
+// association membership comes first. The fourth card is an experience
+// card, not a degree card: the doctorate itself is carried by the
+// Why-Ichnos copy (`landingContent.js`) and the team page
+// (`teamContent.js`), so no information is lost here.
 export const CREDENTIALS = [
   {
     id: 'catenax-member',
     label: 'Catena-X Association member',
-    note: CATENA_X_MEMBERSHIP_NOTE,
+    note: MEMBER_CARD_NOTE,
     cxLabel: 'member',
   },
   {
     id: 'catenax-qualified-advisor',
     label: 'Catena-X Qualified Advisor',
-    note: 'Attestation ID 868 · valid to 06 Jul 2027',
+    note: ADVISOR_CARD_NOTE,
     cxLabel: 'advisor',
     // Logo Use Agreement §4: a label may link only to catena-x.net, and
     // at most one linked label may appear per page. This is that one —
@@ -31,11 +34,11 @@ export const CREDENTIALS = [
   {
     id: 'dpp-expert-group',
     label: 'Digital Product Passport Expert Group',
-    note: 'Member — expert group under the Catena-X Sustainability Committee',
+    note: 'Member: expert group under the Catena-X Sustainability Committee',
   },
   {
-    id: 'phd-pem-rwth',
-    label: 'PhD, PEM — RWTH Aachen',
-    note: 'Circular economy for automotive batteries',
+    id: 'battery-experience',
+    label: '10+ years in battery development',
+    note: 'PEM RWTH Aachen & FEV, from cell production research to vehicle battery systems',
   },
 ];
