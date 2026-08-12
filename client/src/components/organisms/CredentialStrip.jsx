@@ -5,10 +5,7 @@ import CredentialLabel from '../molecules/CredentialLabel';
 
 export default function CredentialStrip() {
   return (
-    <section
-      className="credential-strip"
-      aria-label="Credentials and recognitions"
-    >
+    <section className="credential-strip" aria-label="Credentials">
       <Container>
         <div className="credential-strip__items">
           {CREDENTIALS.map((credential) => (
@@ -19,7 +16,7 @@ export default function CredentialStrip() {
             >
               <CredentialLabel
                 label={credential.label}
-                isCatenaXLabel={credential.isCatenaXLabel}
+                cxLabel={credential.cxLabel}
                 href={credential.href}
               />
               <p className="credential-strip__note">{credential.note}</p>

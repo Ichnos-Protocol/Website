@@ -272,12 +272,16 @@ body {
 }
 
 /* ---------- Footer recognitions: Catena-X label ---------- */
-/* The plaque exists only because no official negative (dark-surface)
-   variant of the Qualified Advisor label has been supplied. It gives the
-   positive file the light ground its original design requires, without
-   modifying the file itself. Delete this rule together with the wrapper
-   span in FooterRecognitions.jsx as soon as CATENA_X_LABEL_ASSET_NEG is
-   set. The 4px radius deliberately matches .credential-strip__item. */
+/* The plaque gives the positive label file the light ground its original
+   design requires, without modifying the file itself.
+   With CATENA_X_LABEL_ASSET_NEG set, the footer renders the negative
+   variant bare (§3.3 precedence 1) and this rule is DORMANT, not dead.
+   Do NOT delete this rule or the wrapper span in FooterRecognitions.jsx:
+   it is the lapse-resilience path — if the negative constant returns to
+   null (Logo Use Agreement §6.1 revocation, or a qualification lapse),
+   precedence 2 must still have its white ground. §9.1 explicitly reverses
+   §3.4's original "delete once set" instruction.
+   The 4px radius deliberately matches .credential-strip__item. */
 .footer-label-plaque {
   display: inline-block;
   background: #ffffff;
@@ -292,6 +296,20 @@ body {
   width: auto;
   object-fit: contain;
   display: block;
+}
+
+/* Member-label clear space. The member SVG is tight-cropped
+   (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin), unlike the 16:9
+   advisor files which carry their own baked-in clear space. Brand Governance
+   defines clear space as the height of the figurative mark; the padding below
+   adds space AROUND the mark and never crops it — box-sizing: content-box is
+   mandatory, since Bootstrap Reboot's global border-box would otherwise
+   subtract the padding from the declared height and shrink the mark.
+   Padding ≈ 0.75× the base rule's rendered height. Exact geometry is a §7.4
+   manual review point. Unused until the label flip (T3) wires it. */
+.footer-label-img--member {
+  box-sizing: content-box;
+  padding: 26px;
 }
 
 .footer-recognition {
@@ -339,6 +357,16 @@ body {
   width: auto;
   object-fit: contain;
   display: block;
+}
+
+/* Member-label clear space — same reasoning as .footer-label-img--member:
+   the tight-cropped member SVG needs clear space added around the mark,
+   content-box keeps the padding from eating the declared 40px height, and
+   the value is ≈ 0.75× that rendered height. §7.4 manual review point;
+   unused until T3. */
+.credential-strip__label-img--member {
+  box-sizing: content-box;
+  padding: 30px;
 }
 
 /* ========== Landing Sections ========== */
@@ -1035,13 +1063,31 @@ h1.page-title {
 }
 
 /* ========== Scaffold: Advisory Page Hero (Phase 9) ========== */
+/* 0.66 is the alpha floor — never go lower; if the §7.4 AA contrast check
+   fails, nudge back UP by at most 0.06. */
 .advisory-page-hero {
   background:
-    linear-gradient(rgba(245, 247, 250, 0.85), rgba(232, 236, 241, 0.95)),
+    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.80)),
     url('/bg-advisory.jpg') center / cover no-repeat;
   padding: var(--spacing-3xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-primary);
+}
+
+/* ========== Landing Hero Battery Background (§9.2 / §9.6) ========== */
+/* T7, revertible on its own: reverting just this rule restores the flat
+   gradient hero from .hero-section / .hero-section--advisory.
+   Both theme scopes are listed because the landing hero mounts under
+   .theme-advisory (App.jsx routes / through AdvisoryThemeLayout), while
+   .theme-catenax keeps the guard's contract and covers any hero mounted
+   under the Catena-X wrapper.
+   0.66 is the alpha floor — never go lower; if the §7.4 AA contrast check
+   fails, nudge back UP by at most 0.06, never past 0.85 / 0.95. */
+.theme-advisory .hero-section,
+.theme-catenax .hero-section {
+  background:
+    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.80)),
+    url('/bg-advisory.jpg') center / cover no-repeat;
 }
 
 /* ========== Cookie Consent Banner (replaces inline styles) ========== */

@@ -1,20 +1,25 @@
 import { CATENA_X_MEMBERSHIP_NOTE } from './catenaXStatus';
 
 // Shared credentials/recognitions list, consumed by CredentialStrip
-// (homepage) and the Footer recognitions block. The Catena-X item is
-// the only linkable credential, and it may link only to catena-x.net.
-// Array order is meaningful: association membership comes first.
+// (homepage) and the Footer recognitions block. Two credentials carry an
+// official Catena-X label, selected by `cxLabel` ('member' | 'advisor');
+// only the Qualified Advisor is linkable. Array order is meaningful:
+// association membership comes first.
 export const CREDENTIALS = [
   {
     id: 'catenax-member',
     label: 'Catena-X Association member',
     note: CATENA_X_MEMBERSHIP_NOTE,
+    cxLabel: 'member',
   },
   {
     id: 'catenax-qualified-advisor',
     label: 'Catena-X Qualified Advisor',
     note: 'Attestation ID 868 · valid to 06 Jul 2027',
-    isCatenaXLabel: true,
+    cxLabel: 'advisor',
+    // Logo Use Agreement §4: a label may link only to catena-x.net, and
+    // at most one linked label may appear per page. This is that one —
+    // no other credential may carry an `href`.
     href: 'https://catena-x.net',
   },
   // Label and note are literals here rather than

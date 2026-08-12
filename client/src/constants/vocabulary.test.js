@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   ALLOWED_EXCEPTIONS,
+  ASSET_PATH_EXPORTS,
   FILES,
   FORBIDDEN,
   LEGACY_HEXES,
@@ -172,8 +173,10 @@ describe("vocabulary corpus (required expressions)", () => {
 // Item 8 (§7.1). catenaXStatus.js is where these constants are declared, so a
 // hit there proves nothing; its test is already dropped by SKIP_FILES, but the
 // exclusion is spelled out rather than left incidental.
-// CATENA_X_MEMBER_LABEL_ASSET / _NEG are deliberately out of scope while they
-// remain null (§7.1) — the omission is a decision, not an oversight.
+// This exclusion set is status-string-only. The label-asset paths are scanned
+// separately below, under a rule that keeps catenaXStatus.js in the file set —
+// their correct consumer, CX_LABEL_ASSETS, is declared in that same file, so
+// excluding it by name would leave them permanently unconsumable.
 const CONSUMER_EXCLUDED = new Set([
   "catenaXStatus.js",
   "catenaXStatus.test.js",
@@ -206,6 +209,36 @@ describe("vocabulary corpus (status-string consumers)", () => {
     const unconsumed = STATUS_STRING_EXPORTS.filter((name) => {
       const rx = new RegExp(`\\b${name}\\b`);
       return !consumingText.some((text) => rx.test(text));
+    });
+    expect(report(unconsumed)).toBe("");
+  });
+});
+
+// No file exclusion here: catenaXStatus.js stays in, because CX_LABEL_ASSETS —
+// the map that carries these paths to CredentialLabel and FooterRecognitions —
+// is declared in that same file. FILES already drops every *.test.js(x) plus
+// vocabulary.js itself, so nothing test-only or list-only can satisfy the scan.
+const ASSET_CONSUMER_FILES = FILES.filter((file) => /\.(js|jsx)$/.test(file));
+
+// The one thing a same-file scan must not count is the constant's own
+// declaration. `\b` after the name keeps CATENA_X_LABEL_ASSET from eating the
+// `export const CATENA_X_LABEL_ASSET_NEG` line; the `m` flag anchors to a line
+// start, which survives stripNonConsuming (comment removal leaves the blank
+// lines behind). Non-global: there is exactly one declaration to discount.
+function stripOwnDeclaration(source, name) {
+  return source.replace(new RegExp(`^export const ${name}\\b`, "m"), "");
+}
+
+describe("vocabulary corpus (asset-path consumers)", () => {
+  it("has a real consumer for every label-asset path export", () => {
+    // A CX_LABEL_ASSETS hit inside catenaXStatus.js is the intended, correct
+    // consumer — that map is what every rendering surface reads.
+    const stripped = ASSET_CONSUMER_FILES.map((file) =>
+      stripNonConsuming(readSource(file)),
+    );
+    const unconsumed = ASSET_PATH_EXPORTS.filter((name) => {
+      const rx = new RegExp(`\\b${name}\\b`);
+      return !stripped.some((text) => rx.test(stripOwnDeclaration(text, name)));
     });
     expect(report(unconsumed)).toBe("");
   });

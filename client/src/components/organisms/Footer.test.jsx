@@ -12,8 +12,7 @@ import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
 import { CREDENTIALS } from '../../constants/credentials';
 import {
   CATENA_X_TITLE_BASE,
-  CATENA_X_LABEL_ASSET,
-  CATENA_X_LABEL_ASSET_NEG,
+  CX_LABEL_ASSETS,
   TRADEMARK_NOTICE,
 } from '../../constants/catenaXStatus';
 
@@ -46,33 +45,47 @@ const ATTRIBUTION_TEXT =
 const ADVISOR_CREDENTIAL = CREDENTIALS.find(
   ({ id }) => id === 'catenax-qualified-advisor',
 );
+const MEMBER_CREDENTIAL = CREDENTIALS.find(({ id }) => id === 'catenax-member');
 
 const ADVISOR_TESTID = `footer-recognition-${ADVISOR_CREDENTIAL.id}`;
+const MEMBER_TESTID = `footer-recognition-${MEMBER_CREDENTIAL.id}`;
 
-// Fixture only — a stand-in path for the negative/dark label variant that
-// has not been supplied yet. Not a restatement of any real constant.
-const FAKE_NEG_ASSET = '/brand/__test__/cx-qualified-advisor-neg.png';
+// Fixtures only — stand-in paths used to drive the mocked states with
+// values distinct from the real ones, so each label is isolated. Not a
+// restatement of any real constant.
+const FAKE_ADVISOR_NEG_ASSET = '/brand/__test__/cx-qualified-advisor-neg.png';
+const FAKE_MEMBER_NEG_ASSET = '/brand/__test__/cx-association-member-neg.png';
 
 // Renders a freshly-imported Footer with `catenaXStatus` partially mocked.
 // The `...(await orig())` spread is mandatory: `credentials.js` imports
 // from this module, so a factory-style mock would blank every note.
-async function renderFooterWithAssets(overrides) {
+//
+// The override must set BOTH the four bare constants and a matching
+// `CX_LABEL_ASSETS`: the map is built at module load from the real
+// constants, so overriding the constants alone would be inert now that
+// the components read the map.
+async function renderFooterWithAssets({ advisor, member }) {
   vi.resetModules();
   vi.doMock('../../constants/catenaXStatus', async (orig) => ({
     ...(await orig()),
-    ...overrides,
+    CATENA_X_LABEL_ASSET: advisor.pos,
+    CATENA_X_LABEL_ASSET_NEG: advisor.neg,
+    CATENA_X_MEMBER_LABEL_ASSET: member.pos,
+    CATENA_X_MEMBER_LABEL_ASSET_NEG: member.neg,
+    CX_LABEL_ASSETS: { advisor, member },
   }));
   const { default: MockedFooter } = await import('./Footer');
   return renderWithProviders(<MockedFooter />);
 }
 
 // Pure: returns the images inside the recognitions block that are neither
-// the negative variant nor wrapped in the white plaque. Returns data only
-// — every expect() stays inside its own `it`.
-function findUnplaquedImages(recognitions, negAsset) {
+// a permitted negative variant nor wrapped in the white plaque. Returns
+// data only — every expect() stays inside its own `it`.
+function findUnplaquedImages(recognitions, permittedNegAssets) {
+  const permitted = new Set(permittedNegAssets);
   return Array.from(recognitions.querySelectorAll('img')).filter(
     (img) =>
-      img.getAttribute('src') !== negAsset &&
+      !permitted.has(img.getAttribute('src')) &&
       img.closest('.footer-label-plaque') === null,
   );
 }
@@ -262,7 +275,7 @@ describe('Footer', () => {
 
     it('renders one recognitions item per credential id and no extras', () => {
       const recognitions = screen.getByTestId('footer-recognitions');
-      expect(recognitions).toHaveTextContent('Recognitions');
+      expect(recognitions).toHaveTextContent('Credentials');
       CREDENTIALS.forEach(({ id }) => {
         expect(
           screen.getAllByTestId(`footer-recognition-${id}`),
@@ -274,25 +287,48 @@ describe('Footer', () => {
       ).toHaveLength(CREDENTIALS.length);
     });
 
-    it('every recognitions image is either the negative variant or plaque-wrapped', () => {
-      // The footer is dark. The positive label may only appear on the white
-      // plaque that supplies its original light ground; the negative variant,
-      // once supplied, may render bare. Nothing else is permitted.
+    it('every recognitions image is either a negative variant or plaque-wrapped', () => {
+      // The footer is dark. A positive label may only appear on the white
+      // plaque that supplies its original light ground; a negative variant
+      // may render bare. Nothing else is permitted.
       const recognitions = screen.getByTestId('footer-recognitions');
       expect(
-        findUnplaquedImages(recognitions, CATENA_X_LABEL_ASSET_NEG),
+        findUnplaquedImages(recognitions, [
+          CX_LABEL_ASSETS.advisor.neg,
+          CX_LABEL_ASSETS.member.neg,
+        ]),
       ).toEqual([]);
     });
 
-    it('renders the Catena-X label as the plaque-wrapped positive asset', () => {
+    it('renders the Qualified Advisor label as the bare negative asset', () => {
       const item = screen.getByTestId(ADVISOR_TESTID);
       const img = within(item).getByRole('img');
-      expect(img).toHaveAttribute('src', CATENA_X_LABEL_ASSET);
+      expect(img).toHaveAttribute('src', CX_LABEL_ASSETS.advisor.neg);
       expect(img).toHaveAttribute('alt', ADVISOR_CREDENTIAL.label);
       expect(img).toHaveAttribute('loading', 'lazy');
       expect(img).toHaveAttribute('decoding', 'async');
       expect(img).toHaveClass('footer-label-img');
-      expect(img.closest('.footer-label-plaque')).not.toBeNull();
+      expect(img).not.toHaveClass('footer-label-img--member');
+      expect(img.closest('.footer-label-plaque')).toBeNull();
+      expect(document.querySelector('.footer-label-plaque')).toBeNull();
+    });
+
+    it('renders the Association member label as the bare negative asset', () => {
+      const item = screen.getByTestId(MEMBER_TESTID);
+      const img = within(item).getByRole('img');
+      expect(img).toHaveAttribute('src', CX_LABEL_ASSETS.member.neg);
+      expect(img).toHaveAttribute('alt', MEMBER_CREDENTIAL.label);
+      expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('decoding', 'async');
+      expect(img).toHaveClass('footer-label-img');
+      expect(img).toHaveClass('footer-label-img--member');
+      expect(img.closest('.footer-label-plaque')).toBeNull();
+      expect(document.querySelector('.footer-label-plaque')).toBeNull();
+    });
+
+    it('renders exactly two label images in the recognitions block', () => {
+      const recognitions = screen.getByTestId('footer-recognitions');
+      expect(recognitions.querySelectorAll('img')).toHaveLength(2);
     });
 
     it('recognitions carry no link; the one permitted linked instance is elsewhere', () => {
@@ -331,28 +367,49 @@ describe('Footer', () => {
     });
   });
 
-  describe('when the negative label variant is available', () => {
-    it('renders it bare, with no plaque', async () => {
+  describe('when the negative label variants are available', () => {
+    it('renders both bare, with no plaque', async () => {
       await renderFooterWithAssets({
-        CATENA_X_LABEL_ASSET_NEG: FAKE_NEG_ASSET,
+        advisor: {
+          pos: CX_LABEL_ASSETS.advisor.pos,
+          neg: FAKE_ADVISOR_NEG_ASSET,
+        },
+        member: {
+          pos: CX_LABEL_ASSETS.member.pos,
+          neg: FAKE_MEMBER_NEG_ASSET,
+        },
       });
       const recognitions = screen.getByTestId('footer-recognitions');
-      const img = within(recognitions).getByRole('img');
-      expect(img).toHaveAttribute('src', FAKE_NEG_ASSET);
-      expect(img).toHaveClass('footer-label-img');
+      const images = recognitions.querySelectorAll('img');
+      expect(images).toHaveLength(2);
+      expect(
+        Array.from(images).map((img) => img.getAttribute('src')),
+      ).toEqual([FAKE_MEMBER_NEG_ASSET, FAKE_ADVISOR_NEG_ASSET]);
       expect(document.querySelector('.footer-label-plaque')).toBeNull();
-      expect(findUnplaquedImages(recognitions, FAKE_NEG_ASSET)).toEqual([]);
+      expect(
+        findUnplaquedImages(recognitions, [
+          FAKE_ADVISOR_NEG_ASSET,
+          FAKE_MEMBER_NEG_ASSET,
+        ]),
+      ).toEqual([]);
     });
   });
 
-  describe('when only the positive label variant is available', () => {
-    it('renders exactly one image, plaque-wrapped', async () => {
-      await renderFooterWithAssets({ CATENA_X_LABEL_ASSET_NEG: null });
+  describe('when only the positive label variants are available', () => {
+    it('renders both images plaque-wrapped', async () => {
+      await renderFooterWithAssets({
+        advisor: { pos: CX_LABEL_ASSETS.advisor.pos, neg: null },
+        member: { pos: CX_LABEL_ASSETS.member.pos, neg: null },
+      });
       const recognitions = screen.getByTestId('footer-recognitions');
       const images = recognitions.querySelectorAll('img');
-      expect(images).toHaveLength(1);
-      expect(images[0]).toHaveAttribute('src', CATENA_X_LABEL_ASSET);
-      expect(images[0].closest('.footer-label-plaque')).not.toBeNull();
+      expect(images).toHaveLength(2);
+      expect(
+        Array.from(images).map((img) => img.getAttribute('src')),
+      ).toEqual([CX_LABEL_ASSETS.member.pos, CX_LABEL_ASSETS.advisor.pos]);
+      Array.from(images).forEach((img) => {
+        expect(img.closest('.footer-label-plaque')).not.toBeNull();
+      });
       expect(document.querySelector('.footer-label-plaque')).not.toBeNull();
     });
   });
@@ -360,14 +417,17 @@ describe('Footer', () => {
   describe('when no label variant is available', () => {
     it('falls back to the plain credential label text', async () => {
       await renderFooterWithAssets({
-        CATENA_X_LABEL_ASSET: null,
-        CATENA_X_LABEL_ASSET_NEG: null,
+        advisor: { pos: null, neg: null },
+        member: { pos: null, neg: null },
       });
       const recognitions = screen.getByTestId('footer-recognitions');
       expect(recognitions.querySelectorAll('img')).toHaveLength(0);
       expect(document.querySelector('.footer-label-plaque')).toBeNull();
       expect(screen.getByTestId(ADVISOR_TESTID)).toHaveTextContent(
         ADVISOR_CREDENTIAL.label,
+      );
+      expect(screen.getByTestId(MEMBER_TESTID)).toHaveTextContent(
+        MEMBER_CREDENTIAL.label,
       );
     });
   });

@@ -109,6 +109,22 @@ export const STATUS_STRING_EXPORTS = [
   "TRADEMARK_NOTICE",
 ];
 
+// Item 8 (§7.1) again, for the label-asset path exports — all four are
+// non-null now, so none of them is exempt. Scanned under a DIFFERENT rule
+// from the status strings above: the correct consumer of these paths is
+// CX_LABEL_ASSETS, which lives inside catenaXStatus.js itself, so a
+// same-file hit counts and only the constant's own `export const` line is
+// discounted. The two lists must NOT be merged — running the asset names
+// through the status-string scan would exclude their only real consumer,
+// and running the status strings through the asset scan would let a bare
+// declaration pass.
+export const ASSET_PATH_EXPORTS = [
+  "CATENA_X_LABEL_ASSET",
+  "CATENA_X_LABEL_ASSET_NEG",
+  "CATENA_X_MEMBER_LABEL_ASSET",
+  "CATENA_X_MEMBER_LABEL_ASSET_NEG",
+];
+
 // Solana-era palette (§5), scanned as TEXT over the same file set. This is
 // what catches an inline JSX style ({ color: '#9945FF' }) — a defect the
 // CSS-only assertion in theme-scoping.test.jsx can never see.
