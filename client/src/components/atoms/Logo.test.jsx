@@ -39,6 +39,28 @@ describe('Logo', () => {
     expect(img).toHaveAttribute('src', '/brand/ichnos_mark_white.svg');
   });
 
+  it('renders the wordmark alongside the mark when withWordmark is set', () => {
+    renderWithProviders(<Logo withWordmark />);
+
+    const wordmark = screen.getByTestId('logo-wordmark');
+    expect(wordmark).toBeInTheDocument();
+    expect(wordmark).toHaveAttribute('aria-hidden', 'true');
+    expect(wordmark).toHaveClass('d-none', 'd-sm-inline');
+    expect(wordmark).toHaveTextContent('Ichnos Protocol');
+
+    expect(screen.getByText('Ichnos')).toHaveClass('fw-bold');
+    expect(screen.getByText('Protocol')).toHaveClass('fw-medium', 'text-accent');
+
+    expect(screen.getByAltText('Ichnos Protocol')).toBeInTheDocument();
+  });
+
+  it('renders the mark only when withWordmark is not set', () => {
+    renderWithProviders(<Logo />);
+
+    expect(screen.queryByTestId('logo-wordmark')).toBeNull();
+    expect(screen.getByAltText('Ichnos Protocol')).toBeInTheDocument();
+  });
+
   it('falls back to text when image fails to load', () => {
     renderWithProviders(<Logo />);
 

@@ -298,6 +298,16 @@ body {
   display: block;
 }
 
+/* Advisor-label sizing. The 16:9 advisor file bakes ~54% clear space into
+   its own canvas, so the base height renders a much smaller visible mark
+   than the tight-cropped member file does; the raised height restores
+   parity. Height only — width: auto / object-fit: contain / display: block
+   stay with the base rule, and the file is never cropped or covered. Exact
+   value is a §7.4 manual review point. */
+.footer-label-img--advisor {
+  height: 62px;
+}
+
 /* Member-label clear space. The member SVG is tight-cropped
    (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin), unlike the 16:9
    advisor files which carry their own baked-in clear space. Brand Governance
@@ -305,11 +315,12 @@ body {
    adds space AROUND the mark and never crops it — box-sizing: content-box is
    mandatory, since Bootstrap Reboot's global border-box would otherwise
    subtract the padding from the declared height and shrink the mark.
-   Padding ≈ 0.75× the base rule's rendered height. Exact geometry is a §7.4
-   manual review point. Unused until the label flip (T3) wires it. */
+   Vertical padding ≈ 0.75× the declared 30px visible height. Exact geometry
+   is a §7.4 manual review point. */
 .footer-label-img--member {
   box-sizing: content-box;
-  padding: 26px;
+  height: 30px;
+  padding: 22px 8px;
 }
 
 .footer-recognition {
@@ -322,14 +333,35 @@ body {
 .credential-strip {
   background: var(--color-bg-alt);
   padding: var(--spacing-lg) 0;
+  /* The strip renders only on the landing page, directly after the
+     Why-Ichnos band, and both paint --color-bg-alt — without a gutter the
+     two merge into a single band. Keep this separation at >= --spacing-xl. */
+  margin-top: var(--spacing-xl);
 }
 
-/* auto-fit grid: 4 across in the 1140px container, wraps to fewer
-   columns on tablets and stacks to one column at 390px. */
+/* auto-fit grid: 4 across in the 1140px container. The narrow and tablet
+   ranges below pin the column count rather than leaving it to auto-fit, which
+   would fit three tracks in the 720px tablet container. Every rule keeps the
+   same minmax(220px, 1fr) track floor — only the count is constrained. */
 .credential-strip__items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--spacing-md);
+}
+
+/* Narrow (< 48rem): one column, so the 390px checkpoint stacks regardless of
+   how much container padding the viewport leaves. */
+@media (max-width: 47.9375rem) {
+  .credential-strip__items {
+    grid-template-columns: minmax(220px, 1fr);
+  }
+}
+
+/* Tablet (48rem–61.9375rem): exactly two columns at the 768px checkpoint. */
+@media (min-width: 48rem) and (max-width: 61.9375rem) {
+  .credential-strip__items {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
 }
 
 .credential-strip__item {
@@ -359,14 +391,24 @@ body {
   display: block;
 }
 
+/* Advisor-label sizing — same reasoning as .footer-label-img--advisor: the
+   advisor file's baked-in clear space shrinks its visible mark at the base
+   height, so the height is raised to match the member mark optically.
+   Height only; the base rule still governs aspect and fit. §7.4 manual
+   review point. */
+.credential-strip__label-img--advisor {
+  height: 74px;
+}
+
 /* Member-label clear space — same reasoning as .footer-label-img--member:
    the tight-cropped member SVG needs clear space added around the mark,
-   content-box keeps the padding from eating the declared 40px height, and
-   the value is ≈ 0.75× that rendered height. §7.4 manual review point;
-   unused until T3. */
+   content-box keeps the padding from eating the declared 34px visible
+   height, and the vertical value is ≈ 0.75× that height. §7.4 manual
+   review point. */
 .credential-strip__label-img--member {
   box-sizing: content-box;
-  padding: 30px;
+  height: 34px;
+  padding: 26px 10px;
 }
 
 /* ========== Landing Sections ========== */
@@ -513,6 +555,21 @@ body {
   border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
 }
 
+/* ========== Services pillar subtitle ========== */
+/* The pillar's short line under the group title, above the optional lede.
+   Rule (iii): no text-transform, here or in any future modifier. The
+   Catena-X pillar subtitle carries the "Catena-X" mark, whose casing is
+   fixed, and CSS must not rewrite third-party mark casing — same hygiene
+   as .section-eyebrow below.
+   No margin: the mb-3 utility on the render site owns the spacing, as it
+   does for the sibling kicker and lede. */
+.pillar-subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
 /* ========== Page & Section Headings ========== */
 h1.page-title {
   font-family: var(--font-sans);
@@ -539,6 +596,32 @@ h1.page-title {
 
 .section-subtext {
   color: var(--color-text-secondary);
+}
+
+/* Shared eyebrow label. Live render sites: Hero.jsx, AdvisoryPageHero.jsx,
+   PassportOffer.jsx and the nine PassportBuildStack.jsx labels — edit with
+   all four in view.
+   Rule (iii): no text-transform, here or in any modifier. The class carries
+   third-party marks whose casing is fixed — "Catena-X" in the hero
+   credential line, "Tractus-X" in the build-stack labels — and CSS must not
+   rewrite them.
+   Margin stays small: the build-stack labels are d-block spans in a grid,
+   so a large bottom margin would spread that grid. */
+.section-eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Hero variant — same single-class specificity, so source order decides.
+   Only what the battery photo overlay needs: a slightly larger size and a
+   medium weight for legibility over the photo texture. Color is inherited
+   from the base rule, and there is no text-shadow, matching the sibling
+   .hero-section .section-subtext contract. */
+.section-eyebrow--hero {
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
 }
 
 /* ========== Section Rhythm & Elevation Utilities ========== */
@@ -729,6 +812,154 @@ h1.page-title {
 
 .timeline-content {
   color: var(--color-text-primary);
+}
+
+/* ========== Regulatory Timeline (passport §7.1) ========== */
+/* Mobile is the base form: a vertical axis down the left edge, and it stays
+   the form through the 768px sweep checkpoint. The horizontal arrow axis is
+   purely the >=62rem media query applied to the same DOM — the
+   component never renders a second markup path. No `overflow-x` is declared
+   anywhere in this block, so §8's no-horizontal-scroll rule holds without JS.
+   Exact geometry (dot alignment, arrowhead size) is a §7.4 manual review
+   point. Fresh BEM names only: the career `.timeline-*` rules above are a
+   different component and are never reused here. */
+.regulatory-timeline__axis {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.regulatory-timeline__item {
+  position: relative;
+  border-left: 2px solid var(--color-text-primary);
+  padding: 0 0 var(--spacing-lg) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.regulatory-timeline__item::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-text-primary);
+}
+
+.regulatory-timeline__item--deferred {
+  border-left-style: dashed;
+  color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__item--deferred::before {
+  background-color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__item--today {
+  color: var(--color-accent-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.regulatory-timeline__item--today::before {
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-accent-primary);
+}
+
+.regulatory-timeline__date {
+  display: block;
+  font-weight: var(--font-weight-semibold);
+}
+
+.regulatory-timeline__label {
+  display: block;
+}
+
+.regulatory-timeline__source {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__tag {
+  display: inline-block;
+  margin-top: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  border: 1px dashed var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__footnote {
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* 62rem (Bootstrap's lg edge) rather than 48rem: at 768px the row form packs
+   the dated entries too tightly to read, so the sweep matrix keeps the tablet
+   checkpoint on the vertical base form. Horizontal starts at desktop widths. */
+@media (min-width: 62rem) {
+  .regulatory-timeline__axis {
+    position: relative;
+    flex-direction: row;
+    gap: var(--spacing-md);
+    border-top: 2px solid var(--color-text-primary);
+    padding-top: var(--spacing-lg);
+  }
+
+  /* Left-to-right time arrow: a CSS triangle capping the shared axis line. */
+  .regulatory-timeline__axis::after {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: -1px;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 10px solid var(--color-text-primary);
+  }
+
+  .regulatory-timeline__item {
+    flex: 1 1 0;
+    border-left: none;
+    padding: 0;
+  }
+
+  /* The dot moves off the left rule and onto the shared top axis line. */
+  .regulatory-timeline__item::before {
+    left: 0;
+    top: calc((var(--spacing-lg) + 4px) * -1);
+  }
+
+  /* Deferred entries keep their dashed treatment as a connector stub down
+     from the axis, since the dashed left rule is gone in this form. */
+  .regulatory-timeline__item--deferred::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: calc(var(--spacing-lg) * -1);
+    width: 0;
+    height: var(--spacing-lg);
+    border-left: 1px dashed var(--color-text-secondary);
+  }
+}
+
+/* ========== Passport Diagram (passport §7.2) ========== */
+/* Shared rule for the committed passport diagrams (currently the value-chain
+   JPG under public/diagrams/). Deliberately width-relative rather than sized in
+   pixels, so a re-exported JPG of any pixel dimensions scales to its container
+   at 390, 768 and 1440 px. No fixed width and no overflow-x, per the §8 mobile
+   mandate: the image never forces horizontal scroll. */
+.passport-diagram {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
 }
 
 /* ========== Vision Statement ========== */

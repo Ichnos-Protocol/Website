@@ -1,14 +1,17 @@
 import { render, screen, within } from '@testing-library/react';
 
 import CredentialStrip from './CredentialStrip';
-import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
+import {
+  ADVISOR_CARD_NOTE,
+  CX_LABEL_ASSETS,
+} from '../../constants/catenaXStatus';
 import { CREDENTIALS } from '../../constants/credentials';
 
 const EXPECTED_CREDENTIAL_IDS = [
   'catenax-member',
   'catenax-qualified-advisor',
   'dpp-expert-group',
-  'phd-pem-rwth',
+  'battery-experience',
 ];
 
 // Label text is derived from the credentials constant and asset paths
@@ -70,11 +73,12 @@ describe('CredentialStrip', () => {
       ).toHaveLength(EXPECTED_CREDENTIAL_IDS.length);
     });
 
-    it('keeps the attestation note on the Qualified Advisor card', () => {
+    it('renders the advisor card note from the shared constant', () => {
+      // §7.0 corollary, same two-halves mechanism as the trademark notice:
+      // the exact-string half of tier-3 item 14 lives in
+      // catenaXStatus.test.js; this half asserts DOM-equals-constant.
       const card = screen.getByTestId('credential-catenax-qualified-advisor');
-      expect(
-        within(card).getByText('Attestation ID 868 · valid to 06 Jul 2027'),
-      ).toBeInTheDocument();
+      expect(within(card).getByText(ADVISOR_CARD_NOTE)).toBeInTheDocument();
     });
 
     it('renders a single external link, wrapping the Qualified Advisor label', () => {

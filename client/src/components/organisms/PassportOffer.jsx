@@ -5,7 +5,7 @@ import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
 import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
 
 export default function PassportOffer() {
-  const { heading, paragraphs, ctaLabel, ctaHref } = PASSPORT_OFFER;
+  const { pointer, ctaLabel, ctaHref } = PASSPORT_OFFER;
 
   return (
     <section id="ichnos-offer" className="py-5" data-testid="passport-offer">
@@ -13,12 +13,7 @@ export default function PassportOffer() {
         {CATENA_X_TITLE_BASE}
         <CatenaXQualifierSpan />
       </p>
-      <h2 className="section-heading mb-3">{heading}</h2>
-      {paragraphs.map((paragraph, index) => (
-        <p key={index} className="mb-3">
-          {paragraph}
-        </p>
-      ))}
+      <p className="mb-3">{pointer}</p>
       <Link to={ctaHref} className="fw-semibold">
         {ctaLabel}
       </Link>

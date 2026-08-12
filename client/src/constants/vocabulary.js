@@ -86,6 +86,27 @@ export const FORBIDDEN = [
   /\bcrypto[\s-]?(?:asset|wallet|token)/i,
   /\bblockchain\b/i,
   /distributed\s+ledger/i,
+  // v4 claim-accuracy guards (spec §1 / §9). Trust rests on Verifiable
+  // Credentials presented via DCP, not on zero-knowledge proofs; hosting is
+  // described as EU-hosted and Ichnos-operated, never as a compliance badge;
+  // and the China relationship is a Suzhou Letter of Intent, not operation in
+  // China. `\bZKPs?\b` is case-insensitive for now — narrow it to
+  // case-sensitive if an identifier ever false-positives, rather than adding
+  // an ALLOWED_EXCEPTIONS entry.
+  /zero[\s-]?knowledge/i,
+  /\bZKPs?\b/i,
+  /\bcompliant\s+servers?\b/i,
+  /\boperat(?:e|es|ing)\s+in\s+China\b/i,
+  // The two superseded obligation dates deleted from the passport page in this
+  // commit. The amending regulation moved them, so publishing either one states
+  // an obligation that does not hold; the enforceable dates live in
+  // regulatoryDates.js and render through RegulatoryTimeline. The \s+ form is
+  // deliberate: it keeps this guard file itself free of any literal occurrence
+  // of either string, so a grep sweep over client/ stays clean while the
+  // patterns still catch the real text. Removing a pattern requires a recorded
+  // reason, per the pivot-3 practice.
+  /\b18\s+February\s+2025\b/i,
+  /\b18\s+August\s+2025\b/i,
 ];
 
 // Groups not yet joined (§1). Move an entry out only when membership is
@@ -105,6 +126,8 @@ export const STATUS_STRING_EXPORTS = [
   "CATENA_X_TITLE_BASE",
   "CATENA_X_MEMBERSHIP_NOTE",
   "CATENA_X_EXPERT_GROUP_NOTE",
+  "MEMBER_CARD_NOTE",
+  "ADVISOR_CARD_NOTE",
   "CATENA_X_STATUS_LINE",
   "TRADEMARK_NOTICE",
 ];

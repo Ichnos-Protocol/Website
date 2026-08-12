@@ -6,6 +6,7 @@ import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import {
   PASSPORT_HERO,
   PASSPORT_CUSTOMERS,
+  PASSPORT_BUILD_STACK,
 } from '../../constants/passportContent';
 import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
@@ -14,6 +15,23 @@ vi.mock('../organisms/ContactSection', () => ({
 }));
 
 const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+
+// v4 replaced the old status/milestone section with the regulatory timeline:
+// the previous list published two obligation dates that were factually wrong,
+// so the section that carried them is gone and every regulatory date now comes
+// from regulatoryDates.js. Section order is data here, asserted in one loop,
+// rather than an inline array inside the test body.
+const ORDERED_SECTION_TESTIDS = [
+  'passport-regulatory-timeline',
+  'passport-case',
+  'passport-catenax',
+  'passport-build-stack',
+  'passport-role',
+  'passport-customers',
+  'passport-offer',
+  'passport-roadmap',
+  'contact-section',
+];
 
 describe('PassportPage', () => {
   beforeEach(() => {
@@ -74,15 +92,7 @@ describe('PassportPage', () => {
   it('renders the ten sections in locked order with ContactSection last', () => {
     const ordered = [
       screen.getByRole('heading', { level: 1 }),
-      screen.getByTestId('passport-status'),
-      screen.getByTestId('passport-case'),
-      screen.getByTestId('passport-catenax'),
-      screen.getByTestId('passport-build-stack'),
-      screen.getByTestId('passport-role'),
-      screen.getByTestId('passport-customers'),
-      screen.getByTestId('passport-offer'),
-      screen.getByTestId('passport-roadmap'),
-      screen.getByTestId('contact-section'),
+      ...ORDERED_SECTION_TESTIDS.map((testId) => screen.getByTestId(testId)),
     ];
 
     for (let i = 0; i < ordered.length - 1; i += 1) {
@@ -118,8 +128,11 @@ describe('PassportPage', () => {
   });
 
   it('renders the locked key copy', () => {
-    expect(document.body).toHaveTextContent(
-      'Kits (the Tractus-X Development Kits)',
+    // The Kits gloss moved out of the offer section into the build stack, so
+    // this asserts against the imported constant on the build-stack section
+    // rather than restating the copy as a literal (§12.4-Q1 / D12).
+    expect(screen.getByTestId('passport-build-stack')).toHaveTextContent(
+      PASSPORT_BUILD_STACK.body,
     );
     expect(document.body).toHaveTextContent('Ichnos role in the value chain');
   });

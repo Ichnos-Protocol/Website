@@ -140,13 +140,42 @@ describe("SERVICE_PILLARS", () => {
     ]);
   });
 
-  it("the catena-x pillar carries the group-header kicker/heading/lede", () => {
+  it("the catena-x pillar carries the group-header subtitle/lede", () => {
     const pillar = SERVICE_PILLARS.find((p) => p.id === "catena-x");
-    expect(pillar.kicker).toBe("Catena-X services");
-    expect(pillar.heading).toBe(
+    expect(pillar.subtitle).toBe(
       "Connect once. Answer every customer data request.",
     );
     expect(pillar.lede).toContain("Catena-X®");
+  });
+
+  // The lede's em-dash junction was converted to a comma. The em-dash is
+  // written as an escape so no literal em-dash character enters this file.
+  it("the catena-x lede joins the clause with a comma, not an em-dash", () => {
+    const pillar = SERVICE_PILLARS.find((p) => p.id === "catena-x");
+    expect(pillar.lede).toContain("shared data network, the channel");
+    expect(pillar.lede).not.toMatch(/\u2014/);
+  });
+
+  it("the engineering pillar carries a subtitle", () => {
+    const pillar = SERVICE_PILLARS.find((p) => p.id === "engineering");
+    expect(pillar.subtitle).toBe(
+      "Technical depth across the battery circular value chain.",
+    );
+  });
+
+  it("allows pillars without a subtitle", () => {
+    ["compliance", "circularity"].forEach((id) => {
+      const pillar = SERVICE_PILLARS.find((p) => p.id === id);
+      expect(pillar).not.toHaveProperty("subtitle");
+      expect(pillar.subtitle).toBeUndefined();
+    });
+  });
+
+  it("no pillar retains the retired kicker/heading fields", () => {
+    SERVICE_PILLARS.forEach((pillar) => {
+      expect(pillar).not.toHaveProperty("kicker");
+      expect(pillar).not.toHaveProperty("heading");
+    });
   });
 });
 

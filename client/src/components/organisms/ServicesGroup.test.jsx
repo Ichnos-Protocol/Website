@@ -88,27 +88,30 @@ describe("ServicesGroup", () => {
     ).toBeNull();
   });
 
-  it("renders kicker and lede, and the heading override replaces the label", () => {
+  // The kicker/heading-override case was removed with the renderer's temporary
+  // compatibility path (P5d): ServicesGroup no longer accepts `kicker` or
+  // `heading`, so the heading always renders `label`.
+
+  it("renders the subtitle below the heading only when provided", () => {
     renderGroup({
-      kicker: "Catena-X services",
-      heading: "Connect once. Answer every customer data request.",
+      subtitle: "Catena-X data exchange, delivered end to end.",
       lede: "The lede paragraph.",
     });
-    expect(screen.getByText("Catena-X services")).toHaveClass(
-      "services-group-kicker",
+    const subtitle = screen.getByText(
+      "Catena-X data exchange, delivered end to end.",
     );
+    expect(subtitle).toHaveClass("pillar-subtitle");
+
+    const heading = screen.getByRole("heading", { level: 2 });
+    expect(heading.nextElementSibling).toBe(subtitle);
+    expect(subtitle.nextElementSibling).toHaveClass("services-group-lede");
+
+    cleanup();
+    const { container } = renderGroup({ lede: "The lede paragraph." });
+    expect(container.querySelector(".pillar-subtitle")).toBeNull();
     expect(screen.getByText("The lede paragraph.")).toHaveClass(
       "services-group-lede",
     );
-    expect(
-      screen.getByRole("heading", {
-        level: 2,
-        name: "Connect once. Answer every customer data request.",
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { level: 2, name: "Engineering" }),
-    ).toBeNull();
   });
 
   it("renders a Learn more → link to /passport for a passportLink service", () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  ADVISOR_CARD_NOTE,
   CATENA_X_LABEL_ASSET,
   CATENA_X_LABEL_ASSET_NEG,
   CATENA_X_MEMBER_LABEL_ASSET,
@@ -57,6 +58,18 @@ describe('catenaXStatus (tier-3 exact strings)', () => {
     // The only legitimate place to restate this literal (§7.3 item 13) — comparing the constant to itself would assert nothing. The DOM-equals-constant half lives in Footer.test.jsx (T7).
     expect(TRADEMARK_NOTICE).toBe(
       'Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.',
+    );
+  });
+
+  // §5.4 replacement of tier-3 item 14, which previously covered the
+  // `credentials.js` expiry literal. This file is the only legitimate place
+  // to restate the string (§7.3). Recorded reason: it is a factual claim
+  // about a credential, and the expiry is deliberately omitted so the public
+  // copy stays renewal-agnostic — the renewal (`renew by 2027-07-06`) is
+  // tracked in the ops calendar instead.
+  it('matches the advisor card note character for character', () => {
+    expect(ADVISOR_CARD_NOTE).toBe(
+      'Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.',
     );
   });
 });

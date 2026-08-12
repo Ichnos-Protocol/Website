@@ -162,17 +162,22 @@ export const SERVICES_LIST = [
 
 // Pillars in display order. `anchor` is the DOM id the page renders for each
 // pillar section and the scroll target the footer/nav links navigate to.
-// The catena-x pillar carries optional group-header copy (kicker/heading/lede,
+// Pillars may carry an optional `subtitle` (one line under the label). The
+// catena-x pillar additionally carries group-header copy (`subtitle` / `lede`,
 // docs §3.1 verbatim — the lede holds the single Catena-X® mention).
 export const SERVICE_PILLARS = [
-  { id: "engineering", label: "Engineering", anchor: "engineering" },
+  {
+    id: "engineering",
+    label: "Engineering",
+    anchor: "engineering",
+    subtitle: "Technical depth across the battery circular value chain.",
+  },
   {
     id: "catena-x",
     label: "Catena-X services",
     anchor: "catena-x",
-    kicker: "Catena-X services",
-    heading: "Connect once. Answer every customer data request.",
-    lede: "Catena-X® is the automotive industry's shared data network — the channel through which EU customers will request battery data. Based in Singapore, we get ASEAN manufacturers connected and make the data flow: from your production floor into your customers' systems and the EU Battery Passport.",
+    subtitle: "Connect once. Answer every customer data request.",
+    lede: "Catena-X® is the automotive industry's shared data network, the channel through which EU customers will request battery data. Based in Singapore, we get ASEAN manufacturers connected and make the data flow: from your production floor into your customers' systems and the EU Battery Passport.",
   },
   { id: "compliance", label: "Compliance", anchor: "compliance" },
   { id: "circularity", label: "Circularity", anchor: "circularity" },

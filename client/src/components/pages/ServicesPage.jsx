@@ -44,8 +44,7 @@ export default function ServicesPage() {
               key={pillar.id}
               id={pillar.anchor}
               label={pillar.label}
-              kicker={pillar.kicker}
-              heading={pillar.heading}
+              subtitle={pillar.subtitle}
               lede={pillar.lede}
               services={getServicesByPillar(pillar.id)}
             />
