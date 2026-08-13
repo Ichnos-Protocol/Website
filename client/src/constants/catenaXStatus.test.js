@@ -80,12 +80,16 @@ describe('catenaXStatus (tier-3 exact label filenames)', () => {
   // either serves an unofficial asset or 404s the official one. This file is
   // the only legitimate place to restate the literals (§7.3) — asserting a
   // constant against itself, or against CX_LABEL_ASSETS, would assert nothing.
-  it('points at the official Qualified Advisor label files', () => {
+  it('points at the official Qualified Advisor label files (cropped display derivatives)', () => {
+    // The `_cropped` files are viewBox-trimmed renders of the official
+    // `_16x9.svg` masters (kept alongside in /brand): artwork untouched,
+    // empty canvas removed, clear space re-supplied in CSS. Recorded
+    // 2026-08-12 — font-parity fix.
     expect(CATENA_X_LABEL_ASSET).toBe(
-      '/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg',
+      '/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg',
     );
     expect(CATENA_X_LABEL_ASSET_NEG).toBe(
-      '/brand/CX_Logo_Qualified-Advisor_RGB_neg_16x9.svg',
+      '/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg',
     );
   });
 

@@ -298,14 +298,19 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing. The 16:9 advisor file bakes ~54% clear space into
-   its own canvas, so the base height renders a much smaller visible mark
-   than the tight-cropped member file does; the raised height restores
-   parity. Height only — width: auto / object-fit: contain / display: block
-   stay with the base rule, and the file is never cropped or covered. Exact
-   value is a §7.4 manual review point. */
+/* Advisor-label sizing — font-parity model (v4 §13, supersedes the §5.2
+   bounding-box ratio, which left the wordmark at ~2/3 the member's and the
+   "Qualified Advisor" line illegible). Measured wordmark fractions: member
+   "Catena-X" = 0.478 of its canvas height; cropped advisor "Catena-X" =
+   0.318. Equal wordmarks therefore need advisor height ≈ 1.5× member height
+   (54 ≈ 1.5 × 36 → both wordmarks ≈ 17px). The display file is the
+   viewBox-trimmed derivative (no baked margins), so clear space is supplied
+   here as padding — content-box so it never eats the declared height.
+   Values §7.4-tunable ±15%; the 1.5 ratio is normative. */
 .footer-label-img--advisor {
-  height: 62px;
+  box-sizing: content-box;
+  height: 54px;
+  padding: 18px 8px;
 }
 
 /* Member-label clear space. The member SVG is tight-cropped
@@ -315,12 +320,12 @@ body {
    adds space AROUND the mark and never crops it — box-sizing: content-box is
    mandatory, since Bootstrap Reboot's global border-box would otherwise
    subtract the padding from the declared height and shrink the mark.
-   Vertical padding ≈ 0.75× the declared 30px visible height. Exact geometry
+   Vertical padding ≈ 0.75× the declared 36px visible height. Exact geometry
    is a §7.4 manual review point. */
 .footer-label-img--member {
   box-sizing: content-box;
-  height: 30px;
-  padding: 22px 8px;
+  height: 36px;
+  padding: 27px 10px;
 }
 
 .footer-recognition {
@@ -391,24 +396,26 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing — same reasoning as .footer-label-img--advisor: the
-   advisor file's baked-in clear space shrinks its visible mark at the base
-   height, so the height is raised to match the member mark optically.
-   Height only; the base rule still governs aspect and fit. §7.4 manual
-   review point. */
+/* Advisor-label sizing — font-parity model, same reasoning as
+   .footer-label-img--advisor: advisor height ≈ 1.5× member height equalises
+   the "Catena-X" wordmark height (60 ≈ 1.5 × 40 → both wordmarks ≈ 19px).
+   Cropped display file carries no baked margins, so clear space is supplied
+   here as padding (content-box). Values §7.4-tunable ±15%; ratio normative. */
 .credential-strip__label-img--advisor {
-  height: 74px;
+  box-sizing: content-box;
+  height: 60px;
+  padding: 20px 8px;
 }
 
 /* Member-label clear space — same reasoning as .footer-label-img--member:
    the tight-cropped member SVG needs clear space added around the mark,
-   content-box keeps the padding from eating the declared 34px visible
+   content-box keeps the padding from eating the declared 40px visible
    height, and the vertical value is ≈ 0.75× that height. §7.4 manual
    review point. */
 .credential-strip__label-img--member {
   box-sizing: content-box;
-  height: 34px;
-  padding: 26px 10px;
+  height: 40px;
+  padding: 30px 12px;
 }
 
 /* ========== Landing Sections ========== */

@@ -40,7 +40,9 @@ function renderCatenaXLabel(cxLabel, label) {
   const assets = CX_LABEL_ASSETS[cxLabel];
   const src = assets?.neg ?? assets?.pos;
   if (!src) {
-    return label;
+    // No asset (lapsed/revoked per catenaXStatus.js): nothing to render —
+    // the visible title above already carries the credential name.
+    return null;
   }
   const img = (
     <img
@@ -60,32 +62,32 @@ function renderCatenaXLabel(cxLabel, label) {
 export default function FooterRecognitions() {
   /* Test ids are prefixed `footer-recognition-`, not `credential-`:
      CREDENTIALS renders twice on `/` (CredentialStrip and this block),
-     and duplicate test ids would break getByTestId in both suites. */
+     and duplicate test ids would break getByTestId in both suites.
+
+     Layout (Francesco, 2026-08-12): every credential leads with its visible
+     text title; the two official Catena-X labels render their image directly
+     BELOW that title, and their marketing notes are footer-omitted (the
+     landing credential strip carries them). `footerLabel` overrides `label`
+     for the footer title only — the membership shows its formal grade here.
+     The label image keeps `alt={label}`: the credential label remains the
+     accessible name of the official artwork even with the adjacent title. */
   return (
     <div data-testid="footer-recognitions">
       <h6 className="footer-heading">Credentials</h6>
-      {CREDENTIALS.map(({ id, label, note, cxLabel }) =>
-        cxLabel ? (
-          <div
-            className="footer-recognition"
-            data-testid={`footer-recognition-${id}`}
-            key={id}
-          >
-            {renderCatenaXLabel(cxLabel, label)}
+      {CREDENTIALS.map(({ id, label, footerLabel, note, cxLabel }) => (
+        <div
+          className="footer-recognition"
+          data-testid={`footer-recognition-${id}`}
+          key={id}
+        >
+          <p className="footer-text fw-semibold mb-1">{footerLabel ?? label}</p>
+          {cxLabel ? (
+            renderCatenaXLabel(cxLabel, label)
+          ) : (
             <p className="footer-text small mb-1">{note}</p>
-          </div>
-        ) : (
-          <p
-            className="footer-text small mb-1"
-            data-testid={`footer-recognition-${id}`}
-            key={id}
-          >
-            {label}
-            {' — '}
-            {note}
-          </p>
-        ),
-      )}
+          )}
+        </div>
+      ))}
     </div>
   );
 }

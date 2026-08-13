@@ -275,14 +275,17 @@ describe('Navbar', () => {
     });
   });
 
-  it('on /passport, the brand Logo renders the light-on-dark mark (/brand/ichnos_mark_white.svg)', () => {
+  it('on /passport, the brand Logo renders the dual-tone mark (light navbar on every route)', () => {
+    // Regression guard for the invisible-tree bug (2026-08-12): the navbar is
+    // a light surface on every route, so the white mark must never appear here.
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
       route: '/passport',
       preloadedState: loggedOutState,
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
     const img = brandLink.querySelector('img');
-    expect(img).toHaveAttribute('src', '/brand/ichnos_mark_white.svg');
+    expect(img).toHaveAttribute('src', '/brand/ichnos_mark_dualtone.svg');
+    expect(img).not.toHaveAttribute('src', '/brand/ichnos_mark_white.svg');
   });
 
   it('on /, the brand Logo renders the dark-on-light mark (/brand/ichnos_mark_dualtone.svg)', () => {

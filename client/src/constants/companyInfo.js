@@ -3,7 +3,10 @@ export const COMPANY_INFO = {
   uen: "202606052196",
   registeredAddress:
     "160 Robinson Road, #14-04 Singapore Business Federation Centre, Singapore 068914",
-  tagline: "Battery advisory and EU battery-passport integration for ASEAN.",
+  // Positioning line (Francesco, 2026-08-12). Single source for the footer
+  // brand column, the schema.org organization description opening, and the
+  // default og:image alt.
+  tagline: "Battery and EU battery passport advisory for ASEAN.",
 };
 
 export const CONTACT_INFO = {
