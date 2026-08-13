@@ -27,12 +27,12 @@ describe('WhyIchnosSection', () => {
     });
   });
 
-  it('renders the Catena-X credential with the pending qualifier span', () => {
+  it('renders the Catena-X credential without the pending qualifier span', () => {
     const { container } = renderWithProviders(<WhyIchnosSection />);
     expect(container.textContent).toContain(CATENA_X_TITLE_BASE);
     expect(
       container.querySelector(`.${CATENA_X_QUALIFIER_CLASS}`),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
   });
 
   it('renders a section with id="company"', () => {

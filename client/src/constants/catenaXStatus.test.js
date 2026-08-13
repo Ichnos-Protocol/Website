@@ -1,35 +1,38 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  ADVISOR_CARD_NOTE,
+  CATENA_X_LABEL_ASSET,
+  CATENA_X_LABEL_ASSET_NEG,
+  CATENA_X_MEMBER_LABEL_ASSET,
+  CATENA_X_MEMBER_LABEL_ASSET_NEG,
   CATENA_X_QUALIFICATION_GRANTED,
   CATENA_X_QUALIFIER_CLASS,
   CATENA_X_TITLE_BASE,
+  TRADEMARK_NOTICE,
   computeCatenaXQualifierText,
   computeCatenaXFullTitle,
   getCatenaXQualifierText,
   getCatenaXFullTitle,
 } from './catenaXStatus';
 
-describe('catenaXStatus (pending state — real module)', () => {
-  it('ships with the qualification flag off', () => {
-    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(false);
+describe('catenaXStatus (granted state — real module)', () => {
+  it('ships with the qualification flag on', () => {
+    expect(CATENA_X_QUALIFICATION_GRANTED).toBe(true);
   });
 
   it('exposes the stable qualifier class name', () => {
     expect(CATENA_X_QUALIFIER_CLASS).toBe('catenax-qualifier-pending');
   });
 
-  it('returns a non-empty qualifier suffix with a leading space while pending', () => {
-    const pending = getCatenaXQualifierText();
-    expect(pending).toBe(computeCatenaXQualifierText(false));
-    expect(pending.startsWith(' ')).toBe(true);
-    expect(pending.trim().length).toBeGreaterThan(0);
+  it('returns an empty qualifier suffix once granted', () => {
+    const granted = getCatenaXQualifierText();
+    expect(granted).toBe(computeCatenaXQualifierText(true));
+    expect(granted).toBe('');
   });
 
-  it('builds the full title as base + qualifier', () => {
-    expect(getCatenaXFullTitle()).toBe(
-      CATENA_X_TITLE_BASE + getCatenaXQualifierText(),
-    );
+  it('reduces the full title to the base credential', () => {
+    expect(getCatenaXFullTitle()).toBe(CATENA_X_TITLE_BASE);
   });
 });
 
@@ -46,6 +49,56 @@ describe('catenaXStatus (granted state — real computation)', () => {
     expect(computeCatenaXQualifierText(false)).not.toBe('');
     expect(computeCatenaXFullTitle(false)).toBe(
       CATENA_X_TITLE_BASE + computeCatenaXQualifierText(false),
+    );
+  });
+});
+
+describe('catenaXStatus (tier-3 exact strings)', () => {
+  it('matches the §2.1 trademark notice character for character', () => {
+    // The only legitimate place to restate this literal (§7.3 item 13) — comparing the constant to itself would assert nothing. The DOM-equals-constant half lives in Footer.test.jsx (T7).
+    expect(TRADEMARK_NOTICE).toBe(
+      'Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.',
+    );
+  });
+
+  // §5.4 replacement of tier-3 item 14, which previously covered the
+  // `credentials.js` expiry literal. This file is the only legitimate place
+  // to restate the string (§7.3). Recorded reason: it is a factual claim
+  // about a credential, and the expiry is deliberately omitted so the public
+  // copy stays renewal-agnostic — the renewal (`renew by 2027-07-06`) is
+  // tracked in the ops calendar instead.
+  it('matches the advisor card note character for character', () => {
+    expect(ADVISOR_CARD_NOTE).toBe(
+      'Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.',
+    );
+  });
+});
+
+describe('catenaXStatus (tier-3 exact label filenames)', () => {
+  // Item 15 widens tier 3 from three exact strings to six: each of these four
+  // paths is an independent Logo Use Agreement exposure, since a wrong filename
+  // either serves an unofficial asset or 404s the official one. This file is
+  // the only legitimate place to restate the literals (§7.3) — asserting a
+  // constant against itself, or against CX_LABEL_ASSETS, would assert nothing.
+  it('points at the official Qualified Advisor label files (cropped display derivatives)', () => {
+    // The `_cropped` files are viewBox-trimmed renders of the official
+    // `_16x9.svg` masters (kept alongside in /brand): artwork untouched,
+    // empty canvas removed, clear space re-supplied in CSS. Recorded
+    // 2026-08-12 — font-parity fix.
+    expect(CATENA_X_LABEL_ASSET).toBe(
+      '/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg',
+    );
+    expect(CATENA_X_LABEL_ASSET_NEG).toBe(
+      '/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg',
+    );
+  });
+
+  it('points at the official ordinary-member label files', () => {
+    expect(CATENA_X_MEMBER_LABEL_ASSET).toBe(
+      '/brand/Association_member_Logo_RGB_pos.svg',
+    );
+    expect(CATENA_X_MEMBER_LABEL_ASSET_NEG).toBe(
+      '/brand/Association_member_Logo_RGB_neg.svg',
     );
   });
 });

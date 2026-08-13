@@ -20,6 +20,12 @@ vi.mock('../organisms/Hero', () => ({
   default: () => <section data-testid="hero">Hero</section>,
 }));
 
+vi.mock('../organisms/CredentialStrip', () => ({
+  default: () => (
+    <section data-testid="credential-strip">CredentialStrip</section>
+  ),
+}));
+
 vi.mock('../organisms/WhyIchnosSection', () => ({
   default: () => <section data-testid="why-ichnos">WhyIchnosSection</section>,
 }));
@@ -33,6 +39,23 @@ vi.mock('../organisms/ContactSection', () => ({
 }));
 
 import { useScrollToSection } from '../../hooks/useScrollToSection';
+
+// v4 §4 homepage order: narrative before evidence. Edit this list — not a
+// restated sequence in a test title — when the section order changes.
+const SECTION_ORDER = [
+  '[data-testid="hero"]',
+  'section#services',
+  '[data-testid="why-ichnos"]',
+  '[data-testid="credential-strip"]',
+  '[data-testid="passport-teaser"]',
+  '[data-testid="contact-section"]',
+];
+
+function precedes(first, second) {
+  return Boolean(
+    first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+}
 
 describe('LandingPage', () => {
   beforeEach(() => {
@@ -155,10 +178,14 @@ describe('LandingPage', () => {
     expect(document.querySelector('section#services')).toBeInTheDocument();
   });
 
-  it('renders exactly five homepage sections with no nested services-group sections', () => {
+  it('renders exactly six homepage sections with no nested services-group sections', () => {
     const { container } = renderWithProviders(<LandingPage />);
-    expect(container.querySelectorAll('section')).toHaveLength(5);
+    expect(container.querySelectorAll('section')).toHaveLength(6);
     expect(container.querySelectorAll('section.services-group')).toHaveLength(0);
+  });
+
+  it('renders CredentialStrip component', () => {
+    expect(screen.getByTestId('credential-strip')).toBeInTheDocument();
   });
 
   it('renders PassportTeaser component', () => {
@@ -169,28 +196,16 @@ describe('LandingPage', () => {
     expect(screen.getByTestId('contact-section')).toBeInTheDocument();
   });
 
-  it('renders sections in order: Hero, WhyIchnosSection, ServicesSnapshot, PassportTeaser, ContactSection', () => {
-    const hero = screen.getByTestId('hero');
-    const company = screen.getByTestId('why-ichnos');
-    const services = document.querySelector('section#services');
-    const passport = screen.getByTestId('passport-teaser');
-    const contact = screen.getByTestId('contact-section');
+  it('renders the homepage sections in SECTION_ORDER', () => {
+    const sections = SECTION_ORDER.map((selector) =>
+      document.querySelector(selector),
+    );
+    expect(sections.every(Boolean)).toBe(true);
 
-    expect(
-      hero.compareDocumentPosition(company) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      company.compareDocumentPosition(services) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      services.compareDocumentPosition(passport) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      passport.compareDocumentPosition(contact) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    const pairs = sections
+      .slice(0, -1)
+      .map((section, index) => precedes(section, sections[index + 1]));
+    expect(pairs).toEqual(Array(SECTION_ORDER.length - 1).fill(true));
   });
 
   it('calls useScrollToSection hook', () => {

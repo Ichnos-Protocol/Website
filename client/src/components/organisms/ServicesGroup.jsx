@@ -3,16 +3,16 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
 
-import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
+import ServiceMicroline from "../molecules/ServiceMicroline";
 
 function ServiceCard({
   icon,
   title,
   description,
-  eyebrow,
   passportLink,
   comingSoon,
   lead,
+  microline,
 }) {
   const cardClass = [
     "h-100 service-card",
@@ -23,7 +23,7 @@ function ServiceCard({
     .join(" ");
 
   return (
-    <Col xs={12} md={6} lg={4} className="mb-4">
+    <Col xs={12} lg={4} className="mb-4">
       <Card className={cardClass}>
         <Card.Body>
           {icon && (
@@ -31,12 +31,6 @@ function ServiceCard({
               className={`bi ${icon} fs-2 mb-3 text-accent d-block`}
               aria-hidden="true"
             />
-          )}
-          {eyebrow && (
-            <span className="service-card-eyebrow d-block mb-2">
-              {eyebrow}
-              <CatenaXQualifierSpan />
-            </span>
           )}
           <Card.Title className="h5 mb-2 service-card-title">
             {title}
@@ -47,6 +41,7 @@ function ServiceCard({
               Learn more →
             </Link>
           )}
+          <ServiceMicroline segments={microline} />
         </Card.Body>
       </Card>
     </Col>
@@ -58,6 +53,8 @@ export default function ServicesGroup({
   label,
   services = [],
   nested = false,
+  subtitle,
+  lede,
 }) {
   const Wrapper = nested ? "div" : "section";
   const Heading = nested ? "h3" : "h2";
@@ -66,6 +63,8 @@ export default function ServicesGroup({
   return (
     <Wrapper id={id} className={wrapperClass}>
       <Heading className="fw-bold mb-3">{label}</Heading>
+      {subtitle && <p className="pillar-subtitle mb-3">{subtitle}</p>}
+      {lede && <p className="services-group-lede lead mb-4">{lede}</p>}
       <Row className="g-4">
         {services.map((service) => (
           <ServiceCard key={service.id} {...service} />

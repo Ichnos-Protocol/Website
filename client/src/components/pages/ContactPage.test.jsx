@@ -211,9 +211,7 @@ describe("ContactPage", () => {
 
   it("renders the intro paragraph above the contact section", async () => {
     await renderPage();
-    expect(
-      screen.getByText(/Catena-X-compatible ASEAN data services/),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("contact-intro")).toBeInTheDocument();
   });
 
   it("renders the four AI example prompts", async () => {
@@ -237,7 +235,7 @@ describe("ContactPage", () => {
 
   it("renders the intro paragraph above the shared ContactSection", async () => {
     await renderPage();
-    const intro = screen.getByText(/Catena-X-compatible ASEAN data services/);
+    const intro = screen.getByTestId("contact-intro");
     const contactSection = screen.getByTestId("contact-section");
     expect(intro).toBeInTheDocument();
     expect(contactSection).toBeInTheDocument();

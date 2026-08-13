@@ -8,27 +8,22 @@ describe('CatenaXQualifierSpan', () => {
     vi.doUnmock('../../constants/catenaXStatus');
   });
 
-  it('renders the muted qualifier span while the qualification is pending', async () => {
+  it('renders nothing once the qualification is granted', async () => {
     const { default: CatenaXQualifierSpan } = await import(
       './CatenaXQualifierSpan'
-    );
-    const { getCatenaXQualifierText } = await import(
-      '../../constants/catenaXStatus'
     );
 
     const { container } = renderWithProviders(<CatenaXQualifierSpan />);
 
-    const span = container.querySelector('span.catenax-qualifier-pending');
-    expect(span).toBeTruthy();
-    expect(span.textContent).toBe(getCatenaXQualifierText());
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders nothing once the qualification is granted', async () => {
+  it('renders the muted qualifier span while the qualification is pending', async () => {
     vi.resetModules();
     vi.doMock('../../constants/catenaXStatus', () => ({
-      CATENA_X_QUALIFICATION_GRANTED: true,
+      CATENA_X_QUALIFICATION_GRANTED: false,
       CATENA_X_QUALIFIER_CLASS: 'catenax-qualifier-pending',
-      getCatenaXQualifierText: () => '',
+      getCatenaXQualifierText: () => ' (qualification in progress)',
     }));
 
     const { default: CatenaXQualifierSpan } = await import(
@@ -37,6 +32,8 @@ describe('CatenaXQualifierSpan', () => {
 
     const { container } = renderWithProviders(<CatenaXQualifierSpan />);
 
-    expect(container).toBeEmptyDOMElement();
+    const span = container.querySelector('span.catenax-qualifier-pending');
+    expect(span).toBeTruthy();
+    expect(span.textContent).toBe(' (qualification in progress)');
   });
 });

@@ -7,8 +7,9 @@ import HeroSkeleton from "../molecules/HeroSkeleton";
 import ContentCardSkeleton from "../molecules/ContentCardSkeleton";
 import SeoHead from "../molecules/SeoHead";
 import Hero from "../organisms/Hero";
-import WhyIchnosSection from "../organisms/WhyIchnosSection";
 import ServicesSnapshot from "../organisms/ServicesSnapshot";
+import WhyIchnosSection from "../organisms/WhyIchnosSection";
+import CredentialStrip from "../organisms/CredentialStrip";
 import PassportTeaser from "../organisms/PassportTeaser";
 import ContactSection from "../organisms/ContactSection";
 
@@ -28,8 +29,9 @@ export default function LandingPage() {
       <SeoHead meta={LANDING_META} schemas={PAGE_STRUCTURED_DATA.landing} />
       <PageTransition skeleton={landingSkeleton}>
         <Hero />
-        <WhyIchnosSection />
         <ServicesSnapshot />
+        <WhyIchnosSection />
+        <CredentialStrip />
         <PassportTeaser />
         <ContactSection showFullContactLink={true} />
       </PageTransition>

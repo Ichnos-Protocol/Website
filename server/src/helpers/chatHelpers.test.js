@@ -222,4 +222,35 @@ describe("SYSTEM_PROMPT", () => {
     expect(typeof SYSTEM_PROMPT).toBe("string");
     expect(SYSTEM_PROMPT).toContain("Ichnos Protocol");
   });
+
+  it("states the held Qualified Advisor and ordinary-member statuses", () => {
+    expect(SYSTEM_PROMPT).toContain("Catena-X Qualified Advisor");
+    expect(SYSTEM_PROMPT).toContain("ordinary member");
+    expect(SYSTEM_PROMPT).toContain("Catena-X Automotive Network e.V.");
+  });
+
+  it("states the held Digital Product Passport Expert Group membership", () => {
+    expect(SYSTEM_PROMPT).toContain("Digital Product Passport Expert Group");
+    expect(SYSTEM_PROMPT).toMatch(
+      /member of the Catena-X Digital Product Passport Expert Group/,
+    );
+    // Expert Group, not committee — the two are distinct bodies.
+    expect(SYSTEM_PROMPT).not.toMatch(/expert[\s-]*committee/i);
+  });
+
+  it("carries no pending-membership or conformance-adjective wording", () => {
+    expect(SYSTEM_PROMPT).not.toMatch(/\bin\s+progress\b/i);
+    expect(SYSTEM_PROMPT).not.toMatch(
+      /Catena-X[\s-]*(?:compatible|compliant|conformant|conforming)/i,
+    );
+    expect(SYSTEM_PROMPT).not.toMatch(
+      /(?:compatible|compliant|conformant|conforming)\s+with\s+Catena-X/i,
+    );
+    expect(SYSTEM_PROMPT).not.toMatch(/\bnot\s+claim\b[^.]*\bmembership\b/i);
+  });
+
+  it("retains the certification and partner guardrail", () => {
+    expect(SYSTEM_PROMPT).toContain("Do not claim Catena-X certification");
+    expect(SYSTEM_PROMPT).toContain("partner status");
+  });
 });

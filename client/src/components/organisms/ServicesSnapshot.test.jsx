@@ -4,20 +4,27 @@ import ServicesSnapshot from './ServicesSnapshot';
 import { SERVICES_LIST } from '../../constants/services';
 
 describe('ServicesSnapshot', () => {
-  it('renders one card for each of the 7 services', () => {
+  it('renders one card for each of the 10 services', () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
     const cardTitles = container.querySelectorAll('.service-card-title');
     expect(cardTitles).toHaveLength(SERVICES_LIST.length);
-    expect(cardTitles).toHaveLength(7);
+    expect(cardTitles).toHaveLength(10);
   });
 
-  it('renders the three pillar labels as headings', () => {
-    renderWithProviders(<ServicesSnapshot />);
+  it('renders the pillar labels as headings, with the Catena-X subtitle beneath', () => {
+    const { container } = renderWithProviders(<ServicesSnapshot />);
     ['Engineering', 'Compliance', 'Circularity'].forEach((label) => {
       expect(
         screen.getByRole('heading', { name: label }),
       ).toBeInTheDocument();
     });
+    expect(
+      screen.getByRole('heading', { name: 'Catena-X services' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Connect once. Answer every customer data request.'),
+    ).toHaveClass('pillar-subtitle');
+    expect(container.querySelector('.services-group-kicker')).toBeNull();
   });
 
   it('renders a single services section with no nested services-group sections', () => {

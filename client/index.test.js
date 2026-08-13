@@ -9,15 +9,18 @@ const htmlPath = resolve(process.cwd(), 'index.html');
 const html = readFileSync(htmlPath, 'utf-8');
 
 describe('index.html default head', () => {
-  it('uses the advisory / passport-integration default title', () => {
+  // Positioning line updated 2026-08-12 (Francesco): "Battery and EU battery
+  // passport advisory for ASEAN". These two literals are the pre-render
+  // fallback head; the React pages derive theirs from companyInfo.js.
+  it('uses the battery / passport-advisory default title', () => {
     expect(html).toContain(
-      '<title>Ichnos Protocol — Battery advisory & EU battery-passport integration</title>',
+      '<title>Ichnos Protocol — Battery & EU battery passport advisory</title>',
     );
   });
 
-  it('uses the advisory / passport-integration default description', () => {
+  it('uses the battery / passport-advisory default description', () => {
     expect(html).toContain(
-      'Practitioner-led battery advisory and EU battery-passport integration for ASEAN — systems engineering, safety, compliance, and Catena-X onboarding. Singapore · Europe.',
+      'Practitioner-led battery and EU battery passport advisory for ASEAN — systems engineering, safety, compliance, and Catena-X integration. Singapore · Europe.',
     );
   });
 

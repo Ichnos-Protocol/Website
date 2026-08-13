@@ -39,7 +39,7 @@ describe('FounderProfile', () => {
     expect(screen.getByText('Para two.')).toBeInTheDocument();
   });
 
-  it('renders the Catena-X credential in a bio paragraph with the pending qualifier span', () => {
+  it('renders the Catena-X credential in a bio paragraph without the pending qualifier span', () => {
     const credentialed = {
       ...MEMBER,
       bio: [`He is an ${CATENA_X_TITLE_BASE}, leading the data space.`],
@@ -50,7 +50,7 @@ describe('FounderProfile', () => {
     expect(container.textContent).toContain(CATENA_X_TITLE_BASE);
     expect(
       container.querySelector(`.${CATENA_X_QUALIFIER_CLASS}`),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
   });
 
   it('renders the photo with src and alt from the member prop', () => {

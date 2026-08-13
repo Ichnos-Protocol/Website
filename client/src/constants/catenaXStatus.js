@@ -1,18 +1,111 @@
 // Single source of truth for whether the Catena-X qualification has
-// been formally granted. While `false`, the site renders the pending
-// qualifier suffix in muted styling everywhere the Advisory Provider
-// title appears. When Catena-X confirms the listing, flip this to
-// `true` — the suffix disappears across the entire site without any
-// other code change.
-export const CATENA_X_QUALIFICATION_GRANTED = false;
+// been formally granted. Now `true`: Catena-X has confirmed the
+// Qualified Advisor listing, so `getCatenaXFullTitle()` collapses to
+// the base title and `CatenaXQualifierSpan` renders nothing everywhere
+// the credential appears — no other code change is needed. Flip back to
+// `false` if the qualification ever lapses and the pending suffix must
+// return across the site.
+export const CATENA_X_QUALIFICATION_GRANTED = true;
 
 // Visual class used to gray the qualifier text while the toggle is off.
 export const CATENA_X_QUALIFIER_CLASS = "catenax-qualifier-pending";
 
 // Base credential title, shared by every surface that needs the full
 // string (SEO meta, og:title, schema.org descriptions).
-export const CATENA_X_TITLE_BASE =
-  "Official Catena-X Qualified Advisory Provider";
+export const CATENA_X_TITLE_BASE = "Catena-X Qualified Advisor";
+
+// Companion status notes for surfaces that distinguish the granted
+// Qualified Advisor credential from the association membership and the
+// expert-group participation. Both statuses are held as of Aug 2026;
+// their sole consumer is `structuredData.js`.
+export const CATENA_X_MEMBERSHIP_NOTE =
+  "Ordinary member — Catena-X Automotive Network e.V.";
+export const CATENA_X_EXPERT_GROUP_NOTE =
+  "member of the Catena-X Digital Product Passport Expert Group";
+
+// Displayed card copy for the member and advisor credential cards,
+// single-sourced here so no card hardcodes its own text (consumer:
+// `credentials.js`). This is the §12-Q1-B split: the formal registration
+// wording (`CATENA_X_MEMBERSHIP_NOTE`) stays on the machine-readable
+// schema.org surface, while the card carries the marketing copy — the
+// different-presentation clause of §1.3, not a second source of truth.
+// Content rule (§1.1/§1.2): "well connected" states the member's own
+// network activity, NOT a status or conformance claim. It must never
+// escalate to "official", "endorsed" or "preferred partner".
+// The expiry date is deliberately absent (§5.4): public copy is
+// renewal-agnostic, and the `renew by 2027-07-06` obligation lives in the
+// ops calendar (and stays recorded in the `CATENA_X_LABEL_ASSET` comment
+// below), not on the site.
+export const MEMBER_CARD_NOTE =
+  "Well connected across the network, especially with European OEMs and their supply chains.";
+export const ADVISOR_CARD_NOTE =
+  "Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.";
+
+// One-line status summary for the hero eyebrow (wired in T4 via
+// `landingContent.js`). Deliberately a plain constant, NOT derived from
+// `CATENA_X_TITLE_BASE` (deriving would require string surgery), and it
+// deliberately elides the second "Catena-X". Keep it in lockstep with
+// `CATENA_X_TITLE_BASE` — if the base title changes, update this too.
+export const CATENA_X_STATUS_LINE = "Catena-X member & Qualified Advisor";
+
+// Site-wide trademark and participation disclaimer. This is a tier-3
+// exact-match string (§7.3 item 13) and the target of the §7.2 REQUIRED
+// raw-source scan, so it stays a single string literal — do not "tidy"
+// it into concatenated fragments; the final sentence is the load-bearing
+// disclaimer and may not be shortened.
+export const TRADEMARK_NOTICE =
+  "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.";
+
+// Official Qualified Advisor label assets in the positive and the
+// negative/dark variant. The DISPLAY files are viewBox-trimmed derivatives
+// of the official 16:9 deliveries (which stay in /brand as the
+// `_16x9.svg` masters): the artwork itself is byte-identical — only the
+// empty canvas around it is trimmed, and the mandated clear space is
+// re-supplied as CSS padding, exactly the treatment the tight-cropped
+// member file below already receives. Trim recorded 2026-08-12
+// (Francesco: font-parity request — the 16:9 canvas made the label
+// illegible at card scale). Lifecycle/legal: use only while the
+// qualification holds — set to `null` (and drop the files) if it lapses;
+// renew by 2027-07-06. Governed by Logo Use Agreement §6.1 (revocation
+// with immediate effect, no notice), which is also cause to set these to
+// `null`. Now that the negative variant is present, the dark footer
+// renders it bare and the white plaque is dormant — dormant, not
+// deleted: nulling the negative falls the footer back to the plaque.
+export const CATENA_X_LABEL_ASSET =
+  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg";
+export const CATENA_X_LABEL_ASSET_NEG =
+  "/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg";
+
+// Official ordinary-member label assets (not status strings), positive
+// and negative variants. These are live, so they are no longer exempt
+// from conformance item 8 (§7.1). The member label right runs with
+// ordinary membership (ongoing, terminable on 3 months' notice to
+// fiscal-year end) — an independent lifecycle from the Advisor label's
+// 2027-07-06 renewal, so per §3.1 the two must never share a constant.
+// Governed by Logo Use Agreement §6.1 (revocation with immediate effect,
+// no notice). Setting either back to `null` removes the image everywhere
+// and falls back to text, with no other code change.
+export const CATENA_X_MEMBER_LABEL_ASSET =
+  "/brand/Association_member_Logo_RGB_pos.svg";
+export const CATENA_X_MEMBER_LABEL_ASSET_NEG =
+  "/brand/Association_member_Logo_RGB_neg.svg";
+
+// Label-keyed view over the four constants above, keyed by the
+// credential's `cxLabel`. It *reads* those constants rather than
+// replacing them — each label keeps its own independent lifecycle, and
+// nulling a constant still empties the corresponding entry here. No
+// `alt` key: alt text always comes from the credential `label`, so the
+// asset map never becomes a second source of truth for copy.
+export const CX_LABEL_ASSETS = {
+  advisor: {
+    pos: CATENA_X_LABEL_ASSET,
+    neg: CATENA_X_LABEL_ASSET_NEG,
+  },
+  member: {
+    pos: CATENA_X_MEMBER_LABEL_ASSET,
+    neg: CATENA_X_MEMBER_LABEL_ASSET_NEG,
+  },
+};
 
 // Pure computation of the qualifier suffix from an explicit granted
 // flag. This literal is the only place the pending qualifier text lives

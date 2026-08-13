@@ -102,14 +102,15 @@ Most Battery Passport solutions stop at the minimum required dataset. Ichnos Pro
 | **Degradation forecasting**          | No       | Yes             |
 | **Repurposer/remanufacturer tools**  | No       | Yes             |
 
-### Technology Roadmap
+### Data Architecture
 
-The Battery Passport follows a staged technical architecture:
+The platform uses two data stores, each chosen for the shape of the data it holds, plus Firebase Authentication for identity:
 
-1. **Prototype Phase** (current) — SQL (PostgreSQL) and NoSQL (Firestore) databases for rapid iteration and validation of the data model.
-2. **Production Phase** — Migration to **Solana blockchain** for immutable, decentralized battery lifecycle records with transparent provenance and interoperability.
+1. **PostgreSQL (Neon Tech)** — structured relational data: users and profiles, contact requests, and the questions/topics catalogue. Schema changes are tracked as migrations under `server/migrations/`.
+2. **Firebase Firestore + Storage** — document uploads, file metadata, and the `knowledge_base` collection that grounds the chatbot's RAG responses.
+3. **Firebase Authentication** — identity and role claims. ID tokens are issued client-side and verified server-side on every protected request.
 
-The Solana choice aligns with the project's values: high throughput, low cost, and a growing ecosystem of sustainability-focused decentralized applications.
+The split keeps each store to what it does well: Firebase Storage holds the uploaded files, Firestore holds their metadata alongside the knowledge base, and PostgreSQL holds the structured application records — users, profiles, contact requests, questions, and topics.
 
 ---
 
@@ -212,21 +213,18 @@ A persistent AI-powered assistant available on every public page.
 
 ### Color Palette
 
-The color palette is derived from the **company logo** (a tree with circuit-board roots against a deep navy background with luminous blue highlights and golden accents) and aligned with the **Solana ecosystem** aesthetic.
+The color palette derives from the **Catena-X portal design system** and the Ichnos dual-tone mark.
 
-| Role               | Color           | Hex       | Usage                                           |
-| ------------------ | --------------- | --------- | ----------------------------------------------- |
-| **Primary Dark**   | Deep Navy       | `#0A1628` | Backgrounds, hero sections, footer              |
-| **Primary**        | Luminous Blue   | `#1E90FF` | Links, buttons, interactive elements            |
-| **Accent**         | Cyan / Teal     | `#00D1C1` | Highlights, hover states, secondary CTAs        |
-| **Accent Warm**    | Golden Amber    | `#C8A24E` | Accents, badges, premium indicators             |
-| **Gradient Start** | Solana Teal     | `#14F195` | Gradient accents (Solana alignment)             |
-| **Gradient End**   | Solana Purple   | `#9945FF` | Gradient accents (Solana alignment)             |
-| **Surface**        | Slate Blue      | `#1A2744` | Cards, panels, elevated surfaces                |
-| **Text Primary**   | Off-White       | `#E8ECF1` | Body text on dark backgrounds                   |
-| **Text Secondary** | Muted Blue-Gray | `#8B9DC3` | Secondary text, captions, metadata              |
-| **Background Alt** | Light Gray      | `#F5F7FA` | Light-mode sections, alternating content blocks |
-| **Text Dark**      | Charcoal        | `#1A1A2E` | Body text on light backgrounds                  |
+| Role                      | Hex       | Usage                                            |
+| ------------------------- | --------- | ------------------------------------------------ |
+| **Primary (portal blue)** | `#0F71CB` | Links, buttons, active nav, focus rings          |
+| **Warm accent**           | `#FFA600` | Brand accents, icon chips, rules — **never text** |
+| **Brand green**           | `#B3CB2D` | Sustainability/circularity accents — **never text** |
+| **Tinted surface**        | `#EAF1FE` | Tinted sections, hero tint, icon chips           |
+| **Border**                | `#DCDCDC` | Default borders and dividers                     |
+| **Page base**             | `#FAFBFC` | Page background                                  |
+
+**Hard rule**: `#FFA600` and `#B3CB2D` are never used as a text color; every body-text pair must pass WCAG AA.
 
 ### Typography
 
@@ -236,7 +234,7 @@ The color palette is derived from the **company logo** (a tree with circuit-boar
 
 ### Design Principles
 
-- **Dark-first**: Primary sections use the deep navy palette. Light sections used sparingly for contrast.
+- **Light-first**: Sections sit on the page base with white cards; tinted surfaces mark hero and feature bands. Dark surfaces are reserved for the footer.
 - **Professional and technical**: Clean layouts, generous whitespace, no visual clutter.
 - **Trust signals**: Certifications, regulatory references, and institutional affiliations displayed prominently.
 - **Responsive**: Mobile-first design using Bootstrap 5 grid and utilities.

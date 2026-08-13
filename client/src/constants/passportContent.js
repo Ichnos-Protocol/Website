@@ -11,49 +11,64 @@ export const PASSPORT_HERO = {
     "Status, milestones, the Catena-X data stack, and the ASEAN ↔ EU integration paths.",
 };
 
-// §5.4 Status quo + milestones
+// §5.4 Status quo. v4 removed the milestone list from this constant: it
+// published obligation dates that the amending regulation superseded, so the
+// page was stating dates that no longer hold. Every regulatory date now
+// originates in regulatoryDates.js and renders through the RegulatoryTimeline
+// organism. Do not reintroduce dates here.
 export const PASSPORT_STATUS = {
   heading: "Status quo and milestones",
   intro:
     "Regulation (EU) 2023/1542, the EU Battery Regulation, introduces the digital battery passport, the carbon-footprint declaration, supply-chain due diligence, and recycled-content thresholds. The economic operator placing the battery on the EU market is legally responsible for the passport.",
-  milestones: [
-    {
-      date: "18 February 2025",
-      text: "Article 7 carbon-footprint declaration applies to new EV batteries placed on the EU market.",
-    },
-    {
-      date: "18 August 2025",
-      text: "Articles 47–53 due-diligence obligations enter into force.",
-    },
-    {
-      date: "18 February 2027",
-      text: "Annex XIII digital battery passport data set applies — every EV battery and industrial battery > 2 kWh placed on the EU market must carry one.",
-    },
-    {
-      date: "18 August 2028",
-      text: "Recycled-content reporting begins (Article 8).",
-    },
-    {
-      date: "Ongoing",
-      text: "JRC carbon-footprint methodology (CFB-EV, CFB-IND) and the delegated acts refine the calculation rules. MS 2818 is the Malaysian Standard reference for the same problem in the ASEAN context.",
-    },
-  ],
 };
 
-// §5.5 The case for seamless value-chain data flow
+// §5.5 The case for seamless value-chain data flow. Per source §7.2 /
+// §12.4-Q4 the three paragraphs were replaced by the value-chain diagram: the
+// graphic carries the chain the prose used to narrate, so the copy here is one
+// lead-in sentence plus the image. `diagram.alt` is the accessible equivalent
+// of the whole graphic and must stay complete — do not shorten it. The deck
+// docs/diagrams/Ichnos_ValueChain_Diagrams.pptx is the source of truth for the
+// artwork; a redraw replaces only the JPG at the same filename under
+// client/public/diagrams/, which needs no code change here.
 export const PASSPORT_CASE = {
   heading: "The case for seamless value-chain data flow",
-  paragraphs: [
-    "The passport is not a document the importer fills in at the border. It is a dataset that must accompany the physical goods from raw-materials extraction, through refining, through the ASEAN-made materials, precursors, electrodes, cells, and modules, into the pack and system integrator, and finally into the EU importer's complete passport.",
-    "The default state today is that this travel does not happen, so the data need to be gathered manually and aligned and aggregated painfully by hand. An EV battery containing an ASEAN-made cell starts a passport with no upstream data attached — the importer is legally responsible for a dataset they have no native way to source and rely on the cooperation of the supplier. This raises the costs and friction of onboarding new suppliers, because multiple lines of communication and trust need to be established.",
-    "The fix is not to build a parallel passport. It is to integrate the ASEAN supply chain's data into the same Catena-X-compatible data flows the European passport stack consumes, with the right schemas, the right exchange runtime, and the right chain-of-custody.",
-  ],
+  lead: "The passport is not a document the importer fills in at the border.",
+  diagram: {
+    src: "/diagrams/valuechain_full.jpg",
+    alt: "EU battery-passport value chain: from mine through precursor, electrode, cell, module and pack to second life and recycling, with carbon-footprint, recycled-content and due-diligence documents verified by a notified body and published to the EU system",
+  },
 };
 
-// §5.6 Catena-X stack — factual intro with outbound pointer
+// §5.6 Catena-X stack — v4 §7.3 copy, segmented per §12.3-Q2. The single `body`
+// string is split into `intro`, `principlesLead`, `principles`, and `closing`
+// because each principle opens with a bold lead-in: HTML inside content strings
+// and `dangerouslySetInnerHTML` are both banned, so the lead-in must reach the
+// DOM as a real <strong> node built by PassportCatenaXStack from `lead`/`text`.
 export const PASSPORT_CATENAX = {
   heading: "The Catena-X data stack",
-  body: "The Catena-X network is the European automotive data space and offers a standardised way to exchange supply chain and passport data between organisations. It's built on standardized blocks: common semantic schemas (CX-0143 sub-aspects on the AAS / SAMM standard), standardized connectors such as the Eclipse Dataspace Connector (EDC), and a federated identity model based on Verified Credentials where each participant retains data sovereignty. The battery passport's machine-readable data layer is delivered on this stack.",
+  intro:
+    "Catena-X is the automotive industry's shared data network, born in Europe and expanding internationally, with a North America hub operated with AIAG, growing collaboration in China (Suzhou Letter of Intent), and interoperability testing with the UN Transparency Protocol (UNTP) so that data can travel across dataspaces.",
+  principlesLead: "Its principles matter more than its acronyms.",
+  principles: [
+    {
+      lead: "Your data stays yours:",
+      text: "every company keeps data sovereignty and decides who can discover its data, who can access which dataset, and under which contract policy.",
+    },
+    {
+      lead: "Trade secrets don't travel:",
+      text: "data is exchanged bilaterally, one tier up and one tier down, so your process know-how never propagates along the chain.",
+    },
+    {
+      lead: "Every request is verified:",
+      text: "each participant holds verifiable credentials, and its identity (Business Partner Number) is cryptographically checked at every data request.",
+    },
+    {
+      lead: "Nothing moves without a contract:",
+      text: "exchanges run through a connector, the Eclipse Dataspace Connector (EDC), a piece of software each participant runs, which negotiates a machine-readable contract, enforces the agreed usage policy, and transfers the data directly between the two parties, encrypted, with no central database in between.",
+    },
+  ],
+  closing:
+    "Ichnos can run this for you: we host and operate the connector and digital-twin infrastructure on EU-located servers, managed by us, so your team gets a working Catena-X presence without building one.",
   pointer: {
     label: "Read the Catena-X introduction →",
     href: "https://catena-x.net/en/about-us",
@@ -61,54 +76,37 @@ export const PASSPORT_CATENAX = {
   },
 };
 
-// §5.7 Ichnos role in the value chain
+// §5.7 Ichnos role in the value chain. Per source §7.4 / §12.1 the text band
+// and the nine ASEAN/EU bullets were replaced by the diagram: the graphic shows
+// exactly what they listed, so keeping both recreates the redundancy the rework
+// removes. `intro` is deliberately one lead-in sentence. `diagram.alt` is the
+// accessible equivalent of the whole graphic and must stay complete — do not
+// shorten it. Two framings in the alt are load-bearing: the onboarding claim is
+// registration / BPN management *with Cofinity-X*, never "we onboard you", and
+// passport data readiness is *with the LCA partner* — Ichnos never performs the
+// LCA. The deck docs/diagrams/Ichnos_ValueChain_Diagrams.pptx is the source of
+// truth for the artwork; a redraw replaces only the JPG at the same filename
+// under client/public/diagrams/, which needs no code change here.
 export const PASSPORT_LOCALIZATION = {
   heading: "Ichnos role in the value chain",
   intro:
-    "The EU battery passport carries data from every layer of the value chain. Each layer has established, specialised providers. Ichnos's core competence is the middle of this chain: cells, modules, and packs, where ASEAN manufacturing concentrates and where the data gap to the EU passport is widest. When the customer prefers a single point of accountability, Ichnos also integrates the adjacent layers (raw materials, ESG and due-diligence, finished passport assembly) into the same Catena-X data flow.",
-  layers: [
-    { id: "raw-materials", label: "Raw materials" },
-    { id: "esg", label: "ESG & due-diligence" },
-    {
-      id: "ichnos",
-      label: "Cells, modules and packs (ASEAN manufacturing)",
-      role: "Ichnos — core competence",
-      highlight: true,
-    },
-    { id: "passport-identity", label: "Passport & identity" },
-    { id: "eu-importer", label: "EU importer / OEM" },
-  ],
-  twoColumn: {
-    asean: {
-      heading: "ASEAN side (Ichnos's primary delivery zone)",
-      bullets: [
-        "Material composition, manufacturing-site data, and carbon-footprint data captured at the cell, module, and pack level.",
-        "ESG and supply-chain due-diligence evidence gathered at the supplier site (cobalt, lithium, natural graphite, nickel).",
-        "Supplier readiness for Catena-X onboarding.",
-        "On-site verification across Singapore, Indonesia, Vietnam, Thailand, Malaysia, Philippines.",
-        "Data-model translation from ASEAN standard (such as Malaysian MS 2818) into EU 2023/1542-compliant data structures.",
-      ],
-    },
-    eu: {
-      heading: "EU side",
-      bullets: [
-        "Integration of cell, module, and pack data into the importer's existing passport stack.",
-        "Schema mapping between source data and the Catena-X passport data model (CX-0143 sub-aspects on AAS + SAMM).",
-        "EDC connector planning and data-sovereignty model so each supplier retains control of its own data.",
-        "Optional end-to-end extension upstream (raw materials, ESG) or downstream (finished passport assembly) into one Catena-X data flow when the customer wants single-vendor accountability.",
-      ],
-    },
+    "The EU battery passport carries data from every layer of the value chain.",
+  diagram: {
+    src: "/diagrams/ichnos_role.jpg",
+    alt: "Ichnos's role: making ASEAN component and cell manufacturing passport-ready, between raw-materials traceability and EU importers, with connection management (registration with Cofinity-X), passport data readiness with the LCA partner, and EU-hosted infrastructure operated by Ichnos",
   },
 };
 
-// §5.8 What Ichnos does on this page. The credential eyebrow is rendered by the
+// §5.8 offer block. v4 §7.5 / §12-Q2 stripped this section to eyebrow +
+// pointer + CTA: its two paragraphs restated the service list that /services
+// already owns, so the page said the same thing twice. The Kits gloss that the
+// first paragraph carried now lives in PASSPORT_BUILD_STACK.body, next to the
+// Tractus-X mention it defines. The credential eyebrow is still rendered by the
 // PassportOffer organism through the catenaXStatus toggle, not hard-coded here.
+// Note: `pointer` here is a plain string, unlike PASSPORT_CATENAX.pointer,
+// which is an object carrying label / href / external.
 export const PASSPORT_OFFER = {
-  heading: "What Ichnos does",
-  paragraphs: [
-    "Ichnos consults on the integration of compliant data models, Kits (the Tractus-X Development Kits), data-sovereignty model, audit trail, how to make the best use of the network and supports the ASEAN located battery supplier chain through Catena-X onboarding readiness.",
-    "See the full service list on the Services page.",
-  ],
+  pointer: "Full service list on the Services page.",
   ctaLabel: "See services →",
   ctaHref: "/services",
 };
@@ -120,24 +118,43 @@ export const PASSPORT_OFFER = {
 // §5.10 Build stack credibility
 export const PASSPORT_BUILD_STACK = {
   heading: "The technical stack Ichnos works with",
-  body: "Ichnos works on the open Catena-X reference implementation maintained by the Eclipse Foundation as the Tractus-X project. The passport data model is the AAS + SAMM standard with the Catena-X CX-0143 sub-aspects; the carbon-footprint sub-model follows CX-0026 with the rulebook in CX-0029, computed against the JRC CFB-EV methodology. Bilateral data exchange runs over the Eclipse Dataspace Connector (EDC). For production go-live, Ichnos uses the Cofinity-X Dataspace OS managed connector and Business Partner Number (BPN) onboarding.",
+  body: "Ichnos works on the open Catena-X reference implementation maintained by the Eclipse Foundation as the Tractus-X project, and consults on the integration of the Kits (the Tractus-X Development Kits). The passport data model is the AAS + SAMM standard with the Catena-X CX-0143 sub-aspects; the carbon-footprint sub-model follows CX-0026 with the rulebook in CX-0029, computed against the JRC CFB-EV methodology. Bilateral data exchange runs over the Eclipse Dataspace Connector (EDC). For production go-live, Ichnos uses the Cofinity-X Dataspace OS managed connector and Business Partner Number (BPN) onboarding.",
   standardsList: [
-    { label: "AAS + SAMM (CX-0003)", note: "Semantic model on the Asset Administration Shell" },
-    { label: "CX-0143", note: "Digital Product Passport sub-aspects for batteries" },
+    {
+      label: "AAS + SAMM (CX-0003)",
+      note: "Semantic model on the Asset Administration Shell",
+    },
+    {
+      label: "CX-0143",
+      note: "Digital Product Passport sub-aspects for batteries",
+    },
     { label: "CX-0026 / CX-0029", note: "PCF data model and rulebook" },
     { label: "CX-0136", note: "Use Case PCF" },
     { label: "JRC CFB-EV / CFB-IND", note: "EU carbon-footprint methodology" },
-    { label: "Tractus-X EDC", note: "Eclipse Dataspace Connector reference implementation" },
-    { label: "Tractus-X Industry Core Hub", note: "Twin and submodel provisioning" },
-    { label: "Tractus-X SDK (Python)", note: "Programmatic EDC / DTR / submodel access" },
-    { label: "Cofinity-X Dataspace OS", note: "Managed connector + BPN for go-live" },
+    {
+      label: "Tractus-X EDC",
+      note: "Eclipse Dataspace Connector reference implementation",
+    },
+    {
+      label: "Tractus-X Industry Core Hub",
+      note: "Twin and submodel provisioning",
+    },
+    {
+      label: "Tractus-X SDK (Python)",
+      note: "Programmatic EDC / DTR / submodel access",
+    },
+    {
+      label: "Cofinity-X Dataspace OS",
+      note: "Managed connector + BPN for go-live",
+    },
   ],
 };
 
 // §5.11 Customer segmentation
 export const PASSPORT_CUSTOMERS = {
   heading: "Who Ichnos works with",
-  intro: "Three groups, three different conversations. Ichnos works with each on its own terms.",
+  intro:
+    "Three groups, three different conversations. Ichnos works with each on its own terms.",
   groups: [
     {
       id: "asean-suppliers",

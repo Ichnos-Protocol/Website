@@ -2,6 +2,13 @@ import {
   CAREER_TIMELINE_FRANCESCO,
   CAREER_TIMELINE_IHSAN,
 } from "./teamTimelines";
+// Team copy states the Qualified Advisor qualification only. That
+// qualification is personal to Francesco — attestation 868 names him.
+// Association membership and Digital Product Passport Expert Group
+// participation belong to Ichnos Protocol Pte. Ltd., so they live on
+// corporate surfaces (footer, credentials, structured data). The absence
+// of `CATENA_X_MEMBERSHIP_NOTE` and `CATENA_X_EXPERT_GROUP_NOTE` here is
+// deliberate — do not "fix" the asymmetry by adding them to a bio.
 import { CATENA_X_TITLE_BASE, getCatenaXFullTitle } from "./catenaXStatus";
 
 export const TEAM_MEMBERS = [
@@ -13,7 +20,7 @@ export const TEAM_MEMBERS = [
     bio: [
       "Dr.-Ing. Francesco Maltoni is the founder of Ichnos Protocol. He spent his engineering career at FEV in Aachen as lead battery expert in battery-system engineering, owning sustainability requirements with customers, leading a battery digital-product-passport pilot on the in-house BMS/cloud-BMS practice, and presenting at Advanced Battery Power Europe 2025.",
       "His doctorate at the RWTH-Aachen University Chair of Production Engineering of Electromobility Components (PEM) covered circular-economy battery systems and was recognised with the 3rd-place RWTH Innovation Award. He authored four peer-reviewed publications on remanufacturing, recycling, and cell housing design, and lectured on battery recycling at the PEM Chair.",
-      `He is an ${CATENA_X_TITLE_BASE}, working to bring ASEAN battery manufacturers into the Catena-X data space alongside their European importer customers, bridging the data-flow gap up the value chain without forcing any party to give up data sovereignty.`,
+      `He is a ${CATENA_X_TITLE_BASE}, working to bring ASEAN battery manufacturers into the Catena-X data space alongside their European importer customers, bridging the data-flow gap up the value chain without forcing any party to give up data sovereignty.`,
     ],
     skillsChips: [
       "Battery Systems & Safety (FMEA · requirements · test management)",

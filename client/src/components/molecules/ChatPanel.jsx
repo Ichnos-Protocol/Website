@@ -15,7 +15,7 @@ import { DAILY_MESSAGE_LIMIT } from "../../constants/chat";
 import Button from "../atoms/Button";
 import { renderInquiryButton, refreshHistorySafely } from "./ChatPanel.helpers";
 
-const WELCOME_TEXT = "Hi — ask me about Catena-X-compatible data services for ASEAN-made batteries, Catena-X onboarding, EU 2023/1542 compliance, or battery-systems advisory.";
+const WELCOME_TEXT = "Hi — ask me about Catena-X onboarding for ASEAN-made batteries, EU Battery Passport data flows, EU 2023/1542 compliance, or battery-systems advisory.";
 const DISCLAIMER_TEXT = "Responses are AI-generated. We follow up personally on every conversation that becomes a lead.";
 
 export default function ChatPanel({ mode, persistState }) {

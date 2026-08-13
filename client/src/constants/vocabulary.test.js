@@ -1,0 +1,245 @@
+/*
+ * Vocabulary corpus guard (§7.2).
+ *
+ * Reads every file in the §7.2 corpus as plain text and scans it against the
+ * pattern sets in vocabulary.js. No DOM, no component rendering. Failures
+ * report file, line and matched text so a hit is actionable without a manual
+ * search, and every scan aggregates — one assertion listing every violation,
+ * not a fail-fast on the first.
+ */
+
+import { readFileSync } from "node:fs";
+import { basename, dirname, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import {
+  ALLOWED_EXCEPTIONS,
+  ASSET_PATH_EXPORTS,
+  FILES,
+  FORBIDDEN,
+  LEGACY_HEXES,
+  NOT_YET_HELD,
+  REQUIRED,
+  STATUS_STRING_EXPORTS,
+} from "./vocabulary";
+
+const CLIENT_ROOT = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
+
+const SOURCE_CACHE = new Map();
+
+function readSource(file) {
+  if (!SOURCE_CACHE.has(file)) {
+    SOURCE_CACHE.set(file, readFileSync(file, "utf8"));
+  }
+  return SOURCE_CACHE.get(file);
+}
+
+function toClientPath(file) {
+  return relative(CLIENT_ROOT, file).split(sep).join("/");
+}
+
+function lineNumberAt(text, index) {
+  let line = 1;
+  for (let i = 0; i < index; i += 1) {
+    if (text[i] === "\n") line += 1;
+  }
+  return line;
+}
+
+// A fresh global clone per use: lastIndex never leaks between files, and every
+// occurrence is reported rather than only the first. The scan runs against the
+// whole file text — patterns such as `[^.]{0,40}` span newlines, so a
+// line-by-line loop would miss them.
+function findMatches(pattern, text) {
+  const flags = pattern.flags.includes("g")
+    ? pattern.flags
+    : `${pattern.flags}g`;
+  const rx = new RegExp(pattern.source, flags);
+  const hits = [];
+  let match = rx.exec(text);
+  while (match !== null) {
+    hits.push({ text: match[0], index: match.index });
+    if (match[0] === "") rx.lastIndex += 1;
+    match = rx.exec(text);
+  }
+  return hits;
+}
+
+function scanCorpus(patterns, exceptions = []) {
+  const violations = [];
+  for (const file of FILES) {
+    const text = readSource(file);
+    for (const pattern of patterns) {
+      for (const hit of findMatches(pattern, text)) {
+        if (exceptions.includes(hit.text)) continue;
+        violations.push(
+          `${toClientPath(file)}:${lineNumberAt(text, hit.index)} — "${hit.text}" (matched ${pattern.source})`,
+        );
+      }
+    }
+  }
+  return violations;
+}
+
+function report(violations) {
+  return violations.join("\n");
+}
+
+describe("vocabulary corpus (file set)", () => {
+  it("walks a non-empty corpus that includes the static shells and no test files", () => {
+    const paths = FILES.map(toClientPath);
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths).toContain("index.html");
+    expect(paths).toContain("public/site.webmanifest");
+    const excluded = FILES.map((file) => basename(file)).filter((name) =>
+      /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js)$/.test(name),
+    );
+    expect(excluded).toEqual([]);
+  });
+});
+
+describe("vocabulary corpus (prohibited expressions)", () => {
+  it("contains no FORBIDDEN expression", () => {
+    const violations = scanCorpus(FORBIDDEN, ALLOWED_EXCEPTIONS);
+    expect(report(violations)).toBe("");
+  });
+
+  // ALLOWED_EXCEPTIONS is a FORBIDDEN-only escape hatch (§7.2): a group that
+  // is not yet held cannot be excepted into being held.
+  it("claims no NOT_YET_HELD group", () => {
+    const violations = scanCorpus(NOT_YET_HELD);
+    expect(report(violations)).toBe("");
+  });
+
+  it("contains no Solana-era legacy hex", () => {
+    const violations = scanCorpus(LEGACY_HEXES);
+    expect(report(violations)).toBe("");
+  });
+});
+
+// Probes: the corpus scan above proves only that today's copy is clean, which
+// a too-narrow pattern also satisfies. These assert the guard would actually
+// catch the §1.2 claims it exists for. The strings live here and nowhere else
+// — this file is dropped by SKIP_FILES, so a probe never enters the corpus.
+describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
+  function isForbidden(text) {
+    return FORBIDDEN.some((pattern) => findMatches(pattern, text).length > 0);
+  }
+
+  const PROBES = [
+    // Partner status: prohibited bare, not only in the `official` form.
+    "Ichnos Protocol is a Catena-X partner.",
+    "Ichnos Protocol is an official Catena-X partner.",
+    "Ichnos Protocol is a Catena-X Solution Partner.",
+    // Pending membership/application, both word orders.
+    "Catena-X membership application pending.",
+    "Our Catena-X membership application is pending review.",
+    "Ichnos has a pending Catena-X membership application.",
+  ];
+
+  it.each(PROBES)("matches the prohibited claim %j", (probe) => {
+    expect(isForbidden(probe)).toBe(true);
+  });
+
+  // Guards the probes above from being satisfied by an over-broad pattern:
+  // legitimate copy on live surfaces must still pass.
+  const PERMITTED = [
+    "Ordinary member — Catena-X Automotive Network e.V.",
+    "Catena-X member & Qualified Advisor",
+    "Business Partner Number (BPN)",
+    "the relationship is partner-and-channel, not competition",
+  ];
+
+  it.each(PERMITTED)("leaves permitted copy alone: %j", (permitted) => {
+    expect(isForbidden(permitted)).toBe(false);
+  });
+});
+
+describe("vocabulary corpus (required expressions)", () => {
+  it("contains every REQUIRED expression somewhere in client source", () => {
+    const missing = REQUIRED.filter((pattern) =>
+      FILES.every(
+        (file) => findMatches(pattern, readSource(file)).length === 0,
+      ),
+    ).map((pattern) => pattern.source);
+    expect(report(missing)).toBe("");
+  });
+});
+
+// Item 8 (§7.1). catenaXStatus.js is where these constants are declared, so a
+// hit there proves nothing; its test is already dropped by SKIP_FILES, but the
+// exclusion is spelled out rather than left incidental.
+// This exclusion set is status-string-only. The label-asset paths are scanned
+// separately below, under a rule that keeps catenaXStatus.js in the file set —
+// their correct consumer, CX_LABEL_ASSETS, is declared in that same file, so
+// excluding it by name would leave them permanently unconsumable.
+const CONSUMER_EXCLUDED = new Set([
+  "catenaXStatus.js",
+  "catenaXStatus.test.js",
+]);
+
+const CONSUMER_FILES = FILES.filter(
+  (file) => /\.(js|jsx)$/.test(file) && !CONSUMER_EXCLUDED.has(basename(file)),
+);
+
+// An unused uppercase import survives lint (varsIgnorePattern: "^[A-Z_]") and a
+// comment mention satisfies a raw text search, so both are removed before the
+// identifier is counted. Import stripping is multiline-aware: a line filter
+// misses the identifier inside a multiline `import { … }` block. The side-effect
+// form is stripped first so its statement cannot be swallowed by the `from`
+// form's non-greedy span. `import` must be followed by whitespace or a quote,
+// so a dynamic `import(` is never stripped.
+function stripNonConsuming(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
+    .replace(/^import\s*['"][^'"]*['"];?/gm, "")
+    .replace(/^import\s[\s\S]*?from\s*['"][^'"]*['"];?/gm, "");
+}
+
+describe("vocabulary corpus (status-string consumers)", () => {
+  it("has a real consumer for every status-string export", () => {
+    const consumingText = CONSUMER_FILES.map((file) =>
+      stripNonConsuming(readSource(file)),
+    );
+    const unconsumed = STATUS_STRING_EXPORTS.filter((name) => {
+      const rx = new RegExp(`\\b${name}\\b`);
+      return !consumingText.some((text) => rx.test(text));
+    });
+    expect(report(unconsumed)).toBe("");
+  });
+});
+
+// No file exclusion here: catenaXStatus.js stays in, because CX_LABEL_ASSETS —
+// the map that carries these paths to CredentialLabel and FooterRecognitions —
+// is declared in that same file. FILES already drops every *.test.js(x) plus
+// vocabulary.js itself, so nothing test-only or list-only can satisfy the scan.
+const ASSET_CONSUMER_FILES = FILES.filter((file) => /\.(js|jsx)$/.test(file));
+
+// The one thing a same-file scan must not count is the constant's own
+// declaration. `\b` after the name keeps CATENA_X_LABEL_ASSET from eating the
+// `export const CATENA_X_LABEL_ASSET_NEG` line; the `m` flag anchors to a line
+// start, which survives stripNonConsuming (comment removal leaves the blank
+// lines behind). Non-global: there is exactly one declaration to discount.
+function stripOwnDeclaration(source, name) {
+  return source.replace(new RegExp(`^export const ${name}\\b`, "m"), "");
+}
+
+describe("vocabulary corpus (asset-path consumers)", () => {
+  it("has a real consumer for every label-asset path export", () => {
+    // A CX_LABEL_ASSETS hit inside catenaXStatus.js is the intended, correct
+    // consumer — that map is what every rendering surface reads.
+    const stripped = ASSET_CONSUMER_FILES.map((file) =>
+      stripNonConsuming(readSource(file)),
+    );
+    const unconsumed = ASSET_PATH_EXPORTS.filter((name) => {
+      const rx = new RegExp(`\\b${name}\\b`);
+      return !stripped.some((text) => rx.test(stripOwnDeclaration(text, name)));
+    });
+    expect(report(unconsumed)).toBe("");
+  });
+});
