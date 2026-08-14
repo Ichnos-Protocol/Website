@@ -45,6 +45,11 @@ export const SERVICES_LIST = [
   },
   // ── Catena-X (SME-facing storefront cards, copy per docs §3.2 verbatim;
   //    official terms live only in the microlines, linked to official pages) ──
+  // Microline link policy (verified 2026-08-13): every Tractus-X link targets
+  // the KIT's ADOPTION VIEW under /docs-kits/kits/<kit>/adoption-view — the
+  // reader-friendly intro. The old /docs-kits/category/<kit> landing pages
+  // were dropped in a docs restructure (three of our four returned 404), so
+  // the category namespace is never used here again.
   {
     id: "catenax-get-connected",
     icon: "bi-diagram-3",
@@ -76,7 +81,7 @@ export const SERVICES_LIST = [
     microline: [
       {
         text: "Industry Core KIT",
-        href: "https://eclipse-tractusx.github.io/docs-kits/category/industry-core-kit",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/industry-core-kit/adoption-view",
       },
       { text: "Digital Twin Registry (DTR)" },
       { text: "SAMM aspect models" },
@@ -110,11 +115,11 @@ export const SERVICES_LIST = [
     microline: [
       {
         text: "Demand & Capacity Management (DCM) KIT",
-        href: "https://eclipse-tractusx.github.io/docs-kits/category/dcm-kit",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/demand-and-capacity-management-kit/adoption-view/overview/",
       },
       {
         text: "PURIS (short-interval production & stock data)",
-        href: "https://eclipse-tractusx.github.io/docs-kits/category/puris-kit",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/puris-kit/adoption-view/",
       },
     ],
   },
@@ -129,7 +134,7 @@ export const SERVICES_LIST = [
     microline: [
       {
         text: "PCF KIT",
-        href: "https://eclipse-tractusx.github.io/docs-kits/category/pcf-exchange-kit",
+        href: "https://eclipse-tractusx.github.io/docs-kits/kits/product-carbon-footprint-exchange-kit/adoption-view/",
       },
       { text: "pcf aspect model" },
     ],
