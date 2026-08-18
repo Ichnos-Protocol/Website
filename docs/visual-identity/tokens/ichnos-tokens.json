@@ -1,0 +1,120 @@
+{
+  "$comment": "Ichnos Protocol design tokens. Mirror of ichnos-tokens.css for design tools, Tailwind/Figma config, or JS theming. Source of truth: client/src/index.css.",
+  "version": "1.0.0",
+  "color": {
+    "light": {
+      "bgBase": "#FAFBFC",
+      "bgAlt": "#EAF1FE",
+      "surface": "#FFFFFF",
+      "textPrimary": "#111111",
+      "textSecondary": "#252525",
+      "accentPrimary": "#0F71CB",
+      "accentCyan": "#0F71CB",
+      "accentWarm": "#FFA600",
+      "accentGreen": "#B3CB2D",
+      "border": "#DCDCDC",
+      "shadow": "rgba(15, 20, 25, 0.06)"
+    },
+    "dark": {
+      "$comment": "Footer surface only. Not a theme.",
+      "bgBase": "#0F1419",
+      "bgAlt": "#1A2030",
+      "surface": "#1A2030",
+      "textPrimary": "#E8ECF1",
+      "textSecondary": "#9AA5B8",
+      "border": "rgba(232, 236, 241, 0.08)"
+    },
+    "logo": {
+      "$comment": "Fills baked into the Ichnos mark SVGs.",
+      "trunkAmber": "#FFA600",
+      "canopyGreen": "#B3CB2D",
+      "ink": "#111111",
+      "monoBlue": "#0F71CB"
+    },
+    "statusTint": {
+      "$comment": "Badge fills. Text colour is the paired token, never the tint.",
+      "live": "rgba(15, 113, 203, 0.12)",
+      "inDevelopment": "rgba(15, 113, 203, 0.15)",
+      "planned": "rgba(139, 157, 195, 0.15)",
+      "updating": "rgba(255, 165, 0, 0.15)"
+    },
+    "hairline": {
+      "$comment": "Card borders on the site use this literal rather than --color-border.",
+      "cardBorder": "rgba(139, 157, 195, 0.15)",
+      "cardBorderStrong": "rgba(139, 157, 195, 0.25)"
+    }
+  },
+  "font": {
+    "family": {
+      "sans": "'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif",
+      "display": "'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "size": {
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "24px",
+      "2xl": "32px",
+      "3xl": "48px"
+    },
+    "weight": {
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "lineHeight": {
+      "tight": 1.2,
+      "normal": 1.5,
+      "relaxed": 1.75
+    },
+    "letterSpacing": {
+      "$comment": "Applied per role, not tokenised on the site.",
+      "displayHeading": "-0.02em",
+      "eyebrow": "0.06em",
+      "badge": "0.05em"
+    }
+  },
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "2xl": "48px",
+    "3xl": "64px"
+  },
+  "radius": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px",
+    "pill": "9999px"
+  },
+  "elevation": {
+    "resting": "0 2px 12px rgba(15, 20, 25, 0.06)",
+    "hover": "0 8px 24px rgba(15, 20, 25, 0.06)",
+    "bubble": "0 1px 2px rgba(15, 20, 25, 0.06)"
+  },
+  "transition": {
+    "fast": "150ms ease-in-out",
+    "base": "300ms ease-in-out",
+    "slow": "500ms ease-in-out"
+  },
+  "zIndex": {
+    "base": 1,
+    "dropdown": 1000,
+    "sticky": 1020,
+    "overlay": 1030,
+    "modal": 1040,
+    "tooltip": 1050
+  },
+  "breakpoint": {
+    "$comment": "Bootstrap 5 edges. The site's own checkpoints are 390 / 768 / 1440 px.",
+    "sm": "576px",
+    "md": "768px",
+    "lg": "992px",
+    "xl": "1200px",
+    "containerMax": "1140px"
+  }
+}

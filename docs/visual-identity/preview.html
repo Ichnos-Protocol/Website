@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ichnos Protocol — Visual Identity Preview</title>
+
+    <link rel="icon" type="image/svg+xml" href="logos/ichnos/favicon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="tokens/ichnos-tokens.css" />
+    <link rel="stylesheet" href="components/ichnos-components.css" />
+
+    <style>
+      /* Preview-only chrome. None of this is part of the identity. */
+      .wrap {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 0 var(--spacing-md);
+      }
+      .block {
+        padding: var(--spacing-2xl) 0;
+        border-top: 1px solid rgba(139, 157, 195, 0.15);
+      }
+      .block:first-of-type { border-top: none; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+      }
+      .swatch {
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(139, 157, 195, 0.15);
+        overflow: hidden;
+        background: var(--color-surface);
+      }
+      .swatch__chip { height: 72px; }
+      .swatch__meta {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 13px;
+      }
+      .swatch__meta code {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .rule { margin: 0 0 var(--spacing-xs); }
+      .stack > * + * { margin-top: var(--spacing-md); }
+      .logo-tile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 120px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(139, 157, 195, 0.15);
+      }
+      .logo-tile img { height: 64px; width: auto; }
+      .logo-tile--light { background: var(--color-surface); }
+      .logo-tile--tint { background: var(--color-bg-alt); }
+      .logo-tile--dark { background: #0F1419; }
+      .caption {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        margin: var(--spacing-xs) 0 0;
+        text-align: center;
+      }
+      .row-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        align-items: center;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: var(--font-weight-medium);
+      }
+      table { width: 100%; border-collapse: collapse; }
+      th, td {
+        padding: var(--spacing-sm) var(--spacing-md);
+        text-align: left;
+        border-bottom: 1px solid rgba(139, 157, 195, 0.15);
+      }
+      .card-pad { padding: var(--spacing-md); border-radius: var(--radius-md); }
+      .note {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
+    </style>
+  </head>
+
+  <body class="theme-catenax">
+    <!-- ================= Hero ================= -->
+    <header class="hero-section hero-section--photo" style="min-height: auto">
+      <div class="wrap">
+        <span class="section-eyebrow section-eyebrow--hero"
+          >Catena-X member &amp; Qualified Advisor</span
+        >
+        <h1 class="page-title hero-headline" style="font-size: var(--font-size-3xl); margin: 0 0 var(--spacing-md)">
+          Ichnos Protocol visual identity
+        </h1>
+        <p class="section-subtext" style="max-width: 60ch; margin: 0 0 var(--spacing-lg)">
+          Every token, logo variant and component pattern the Battery Passport demo needs,
+          rendered from the same CSS the website ships.
+        </p>
+        <button class="hero-cta-btn" style="padding: 10px 24px; font-weight: 500">
+          Primary action
+        </button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <!-- ================= Colour ================= -->
+      <section class="block">
+        <span class="section-eyebrow">01</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Colour</h2>
+        <p class="section-subtext">
+          One interactive blue. Amber and green come from the logo and stay decorative.
+        </p>
+
+        <div class="grid" style="margin-top: var(--spacing-lg)">
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #FAFBFC; border-bottom: 1px solid rgba(139,157,195,.15)"></div>
+            <div class="swatch__meta"><strong>Page ground</strong><code>--color-bg-base · #FAFBFC</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #EAF1FE"></div>
+            <div class="swatch__meta"><strong>Alt band</strong><code>--color-bg-alt · #EAF1FE</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #FFFFFF; border-bottom: 1px solid rgba(139,157,195,.15)"></div>
+            <div class="swatch__meta"><strong>Surface</strong><code>--color-surface · #FFFFFF</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #0F71CB"></div>
+            <div class="swatch__meta"><strong>Accent primary</strong><code>--color-accent-primary · #0F71CB</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #111111"></div>
+            <div class="swatch__meta"><strong>Text primary</strong><code>--color-text-primary · #111111</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #252525"></div>
+            <div class="swatch__meta"><strong>Text secondary</strong><code>--color-text-secondary · #252525</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #FFA600"></div>
+            <div class="swatch__meta"><strong>Logo amber</strong><code>--color-accent-warm · #FFA600</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #B3CB2D"></div>
+            <div class="swatch__meta"><strong>Logo green</strong><code>--color-accent-green · #B3CB2D</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #DCDCDC"></div>
+            <div class="swatch__meta"><strong>Border</strong><code>--color-border · #DCDCDC</code></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background: #0F1419"></div>
+            <div class="swatch__meta"><strong>Dark surface ground</strong><code>.surface-dark · #0F1419</code></div>
+          </div>
+        </div>
+
+        <p class="note" style="margin-top: var(--spacing-md)">
+          Amber is never used as text. On white it is roughly 1.9:1.
+        </p>
+      </section>
+
+      <!-- ================= Typography ================= -->
+      <section class="block">
+        <span class="section-eyebrow">02</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Typography</h2>
+        <p class="section-subtext">Libre Franklin, 300 to 700. Headings carry −0.02em tracking.</p>
+
+        <div class="stack" style="margin-top: var(--spacing-lg)">
+          <p class="rule hero-headline" style="font-size: 48px; margin: 0">Display 48 / 700</p>
+          <p class="rule section-display-heading" style="font-size: 32px; margin: 0">Heading 32 / 700</p>
+          <p class="rule section-heading" style="font-size: 24px; margin: 0">Section heading 24 / 600</p>
+          <p class="rule" style="font-size: 18px; margin: 0">Lead paragraph 18 / 400</p>
+          <p class="rule" style="font-size: 16px; margin: 0">Body 16 / 400 / 1.5 line height</p>
+          <p class="rule section-subtext" style="font-size: 14px; margin: 0">Supporting copy 14 / 400</p>
+          <span class="section-eyebrow" style="display: block">Eyebrow 12.8 / +0.06em</span>
+          <p class="rule" style="font-family: var(--font-mono); font-size: 14px; margin: 0">
+            Mono · did:web:ichnos-protocol.com · BATT-2026-000481
+          </p>
+        </div>
+
+        <p class="note" style="margin-top: var(--spacing-md)">
+          The mono token is declared but the site never loads JetBrains Mono. Load it in the demo
+          if you use it for identifiers; otherwise the system monospace is fine.
+        </p>
+      </section>
+
+      <!-- ================= Logo ================= -->
+      <section class="block">
+        <span class="section-eyebrow">03</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Logo</h2>
+        <p class="section-subtext">
+          Dualtone on light, white on dark. Every file is tight-cropped, so declared height equals
+          visible height.
+        </p>
+
+        <div class="grid" style="margin-top: var(--spacing-lg)">
+          <div>
+            <div class="logo-tile logo-tile--light">
+              <img src="logos/ichnos/ichnos_mark_dualtone.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">mark · dualtone · light</p>
+          </div>
+          <div>
+            <div class="logo-tile logo-tile--tint">
+              <img src="logos/ichnos/ichnos_lockup_dualtone.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">lockup · dualtone · tint</p>
+          </div>
+          <div>
+            <div class="logo-tile logo-tile--dark">
+              <img src="logos/ichnos/ichnos_mark_white.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">mark · white · dark</p>
+          </div>
+          <div>
+            <div class="logo-tile logo-tile--dark">
+              <img src="logos/ichnos/ichnos_lockup_white.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">lockup · white · dark</p>
+          </div>
+          <div>
+            <div class="logo-tile logo-tile--light">
+              <img src="logos/ichnos/ichnos_mark_black.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">mark · black · single colour</p>
+          </div>
+          <div>
+            <div class="logo-tile logo-tile--light">
+              <img src="logos/ichnos/ichnos_mark_mono_blue.svg" alt="Ichnos Protocol" />
+            </div>
+            <p class="caption">mark · mono blue · single colour</p>
+          </div>
+        </div>
+
+        <div class="row-inline" style="margin-top: var(--spacing-lg)">
+          <img src="logos/ichnos/ichnos_mark_dualtone.svg" alt="Ichnos Protocol" style="height: 24px" />
+          <img src="logos/ichnos/ichnos_mark_dualtone.svg" alt="" aria-hidden="true" style="height: 38px" />
+          <img src="logos/ichnos/ichnos_mark_dualtone.svg" alt="" aria-hidden="true" style="height: 64px" />
+          <span class="note">24px minimum · 38px header · 64px footer</span>
+        </div>
+      </section>
+
+      <!-- ================= Cards ================= -->
+      <section class="block">
+        <span class="section-eyebrow">04</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Cards</h2>
+        <p class="section-subtext">Hover each one. A card is either hairline or elevated, never both.</p>
+
+        <div class="grid" style="margin-top: var(--spacing-lg)">
+          <div class="problem-card card-pad">
+            <strong>Hairline card</strong>
+            <p class="section-subtext" style="margin: var(--spacing-xs) 0 0; font-size: 14px">
+              Default. Accent border and −4px lift on hover.
+            </p>
+          </div>
+          <div class="card-elevated card-pad">
+            <strong>Elevated card</strong>
+            <p class="section-subtext" style="margin: var(--spacing-xs) 0 0; font-size: 14px">
+              Shadow, no border, 12px radius.
+            </p>
+          </div>
+          <div class="service-card service-card--lead card-pad">
+            <span class="pillar-badge pillar-badge--pillar">Lead offering</span>
+            <strong style="display: block">Offering card</strong>
+            <p class="card-text section-subtext" style="margin: var(--spacing-xs) 0 0; font-size: 14px">
+              3px blue left rule marks the card that leads its row.
+            </p>
+          </div>
+          <div class="service-card service-card--coming-soon card-pad">
+            <span class="pillar-badge pillar-badge--delivery-method">Delivery method</span>
+            <strong style="display: block">Coming soon</strong>
+            <p class="card-text" style="margin: var(--spacing-xs) 0 0; font-size: 14px">
+              Dashed border, muted copy, no lift. That is the whole signal.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Credential strip ================= -->
+      <section class="block">
+        <span class="section-eyebrow">05</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Credential strip</h2>
+        <p class="section-subtext">
+          Official Catena-X labels sized by wordmark parity: the advisor label is 1.5× the member
+          label's height. Read <code>logos/catena-x/USAGE.md</code> before reusing these.
+        </p>
+
+        <div class="credential-strip" style="margin-top: var(--spacing-lg); padding-inline: var(--spacing-md)">
+          <div class="credential-strip__items">
+            <div class="credential-strip__item">
+              <img
+                class="cx-label-img cx-label-img--member"
+                src="logos/catena-x/Association_member_Logo_RGB_pos.svg"
+                alt="Catena-X Association member"
+              />
+              <span class="credential-strip__label">Catena-X Association member</span>
+              <p class="credential-strip__note">
+                Well connected across the network, especially with European OEMs and their supply chains.
+              </p>
+            </div>
+            <div class="credential-strip__item">
+              <a href="https://catena-x.net">
+                <img
+                  class="cx-label-img cx-label-img--advisor"
+                  src="logos/catena-x/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg"
+                  alt="Catena-X Qualified Advisor"
+                />
+              </a>
+              <span class="credential-strip__label">Catena-X Qualified Advisor</span>
+              <p class="credential-strip__note">
+                Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore,
+                on site across ASEAN.
+              </p>
+            </div>
+            <div class="credential-strip__item">
+              <span class="credential-strip__label">Digital Product Passport Expert Group</span>
+              <p class="credential-strip__note">
+                Member: expert group under the Catena-X Sustainability Committee
+              </p>
+            </div>
+            <div class="credential-strip__item">
+              <span class="credential-strip__label">10+ years in battery development</span>
+              <p class="credential-strip__note">
+                PEM RWTH Aachen &amp; FEV, from cell production research to vehicle battery systems
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="note" style="margin-top: var(--spacing-md)">
+          Only the advisor label is linked, and only to catena-x.net. One linked label per page,
+          maximum.
+        </p>
+      </section>
+
+      <!-- ================= Badges & table ================= -->
+      <section class="block">
+        <span class="section-eyebrow">06</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Badges and tables</h2>
+
+        <div class="row-inline" style="margin-top: var(--spacing-lg)">
+          <span class="badge badge-status-live">Live</span>
+          <span class="badge badge-status-dev">In development</span>
+          <span class="badge badge-status-planned">Planned</span>
+          <span class="badge badge-status-updating">Updating</span>
+          <span class="pillar-badge pillar-badge--pillar">Pillar</span>
+          <span class="pillar-badge pillar-badge--delivery-method">Delivery method</span>
+        </div>
+
+        <table class="table-dark-custom" style="margin-top: var(--spacing-lg); background: var(--color-surface)">
+          <thead>
+            <tr>
+              <th>Passport attribute</th>
+              <th>Source</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="table-cell-text">Cell chemistry</td>
+              <td class="table-cell-text">Manufacturer declaration</td>
+              <td><span class="badge badge-status-live">Live</span></td>
+            </tr>
+            <tr>
+              <td class="table-cell-text">Carbon footprint</td>
+              <td class="table-cell-text">PCF exchange</td>
+              <td><span class="badge badge-status-dev">In development</span></td>
+            </tr>
+            <tr>
+              <td class="table-cell-text">State of health</td>
+              <td class="table-cell-text">Telematics feed</td>
+              <td><span class="badge badge-status-planned">Planned</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ================= Timeline ================= -->
+      <section class="block">
+        <span class="section-eyebrow">07</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Timeline</h2>
+        <p class="section-subtext">
+          Vertical below 62rem, horizontal arrow axis above. One DOM, one media query. Narrow the
+          window to see it switch.
+        </p>
+
+        <div class="regulatory-timeline__axis" style="margin-top: var(--spacing-xl)">
+          <div class="regulatory-timeline__item">
+            <span class="regulatory-timeline__date">Milestone A</span>
+            <span class="regulatory-timeline__label">Obligation enters into force</span>
+            <span class="regulatory-timeline__source">Source reference</span>
+          </div>
+          <div class="regulatory-timeline__item regulatory-timeline__item--today">
+            <span class="regulatory-timeline__date">Today</span>
+            <span class="regulatory-timeline__label">Current position</span>
+          </div>
+          <div class="regulatory-timeline__item regulatory-timeline__item--deferred">
+            <span class="regulatory-timeline__date">Milestone B</span>
+            <span class="regulatory-timeline__label">Deferred by amending regulation</span>
+            <span class="regulatory-timeline__tag">date moved</span>
+          </div>
+          <div class="regulatory-timeline__item">
+            <span class="regulatory-timeline__date">Milestone C</span>
+            <span class="regulatory-timeline__label">Full applicability</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Chat ================= -->
+      <section class="block">
+        <span class="section-eyebrow">08</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Chat panel</h2>
+
+        <div class="chat-panel" style="max-width: 480px; height: 320px; margin-top: var(--spacing-lg)">
+          <div class="chat-panel__messages">
+            <div class="chat-panel__bubble chat-panel__bubble--bot">
+              Ask me about the battery passport demo.
+            </div>
+            <div class="chat-panel__bubble chat-panel__bubble--user">
+              What data does the passport carry?
+            </div>
+            <div class="chat-panel__bubble chat-panel__bubble--bot">
+              Cell chemistry, carbon footprint, state of health, and the due-diligence record.
+            </div>
+          </div>
+          <div class="chat-panel__input-row">
+            <input class="chat-panel__input" placeholder="Type a message" />
+            <button class="chat-panel__send-btn" aria-label="Send">→</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Spacing & radius ================= -->
+      <section class="block">
+        <span class="section-eyebrow">09</span>
+        <h2 class="section-heading" style="font-size: var(--font-size-2xl)">Spacing and radius</h2>
+
+        <div class="stack" style="margin-top: var(--spacing-lg)">
+          <div class="row-inline">
+            <div style="width: 4px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 8px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 16px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 24px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 32px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 48px; height: 32px; background: #0F71CB"></div>
+            <div style="width: 64px; height: 32px; background: #0F71CB"></div>
+            <span class="note">4 · 8 · 16 · 24 · 32 · 48 · 64</span>
+          </div>
+          <div class="row-inline">
+            <div style="width: 64px; height: 48px; background: var(--color-bg-alt); border-radius: 4px"></div>
+            <div style="width: 64px; height: 48px; background: var(--color-bg-alt); border-radius: 8px"></div>
+            <div style="width: 64px; height: 48px; background: var(--color-bg-alt); border-radius: 12px"></div>
+            <div style="width: 48px; height: 48px; background: var(--color-bg-alt); border-radius: 50%"></div>
+            <span class="note">4 badges · 8 buttons · 12 panels · 50% avatars</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= Footer ================= -->
+    <footer
+      class="surface-dark"
+      style="
+        margin-top: var(--spacing-2xl);
+        padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
+      "
+    >
+      <div class="wrap">
+        <img class="footer-logo" src="logos/ichnos/ichnos_lockup_white.svg" alt="Ichnos Protocol" />
+        <p class="footer-brand-desc" style="max-width: 32ch; color: var(--color-text-secondary)">
+          The dark surface is the footer band. It is scoped, not a theme.
+        </p>
+
+        <div class="row-inline" style="margin-top: var(--spacing-lg)">
+          <img
+            class="cx-label-img cx-label-img--member"
+            src="logos/catena-x/Association_member_Logo_RGB_neg.svg"
+            alt="Catena-X Association ordinary member"
+          />
+          <img
+            class="cx-label-img cx-label-img--advisor"
+            src="logos/catena-x/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg"
+            alt="Catena-X Qualified Advisor"
+          />
+          <span class="note" style="color: var(--color-text-secondary)">
+            Negative variants on the dark surface. The positive files would need a white plaque.
+          </span>
+        </div>
+
+        <p class="footer-attribution" style="color: var(--color-text-secondary)">
+          Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol
+          Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor.
+          References to Catena-X standards and committees describe factual participation and do not
+          imply certification of Ichnos products or endorsement by the association or its bodies.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,637 @@
+/* =========================================================================
+   Ichnos Protocol — component patterns for the Battery Passport demo
+   Requires tokens/ichnos-tokens.css to be loaded first.
+
+   These are the site's real rules, lifted from client/src/index.css and
+   stripped of the site-only pieces (navbar, mobile overlay, cookie banner,
+   auth modal, founder photo). Class names are unchanged, so anything you
+   build here drops back into the website without a rename.
+
+   Bootstrap 5 is assumed for layout utilities (container, row, col, py-5,
+   mb-3, d-flex, text-center, fw-bold). Nothing below depends on it except
+   the few rules that override Bootstrap defaults, which are marked.
+   ========================================================================= */
+
+/* =========================================================================
+   1. Logo
+   ========================================================================= */
+
+/* Light surfaces take the dualtone mark, dark surfaces the white one.
+   Both files are tight-cropped to the mark. Navbar height is 38px; the
+   footer lockup is 64px. */
+.logo-img {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+
+.footer-logo {
+  height: 64px;
+  width: auto;
+  display: block;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* =========================================================================
+   2. Headings and eyebrows
+   ========================================================================= */
+
+h1.page-title,
+.page-title {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.hero-headline,
+.section-display-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-heading {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.section-subtext,
+.text-muted-custom {
+  color: var(--color-text-secondary);
+}
+
+.text-accent {
+  color: var(--color-accent-cyan);
+}
+
+/* Small label above a heading. NEVER apply text-transform to this class or
+   any modifier of it: it carries third-party marks whose casing is fixed
+   ("Catena-X", "Tractus-X"), and CSS must not rewrite them. */
+.section-eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* =========================================================================
+   3. Section rhythm
+   Alternate primary/alt bands down the page. Keep >= --spacing-xl between
+   two consecutive bands that paint --color-bg-alt, or they merge into one.
+   ========================================================================= */
+
+.section-rhythm-primary {
+  background-color: var(--color-bg-base);
+}
+
+.section-rhythm-alt {
+  background-color: var(--color-bg-alt);
+}
+
+.full-bleed-section {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* =========================================================================
+   4. Hero
+   Flat light wash, optionally over a photo. The overlay alpha 0.66 is a
+   FLOOR — never go lower. If an AA contrast check fails, raise it, by at
+   most 0.06 at a time, and never past 0.85 / 0.95.
+   ========================================================================= */
+
+.hero-section {
+  position: relative;
+  min-height: 85vh;
+  padding: var(--spacing-3xl) 0;
+  color: var(--color-text-primary);
+  background: linear-gradient(
+    to bottom,
+    var(--color-bg-base) 0%,
+    var(--color-bg-alt) 100%
+  );
+}
+
+/* Photo variant — swap the URL for the demo's own image. */
+.hero-section--photo {
+  background:
+    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.80)),
+    url('../reference/bg-advisory.jpg') center / cover no-repeat;
+}
+
+.hero-cta-btn {
+  background: var(--color-accent-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  transition: var(--transition-base);
+}
+
+.hero-cta-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* =========================================================================
+   5. Cards
+   Three card treatments in use. Pick one per context and stay consistent:
+   the hairline card is the default, the elevated card is for content that
+   floats above a band, the credential card is the top-rule variant.
+   ========================================================================= */
+
+/* Default hairline card. Note the border colour is a literal, not
+   --color-border: the site uses the cooler blue-grey hairline on cards. */
+.problem-card,
+.roadmap-card,
+.competency-card,
+.contact-card,
+.vision-container {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(139, 157, 195, 0.15);
+  transition: var(--transition-base);
+}
+
+.problem-card:hover,
+.roadmap-card:hover,
+.competency-card:hover {
+  border-color: var(--color-accent-cyan);
+  transform: translateY(-4px);
+}
+
+.roadmap-card:hover {
+  transform: none; /* roadmap cards recolour but do not lift */
+}
+
+/* Elevated card — shadow instead of a border. */
+.card-elevated {
+  background-color: var(--color-surface);
+  box-shadow: 0 2px 12px var(--color-shadow);
+  border: none;
+  border-radius: var(--radius-lg);
+  transition: var(--transition-base);
+}
+
+.card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--color-shadow);
+}
+
+/* Offering card. `!important` beats Bootstrap's .card border. */
+.service-card {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(139, 157, 195, 0.15) !important;
+  border-radius: var(--radius-md);
+  transition: var(--transition-base);
+}
+
+.service-card:hover {
+  border-color: var(--color-accent-warm) !important;
+  transform: translateY(-4px);
+}
+
+/* Marks the card that leads its row. Deliberately quiet — no louder
+   treatment than this 3px rule. */
+.service-card--lead,
+.service-card--lead:hover {
+  border-left: 3px solid var(--color-accent-primary) !important;
+}
+
+/* "Coming soon": dashed lower-contrast border, muted body text, no lift.
+   The desaturation plus the body copy is the entire signal — no ribbon. */
+.service-card--coming-soon,
+.service-card--coming-soon:hover {
+  border-style: dashed !important;
+  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
+}
+
+.service-card--coming-soon:hover {
+  transform: none;
+}
+
+.service-card--coming-soon .card-text {
+  color: color-mix(in srgb, var(--color-text-secondary) 60%, transparent);
+}
+
+/* =========================================================================
+   6. Credential strip
+   Four cards across at 1140px, two at tablet, one below 48rem. The column
+   count is pinned rather than left to auto-fit, which would put three
+   tracks in the 720px tablet container.
+   ========================================================================= */
+
+.credential-strip {
+  background: var(--color-bg-alt);
+  padding: var(--spacing-lg) 0;
+  margin-top: var(--spacing-xl);
+}
+
+.credential-strip__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 47.9375rem) {
+  .credential-strip__items {
+    grid-template-columns: minmax(220px, 1fr);
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 61.9375rem) {
+  .credential-strip__items {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+.credential-strip__item {
+  background: var(--color-surface, #fff);
+  border-top: 3px solid var(--color-accent-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  min-height: 96px;
+}
+
+.credential-strip__label {
+  display: block;
+  font-weight: 600;
+}
+
+.credential-strip__note {
+  color: #666;
+  font-size: 0.85rem;
+  margin: var(--spacing-xs, 4px) 0 0;
+}
+
+/* =========================================================================
+   7. Badges
+   Tint fill + readable ink. The tint is graphic; it never carries the text
+   colour. Amber in particular fails contrast as text — the label on an
+   amber badge stays --color-text-secondary.
+   ========================================================================= */
+
+.badge-status-live {
+  background-color: rgba(15, 113, 203, 0.12);
+  color: var(--color-accent-primary);
+}
+
+.badge-status-dev {
+  background-color: rgba(15, 113, 203, 0.15);
+  color: var(--color-accent-primary);
+}
+
+.badge-status-planned {
+  background-color: rgba(139, 157, 195, 0.15);
+  color: var(--color-text-secondary);
+}
+
+.badge-status-updating {
+  background-color: rgba(255, 165, 0, 0.15);
+  color: var(--color-text-secondary);
+}
+
+/* Outline badge — border in currentColor, transparent fill. */
+.pillar-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold, 600);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+  background-color: transparent;
+}
+
+.pillar-badge--pillar {
+  color: var(--color-accent-cyan);
+}
+
+.pillar-badge--delivery-method {
+  color: var(--color-text-secondary);
+}
+
+/* =========================================================================
+   8. Data table
+   The --bs-* variables are Bootstrap's table hooks; drop them if the demo
+   does not use Bootstrap tables and set the properties directly instead.
+   ========================================================================= */
+
+.table-dark-custom {
+  --bs-table-bg: var(--color-surface);
+  --bs-table-color: var(--color-text-primary);
+  --bs-table-border-color: rgba(139, 157, 195, 0.15);
+}
+
+.table-dark-custom thead th {
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  border-bottom: 2px solid var(--color-accent-primary);
+}
+
+.table-cell-text {
+  color: var(--color-text-secondary);
+}
+
+/* =========================================================================
+   9. Regulatory timeline
+   Mobile is the base form: a vertical axis down the left edge, and it stays
+   the form through the 768px checkpoint. The horizontal arrow axis is only
+   the >= 62rem query applied to the same DOM — there is never a second
+   markup path. No overflow-x anywhere, so nothing forces horizontal scroll.
+   ========================================================================= */
+
+.regulatory-timeline__axis {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.regulatory-timeline__item {
+  position: relative;
+  border-left: 2px solid var(--color-text-primary);
+  padding: 0 0 var(--spacing-lg) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.regulatory-timeline__item::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-text-primary);
+}
+
+.regulatory-timeline__item--deferred {
+  border-left-style: dashed;
+  color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__item--deferred::before {
+  background-color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__item--today {
+  color: var(--color-accent-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.regulatory-timeline__item--today::before {
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-accent-primary);
+}
+
+.regulatory-timeline__date {
+  display: block;
+  font-weight: var(--font-weight-semibold);
+}
+
+.regulatory-timeline__label {
+  display: block;
+}
+
+.regulatory-timeline__source,
+.regulatory-timeline__footnote {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.regulatory-timeline__footnote {
+  margin-top: var(--spacing-lg);
+}
+
+.regulatory-timeline__tag {
+  display: inline-block;
+  margin-top: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  border: 1px dashed var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* 62rem, not 48rem: at 768px the row form packs the dated entries too
+   tightly to read, so tablet keeps the vertical base form. */
+@media (min-width: 62rem) {
+  .regulatory-timeline__axis {
+    position: relative;
+    flex-direction: row;
+    gap: var(--spacing-md);
+    border-top: 2px solid var(--color-text-primary);
+    padding-top: var(--spacing-lg);
+  }
+
+  .regulatory-timeline__axis::after {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: -1px;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 10px solid var(--color-text-primary);
+  }
+
+  .regulatory-timeline__item {
+    flex: 1 1 0;
+    border-left: none;
+    padding: 0;
+  }
+
+  .regulatory-timeline__item::before {
+    left: 0;
+    top: calc((var(--spacing-lg) + 4px) * -1);
+  }
+
+  .regulatory-timeline__item--deferred::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: calc(var(--spacing-lg) * -1);
+    width: 0;
+    height: var(--spacing-lg);
+    border-left: 1px dashed var(--color-text-secondary);
+  }
+}
+
+/* =========================================================================
+   10. Diagrams and imagery
+   Width-relative, never sized in pixels, so a re-export at any pixel
+   dimension still scales to its container at 390 / 768 / 1440 px.
+   ========================================================================= */
+
+.passport-diagram {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* =========================================================================
+   11. Chat panel
+   Included because the demo may embed the assistant. The send button is a
+   40px circle; the input is a pill of the same height.
+   ========================================================================= */
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 12px var(--color-shadow);
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+.chat-panel--modal { height: 60vh; }
+.chat-panel--inline { height: 480px; }
+
+.chat-panel__messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding-right: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.chat-panel__bubble {
+  max-width: 80%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  line-height: var(--line-height-normal);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  box-shadow: 0 1px 2px var(--color-shadow);
+}
+
+.chat-panel__bubble--bot {
+  align-self: flex-start;
+  background-color: var(--color-bg-alt);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.chat-panel__bubble--user {
+  align-self: flex-end;
+  background-color: var(--color-accent-primary);
+  color: #FFFFFF;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.chat-panel__input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: auto;
+}
+
+.chat-panel__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--spacing-md);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.chat-panel__input:focus {
+  border-color: var(--color-accent-cyan);
+  box-shadow: 0 0 0 0.2rem rgba(15, 113, 203, 0.15);
+}
+
+.chat-panel__send-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background-color: var(--color-accent-cyan);
+  border-color: var(--color-accent-cyan);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .chat-panel__bubble { max-width: 92%; }
+  .chat-panel__input-row { gap: var(--spacing-xs); }
+}
+
+/* =========================================================================
+   12. Form controls (focus ring)
+   The focus ring is the one place the accent is allowed to bleed outside
+   its element. Keep it — it is the demo's visible keyboard-focus signal.
+   ========================================================================= */
+
+.form-control:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 0.2rem rgba(15, 113, 203, 0.25);
+  outline: none;
+}
+
+/* =========================================================================
+   13. Official Catena-X label rendering
+   Read logos/catena-x/README before using any of this. The sizing model is
+   font parity, not bounding-box parity: the advisor label needs ~1.5x the
+   member label's height for the two "Catena-X" wordmarks to match, because
+   the wordmark occupies 0.318 of the advisor canvas and 0.478 of the
+   member's. box-sizing: content-box is mandatory — a global border-box
+   would subtract the clear-space padding from the declared height and
+   shrink the mark below its permitted minimum.
+   ========================================================================= */
+
+.cx-label-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cx-label-img--advisor {
+  box-sizing: content-box;
+  height: 60px;      /* 1.5 x the member height */
+  padding: 20px 8px; /* clear space; the cropped file has no baked margin */
+}
+
+.cx-label-img--member {
+  box-sizing: content-box;
+  height: 40px;
+  padding: 30px 12px; /* vertical ~= 0.75 x the visible height */
+}
+
+/* If you ever render the POSITIVE label on a dark surface, it needs a white
+   ground. Prefer the _neg file instead — this plaque is the fallback. */
+.cx-label-plaque {
+  display: inline-block;
+  background: #FFFFFF;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-bottom: var(--spacing-xs, 4px);
+}

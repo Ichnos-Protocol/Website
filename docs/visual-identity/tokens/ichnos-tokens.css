@@ -1,0 +1,130 @@
+/* =========================================================================
+   Ichnos Protocol — design tokens
+   Extracted from client/src/index.css (the website's single source of truth).
+   Drop this file into the Battery Passport demo and reference the custom
+   properties; do not hardcode the hex values in component code.
+   ========================================================================= */
+
+:root {
+  /* ---------- Typography ---------- */
+  /* Libre Franklin is the only webfont the site loads. Weights 300–700.
+     JetBrains Mono is declared for monospace runs (serial numbers, DIDs,
+     hashes) but the site never loads it — load it in the demo if you use it,
+     otherwise the stack falls back to the system monospace. */
+  --font-sans: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --font-size-base: 16px;
+  --font-size-sm: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ---------- Spacing (4px base grid) ---------- */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* ---------- Motion ---------- */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+
+  /* ---------- Z-index ladder ---------- */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-overlay: 1030;
+  --z-modal: 1040;
+  --z-tooltip: 1050;
+
+  /* ---------- Radius (not tokenised on the site; these are the values in use) ---------- */
+  --radius-sm: 4px;   /* credential cards, badges, diagrams, plaques */
+  --radius-md: 8px;   /* buttons, service cards */
+  --radius-lg: 12px;  /* elevated cards, chat panel, chat bubbles */
+  --radius-pill: 9999px;
+}
+
+/* =========================================================================
+   Light theme — the default and, for the passport demo, the only theme.
+   `.theme-advisory` and `.theme-catenax` carry identical values on the site;
+   the demo needs one light set, so both class hooks are kept as aliases.
+   ========================================================================= */
+.theme-catenax,
+.theme-advisory,
+body {
+  --color-bg-base: #FAFBFC;        /* page ground */
+  --color-bg-alt: #EAF1FE;         /* alternating band / tinted surface */
+  --color-surface: #FFFFFF;        /* cards, panels, navbar */
+  --color-text-primary: #111111;   /* headings and body ink */
+  --color-text-secondary: #252525; /* supporting copy, notes, captions */
+  --color-accent-primary: #0F71CB; /* Catena-X blue — primary action + links */
+  --color-accent-cyan: #0F71CB;    /* legacy alias of accent-primary; same value */
+  --color-accent-warm: #FFA600;    /* logo amber — graphic accents only */
+  --color-accent-green: #B3CB2D;   /* logo green — graphic accents only */
+  --color-border: #DCDCDC;
+  --color-shadow: rgba(15, 20, 25, 0.06);
+}
+
+/* =========================================================================
+   Dark surface — the footer band only. The site has no dark mode; this is a
+   scoped surface, not a theme. Use it for a dark footer or a dark hero strip
+   in the demo and nothing else.
+   ========================================================================= */
+.surface-dark {
+  --color-bg-base: #0F1419;
+  --color-bg-alt: #1A2030;
+  --color-surface: #1A2030;
+  --color-text-primary: #E8ECF1;
+  --color-text-secondary: #9AA5B8;
+  --color-border: rgba(232, 236, 241, 0.08);
+
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
+}
+
+/* =========================================================================
+   Base
+   ========================================================================= */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
