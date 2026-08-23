@@ -13,6 +13,7 @@ import {
   buildTopicMessages,
   parseTopicKeywords,
 } from "../helpers/chatHelpers.js";
+import { buildDigestHtml } from "../helpers/buildDigestHtml.js";
 import { stringify } from "csv-stringify/sync";
 import { Resend } from "resend";
 import firebaseAdmin from "../config/firebase.js";
@@ -155,21 +156,6 @@ async function sendEmail(to, subject, html) {
     html,
   });
   if (error) throw new Error(error.message);
-}
-
-function buildDigestHtml(inquiries, chatLeads) {
-  const inquiryRows = inquiries
-    .map((i) => {
-      const preview = i.questionPreview ? `<br/><em>${i.questionPreview}</em>` : "";
-      return `<li><b>${i.name}</b> (${i.email}, ${i.company || "N/A"}) — ${i.status}${preview}</li>`;
-    })
-    .join("");
-  const leadRows = chatLeads
-    .map((l) => `<li><b>${l.name}</b> (${l.email}) — ${l.totalMessages} messages</li>`)
-    .join("");
-
-  return `<h2>New Inquiries (${inquiries.length})</h2><ul>${inquiryRows || "<li>None</li>"}</ul>` +
-    `<h2>Chat-Only Leads (${chatLeads.length})</h2><ul>${leadRows || "<li>None</li>"}</ul>`;
 }
 
 export async function sendDailyDigest() {

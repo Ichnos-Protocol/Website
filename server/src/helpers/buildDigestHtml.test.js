@@ -8,77 +8,23 @@
  * expectations to entity-encoded output. Until then, do NOT "fix" the
  * expectations in this file — a failure here means the output drifted.
  *
- * In this first step the builder is still module-private inside
- * `services/adminService.js`, so the test drives `sendDailyDigest` and reads
- * the HTML back off the mocked Resend client. Step 2 extracts the builder into
- * `helpers/buildDigestHtml.js` and re-points only the `renderDigest` adapter —
- * every assertion below stays byte-identical, which is the proof that the
- * extraction was faithful.
+ * The builder now lives in `helpers/buildDigestHtml.js` and this test targets
+ * it directly. It previously drove `adminService.sendDailyDigest`, reading the
+ * HTML back off a mocked Resend client; only the `renderDigest` adapter
+ * changed when the function was extracted — every assertion below is
+ * byte-identical to the pre-extraction version, which is the proof that the
+ * move was faithful.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
-const mockGetRecentInquiries = vi.fn();
-const mockGetRecentChatOnlyLeads = vi.fn();
-const mockResendSend = vi.fn();
-
-vi.mock("../repositories/adminRepository.js", () => ({
-  getRecentInquiries: (...args) => mockGetRecentInquiries(...args),
-  getRecentChatOnlyLeads: (...args) => mockGetRecentChatOnlyLeads(...args),
-}));
-
-vi.mock("../repositories/contactRepository.js", () => ({
-  updateRequest: vi.fn(),
-  deleteRequest: vi.fn(),
-}));
-
-vi.mock("../repositories/questionRepository.js", () => ({
-  createTopic: vi.fn(),
-}));
-
-vi.mock("../services/chatService.js", () => ({
-  callXaiApi: vi.fn(),
-}));
-
-// Written as "../services/gdprService.js" because this test lives in
-// src/helpers/; the service imports it as "./gdprService.js" — same module id.
-vi.mock("../services/gdprService.js", () => ({
-  deleteUserAccount: vi.fn(),
-}));
-
-// Mandatory: the real config module throws at import time without Firebase env.
-vi.mock("../config/firebase.js", () => ({
-  default: {
-    auth: () => ({
-      getUserByEmail: vi.fn(),
-      setCustomUserClaims: vi.fn(),
-    }),
-  },
-}));
-
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = { send: (...args) => mockResendSend(...args) };
-  },
-}));
-
-vi.mock("csv-stringify/sync", () => ({
-  stringify: () => "",
-}));
-
-const { sendDailyDigest } = await import("../services/adminService.js");
+import { buildDigestHtml } from "./buildDigestHtml.js";
 
 /**
- * The only seam step 2 rewrites: feed the two collections in, get the digest
+ * The only seam step 2 rewrote: feed the two collections in, get the digest
  * HTML out. Everything below this line stays untouched across the extraction.
  */
-async function renderDigest(inquiries, chatLeads) {
-  mockGetRecentInquiries.mockResolvedValue(inquiries);
-  mockGetRecentChatOnlyLeads.mockResolvedValue(chatLeads);
-  mockResendSend.mockResolvedValue({ error: null });
-
-  await sendDailyDigest();
-
-  return mockResendSend.mock.calls[0][0].html;
+function renderDigest(inquiries, chatLeads) {
+  return buildDigestHtml(inquiries, chatLeads);
 }
 
 const HOSTILE_NAME = 'Ada & "Lovelace"<script>alert(1)</script>';
@@ -123,10 +69,6 @@ const EXPECTED_EMPTY_HTML =
   `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`;
 
 describe("buildDigestHtml", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("renders hostile payloads character-for-character, unescaped", async () => {
     const html = await renderDigest([HOSTILE_INQUIRY], [HOSTILE_LEAD]);
 
