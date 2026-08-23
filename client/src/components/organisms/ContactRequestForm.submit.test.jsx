@@ -63,8 +63,9 @@ describe("ContactRequestForm submission", () => {
       productLine: "48V pack line",
       dataExtract: "not_yet",
       preferredStart: "nov_2026",
-      consentVersion: "v1",
+      consentVersion: "consortium-v1",
     });
+    expect(body.consentVersion).toBe("v1");
     expect(body.consortium.consent).toBeUndefined();
   });
 

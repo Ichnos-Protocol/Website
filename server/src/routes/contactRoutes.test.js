@@ -168,6 +168,24 @@ describe("contact routes", () => {
       expect(res.body.message).toBe("Question added");
     });
 
+    it("returns 409 on a consortium request", async () => {
+      mockVerifyIdToken.mockResolvedValue(decodedToken);
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ id: 1, user_id: "uid-1", kind: "consortium" }],
+      });
+
+      const res = await request(app)
+        .post("/api/contact/1/question")
+        .set(authHeader())
+        .send({ question: "Follow-up" });
+
+      expect(res.status).toBe(409);
+      expect(res.body.data).toBeNull();
+      expect(res.body.error).toBe("Ask your question as a new inquiry");
+      expect(res.body.message).toBe("Ask your question as a new inquiry");
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+    });
+
     it("returns 401 without auth token", async () => {
       const res = await request(app)
         .post("/api/contact/1/question")

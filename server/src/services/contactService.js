@@ -39,6 +39,19 @@ function resolveKind(data) {
     : REQUEST_KIND_INQUIRY;
 }
 
+// Order matters: an unowned row must still report 403, never 409.
+function assertQuestionAllowed(request, userId) {
+  if (!request) {
+    throw buildError("Contact request not found", 404);
+  }
+  if (request.user_id !== userId) {
+    throw buildError("Not authorized to add to this request", 403);
+  }
+  if (request.kind === REQUEST_KIND_CONSORTIUM) {
+    throw buildError("Ask your question as a new inquiry", 409);
+  }
+}
+
 async function createQuestionsFor(userId, requestId, questions, client) {
   const created = [];
   for (const q of questions) {
@@ -118,12 +131,7 @@ export async function getMyRequests(userId) {
 export async function addQuestion(userId, requestId, questionText) {
   const request = await contactRepository.getRequestById(requestId);
 
-  if (!request) {
-    throw buildError("Contact request not found", 404);
-  }
-  if (request.user_id !== userId) {
-    throw buildError("Not authorized to add to this request", 403);
-  }
+  assertQuestionAllowed(request, userId);
 
   const question = await questionRepository.createQuestion(userId, {
     question: questionText,

@@ -57,7 +57,7 @@ const consortiumAnswers = {
   dataExtract: "not_yet",
   preferredStart: "nov_2026",
   consentTimestamp: "2026-01-01T00:00:00Z",
-  consentVersion: "v1",
+  consentVersion: "consortium-v1",
 };
 
 function clientStatements() {
@@ -275,7 +275,11 @@ describe("contactService", () => {
 
   describe("addQuestion", () => {
     it("creates a question for an owned request", async () => {
-      mockGetRequestById.mockResolvedValue({ id: 1, user_id: "uid-1" });
+      mockGetRequestById.mockResolvedValue({
+        id: 1,
+        user_id: "uid-1",
+        kind: "inquiry",
+      });
       mockCreateQuestion.mockResolvedValue({ id: 30, question: "Follow-up" });
       mockUpdateUserActivity.mockResolvedValue();
 
@@ -307,6 +311,21 @@ describe("contactService", () => {
 
       expect(error.message).toBe("Not authorized to add to this request");
       expect(error.statusCode).toBe(403);
+    });
+
+    it("refuses a consortium row with 409", async () => {
+      mockGetRequestById.mockResolvedValue({
+        id: 5,
+        user_id: "uid-1",
+        kind: "consortium",
+      });
+
+      const error = await addQuestion("uid-1", 5, "Q").catch((e) => e);
+
+      expect(error.statusCode).toBe(409);
+      expect(error.message).toBe("Ask your question as a new inquiry");
+      expect(mockCreateQuestion).not.toHaveBeenCalled();
+      expect(mockUpdateUserActivity).not.toHaveBeenCalled();
     });
   });
 });

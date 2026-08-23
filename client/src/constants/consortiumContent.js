@@ -36,6 +36,10 @@ export const CONSORTIUM_PREFERRED_START_LABEL = "When would you like to start?";
 export const CONSORTIUM_CONSENT_LABEL =
   "I agree that Ichnos Protocol may contact me about this consortium registration, store the answers I have given here, and share my company name and use-case summary with the other consortium participants. See Privacy Policy.";
 
+// Dedicated consortium consent version (docs §4.4), deliberately distinct
+// from the generic contact consent "v1" sent at the top level.
+export const CONSORTIUM_CONSENT_VERSION = "consortium-v1";
+
 export const CONSORTIUM_INTEREST_LABEL =
   "I am interested in joining the battery passport consortium.";
 

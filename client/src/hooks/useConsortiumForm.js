@@ -6,6 +6,7 @@ import {
   useGetConsortiumMeQuery,
 } from "../features/consortium/consortiumApi";
 import {
+  CONSORTIUM_CONSENT_VERSION,
   SUBMIT_INQUIRY_LABEL,
   SUBMIT_REGISTRATION_LABEL,
   UPDATE_REGISTRATION_LABEL,
@@ -89,7 +90,7 @@ export function useConsortiumForm(mode) {
         ...answers,
         ...(source ? { source } : {}),
         consentTimestamp: new Date().toISOString(),
-        consentVersion: "v1",
+        consentVersion: CONSORTIUM_CONSENT_VERSION,
       },
     };
   };
