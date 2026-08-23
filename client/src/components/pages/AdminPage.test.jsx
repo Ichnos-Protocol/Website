@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 
@@ -42,6 +43,12 @@ vi.mock('../organisms/UserTimeline', () => ({
 vi.mock('../organisms/TopicAnalytics', () => ({
   default: function MockTopicAnalytics() {
     return <div data-testid="topic-analytics" />;
+  },
+}));
+
+vi.mock('../organisms/ConsortiumRegistrations', () => ({
+  default: function MockConsortiumRegistrations() {
+    return <div data-testid="consortium-registrations" />;
   },
 }));
 
@@ -115,6 +122,29 @@ describe('AdminPage', () => {
     );
     const timeline = screen.getByTestId('user-timeline');
     expect(timeline).toHaveAttribute('data-userid', 'uid-1');
+  });
+
+  it('renders the Consortium tab title', async () => {
+    const { default: AdminPage } = await import('./AdminPage');
+    render(
+      <Provider store={createStore()}>
+        <AdminPage />
+      </Provider>,
+    );
+    expect(screen.getByText('Consortium')).toBeInTheDocument();
+  });
+
+  it('shows ConsortiumRegistrations when the Consortium tab is selected', async () => {
+    const user = userEvent.setup();
+    const { default: AdminPage } = await import('./AdminPage');
+    render(
+      <Provider store={createStore()}>
+        <AdminPage />
+      </Provider>,
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Consortium' }));
+    expect(screen.getByTestId('consortium-registrations')).toBeInTheDocument();
   });
 
   describe('Settings tab visibility', () => {

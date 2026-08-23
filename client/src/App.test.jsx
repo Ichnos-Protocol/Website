@@ -28,8 +28,18 @@ vi.mock('./components/pages/ContactPage', () => ({
 vi.mock('./components/pages/PrivacyPage', () => ({
   default: () => <div>Privacy Page</div>,
 }));
+vi.mock('./components/pages/ConsortiumPage', () => ({
+  default: () => <div>Consortium Page</div>,
+}));
+vi.mock('./components/pages/ConsortiumTiersPage', () => ({
+  default: () => <div>Consortium Tiers Page</div>,
+}));
 vi.mock('./routes/ProtectedRoute', () => ({
-  default: ({ children }) => children,
+  default: ({ children, redirectTo }) => (
+    <div data-testid="protected-route" data-redirect-to={redirectTo ?? ''}>
+      {children}
+    </div>
+  ),
 }));
 vi.mock('./components/templates/PublicLayout', () => ({
   default: ({ children }) => (
@@ -157,6 +167,32 @@ describe('App route theme wrappers', () => {
     ).toBeInTheDocument();
     expect(passportWrapper).toHaveTextContent('Passport Page');
     expect(container.querySelector('.theme-advisory')).toBeNull();
+  });
+
+  it('renders the consortium page inside the advisory chrome', async () => {
+    const { container } = renderWithProviders(<App />, { route: '/consortium' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Consortium Page')).toBeInTheDocument();
+    });
+
+    const advisoryWrapper = container.querySelector('.theme-advisory');
+    expect(
+      advisoryWrapper.querySelector('[data-testid="public-layout"]'),
+    ).toHaveTextContent('Consortium Page');
+  });
+
+  it('protects /consortium/tiers with a redirect to /consortium', async () => {
+    renderWithProviders(<App />, { route: '/consortium/tiers' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Consortium Tiers Page')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('protected-route')).toHaveAttribute(
+      'data-redirect-to',
+      '/consortium',
+    );
   });
 });
 

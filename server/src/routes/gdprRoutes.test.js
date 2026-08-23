@@ -27,6 +27,7 @@ vi.mock("../config/firebase.js", () => ({
 
 vi.mock("../config/database.js", () => ({
   default: { query: (...args) => mockQuery(...args) },
+  withTransaction: (fn) => fn({ query: (...args) => mockQuery(...args) }),
 }));
 
 vi.mock("../repositories/knowledgeRepository.js", () => ({
@@ -69,6 +70,8 @@ describe("GDPR routes", () => {
           ],
         })
         .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        // getConsortiumProfile — no registration for this user
         .mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
@@ -96,6 +99,8 @@ describe("GDPR routes", () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
       mockQuery
         .mockResolvedValueOnce({ rows: [] })
+        // scrubConsortiumText, then the two deleteUserData statements
+        .mockResolvedValueOnce({ rowCount: 0 })
         .mockResolvedValueOnce({ rowCount: 1 })
         .mockResolvedValueOnce({ rowCount: 1 });
       mockDeleteUser.mockResolvedValue();

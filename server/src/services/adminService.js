@@ -7,12 +7,18 @@
 import * as adminRepository from "../repositories/adminRepository.js";
 import * as contactRepository from "../repositories/contactRepository.js";
 import * as questionRepository from "../repositories/questionRepository.js";
+import * as userRepository from "../repositories/userRepository.js";
 import * as gdprService from "./gdprService.js";
 import { callXaiApi } from "../services/chatService.js";
 import {
   buildTopicMessages,
   parseTopicKeywords,
 } from "../helpers/chatHelpers.js";
+import { buildDigestHtml } from "../helpers/buildDigestHtml.js";
+import {
+  buildGoogleContactsCsv,
+  buildGoogleGroupsCsv,
+} from "../helpers/buildConsortiumCsv.js";
 import { stringify } from "csv-stringify/sync";
 import { Resend } from "resend";
 import firebaseAdmin from "../config/firebase.js";
@@ -157,31 +163,61 @@ async function sendEmail(to, subject, html) {
   if (error) throw new Error(error.message);
 }
 
-function buildDigestHtml(inquiries, chatLeads) {
-  const inquiryRows = inquiries
-    .map((i) => {
-      const preview = i.questionPreview ? `<br/><em>${i.questionPreview}</em>` : "";
-      return `<li><b>${i.name}</b> (${i.email}, ${i.company || "N/A"}) — ${i.status}${preview}</li>`;
-    })
-    .join("");
-  const leadRows = chatLeads
-    .map((l) => `<li><b>${l.name}</b> (${l.email}) — ${l.totalMessages} messages</li>`)
-    .join("");
-
-  return `<h2>New Inquiries (${inquiries.length})</h2><ul>${inquiryRows || "<li>None</li>"}</ul>` +
-    `<h2>Chat-Only Leads (${chatLeads.length})</h2><ul>${leadRows || "<li>None</li>"}</ul>`;
-}
-
 export async function sendDailyDigest() {
-  const [inquiries, chatLeads] = await Promise.all([
+  const [inquiries, chatLeads, consortiumRegistrations] = await Promise.all([
     adminRepository.getRecentInquiries(),
     adminRepository.getRecentChatOnlyLeads(),
+    adminRepository.getRecentConsortiumRegistrations(),
   ]);
   const date = new Date().toISOString().slice(0, 10);
   const subject = `Daily Inquiry Digest – ${date}`;
-  const html = buildDigestHtml(inquiries, chatLeads);
+  const html = buildDigestHtml(inquiries, chatLeads, consortiumRegistrations);
 
   await sendEmail(process.env.ADMIN_EMAILS, subject, html);
 
-  return { sent: true, inquiries: inquiries.length, chatLeads: chatLeads.length };
+  return {
+    sent: true,
+    inquiries: inquiries.length,
+    chatLeads: chatLeads.length,
+    consortiumRegistrations: consortiumRegistrations.length,
+  };
+}
+
+const CONSORTIUM_FORMAT_CONTACTS = "google-contacts";
+const CONSORTIUM_FORMAT_GROUPS = "google-groups";
+const CONSORTIUM_CONTACTS_FILENAME = "consortium-google-contacts.csv";
+const CONSORTIUM_GROUPS_FILENAME = "consortium-google-groups.csv";
+
+export async function getConsortiumRegistrants(filters = {}) {
+  return adminRepository.getConsortiumRegistrants(filters);
+}
+
+export async function updateConsortiumRegistrant(userId, updates) {
+  const result = await userRepository.updateConsortiumAdmin(userId, updates);
+
+  if (result === null) {
+    throw buildError("Consortium registrant not found", 404);
+  }
+
+  return result;
+}
+
+export async function exportConsortiumRegistrants({ format, group, filters }) {
+  const rows = await adminRepository.getConsortiumRegistrants(filters);
+
+  if (format === CONSORTIUM_FORMAT_CONTACTS) {
+    return {
+      csv: buildGoogleContactsCsv(rows),
+      filename: CONSORTIUM_CONTACTS_FILENAME,
+    };
+  }
+
+  if (format === CONSORTIUM_FORMAT_GROUPS) {
+    return {
+      csv: buildGoogleGroupsCsv(rows, group),
+      filename: CONSORTIUM_GROUPS_FILENAME,
+    };
+  }
+
+  throw buildError("Unsupported consortium export format", 400);
 }

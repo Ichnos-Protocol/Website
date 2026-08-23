@@ -293,6 +293,7 @@ All endpoints are prefixed with `/api`.
 Rules:
 
 - Return consistent JSON shape: `{ data, error, message }`.
+- Error responses: `{ data: null, error: string | array, message: string }`, never `error: true`.
 - Use plural nouns for resource collections.
 - Validate all inputs. Return 400 with descriptive errors on failure.
 - Paginate list endpoints (default 20, max 100).

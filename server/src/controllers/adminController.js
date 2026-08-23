@@ -6,6 +6,7 @@
  */
 import * as adminService from "../services/adminService.js";
 import { formatResponse } from "../helpers/formatResponse.js";
+import { adminConsortiumExportSchema } from "../validators/adminSchemas.js";
 
 function parseIntId(id) {
   const parsed = parseInt(id, 10);
@@ -14,6 +15,17 @@ function parseIntId(id) {
 
 function validateUserId(userId) {
   return typeof userId === "string" && userId.trim().length > 0;
+}
+
+// Express turns a repeated query param (`?tier=a&tier=b`) into an array and a
+// bracketed one (`?tier[x]=y`) into an object. Either shape would reach the
+// repository and be bound to `p.consortium_tier = $1`, which PostgreSQL rejects
+// with a type error surfacing as a 500. Filters must be scalar or absent.
+function collectInvalidFilters(query) {
+  return ["tier", "source", "status"].filter((key) => {
+    const value = query?.[key];
+    return value !== undefined && typeof value !== "string";
+  });
 }
 
 export async function getUsers(_req, res, next) {
@@ -156,6 +168,84 @@ export async function sendDailyDigest(_req, res, next) {
   try {
     const result = await adminService.sendDailyDigest();
     res.status(200).json(formatResponse(result, "Digest sent"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getConsortiumRegistrants(req, res, next) {
+  try {
+    const invalid = collectInvalidFilters(req.query);
+
+    if (invalid.length > 0) {
+      return res.status(422).json({
+        data: null,
+        error: invalid.map((field) => ({
+          path: [field],
+          message: "Filter must be a single value",
+        })),
+        message: "Validation failed",
+      });
+    }
+
+    const { tier, source, status } = req.query;
+    const rows = await adminService.getConsortiumRegistrants({
+      tier,
+      source,
+      status,
+    });
+    res
+      .status(200)
+      .json(formatResponse(rows, "Consortium registrants retrieved"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateConsortiumRegistrant(req, res, next) {
+  try {
+    const { userId } = req.params;
+
+    if (!validateUserId(userId)) {
+      return res
+        .status(400)
+        .json({ data: null, error: "Invalid userId", message: null });
+    }
+
+    const updated = await adminService.updateConsortiumRegistrant(
+      userId,
+      req.body,
+    );
+    res
+      .status(200)
+      .json(formatResponse(updated, "Consortium registrant updated"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportConsortiumRegistrants(req, res, next) {
+  try {
+    const parsed = adminConsortiumExportSchema.safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(422).json({
+        data: null,
+        error: parsed.error.issues,
+        message: "Validation failed",
+      });
+    }
+
+    const { format, group, tier, source, status } = parsed.data;
+    const { csv, filename } = await adminService.exportConsortiumRegistrants({
+      format,
+      group,
+      filters: { tier, source, status },
+    });
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.status(200).send(csv);
   } catch (error) {
     next(error);
   }

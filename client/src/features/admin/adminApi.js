@@ -2,6 +2,17 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { API_BASE_URL } from '../../constants/api';
 
+function buildQueryString(params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      search.set(key, value);
+    }
+  });
+  const qs = search.toString();
+  return qs ? `?${qs}` : '';
+}
+
 export const adminApi = createApi({
   reducerPath: 'adminApi',
   baseQuery: fetchBaseQuery({
@@ -18,7 +29,13 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['AdminUsers', 'AdminRequests', 'ChatLeads', 'Topics'],
+  tagTypes: [
+    'AdminUsers',
+    'AdminRequests',
+    'ChatLeads',
+    'Topics',
+    'ConsortiumRegistrants',
+  ],
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: () => '/api/admin/users',
@@ -77,6 +94,34 @@ export const adminApi = createApi({
         responseHandler: (response) => response.text(),
       }),
     }),
+    getConsortiumRegistrants: builder.query({
+      query: ({ tier, source, status } = {}) =>
+        `/api/admin/consortium${buildQueryString({ tier, source, status })}`,
+      providesTags: ['ConsortiumRegistrants'],
+    }),
+    updateConsortiumRegistrant: builder.mutation({
+      query: ({ userId, status, adminNotes }) => ({
+        url: `/api/admin/consortium/${userId}`,
+        method: 'PUT',
+        body: {
+          ...(status !== undefined ? { status } : {}),
+          ...(adminNotes !== undefined ? { adminNotes } : {}),
+        },
+      }),
+      invalidatesTags: ['ConsortiumRegistrants'],
+    }),
+    exportConsortiumRegistrants: builder.query({
+      query: ({ format, group, tier, source, status } = {}) => ({
+        url: `/api/admin/consortium/export${buildQueryString({
+          format,
+          group,
+          tier,
+          source,
+          status,
+        })}`,
+        responseHandler: (response) => response.text(),
+      }),
+    }),
     manageAdmins: builder.mutation({
       query: (body) => ({
         url: '/api/admin/manage-admins',
@@ -100,4 +145,8 @@ export const {
   useExportCSVQuery,
   useLazyExportCSVQuery,
   useManageAdminsMutation,
+  useGetConsortiumRegistrantsQuery,
+  useUpdateConsortiumRegistrantMutation,
+  useExportConsortiumRegistrantsQuery,
+  useLazyExportConsortiumRegistrantsQuery,
 } = adminApi;

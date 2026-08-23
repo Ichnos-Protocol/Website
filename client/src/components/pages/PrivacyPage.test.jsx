@@ -205,6 +205,13 @@ describe('PrivacyPage', () => {
     expect(screen.getByText(/do not sell or share your data/)).toBeInTheDocument();
   });
 
+  it('renders the consortium campaign-source disclosure', () => {
+    renderPage();
+    expect(
+      screen.getByText(/sent to us solely if you submit a consortium registration/),
+    ).toBeInTheDocument();
+  });
+
   it('renders Cookie Policy section', () => {
     renderPage();
     expect(screen.getByText('Cookie Policy')).toBeInTheDocument();

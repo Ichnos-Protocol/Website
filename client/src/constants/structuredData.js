@@ -212,5 +212,13 @@ export const PAGE_STRUCTURED_DATA = {
       { name: "Contact", path: "/contact" },
     ]),
   ],
+  consortium: [
+    ORGANIZATION_SCHEMA,
+    breadcrumb([
+      { name: "Home", path: "/" },
+      { name: "Consortium", path: "/consortium" },
+    ]),
+  ],
+  consortiumTiers: [ORGANIZATION_SCHEMA],
   privacy: [ORGANIZATION_SCHEMA],
 };

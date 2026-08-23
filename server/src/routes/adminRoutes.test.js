@@ -23,6 +23,7 @@ vi.mock("../config/firebase.js", () => ({
 
 vi.mock("../config/database.js", () => ({
   default: { query: (...args) => mockQuery(...args) },
+  withTransaction: (fn) => fn({ query: (...args) => mockQuery(...args) }),
 }));
 
 vi.mock("../repositories/knowledgeRepository.js", () => ({
@@ -41,6 +42,9 @@ const mockExportToCSV = vi.fn();
 const mockManageAdmins = vi.fn();
 const mockRunRetentionSweep = vi.fn();
 const mockSendDailyDigest = vi.fn();
+const mockGetConsortiumRegistrants = vi.fn();
+const mockUpdateConsortiumRegistrant = vi.fn();
+const mockExportConsortiumRegistrants = vi.fn();
 
 vi.mock("../services/adminService.js", () => ({
   getUsers: (...args) => mockGetUsers(...args),
@@ -55,6 +59,11 @@ vi.mock("../services/adminService.js", () => ({
   manageAdmins: (...args) => mockManageAdmins(...args),
   runRetentionSweep: (...args) => mockRunRetentionSweep(...args),
   sendDailyDigest: (...args) => mockSendDailyDigest(...args),
+  getConsortiumRegistrants: (...args) => mockGetConsortiumRegistrants(...args),
+  updateConsortiumRegistrant: (...args) =>
+    mockUpdateConsortiumRegistrant(...args),
+  exportConsortiumRegistrants: (...args) =>
+    mockExportConsortiumRegistrants(...args),
 }));
 
 globalThis.fetch = vi.fn();
@@ -89,6 +98,9 @@ describe("admin routes", () => {
     mockManageAdmins.mockReset();
     mockRunRetentionSweep.mockReset();
     mockSendDailyDigest.mockReset();
+    mockGetConsortiumRegistrants.mockReset();
+    mockUpdateConsortiumRegistrant.mockReset();
+    mockExportConsortiumRegistrants.mockReset();
   });
 
   afterEach(() => {
@@ -547,6 +559,167 @@ describe("admin routes", () => {
         .set(authHeader());
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe("GET /api/admin/consortium", () => {
+    it("returns 200 for admin", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+      mockGetConsortiumRegistrants.mockResolvedValue([
+        { userId: "uid-1", email: "a@b.com" },
+      ]);
+
+      const res = await request(app)
+        .get("/api/admin/consortium")
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("Consortium registrants retrieved");
+      expect(res.body.data).toHaveLength(1);
+    });
+
+    it("passes tier, source and status filters to the service", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+      mockGetConsortiumRegistrants.mockResolvedValue([]);
+
+      const res = await request(app)
+        .get("/api/admin/consortium?tier=founding&source=landing&status=contacted")
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(mockGetConsortiumRegistrants).toHaveBeenCalledWith({
+        tier: "founding",
+        source: "landing",
+        status: "contacted",
+      });
+    });
+
+    it("returns 422 for a repeated tier filter without calling the service", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+
+      const res = await request(app)
+        .get("/api/admin/consortium?tier=founding&tier=core")
+        .set(authHeader());
+
+      expect(res.status).toBe(422);
+      expect(res.body.data).toBeNull();
+      expect(res.body.message).toBe("Validation failed");
+      expect(mockGetConsortiumRegistrants).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 for non-admin user", async () => {
+      mockVerifyIdToken.mockResolvedValue(userToken);
+
+      const res = await request(app)
+        .get("/api/admin/consortium")
+        .set(authHeader());
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 401 without auth token", async () => {
+      const res = await request(app).get("/api/admin/consortium");
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("PUT /api/admin/consortium/:userId", () => {
+    it("returns 200 with valid body", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+      mockUpdateConsortiumRegistrant.mockResolvedValue({
+        userId: "uid-1",
+        consortiumStatus: "contacted",
+      });
+
+      const res = await request(app)
+        .put("/api/admin/consortium/uid-1")
+        .set(authHeader())
+        .send({ status: "contacted" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("Consortium registrant updated");
+      expect(res.body.data.consortiumStatus).toBe("contacted");
+    });
+
+    it("returns 422 with empty body", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+
+      const res = await request(app)
+        .put("/api/admin/consortium/uid-1")
+        .set(authHeader())
+        .send({});
+
+      expect(res.status).toBe(422);
+      expect(res.body.message).toBe("Validation failed");
+    });
+
+    it("returns 403 for non-admin user", async () => {
+      mockVerifyIdToken.mockResolvedValue(userToken);
+
+      const res = await request(app)
+        .put("/api/admin/consortium/uid-1")
+        .set(authHeader())
+        .send({ status: "contacted" });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("GET /api/admin/consortium/export", () => {
+    it("returns 200 with the Google Contacts CSV", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+      mockExportConsortiumRegistrants.mockResolvedValue({
+        csv: "Name,E-mail 1 - Value\nAlice,a@b.com",
+        filename: "consortium-google-contacts.csv",
+      });
+
+      const res = await request(app)
+        .get("/api/admin/consortium/export?format=google-contacts")
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("text/csv");
+      expect(res.headers["content-disposition"]).toContain(
+        "consortium-google-contacts.csv",
+      );
+      expect(res.text).toContain("Alice");
+    });
+
+    it("returns 200 with the Google Groups CSV and forwards group + filters", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+      mockExportConsortiumRegistrants.mockResolvedValue({
+        csv: "Group Email [Required],Member Email\nconsortium-2026@ichnos-protocol.com,a@b.com",
+        filename: "consortium-google-groups.csv",
+      });
+
+      const res = await request(app)
+        .get(
+          "/api/admin/consortium/export?format=google-groups&group=consortium-2026@ichnos-protocol.com&tier=founding",
+        )
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toContain(
+        "consortium-google-groups.csv",
+      );
+      expect(mockExportConsortiumRegistrants).toHaveBeenCalledWith({
+        format: "google-groups",
+        group: "consortium-2026@ichnos-protocol.com",
+        filters: { tier: "founding", source: undefined, status: undefined },
+      });
+    });
+
+    it("returns 422 for the groups format without a group address", async () => {
+      mockVerifyIdToken.mockResolvedValue(adminToken);
+
+      const res = await request(app)
+        .get("/api/admin/consortium/export?format=google-groups")
+        .set(authHeader());
+
+      expect(res.status).toBe(422);
+      expect(res.body.message).toBe("Validation failed");
+      expect(mockExportConsortiumRegistrants).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,6 +2,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 
 import InquiryStatusBadge from '../atoms/InquiryStatusBadge';
 import Button from '../atoms/Button';
+import { getInquiryPreview, CONSORTIUM_REQUEST_KIND } from '../../helpers/inquiryPreview';
 
 function truncate(text, max = 80) {
   if (!text) return '';
@@ -28,16 +29,16 @@ export default function MyInquiriesList({ requests, onAddQuestion, onNewInquiry 
           >
             <div>
               <InquiryStatusBadge status={req.status} />
-              <span className="ms-2">
-                {truncate(req.questions?.[0]?.question || req.questions?.[0]?.text || req.question_preview)}
-              </span>
+              <span className="ms-2">{truncate(getInquiryPreview(req))}</span>
               <small className="text-muted d-block mt-1">
                 {formatDate(req.created_at)}
               </small>
             </div>
-            <Button size="sm" variant="outline-secondary" onClick={() => onAddQuestion(req.id)}>
-              Add question
-            </Button>
+            {req.kind !== CONSORTIUM_REQUEST_KIND && (
+              <Button size="sm" variant="outline-secondary" onClick={() => onAddQuestion(req.id)}>
+                Add question
+              </Button>
+            )}
           </ListGroup.Item>
         ))}
       </ListGroup>

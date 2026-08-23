@@ -5,6 +5,8 @@ import ServicesPage from "./components/pages/ServicesPage";
 import PassportPage from "./components/pages/PassportPage";
 import TeamPage from "./components/pages/TeamPage";
 import ContactPage from "./components/pages/ContactPage";
+import ConsortiumPage from "./components/pages/ConsortiumPage";
+import ConsortiumTiersPage from "./components/pages/ConsortiumTiersPage";
 import PrivacyPage from "./components/pages/PrivacyPage";
 import AdminPage from "./components/pages/AdminPage";
 import PublicLayout from "./components/templates/PublicLayout";
@@ -42,6 +44,15 @@ export default function App() {
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/consortium" element={<ConsortiumPage />} />
+            <Route
+              path="/consortium/tiers"
+              element={
+                <ProtectedRoute redirectTo="/consortium">
+                  <ConsortiumTiersPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/privacy"
               element={

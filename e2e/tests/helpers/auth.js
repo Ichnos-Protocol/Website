@@ -92,3 +92,80 @@ export async function loginAsUser(page) {
 export async function loginAsSuperAdmin(page) {
   await loginAs(page, SUPER_ADMIN.email, SUPER_ADMIN.password);
 }
+
+/**
+ * Create a brand-new account through the signup tab and leave the page
+ * authenticated as that account.
+ *
+ * This writes a REAL Firebase user plus its Postgres profile row — nothing
+ * here is stubbed. The address is therefore minted per invocation (never at
+ * module scope) so a CI retry, or a second run against the same project,
+ * cannot collide on Firebase's existing-email error.
+ *
+ * Cleanup is deliberately out of band: this helper never deletes the account
+ * it creates. `server/scripts/cleanupOrphanUsers.js` is the natural home for
+ * sweeping `e2e-consortium-*@example.com` users and is intentionally not
+ * wired up here — a teardown hook that ran on every spec would race with
+ * retries still using the account.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{email?: string, password?: string, name?: string, surname?: string, company?: string}} overrides
+ * @returns {Promise<{email: string, password: string, name: string, surname: string, company: string}>}
+ */
+export async function signUpAs(page, overrides = {}) {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const creds = {
+    email: `e2e-consortium-${token}@example.com`,
+    password: 'TestPass123!',
+    name: 'E2E',
+    surname: 'Consortium',
+    company: `E2E Consortium ${token}`,
+    ...overrides,
+  };
+
+  // Same context-level guard as loginAs: the Firebase API proxy must be
+  // registered once per context, not once per call.
+  const context = page.context();
+  if (!context.__firebaseProxyReady) {
+    await setupFirebaseProxy(context);
+    context.__firebaseProxyReady = true;
+  }
+
+  // Registered BEFORE any navigation so it covers the profile modal that can
+  // open right after the account is created.
+  await setupAutoModalDismiss(page);
+
+  await waitForAppReady(page, '/');
+
+  const auth = new AuthPage(page);
+  await auth.openLoginModal();
+  await auth.openSignupTab();
+  await expect(auth.createAccountText).toBeVisible();
+
+  await auth.fillSignupForm({
+    name: creds.name,
+    surname: creds.surname,
+    email: creds.email,
+    password: creds.password,
+    company: creds.company,
+  });
+  await auth.submitForm();
+
+  try {
+    await expect(auth.userMenuToggle).toBeVisible({
+      timeout: TIMEOUTS.authVerify,
+    });
+  } catch (err) {
+    const alertText = await auth.alert.textContent().catch(() => 'no alert visible');
+    console.error(
+      `[signUpAs] Signup failed for ${creds.email}.\n` +
+        `  Error: ${err.message?.split('\n')[0]}\n` +
+        `  Alert text: "${alertText}"`,
+    );
+    throw err;
+  }
+
+  await dismissProfileModalIfVisible(page);
+
+  return creds;
+}
