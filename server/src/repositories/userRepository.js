@@ -19,10 +19,10 @@ export async function createUser(firebaseUid) {
   }
 }
 
-export async function upsertProfile(userId, profileData) {
+export async function upsertProfile(userId, profileData, db = pool) {
   try {
     const { name, surname, email, phone, company, linkedin } = profileData;
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `INSERT INTO user_profiles (user_id, name, surname, email, phone, company, linkedin)
        VALUES ($1, COALESCE($2, ''), COALESCE($3, ''), $4, $5, $6, $7)
        ON CONFLICT (user_id)
@@ -40,9 +40,9 @@ export async function upsertProfile(userId, profileData) {
   }
 }
 
-export async function getUserById(userId) {
+export async function getUserById(userId, db = pool) {
   try {
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `SELECT u.firebase_uid, u.deleted_at, u.created_at, u.updated_at,
               p.name, p.surname, p.email, p.phone, p.company, p.linkedin
        FROM users u
@@ -74,9 +74,9 @@ export async function getUserByEmail(email) {
   }
 }
 
-export async function updateUserActivity(userId) {
+export async function updateUserActivity(userId, db = pool) {
   try {
-    await pool.query(
+    await db.query(
       `UPDATE users SET updated_at = NOW() WHERE firebase_uid = $1`,
       [userId],
     );

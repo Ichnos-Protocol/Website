@@ -1,24 +1,26 @@
+import { escapeHtml } from "./escapeHtml.js";
+
 /**
  * Builds the daily admin digest HTML from recent inquiries and chat-only leads.
  *
- * NOTE: values are interpolated into the markup UNESCAPED today — this is a
- * verbatim move of the previously private builder in adminService.js.
- * HTML escaping arrives with T3; see buildDigestHtml.test.js, which documents
- * the current behaviour.
+ * Every dynamic value (names, emails, company, status, question preview and
+ * message counts) is passed through `escapeHtml` before interpolation, so
+ * user-supplied text cannot inject markup into the email body. Headings,
+ * counts and the `None` fallbacks are static markup and stay unescaped.
  */
 export function buildDigestHtml(inquiries, chatLeads) {
   const inquiryRows = inquiries
     .map((i) => {
       const preview = i.questionPreview
-        ? `<br/><em>${i.questionPreview}</em>`
+        ? `<br/><em>${escapeHtml(i.questionPreview)}</em>`
         : "";
-      return `<li><b>${i.name}</b> (${i.email}, ${i.company || "N/A"}) — ${i.status}${preview}</li>`;
+      return `<li><b>${escapeHtml(i.name)}</b> (${escapeHtml(i.email)}, ${escapeHtml(i.company || "N/A")}) — ${escapeHtml(i.status)}${preview}</li>`;
     })
     .join("");
   const leadRows = chatLeads
     .map(
       (l) =>
-        `<li><b>${l.name}</b> (${l.email}) — ${l.totalMessages} messages</li>`,
+        `<li><b>${escapeHtml(l.name)}</b> (${escapeHtml(l.email)}) — ${escapeHtml(l.totalMessages)} messages</li>`,
     )
     .join("");
 

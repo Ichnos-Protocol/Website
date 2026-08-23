@@ -6,7 +6,7 @@
  */
 import pool from "../config/database.js";
 
-export async function createQuestion(userId, questionData) {
+export async function createQuestion(userId, questionData, db = pool) {
   try {
     const { question, answer, source, contactRequestId } = questionData;
 
@@ -14,7 +14,7 @@ export async function createQuestion(userId, questionData) {
     const params = [userId, question, answer || null, source, contactRequestId || null];
     const ph = params.map((_, i) => `$${i + 1}`).join(", ");
 
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `INSERT INTO questions (${cols}) VALUES (${ph}) RETURNING *`,
       params,
     );

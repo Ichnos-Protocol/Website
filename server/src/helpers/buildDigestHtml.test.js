@@ -1,19 +1,20 @@
 /*
- * CHARACTERIZATION TEST — documents CURRENT, DEFECTIVE behaviour.
+ * Pins the ESCAPED digest output.
  *
- * The daily digest builder interpolates user-supplied text (name, company,
- * question preview) straight into HTML with NO escaping. The assertions below
- * describe that defect exactly as it exists today; they are NOT a statement of
- * desired behaviour. Ticket T3 introduces escaping and will flip these
- * expectations to entity-encoded output. Until then, do NOT "fix" the
- * expectations in this file — a failure here means the output drifted.
+ * The daily digest builder passes every user-supplied value (name, email,
+ * company, status, question preview, message count) through `escapeHtml`
+ * before interpolation. The assertions below check that hostile text is
+ * entity-encoded, and that the section structure, counts and `None` fallbacks
+ * are unchanged from the characterization baseline. This is the only test that
+ * inspects the digest HTML, so any new interpolation point must add its
+ * escaping assertion here.
  *
- * The builder now lives in `helpers/buildDigestHtml.js` and this test targets
- * it directly. It previously drove `adminService.sendDailyDigest`, reading the
- * HTML back off a mocked Resend client; only the `renderDigest` adapter
- * changed when the function was extracted — every assertion below is
- * byte-identical to the pre-extraction version, which is the proof that the
- * move was faithful.
+ * The builder lives in `helpers/buildDigestHtml.js` and this test targets it
+ * directly. It previously drove `adminService.sendDailyDigest`, reading the
+ * HTML back off a mocked Resend client; the `renderDigest` adapter is what
+ * changed when the function was extracted. The markup skeleton below is
+ * byte-identical to the pre-extraction version — only the encoding of the
+ * user-supplied text differs.
  */
 import { describe, it, expect } from "vitest";
 
@@ -32,6 +33,17 @@ const HOSTILE_COMPANY = 'Acme & "Co"<script>alert(2)</script>';
 const HOSTILE_PREVIEW = 'Why & "how"?<script>alert(3)</script>';
 const HOSTILE_LEAD_NAME = 'Bob & "Tables"<script>alert(4)</script>';
 
+// Spelled out as literals, not computed with escapeHtml — computing them from
+// the helper under test would make the expectations tautological.
+const ESCAPED_NAME =
+  "Ada &amp; &quot;Lovelace&quot;&lt;script&gt;alert(1)&lt;/script&gt;";
+const ESCAPED_COMPANY =
+  "Acme &amp; &quot;Co&quot;&lt;script&gt;alert(2)&lt;/script&gt;";
+const ESCAPED_PREVIEW =
+  "Why &amp; &quot;how&quot;?&lt;script&gt;alert(3)&lt;/script&gt;";
+const ESCAPED_LEAD_NAME =
+  "Bob &amp; &quot;Tables&quot;&lt;script&gt;alert(4)&lt;/script&gt;";
+
 const HOSTILE_INQUIRY = {
   id: 1,
   name: HOSTILE_NAME,
@@ -49,13 +61,14 @@ const HOSTILE_LEAD = {
 };
 
 // Em dash (U+2014) separator; no whitespace or newline between the sections.
+// Emails, `new` and `7` contain no special characters, so they render as-is.
 const EXPECTED_HOSTILE_HTML =
   `<h2>New Inquiries (1)</h2><ul>` +
-  `<li><b>${HOSTILE_NAME}</b> (ada@example.com, ${HOSTILE_COMPANY}) — new` +
-  `<br/><em>${HOSTILE_PREVIEW}</em></li>` +
+  `<li><b>${ESCAPED_NAME}</b> (ada@example.com, ${ESCAPED_COMPANY}) — new` +
+  `<br/><em>${ESCAPED_PREVIEW}</em></li>` +
   `</ul>` +
   `<h2>Chat-Only Leads (1)</h2><ul>` +
-  `<li><b>${HOSTILE_LEAD_NAME}</b> (bob@example.com) — 7 messages</li>` +
+  `<li><b>${ESCAPED_LEAD_NAME}</b> (bob@example.com) — 7 messages</li>` +
   `</ul>`;
 
 const EXPECTED_FALLBACK_HTML =
@@ -69,22 +82,22 @@ const EXPECTED_EMPTY_HTML =
   `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`;
 
 describe("buildDigestHtml", () => {
-  it("renders hostile payloads character-for-character, unescaped", async () => {
+  it("entity-encodes hostile payloads in every field", async () => {
     const html = await renderDigest([HOSTILE_INQUIRY], [HOSTILE_LEAD]);
 
     expect(html).toBe(EXPECTED_HOSTILE_HTML);
 
-    // Injection defect: the raw script tag reaches the email body intact.
-    expect(html).toContain("<script>alert(1)</script>");
-    expect(html).toContain("<script>alert(4)</script>");
-    // Injection defect: ampersands pass through un-encoded.
-    expect(html).toContain('Ada & "Lovelace"');
-    // Injection defect: double quotes pass through un-encoded.
-    expect(html).toContain('"Co"');
-    // Injection defect: no HTML entity encoding is applied anywhere.
-    expect(html).not.toContain("&lt;");
-    expect(html).not.toContain("&amp;");
-    expect(html).not.toContain("&quot;");
+    // Angle brackets, ampersands and double quotes are all encoded.
+    expect(html).toContain("&lt;");
+    expect(html).toContain("&amp;");
+    expect(html).toContain("&quot;");
+    // No executable markup survives from any of the four payloads.
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("<script>alert(1)</script>");
+    expect(html).not.toContain("<script>alert(4)</script>");
+    // Raw ampersands and quotes never reach the email body.
+    expect(html).not.toContain('Ada & "Lovelace"');
+    expect(html).not.toContain('"Co"');
   });
 
   it("falls back to N/A and omits the preview fragment", async () => {
@@ -101,6 +114,9 @@ describe("buildDigestHtml", () => {
     expect(html).toBe(EXPECTED_FALLBACK_HTML);
     expect(html).toContain("N/A");
     expect(html).not.toContain("<br/><em>");
+    // The `|| "N/A"` fallback resolves before escaping, so a null company
+    // never reaches escapeHtml and stringifies to the literal "null".
+    expect(html).not.toContain("null");
   });
 
   it("renders zero counts with None fallbacks in both sections", async () => {

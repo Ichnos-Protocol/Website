@@ -6,10 +6,10 @@
  */
 import pool from "../config/database.js";
 
-export async function createContactRequest(userId, consentData) {
+export async function createContactRequest(userId, consentData, db = pool) {
   try {
     const { consentTimestamp, consentVersion } = consentData;
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `INSERT INTO contact_requests (user_id, contact_consent_timestamp, contact_consent_version)
        VALUES ($1, $2, $3)
        RETURNING *`,

@@ -32,7 +32,15 @@ vi.mock("../../features/auth/authApi", () => ({
   useGetMeQuery: () => ({
     data: {
       data: {
-        profile: { name: "John", surname: "Doe", email: "john@test.com" },
+        user: {
+          firebaseUid: "u1",
+          email: "john@test.com",
+          name: "John",
+          surname: "Doe",
+          phone: "+39 055 1234567",
+          company: "Acme Industries",
+          linkedin: "https://linkedin.com/in/johndoe",
+        },
       },
     },
   }),
@@ -113,8 +121,11 @@ describe("ContactForm", () => {
       </Provider>,
     );
 
+    expect(screen.getByText("Your Profile")).toBeInTheDocument();
     expect(screen.getByText("John")).toBeInTheDocument();
+    expect(screen.getByText("Doe")).toBeInTheDocument();
     expect(screen.getByText("john@test.com")).toBeInTheDocument();
+    expect(screen.getByText("Acme Industries")).toBeInTheDocument();
   });
 
   it("does not open auth modal on mount for unauthenticated user", async () => {
