@@ -13,7 +13,24 @@ const {
   getUserByEmail,
   updateUserActivity,
   deleteUserData,
+  updateConsortiumProfile,
+  getConsortiumProfile,
+  setConsortiumTier,
+  scrubConsortiumText,
 } = await import("./userRepository.js");
+
+const consortiumAnswers = {
+  position: "supplier",
+  chainRole: "cathode_material",
+  productLine: "NMC cathode powders",
+  customerRequest: null,
+  dataExtract: "not_yet",
+  dataNeeds: null,
+  preferredStart: "nov_2026",
+  source: "landing_page",
+  consentTimestamp: "2026-02-16T12:00:00Z",
+  consentVersion: "v1",
+};
 
 describe("userRepository", () => {
   beforeEach(() => {
@@ -139,6 +156,215 @@ describe("userRepository", () => {
     });
   });
 
+  describe("updateConsortiumProfile", () => {
+    it("issues a single UPDATE and returns the row", async () => {
+      const row = { consortium_interest: true, consortium_position: "supplier" };
+      mockQuery.mockResolvedValue({ rows: [row] });
+
+      const result = await updateConsortiumProfile("uid-1", consortiumAnswers);
+
+      expect(result).toEqual(row);
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain("UPDATE user_profiles");
+      expect(params[0]).toBe("uid-1");
+      expect(params).toContain("registered");
+    });
+
+    it("keeps registration metadata on a first-write-wins basis", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumProfile("uid-1", consortiumAnswers);
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain(
+        "consortium_registered_at = COALESCE(consortium_registered_at, NOW())",
+      );
+      expect(sql).toContain("consortium_source = COALESCE(consortium_source,");
+      expect(sql).toContain("consortium_status = COALESCE(consortium_status,");
+    });
+
+    it("never clears consortium_interest", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumProfile("uid-1", consortiumAnswers);
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("consortium_interest = true");
+      expect(sql).not.toContain("consortium_interest = false");
+    });
+
+    it("never touches identity columns", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumProfile("uid-1", consortiumAnswers);
+
+      const [sql] = mockQuery.mock.calls[0];
+      for (const column of ["name", "surname", "email", "phone", "company", "linkedin"]) {
+        expect(sql).not.toContain(`${column} =`);
+      }
+    });
+
+    it("returns null when the profile does not exist", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      const result = await updateConsortiumProfile("nobody", consortiumAnswers);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getConsortiumProfile", () => {
+    it("returns the row when found", async () => {
+      const row = { consortium_interest: true, consortium_tier: "pilot" };
+      mockQuery.mockResolvedValue({ rows: [row] });
+
+      const result = await getConsortiumProfile("uid-1");
+
+      expect(result).toEqual(row);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining("FROM user_profiles"),
+        ["uid-1"],
+      );
+    });
+
+    it("returns null when not found", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      const result = await getConsortiumProfile("nobody");
+      expect(result).toBeNull();
+    });
+
+    it("returns null for an existing profile that never registered", async () => {
+      mockQuery.mockResolvedValue({
+        rows: [{ consortium_interest: false, consortium_position: null }],
+      });
+
+      const result = await getConsortiumProfile("uid-1");
+      expect(result).toBeNull();
+    });
+
+    it("filters non-registrants in SQL", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      await getConsortiumProfile("uid-1");
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("consortium_interest = true");
+    });
+
+    it("never selects admin notes", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      await getConsortiumProfile("uid-1");
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).not.toContain("consortium_admin_notes");
+    });
+  });
+
+  describe("setConsortiumTier", () => {
+    it("issues a single UPDATE with the uid and tier", async () => {
+      const row = { consortium_interest: true, consortium_tier: "pilot" };
+      mockQuery.mockResolvedValue({ rows: [row] });
+
+      const result = await setConsortiumTier("uid-1", "pilot");
+
+      expect(result).toEqual(row);
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain("UPDATE user_profiles");
+      expect(params).toEqual(["uid-1", "pilot"]);
+    });
+
+    it("stamps the selection time and keeps the registrant predicate", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await setConsortiumTier("uid-1", "pilot");
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("consortium_tier_selected_at = NOW()");
+      expect(sql).toContain("consortium_interest = true");
+    });
+
+    it("never selects admin notes", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await setConsortiumTier("uid-1", "pilot");
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).not.toContain("consortium_admin_notes");
+    });
+
+    it("never touches identity columns", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await setConsortiumTier("uid-1", "pilot");
+
+      const [sql] = mockQuery.mock.calls[0];
+      for (const column of ["name", "surname", "email", "phone", "company", "linkedin"]) {
+        expect(sql).not.toContain(`${column} =`);
+      }
+    });
+
+    it("returns null when no registrant row matches", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      const result = await setConsortiumTier("nobody", "pilot");
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("scrubConsortiumText", () => {
+    it("nulls exactly the four free-text columns", async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1 });
+
+      await scrubConsortiumText("uid-1");
+
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual(["uid-1"]);
+      expect(sql).toContain("consortium_product_line = NULL");
+      expect(sql).toContain("consortium_customer_request = NULL");
+      expect(sql).toContain("consortium_data_needs = NULL");
+      expect(sql).toContain("consortium_admin_notes = NULL");
+    });
+
+    it("leaves the structured registration columns alone", async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0 });
+
+      await scrubConsortiumText("uid-1");
+
+      const [sql] = mockQuery.mock.calls[0];
+      for (const column of [
+        "consortium_position",
+        "consortium_chain_role",
+        "consortium_tier",
+        "consortium_data_extract",
+        "consortium_preferred_start",
+        "consortium_status",
+      ]) {
+        expect(sql).not.toContain(column);
+      }
+    });
+  });
+
+  describe("upsertProfile consortium guard", () => {
+    it("issues no consortium column on a login-shaped upsert", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await upsertProfile("uid-1", {
+        name: "John",
+        surname: "Doe",
+        email: "j@d.com",
+      });
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.not.stringContaining("consortium"),
+        ["uid-1", "John", "Doe", "j@d.com", null, null, null],
+      );
+    });
+  });
+
   describe("error handling", () => {
     it("createUser logs and rethrows on DB error", async () => {
       const dbError = new Error("connection refused");
@@ -176,6 +402,60 @@ describe("userRepository", () => {
       expect(spy).toHaveBeenCalledWith(
         "userRepository.getUserById failed:",
         "timeout",
+      );
+      spy.mockRestore();
+    });
+
+    it("updateConsortiumProfile logs and rethrows on DB error", async () => {
+      mockQuery.mockRejectedValue(new Error("check violation"));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(
+        updateConsortiumProfile("uid-1", consortiumAnswers),
+      ).rejects.toThrow("check violation");
+      expect(spy).toHaveBeenCalledWith(
+        "userRepository.updateConsortiumProfile failed:",
+        "check violation",
+      );
+      spy.mockRestore();
+    });
+
+    it("getConsortiumProfile logs and rethrows on DB error", async () => {
+      mockQuery.mockRejectedValue(new Error("timeout"));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(getConsortiumProfile("uid-1")).rejects.toThrow("timeout");
+      expect(spy).toHaveBeenCalledWith(
+        "userRepository.getConsortiumProfile failed:",
+        "timeout",
+      );
+      spy.mockRestore();
+    });
+
+    it("setConsortiumTier logs and rethrows on DB error", async () => {
+      mockQuery.mockRejectedValue(new Error("check violation"));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(setConsortiumTier("uid-1", "pilot")).rejects.toThrow(
+        "check violation",
+      );
+      expect(spy).toHaveBeenCalledWith(
+        "userRepository.setConsortiumTier failed:",
+        "check violation",
+      );
+      spy.mockRestore();
+    });
+
+    it("scrubConsortiumText logs and rethrows on DB error", async () => {
+      mockQuery.mockRejectedValue(new Error("connection lost"));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(scrubConsortiumText("uid-1")).rejects.toThrow(
+        "connection lost",
+      );
+      expect(spy).toHaveBeenCalledWith(
+        "userRepository.scrubConsortiumText failed:",
+        "connection lost",
       );
       spy.mockRestore();
     });
