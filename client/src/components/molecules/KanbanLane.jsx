@@ -5,16 +5,13 @@ import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 
 import InquiryStatusBadge from '../atoms/InquiryStatusBadge';
+import { getInquiryPreview } from '../../helpers/inquiryPreview';
 
 const STATUSES = ['new', 'contacted', 'in_progress', 'resolved'];
 
 function truncate(text, max = 100) {
   if (!text) return '';
   return text.length > max ? text.slice(0, max) + '...' : text;
-}
-
-function getPreviewText(request) {
-  return request.questionPreview || request.question_preview || '';
 }
 
 export default function KanbanLane({
@@ -72,7 +69,7 @@ export default function KanbanLane({
                     >
                       <Card.Body className="p-2">
                         <Card.Text className="small mb-1">
-                          {truncate(getPreviewText(req))}
+                          {truncate(getInquiryPreview(req))}
                         </Card.Text>
                         <div className="d-flex justify-content-between align-items-center">
                           <small className="text-muted">{req.created_at}</small>

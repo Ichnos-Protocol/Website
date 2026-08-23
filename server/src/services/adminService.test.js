@@ -10,6 +10,7 @@ const mockGetAllDataForExport = vi.fn();
 const mockGetInactiveUsers = vi.fn();
 const mockGetRecentInquiries = vi.fn();
 const mockGetRecentChatOnlyLeads = vi.fn();
+const mockGetRecentConsortiumRegistrations = vi.fn();
 const mockUpdateRequest = vi.fn();
 const mockDeleteRequest = vi.fn();
 const mockCreateTopic = vi.fn();
@@ -32,6 +33,8 @@ vi.mock("../repositories/adminRepository.js", () => ({
   getInactiveUsers: (...args) => mockGetInactiveUsers(...args),
   getRecentInquiries: (...args) => mockGetRecentInquiries(...args),
   getRecentChatOnlyLeads: (...args) => mockGetRecentChatOnlyLeads(...args),
+  getRecentConsortiumRegistrations: (...args) =>
+    mockGetRecentConsortiumRegistrations(...args),
 }));
 
 vi.mock("../repositories/contactRepository.js", () => ({
@@ -400,11 +403,17 @@ describe("adminService", () => {
       ];
       mockGetRecentInquiries.mockResolvedValue(inquiries);
       mockGetRecentChatOnlyLeads.mockResolvedValue(chatLeads);
+      mockGetRecentConsortiumRegistrations.mockResolvedValue([]);
       mockResendSend.mockResolvedValue({ error: null });
 
       const result = await sendDailyDigest();
 
-      expect(result).toEqual({ sent: true, inquiries: 1, chatLeads: 1 });
+      expect(result).toEqual({
+        sent: true,
+        inquiries: 1,
+        chatLeads: 1,
+        consortiumRegistrations: 0,
+      });
       expect(mockGetRecentInquiries).toHaveBeenCalled();
       expect(mockGetRecentChatOnlyLeads).toHaveBeenCalled();
       expect(mockResendSend).toHaveBeenCalledWith(
@@ -414,9 +423,49 @@ describe("adminService", () => {
       );
     });
 
+    it("reports the consortium registration count from the repository", async () => {
+      mockGetRecentInquiries.mockResolvedValue([]);
+      mockGetRecentChatOnlyLeads.mockResolvedValue([]);
+      mockGetRecentConsortiumRegistrations.mockResolvedValue([
+        {
+          name: "Dana",
+          email: "dana@example.com",
+          company: "Dyn",
+          position: "CTO",
+          chainRole: "OEM",
+          source: "website",
+        },
+        {
+          name: "Erin",
+          email: "erin@example.com",
+          company: null,
+          position: "Analyst",
+          chainRole: "Recycler",
+          source: null,
+        },
+      ]);
+      mockResendSend.mockResolvedValue({ error: null });
+
+      const result = await sendDailyDigest();
+
+      expect(mockGetRecentConsortiumRegistrations).toHaveBeenCalled();
+      expect(result).toEqual({
+        sent: true,
+        inquiries: 0,
+        chatLeads: 0,
+        consortiumRegistrations: 2,
+      });
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          html: expect.stringContaining("New consortium registrations (2)"),
+        }),
+      );
+    });
+
     it("throws when Resend returns an error", async () => {
       mockGetRecentInquiries.mockResolvedValue([]);
       mockGetRecentChatOnlyLeads.mockResolvedValue([]);
+      mockGetRecentConsortiumRegistrations.mockResolvedValue([]);
       mockResendSend.mockResolvedValue({
         error: { message: "API key invalid" },
       });

@@ -63,5 +63,12 @@ export async function selectTier(userId, tier) {
     throw buildError(TIER_NOT_PERMITTED_MESSAGE, 403);
   }
 
-  return userRepository.setConsortiumTier(userId, tier);
+  const updated = await userRepository.setConsortiumTier(userId, tier);
+
+  // The update predicate re-checks the registration, so a null row means the
+  // registration went away between the read above and the write. Success must
+  // mean the tier was persisted, never a silent no-op.
+  if (!updated) throw buildError(NOT_REGISTERED_MESSAGE, 403);
+
+  return updated;
 }

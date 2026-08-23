@@ -6,6 +6,11 @@ const mockGetRequestById = vi.fn();
 const mockCreateQuestion = vi.fn();
 const mockGetQuestionsByUserId = vi.fn();
 const mockUpdateUserActivity = vi.fn();
+const mockGetConsortiumProfile = vi.fn();
+const mockUpdateConsortiumProfile = vi.fn();
+const mockClientQuery = vi.fn();
+
+const mockClient = { query: (...args) => mockClientQuery(...args) };
 
 vi.mock("../repositories/contactRepository.js", () => ({
   createContactRequest: (...args) => mockCreateContactRequest(...args),
@@ -20,15 +25,50 @@ vi.mock("../repositories/questionRepository.js", () => ({
 
 vi.mock("../repositories/userRepository.js", () => ({
   updateUserActivity: (...args) => mockUpdateUserActivity(...args),
+  getConsortiumProfile: (...args) => mockGetConsortiumProfile(...args),
+  updateConsortiumProfile: (...args) => mockUpdateConsortiumProfile(...args),
+}));
+
+// Mirrors the real withTransaction against a mock client so BEGIN / COMMIT /
+// ROLLBACK are observable without a database.
+vi.mock("../config/database.js", () => ({
+  default: { query: (...args) => mockClientQuery(...args) },
+  withTransaction: async (fn) => {
+    await mockClient.query("BEGIN");
+    try {
+      const result = await fn(mockClient);
+      await mockClient.query("COMMIT");
+      return result;
+    } catch (error) {
+      await mockClient.query("ROLLBACK");
+      throw error;
+    }
+  },
 }));
 
 const { submitContactRequest, getMyRequests, addQuestion } = await import(
   "./contactService.js"
 );
 
+const consortiumAnswers = {
+  position: "supplier",
+  chainRole: "cathode_material",
+  productLine: "NMC cathode powders",
+  dataExtract: "not_yet",
+  preferredStart: "nov_2026",
+  consentTimestamp: "2026-01-01T00:00:00Z",
+  consentVersion: "v1",
+};
+
+function clientStatements() {
+  return mockClientQuery.mock.calls.map(([sql]) => sql);
+}
+
 describe("contactService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetConsortiumProfile.mockResolvedValue(null);
+    mockUpdateUserActivity.mockResolvedValue();
   });
 
   describe("submitContactRequest", () => {
@@ -46,12 +86,16 @@ describe("contactService", () => {
       expect(result.id).toBe(1);
       expect(result.questions).toHaveLength(1);
       expect(result.questions[0].question).toBe("Q1");
-      expect(mockCreateQuestion).toHaveBeenCalledWith("uid-1", {
-        question: "Q1",
-        answer: null,
-        source: "form",
-        contactRequestId: 1,
-      });
+      expect(mockCreateQuestion).toHaveBeenCalledWith(
+        "uid-1",
+        {
+          question: "Q1",
+          answer: null,
+          source: "form",
+          contactRequestId: 1,
+        },
+        mockClient,
+      );
       expect(mockUpdateUserActivity).toHaveBeenCalledWith("uid-1");
     });
 
@@ -70,6 +114,133 @@ describe("contactService", () => {
 
       expect(result.questions).toHaveLength(2);
       expect(mockCreateQuestion).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not touch the consortium profile on a plain inquiry", async () => {
+      mockCreateContactRequest.mockResolvedValue({ id: 3, user_id: "uid-1" });
+      mockCreateQuestion.mockResolvedValue({ id: 30, question: "Q1" });
+
+      const result = await submitContactRequest("uid-1", {
+        consentTimestamp: "2026-01-01T00:00:00Z",
+        consentVersion: "v1",
+        questions: [{ text: "Q1" }],
+      });
+
+      expect(mockUpdateConsortiumProfile).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        id: 3,
+        user_id: "uid-1",
+        questions: [{ id: 30, question: "Q1" }],
+      });
+      expect(mockCreateContactRequest).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ kind: "inquiry" }),
+        mockClient,
+      );
+    });
+  });
+
+  describe("submitContactRequest — consortium", () => {
+    const registration = {
+      consentTimestamp: "2026-01-01T00:00:00Z",
+      consentVersion: "v1",
+      questions: [],
+      consortiumInterest: true,
+      consortium: consortiumAnswers,
+    };
+
+    it("creates a consortium row and returns the profile", async () => {
+      const profile = { consortium_interest: true, consortium_status: "registered" };
+      mockUpdateConsortiumProfile.mockResolvedValue(profile);
+      mockCreateContactRequest.mockResolvedValue({
+        id: 7,
+        user_id: "uid-1",
+        kind: "consortium",
+      });
+
+      const result = await submitContactRequest("uid-1", registration);
+
+      expect(mockCreateContactRequest).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ kind: "consortium" }),
+        mockClient,
+      );
+      expect(result.id).toBe(7);
+      expect(result.consortium).toEqual(profile);
+      expect(result.questions).toEqual([]);
+      expect(mockCreateQuestion).not.toHaveBeenCalled();
+    });
+
+    it("treats a swallowed insert as an edit of the existing registration", async () => {
+      const profile = { consortium_interest: true, consortium_position: "anchor" };
+      mockGetConsortiumProfile.mockResolvedValue({ consortium_interest: true });
+      mockUpdateConsortiumProfile.mockResolvedValue(profile);
+      mockCreateContactRequest.mockResolvedValue(null);
+
+      const result = await submitContactRequest("uid-1", registration);
+
+      expect(result).toEqual({ id: null, questions: [], consortium: profile });
+      expect(mockUpdateConsortiumProfile).toHaveBeenCalledTimes(1);
+    });
+
+    it("files an edit carrying a question as an inquiry", async () => {
+      const profile = { consortium_interest: true };
+      mockGetConsortiumProfile.mockResolvedValue(profile);
+      mockUpdateConsortiumProfile.mockResolvedValue(profile);
+      mockCreateContactRequest.mockResolvedValue({ id: 8, user_id: "uid-1" });
+      mockCreateQuestion.mockResolvedValue({ id: 80, question: "Q1" });
+
+      const result = await submitContactRequest("uid-1", {
+        ...registration,
+        questions: [{ text: "Q1" }],
+      });
+
+      expect(mockCreateContactRequest).toHaveBeenCalledTimes(1);
+      expect(mockCreateContactRequest).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ kind: "inquiry" }),
+        mockClient,
+      );
+      expect(mockCreateQuestion).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ contactRequestId: 8 }),
+        mockClient,
+      );
+      expect(result.consortium).toEqual(profile);
+    });
+
+    it("writes the profile before the request and the request before questions", async () => {
+      mockUpdateConsortiumProfile.mockResolvedValue({ consortium_interest: true });
+      mockCreateContactRequest.mockResolvedValue({ id: 9, user_id: "uid-1" });
+      mockCreateQuestion.mockResolvedValue({ id: 90 });
+
+      await submitContactRequest("uid-1", {
+        ...registration,
+        questions: [{ text: "Q1" }],
+      });
+
+      const profileOrder = mockUpdateConsortiumProfile.mock.invocationCallOrder[0];
+      const requestOrder = mockCreateContactRequest.mock.invocationCallOrder[0];
+      const questionOrder = mockCreateQuestion.mock.invocationCallOrder[0];
+      expect(profileOrder).toBeLessThan(requestOrder);
+      expect(requestOrder).toBeLessThan(questionOrder);
+    });
+
+    it("rolls back and skips the activity bump when a question write fails", async () => {
+      mockUpdateConsortiumProfile.mockResolvedValue({ consortium_interest: true });
+      mockCreateContactRequest.mockResolvedValue({ id: 10, user_id: "uid-1" });
+      mockCreateQuestion.mockRejectedValue(new Error("insert failed"));
+
+      await expect(
+        submitContactRequest("uid-1", {
+          ...registration,
+          questions: [{ text: "Q1" }],
+        }),
+      ).rejects.toThrow("insert failed");
+
+      expect(clientStatements()).toContain("ROLLBACK");
+      expect(clientStatements()).not.toContain("COMMIT");
+      expect(mockUpdateUserActivity).not.toHaveBeenCalled();
     });
   });
 

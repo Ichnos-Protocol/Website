@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 
 const mockVerifyIdToken = vi.fn();
@@ -100,6 +100,10 @@ describe("Consortium routes", () => {
         .set(authHeader());
 
       expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty("data", null);
+      expect(res.body.error).not.toBe(true);
+      expect(typeof res.body.error).toBe("string");
+      expect(res.body.message).toBe("Consortium registration required");
     });
 
     it("returns the permitted ladder for a registrant", async () => {
@@ -142,6 +146,25 @@ describe("Consortium routes", () => {
         .send({ tier: "consortium_anchor" });
 
       expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty("data", null);
+      expect(res.body).toHaveProperty("error");
+      expect(res.body.message).toBe("Tier not available for this registration");
+    });
+
+    it("does not return 200 when the update touches no row", async () => {
+      mockVerifyIdToken.mockResolvedValue(decodedToken);
+      mockQuery
+        .mockResolvedValueOnce({ rows: [registeredRow("supplier")] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .put("/api/consortium/tier")
+        .set(authHeader())
+        .send({ tier: "consortium_supplier" });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty("data", null);
+      expect(res.body.message).not.toBe("Tier saved");
     });
 
     it("returns 200 and the response envelope for a permitted tier", async () => {
@@ -167,6 +190,31 @@ describe("Consortium routes", () => {
       expect(res.body).toHaveProperty("error", null);
       expect(res.body.message).toBe("Tier saved");
       expect(res.body.data.consortium_tier).toBe("consortium_supplier");
+    });
+  });
+
+  describe("global error handler", () => {
+    beforeEach(() => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("returns a string error reason, not error: true, on an unhandled failure", async () => {
+      mockVerifyIdToken.mockResolvedValue(decodedToken);
+      mockQuery.mockRejectedValue(new Error("db exploded"));
+
+      const res = await request(app)
+        .get("/api/consortium/me")
+        .set(authHeader());
+
+      expect(res.status).toBe(500);
+      expect(res.body.data).toBeNull();
+      expect(res.body.error).not.toBe(true);
+      expect(typeof res.body.error).toBe("string");
+      expect(typeof res.body.message).toBe("string");
     });
   });
 });

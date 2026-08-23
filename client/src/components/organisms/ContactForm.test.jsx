@@ -51,6 +51,16 @@ vi.mock("../../features/auth/authApi", () => ({
   },
 }));
 
+vi.mock("../../features/consortium/consortiumApi", () => ({
+  useGetConsortiumMeQuery: () => ({ data: null }),
+  consortiumApi: {
+    reducerPath: "consortiumApi",
+    reducer: (state = {}) => state,
+    middleware: () => (next) => (action) => next(action),
+    util: { invalidateTags: vi.fn(() => ({ type: "consortium/invalidate" })) },
+  },
+}));
+
 vi.mock("../../config/firebase", () => ({
   auth: { currentUser: null },
 }));
@@ -159,7 +169,9 @@ describe("ContactForm", () => {
     );
 
     await user.type(screen.getByLabelText("Question 1"), "My question");
-    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
     await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
 
     expect(store.getState().auth.modalMode).toBe("login");
@@ -200,7 +212,9 @@ describe("ContactForm", () => {
     // Simulate unauthenticated submission to create pending work
     const textarea = screen.getByLabelText("Question 1");
     await user.type(textarea, "My pending question");
-    const checkbox = screen.getByRole("checkbox");
+    const checkbox = screen.getByRole("checkbox", {
+      name: /agree to be contacted/i,
+    });
     await user.click(checkbox);
     await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
 
@@ -242,7 +256,9 @@ describe("ContactForm", () => {
     const textarea = screen.getByLabelText("Question 1");
     await user.type(textarea, "My question");
 
-    const checkbox = screen.getByRole("checkbox");
+    const checkbox = screen.getByRole("checkbox", {
+      name: /agree to be contacted/i,
+    });
     await user.click(checkbox);
 
     await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
@@ -268,7 +284,9 @@ describe("ContactForm", () => {
 
     const textarea = screen.getByLabelText("Question 1");
     await user.type(textarea, "My question");
-    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
     await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
 
     await waitFor(() => {
@@ -292,7 +310,9 @@ describe("ContactForm", () => {
 
     const textarea = screen.getByLabelText("Question 1");
     await user.type(textarea, "My question");
-    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
     await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
 
     await waitFor(() => {
@@ -317,7 +337,9 @@ describe("ContactForm", () => {
     expect(screen.getByText("Add a Follow-up Question")).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Question 1"), "Follow-up question");
-    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
     await user.click(screen.getByRole("button", { name: "Add Question" }));
 
     await waitFor(() => expect(mockAddQuestionUnwrap).toHaveBeenCalled());

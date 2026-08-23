@@ -1,14 +1,15 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore } from "@reduxjs/toolkit";
 
-import authReducer from '../features/auth/authSlice';
-import chatReducer from '../features/chat/chatSlice';
-import contactReducer from '../features/contact/contactSlice';
-import adminReducer from '../features/admin/adminSlice';
-import { authApi } from '../features/auth/authApi';
-import { chatApi } from '../features/chat/chatApi';
-import { contactApi } from '../features/contact/contactApi';
-import { adminApi } from '../features/admin/adminApi';
-import { gdprApi } from '../features/gdpr/gdprApi';
+import authReducer from "../features/auth/authSlice";
+import chatReducer from "../features/chat/chatSlice";
+import contactReducer from "../features/contact/contactSlice";
+import adminReducer from "../features/admin/adminSlice";
+import { authApi } from "../features/auth/authApi";
+import { chatApi } from "../features/chat/chatApi";
+import { contactApi } from "../features/contact/contactApi";
+import { adminApi } from "../features/admin/adminApi";
+import { gdprApi } from "../features/gdpr/gdprApi";
+import { consortiumApi } from "../features/consortium/consortiumApi";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
     [contactApi.reducerPath]: contactApi.reducer,
     [adminApi.reducerPath]: adminApi.reducer,
     [gdprApi.reducerPath]: gdprApi.reducer,
+    [consortiumApi.reducerPath]: consortiumApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -29,5 +31,6 @@ export const store = configureStore({
       contactApi.middleware,
       adminApi.middleware,
       gdprApi.middleware,
+      consortiumApi.middleware,
     ),
 });

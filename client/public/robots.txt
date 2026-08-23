@@ -6,6 +6,7 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /privacy
+Disallow: /consortium/tiers
 Disallow: /api/
 
 # Block AI training crawlers that ignore robots.txt directives elsewhere

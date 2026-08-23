@@ -97,6 +97,11 @@ const CONSORTIUM_COLUMNS = `consortium_interest, consortium_position, consortium
               consortium_registered_at, consortium_tier, consortium_tier_selected_at,
               consortium_status`;
 
+// The base list backs GET /api/consortium/me and must never leak internal
+// commentary. This list is admin-only and used solely by updateConsortiumAdmin,
+// so the caller can echo the notes it just wrote back to the admin UI.
+const CONSORTIUM_ADMIN_COLUMNS = `${CONSORTIUM_COLUMNS}, consortium_admin_notes`;
+
 // First write wins for registration metadata: COALESCE keeps the original
 // registered_at, source and status while the answers themselves are overwritten.
 const UPDATE_CONSORTIUM_SQL = `UPDATE user_profiles
@@ -198,6 +203,31 @@ export async function setConsortiumTier(userId, tier, db = pool) {
     return rows[0] || null;
   } catch (error) {
     console.error("userRepository.setConsortiumTier failed:", error.message);
+    throw error;
+  }
+}
+
+// COALESCE makes each field independently optional: an omitted field is left
+// untouched rather than nulled. The consortium_interest = true predicate is the
+// same defence-in-depth guard as setConsortiumTier, so a non-registrant matches
+// no row and the function returns null for the service to turn into a 404/403.
+const UPDATE_CONSORTIUM_ADMIN_SQL = `UPDATE user_profiles
+       SET consortium_status = COALESCE($2, consortium_status),
+           consortium_admin_notes = COALESCE($3, consortium_admin_notes)
+       WHERE user_id = $1 AND consortium_interest = true
+       RETURNING ${CONSORTIUM_ADMIN_COLUMNS}`;
+
+export async function updateConsortiumAdmin(userId, updates, db = pool) {
+  try {
+    const { status, adminNotes } = updates ?? {};
+    const { rows } = await db.query(UPDATE_CONSORTIUM_ADMIN_SQL, [
+      userId,
+      status ?? null,
+      adminNotes ?? null,
+    ]);
+    return rows[0] || null;
+  } catch (error) {
+    console.error("userRepository.updateConsortiumAdmin failed:", error.message);
     throw error;
   }
 }

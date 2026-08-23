@@ -23,6 +23,8 @@ export async function exportUserData(userId) {
   const questions =
     await questionRepository.getQuestionsByUserId(userId);
 
+  const consortium = await userRepository.getConsortiumProfile(userId);
+
   const allTopics = [];
   for (const question of questions) {
     const topics = await questionRepository.getTopicsByQuestionId(
@@ -44,6 +46,7 @@ export async function exportUserData(userId) {
       company: userData?.company,
       linkedin: userData?.linkedin,
     },
+    consortium,
     contactRequests,
     questions,
     topics: allTopics,
@@ -66,6 +69,7 @@ export async function deleteUserAccount(userId) {
     );
   }
 
+  await userRepository.scrubConsortiumText(userId);
   await userRepository.deleteUserData(userId);
   await firebaseAdmin.auth().deleteUser(userId);
 

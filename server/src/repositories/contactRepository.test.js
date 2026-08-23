@@ -38,6 +38,53 @@ describe("contactRepository", () => {
     });
   });
 
+  describe("createContactRequest — consortium kind", () => {
+    const consentData = {
+      consentTimestamp: "2026-01-01T00:00:00Z",
+      consentVersion: "v1",
+      kind: "consortium",
+    };
+
+    it("binds the kind and guards with ON CONFLICT DO NOTHING", async () => {
+      const row = { id: 5, user_id: "uid-1", kind: "consortium" };
+      mockQuery.mockResolvedValue({ rows: [row] });
+
+      const result = await createContactRequest("uid-1", consentData);
+
+      expect(result).toEqual(row);
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain("ON CONFLICT");
+      expect(sql).toContain("DO NOTHING");
+      expect(params).toEqual([
+        "uid-1",
+        "2026-01-01T00:00:00Z",
+        "v1",
+        "consortium",
+      ]);
+    });
+
+    it("returns null when the conflict swallowed the insert", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      const result = await createContactRequest("uid-1", consentData);
+      expect(result).toBeNull();
+    });
+
+    it("keeps the inquiry statement at three parameters by default", async () => {
+      mockQuery.mockResolvedValue({ rows: [{ id: 1 }] });
+
+      await createContactRequest("uid-1", {
+        consentTimestamp: "2026-01-01T00:00:00Z",
+        consentVersion: "v1",
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(params).toHaveLength(3);
+      expect(sql).not.toContain("ON CONFLICT");
+      expect(sql).not.toContain("kind");
+    });
+  });
+
   describe("getRequestsByUserId", () => {
     it("returns requests ordered by created_at DESC", async () => {
       const rows = [{ id: 2 }, { id: 1 }];

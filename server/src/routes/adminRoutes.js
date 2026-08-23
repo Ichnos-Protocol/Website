@@ -13,6 +13,7 @@ import { validateRequest } from "../middleware/validation.js";
 import {
   adminUpdateRequestSchema,
   adminManageAdminsSchema,
+  adminUpdateConsortiumSchema,
 } from "../validators/adminSchemas.js";
 import * as adminController from "../controllers/adminController.js";
 
@@ -36,6 +37,23 @@ router.delete("/request/:id", auth, admin, adminController.deleteRequest);
 router.post("/analyze-topics", auth, admin, adminController.analyzeTopics);
 router.get("/topics", auth, admin, adminController.getTopics);
 router.get("/export", auth, admin, adminController.exportCSV);
+
+router.get("/consortium", auth, admin, adminController.getConsortiumRegistrants);
+// Declared before `/consortium/:userId` so "export" is never read as a user id.
+router.get(
+  "/consortium/export",
+  auth,
+  admin,
+  adminController.exportConsortiumRegistrants,
+);
+router.put(
+  "/consortium/:userId",
+  auth,
+  admin,
+  validateRequest(adminUpdateConsortiumSchema, { statusCode: 422 }),
+  adminController.updateConsortiumRegistrant,
+);
+
 router.post(
   "/manage-admins",
   auth,

@@ -6,9 +6,8 @@ vi.mock("../repositories/userRepository.js", () => ({
 }));
 
 const userRepository = await import("../repositories/userRepository.js");
-const { getMyConsortium, getPermittedTiers, selectTier } = await import(
-  "./consortiumService.js"
-);
+const { getMyConsortium, getPermittedTiers, selectTier } =
+  await import("./consortiumService.js");
 
 function registeredAs(position) {
   return { consortium_interest: true, consortium_position: position };
@@ -29,18 +28,18 @@ describe("consortiumService", () => {
       ["other", ["readiness", "pilot", "consortium_supplier", "not_sure"]],
     ];
 
-    it.each(cases)("returns exactly the %s ladder, in order", async (
-      position,
-      expected,
-    ) => {
-      userRepository.getConsortiumProfile.mockResolvedValue(
-        registeredAs(position),
-      );
+    it.each(cases)(
+      "returns exactly the %s ladder, in order",
+      async (position, expected) => {
+        userRepository.getConsortiumProfile.mockResolvedValue(
+          registeredAs(position),
+        );
 
-      const result = await getPermittedTiers("uid-1");
+        const result = await getPermittedTiers("uid-1");
 
-      expect(result.tiers.map((t) => t.tierId)).toEqual(expected);
-    });
+        expect(result.tiers.map((t) => t.tierId)).toEqual(expected);
+      },
+    );
 
     it("gives an anchor and a supplier different ladders", async () => {
       userRepository.getConsortiumProfile.mockResolvedValue(
@@ -108,9 +107,9 @@ describe("consortiumService", () => {
     });
 
     it("refuses selectTier with 403 and writes nothing", async () => {
-      await expect(() =>
-        selectTier("uid-1", "readiness"),
-      ).rejects.toThrowError(expect.objectContaining({ statusCode: 403 }));
+      await expect(() => selectTier("uid-1", "readiness")).rejects.toThrowError(
+        expect.objectContaining({ statusCode: 403 }),
+      );
       expect(userRepository.setConsortiumTier).not.toHaveBeenCalled();
     });
   });
@@ -139,6 +138,14 @@ describe("consortiumService", () => {
         selectTier("uid-1", "consortium_anchor"),
       ).rejects.toThrowError(expect.objectContaining({ statusCode: 403 }));
       expect(userRepository.setConsortiumTier).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the update touched no row", async () => {
+      userRepository.setConsortiumTier.mockResolvedValue(null);
+
+      await expect(() =>
+        selectTier("uid-1", "consortium_supplier"),
+      ).rejects.toThrowError(expect.objectContaining({ statusCode: 403 }));
     });
 
     it("persists a permitted tier and returns the row", async () => {

@@ -45,6 +45,7 @@ const MENUS = [
     testId: 'footer-col-products',
     links: [
       { label: 'Battery Passport', to: '/passport' },
+      { label: 'Consortium', to: '/consortium' },
     ],
   },
 ];

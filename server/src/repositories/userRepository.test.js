@@ -17,6 +17,7 @@ const {
   getConsortiumProfile,
   setConsortiumTier,
   scrubConsortiumText,
+  updateConsortiumAdmin,
 } = await import("./userRepository.js");
 
 const consortiumAnswers = {
@@ -314,6 +315,72 @@ describe("userRepository", () => {
     });
   });
 
+  describe("updateConsortiumAdmin", () => {
+    it("sends a null note when only the status is supplied", async () => {
+      const row = { consortium_status: "contacted" };
+      mockQuery.mockResolvedValue({ rows: [row] });
+
+      const result = await updateConsortiumAdmin("uid-1", { status: "contacted" });
+
+      expect(result).toEqual(row);
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const [, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual(["uid-1", "contacted", null]);
+    });
+
+    it("sends a null status when only the notes are supplied", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumAdmin("uid-1", { adminNotes: "called on Tuesday" });
+
+      const [, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual(["uid-1", null, "called on Tuesday"]);
+    });
+
+    it("sends both fields and coalesces each independently", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumAdmin("uid-1", {
+        status: "in_consortium",
+        adminNotes: "signed",
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual(["uid-1", "in_consortium", "signed"]);
+      expect(sql).toContain("consortium_status = COALESCE($2, consortium_status)");
+      expect(sql).toContain(
+        "consortium_admin_notes = COALESCE($3, consortium_admin_notes)",
+      );
+    });
+
+    it("keeps the registrant predicate", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumAdmin("uid-1", { status: "contacted" });
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("consortium_interest = true");
+    });
+
+    it("returns the admin notes alongside the base columns", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumAdmin("uid-1", { status: "contacted" });
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("RETURNING");
+      expect(sql).toContain("consortium_admin_notes");
+      expect(sql).toContain("consortium_tier");
+    });
+
+    it("returns null when no registrant row matches", async () => {
+      mockQuery.mockResolvedValue({ rows: [] });
+
+      const result = await updateConsortiumAdmin("nobody", { status: "contacted" });
+      expect(result).toBeNull();
+    });
+  });
+
   describe("scrubConsortiumText", () => {
     it("nulls exactly the four free-text columns", async () => {
       mockQuery.mockResolvedValue({ rowCount: 1 });
@@ -441,6 +508,20 @@ describe("userRepository", () => {
       );
       expect(spy).toHaveBeenCalledWith(
         "userRepository.setConsortiumTier failed:",
+        "check violation",
+      );
+      spy.mockRestore();
+    });
+
+    it("updateConsortiumAdmin logs and rethrows on DB error", async () => {
+      mockQuery.mockRejectedValue(new Error("check violation"));
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(
+        updateConsortiumAdmin("uid-1", { status: "contacted" }),
+      ).rejects.toThrow("check violation");
+      expect(spy).toHaveBeenCalledWith(
+        "userRepository.updateConsortiumAdmin failed:",
         "check violation",
       );
       spy.mockRestore();

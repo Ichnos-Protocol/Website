@@ -21,11 +21,12 @@ import { describe, it, expect } from "vitest";
 import { buildDigestHtml } from "./buildDigestHtml.js";
 
 /**
- * The only seam step 2 rewrote: feed the two collections in, get the digest
- * HTML out. Everything below this line stays untouched across the extraction.
+ * The only seam step 2 rewrote: feed the collections in, get the digest HTML
+ * out. Everything below this line stays untouched across the extraction; the
+ * third collection (consortium registrations) was appended later.
  */
-function renderDigest(inquiries, chatLeads) {
-  return buildDigestHtml(inquiries, chatLeads);
+function renderDigest(inquiries, chatLeads, consortiumRegistrations = []) {
+  return buildDigestHtml(inquiries, chatLeads, consortiumRegistrations);
 }
 
 const HOSTILE_NAME = 'Ada & "Lovelace"<script>alert(1)</script>';
@@ -60,6 +61,11 @@ const HOSTILE_LEAD = {
   totalMessages: 7,
 };
 
+// The third section always renders, so an empty registration list appends this
+// block to every payload that does not supply one.
+const EMPTY_CONSORTIUM_SECTION =
+  `<h2>New consortium registrations (0)</h2><ul><li>None</li></ul>`;
+
 // Em dash (U+2014) separator; no whitespace or newline between the sections.
 // Emails, `new` and `7` contain no special characters, so they render as-is.
 const EXPECTED_HOSTILE_HTML =
@@ -69,17 +75,47 @@ const EXPECTED_HOSTILE_HTML =
   `</ul>` +
   `<h2>Chat-Only Leads (1)</h2><ul>` +
   `<li><b>${ESCAPED_LEAD_NAME}</b> (bob@example.com) — 7 messages</li>` +
-  `</ul>`;
+  `</ul>` +
+  EMPTY_CONSORTIUM_SECTION;
 
 const EXPECTED_FALLBACK_HTML =
   `<h2>New Inquiries (1)</h2><ul>` +
   `<li><b>Carol</b> (carol@example.com, N/A) — contacted</li>` +
   `</ul>` +
-  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`;
+  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>` +
+  EMPTY_CONSORTIUM_SECTION;
 
 const EXPECTED_EMPTY_HTML =
   `<h2>New Inquiries (0)</h2><ul><li>None</li></ul>` +
-  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`;
+  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>` +
+  EMPTY_CONSORTIUM_SECTION;
+
+const HOSTILE_REGISTRATION_COMPANY = 'Dyn & "Corp"<script>alert(5)</script>';
+const ESCAPED_REGISTRATION_COMPANY =
+  "Dyn &amp; &quot;Corp&quot;&lt;script&gt;alert(5)&lt;/script&gt;";
+
+const HOSTILE_REGISTRATION = {
+  name: "Dana",
+  email: "dana@example.com",
+  company: HOSTILE_REGISTRATION_COMPANY,
+  position: "CTO",
+  chainRole: "OEM",
+  source: "website",
+};
+
+const EXPECTED_HOSTILE_REGISTRATION_HTML =
+  `<h2>New Inquiries (0)</h2><ul><li>None</li></ul>` +
+  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>` +
+  `<h2>New consortium registrations (1)</h2><ul>` +
+  `<li><b>Dana</b> (dana@example.com, ${ESCAPED_REGISTRATION_COMPANY}) — CTO, OEM, website</li>` +
+  `</ul>`;
+
+const EXPECTED_REGISTRATION_FALLBACK_HTML =
+  `<h2>New Inquiries (0)</h2><ul><li>None</li></ul>` +
+  `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>` +
+  `<h2>New consortium registrations (1)</h2><ul>` +
+  `<li><b>Erin</b> (erin@example.com, N/A) — Analyst, Recycler, N/A</li>` +
+  `</ul>`;
 
 describe("buildDigestHtml", () => {
   it("entity-encodes hostile payloads in every field", async () => {
@@ -119,9 +155,40 @@ describe("buildDigestHtml", () => {
     expect(html).not.toContain("null");
   });
 
-  it("renders zero counts with None fallbacks in both sections", async () => {
+  it("renders zero counts with None fallbacks in all three sections", async () => {
     const html = await renderDigest([], []);
 
     expect(html).toBe(EXPECTED_EMPTY_HTML);
+  });
+
+  it("entity-encodes hostile registration text without touching the other sections", async () => {
+    const html = await renderDigest([], [], [HOSTILE_REGISTRATION]);
+
+    expect(html).toBe(EXPECTED_HOSTILE_REGISTRATION_HTML);
+    expect(html).toContain(ESCAPED_REGISTRATION_COMPANY);
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain('Dyn & "Corp"');
+    // The first two sections keep their zero-count `None` markup.
+    expect(html).toContain(`<h2>New Inquiries (0)</h2><ul><li>None</li></ul>`);
+    expect(html).toContain(`<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`);
+  });
+
+  it("falls back to N/A for a registration with null company and source", async () => {
+    const registration = {
+      name: "Erin",
+      email: "erin@example.com",
+      company: null,
+      position: "Analyst",
+      chainRole: "Recycler",
+      source: null,
+    };
+
+    const html = await renderDigest([], [], [registration]);
+
+    expect(html).toBe(EXPECTED_REGISTRATION_FALLBACK_HTML);
+    expect(html).toContain("N/A");
+    // The `|| "N/A"` fallbacks resolve before escaping, so a null value never
+    // reaches escapeHtml and stringifies to the literal "null".
+    expect(html).not.toContain("null");
   });
 });

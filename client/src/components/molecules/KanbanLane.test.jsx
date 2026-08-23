@@ -87,6 +87,46 @@ describe('KanbanLane', () => {
     expect(onSelectUser).toHaveBeenCalledWith('uid-1');
   });
 
+  it('labels a consortium card that carries no question', () => {
+    const consortiumRequests = [
+      { id: '3', status: 'new', kind: 'consortium', created_at: '2025-01-14' },
+    ];
+    render(
+      <KanbanLane
+        user={mockUser}
+        isExpanded={true}
+        onToggle={onToggle}
+        onSelectUser={onSelectUser}
+        requests={consortiumRequests}
+        isLoading={false}
+      />,
+    );
+    expect(screen.getByText('Consortium registration')).toBeInTheDocument();
+  });
+
+  it('renders no empty card previews for a mix of inquiry and consortium rows', () => {
+    const mixedRequests = [
+      { id: '1', status: 'new', questionPreview: 'Question one', created_at: '2025-01-10' },
+      { id: '3', status: 'new', kind: 'consortium', created_at: '2025-01-14' },
+    ];
+    const { container } = render(
+      <KanbanLane
+        user={mockUser}
+        isExpanded={true}
+        onToggle={onToggle}
+        onSelectUser={onSelectUser}
+        requests={mixedRequests}
+        isLoading={false}
+      />,
+    );
+
+    const previews = Array.from(container.querySelectorAll('.card-text')).map((node) =>
+      node.textContent.trim(),
+    );
+    expect(previews).toHaveLength(2);
+    expect(previews.filter((text) => text === '')).toEqual([]);
+  });
+
   it('does not show cards when collapsed', () => {
     render(
       <KanbanLane

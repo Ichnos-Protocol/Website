@@ -6,16 +6,35 @@
  */
 import pool from "../config/database.js";
 
+export const REQUEST_KIND_INQUIRY = "inquiry";
+export const REQUEST_KIND_CONSORTIUM = "consortium";
+
+const INSERT_INQUIRY_SQL = `INSERT INTO contact_requests (user_id, contact_consent_timestamp, contact_consent_version)
+       VALUES ($1, $2, $3)
+       RETURNING *`;
+
+// The index predicate is repeated in the conflict target so inference resolves
+// to uq_contact_requests_one_consortium_per_user — the "one consortium row per
+// person" rule is enforced by the database, not by a read-then-write check.
+const INSERT_CONSORTIUM_SQL = `INSERT INTO contact_requests (user_id, contact_consent_timestamp, contact_consent_version, kind)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) WHERE kind = 'consortium'
+       DO NOTHING
+       RETURNING *`;
+
 export async function createContactRequest(userId, consentData, db = pool) {
   try {
     const { consentTimestamp, consentVersion } = consentData;
-    const { rows } = await db.query(
-      `INSERT INTO contact_requests (user_id, contact_consent_timestamp, contact_consent_version)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [userId, consentTimestamp, consentVersion],
-    );
-    return rows[0];
+    const kind = consentData.kind || REQUEST_KIND_INQUIRY;
+    const params = [userId, consentTimestamp, consentVersion];
+    const { rows } =
+      kind === REQUEST_KIND_CONSORTIUM
+        ? await db.query(INSERT_CONSORTIUM_SQL, [
+            ...params,
+            REQUEST_KIND_CONSORTIUM,
+          ])
+        : await db.query(INSERT_INQUIRY_SQL, params);
+    return rows[0] || null;
   } catch (error) {
     console.error("contactRepository.createContactRequest failed:", error.message);
     throw error;

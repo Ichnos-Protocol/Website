@@ -12,6 +12,7 @@ import AdminKanban from '../organisms/AdminKanban';
 import ChatOnlyLeads from '../organisms/ChatOnlyLeads';
 import UserTimeline from '../organisms/UserTimeline';
 import TopicAnalytics from '../organisms/TopicAnalytics';
+import ConsortiumRegistrations from '../organisms/ConsortiumRegistrations';
 import { selectUser } from '../../features/admin/adminSlice';
 import {
   useLazyExportCSVQuery,
@@ -93,6 +94,9 @@ export default function AdminPage() {
         </Tab>
         <Tab eventKey="analytics" title="Analytics">
           <TopicAnalytics />
+        </Tab>
+        <Tab eventKey="consortium" title="Consortium">
+          <ConsortiumRegistrations />
         </Tab>
         {isSuperAdmin && (
           <Tab eventKey="settings" title="Settings">

@@ -23,6 +23,7 @@ vi.mock("../config/firebase.js", () => ({
 
 vi.mock("../config/database.js", () => ({
   default: { query: (...args) => mockQuery(...args) },
+  withTransaction: (fn) => fn({ query: (...args) => mockQuery(...args) }),
 }));
 
 vi.mock("../repositories/knowledgeRepository.js", () => ({
@@ -49,6 +50,8 @@ describe("contact routes", () => {
     it("returns 201 on successful submission", async () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
       mockQuery
+        // getConsortiumProfile — no registration for this user
+        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({
           rows: [{ id: 1, user_id: "uid-1" }],
         })
