@@ -24,4 +24,36 @@ if (!globalThis.__pgPool) {
 
 const pool = globalThis.__pgPool;
 
+/**
+ * Runs `fn` inside a single-client transaction.
+ *
+ * Checks out one client from the pool, opens a transaction, and hands the
+ * client to `fn`. Commits on success and returns whatever `fn` resolved to;
+ * rolls back and re-throws the original error on any failure. The client is
+ * always released, on both paths.
+ *
+ * A `Pool` and a `PoolClient` expose the same `.query(...)` interface, which
+ * is what lets repository functions take a `db = pool` parameter and accept
+ * either one without changing their bodies.
+ */
+export async function withTransaction(fn) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Failed to roll back transaction:", rollbackError);
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export default pool;

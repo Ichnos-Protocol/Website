@@ -55,6 +55,10 @@ export class AdminPage {
     return this.page.getByRole('tab', { name: 'Settings' });
   }
 
+  get consortiumTab() {
+    return this.page.getByRole('tab', { name: 'Consortium' });
+  }
+
   get recomputeTopicsButton() {
     return this.page.getByRole('button', { name: 'Recompute Topics' });
   }
@@ -133,6 +137,10 @@ export class AdminPage {
 
   async navigateToSettings() {
     await this.settingsTab.click();
+  }
+
+  async navigateToConsortium() {
+    await this.consortiumTab.click();
   }
 
   async clickRecomputeTopics() {

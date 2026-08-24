@@ -7,10 +7,14 @@ const mockGetTopicsByQuestionId = vi.fn();
 const mockScrubQuestionTexts = vi.fn();
 const mockGetRequestsByUserId = vi.fn();
 const mockDeleteUser = vi.fn();
+const mockGetConsortiumProfile = vi.fn();
+const mockScrubConsortiumText = vi.fn();
 
 vi.mock("../repositories/userRepository.js", () => ({
   getUserById: (...args) => mockGetUserById(...args),
   deleteUserData: (...args) => mockDeleteUserData(...args),
+  getConsortiumProfile: (...args) => mockGetConsortiumProfile(...args),
+  scrubConsortiumText: (...args) => mockScrubConsortiumText(...args),
 }));
 
 vi.mock("../repositories/questionRepository.js", () => ({
@@ -39,6 +43,8 @@ const { scrubPII, exportUserData, deleteUserAccount } = await import(
 describe("gdprService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetConsortiumProfile.mockResolvedValue(null);
+    mockScrubConsortiumText.mockResolvedValue();
   });
 
   describe("scrubPII", () => {
@@ -152,6 +158,40 @@ describe("gdprService", () => {
       expect(parsed.topics).toHaveLength(3);
       expect(mockGetTopicsByQuestionId).toHaveBeenCalledTimes(2);
     });
+
+    it("includes the consortium registration in the payload", async () => {
+      const consortium = {
+        consortium_interest: true,
+        consortium_position: "supplier",
+        consortium_chain_role: "cathode_material",
+        consortium_source: "landing_page",
+        consortium_tier: "pilot",
+        consortium_tier_selected_at: "2026-03-01",
+        consortium_status: "registered",
+        consortium_registered_at: "2026-02-16",
+        consortium_consent_timestamp: "2026-02-16T12:00:00Z",
+        consortium_consent_version: "v1",
+      };
+      mockGetUserById.mockResolvedValue({ firebase_uid: "uid-1" });
+      mockGetRequestsByUserId.mockResolvedValue([]);
+      mockGetQuestionsByUserId.mockResolvedValue([]);
+      mockGetConsortiumProfile.mockResolvedValue(consortium);
+
+      const parsed = JSON.parse(await exportUserData("uid-1"));
+
+      expect(parsed.consortium).toEqual(consortium);
+      expect(mockGetConsortiumProfile).toHaveBeenCalledWith("uid-1");
+    });
+
+    it("exports null consortium when the user never registered", async () => {
+      mockGetUserById.mockResolvedValue({ firebase_uid: "uid-1" });
+      mockGetRequestsByUserId.mockResolvedValue([]);
+      mockGetQuestionsByUserId.mockResolvedValue([]);
+
+      const parsed = JSON.parse(await exportUserData("uid-1"));
+
+      expect(parsed.consortium).toBeNull();
+    });
   });
 
   describe("deleteUserAccount", () => {
@@ -186,6 +226,30 @@ describe("gdprService", () => {
 
       expect(mockScrubQuestionTexts).not.toHaveBeenCalled();
       expect(mockDeleteUserData).toHaveBeenCalledWith("uid-1");
+      expect(mockDeleteUser).toHaveBeenCalledWith("uid-1");
+    });
+
+    it("scrubs consortium free text before the soft delete", async () => {
+      mockGetQuestionsByUserId.mockResolvedValue([]);
+      mockDeleteUserData.mockResolvedValue();
+      mockDeleteUser.mockResolvedValue();
+
+      await deleteUserAccount("uid-1");
+
+      expect(mockScrubConsortiumText).toHaveBeenCalledWith("uid-1");
+      expect(
+        mockScrubConsortiumText.mock.invocationCallOrder[0],
+      ).toBeLessThan(mockDeleteUserData.mock.invocationCallOrder[0]);
+    });
+
+    it("completes for a user who never registered for the consortium", async () => {
+      mockGetQuestionsByUserId.mockResolvedValue([]);
+      mockDeleteUserData.mockResolvedValue();
+      mockDeleteUser.mockResolvedValue();
+
+      const result = await deleteUserAccount("uid-1");
+
+      expect(result).toEqual({ success: true });
       expect(mockDeleteUser).toHaveBeenCalledWith("uid-1");
     });
   });

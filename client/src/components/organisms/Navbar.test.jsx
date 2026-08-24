@@ -5,7 +5,8 @@ import Navbar from './Navbar';
 import { NAV_ITEMS } from '../../constants/navigation';
 
 // NAV_ITEMS mix dropdowns and flat links — Company is a dropdown
-// (Why Ichnos / Team), the rest are flat (Services, Battery Passport, Contact).
+// (Why Ichnos / Team), the rest are flat (Services, Battery Passport,
+// Consortium, Contact).
 const FLAT_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.children);
 const DROPDOWN_NAV_ITEMS = NAV_ITEMS.filter((item) => item.children);
 
@@ -210,7 +211,7 @@ describe('Navbar', () => {
     const servicesLink = screen.getByRole('link', { name: 'Services' });
     expect(servicesLink).toHaveClass('active');
 
-    ['Battery Passport', 'Contact'].forEach((label) => {
+    ['Battery Passport', 'Consortium', 'Contact'].forEach((label) => {
       expect(screen.getByRole('link', { name: label })).not.toHaveClass('active');
     });
   });
@@ -235,7 +236,7 @@ describe('Navbar', () => {
     expect(servicesLink).toHaveClass('active');
     expect(servicesLink).toHaveClass('nav-link-active');
 
-    ['Battery Passport', 'Contact'].forEach((label) => {
+    ['Battery Passport', 'Consortium', 'Contact'].forEach((label) => {
       const link = screen.getByRole('link', { name: label });
       expect(link).not.toHaveClass('active');
       expect(link).not.toHaveClass('nav-link-active');
@@ -259,7 +260,7 @@ describe('Navbar', () => {
     });
   });
 
-  it('on / homepage, Battery Passport is NEVER scrollspy-active (route-only)', () => {
+  it('on / homepage, route-only entries (Battery Passport, Consortium) are NEVER scrollspy-active', () => {
     mockUseActiveSection.mockReturnValue('data');
 
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
@@ -329,6 +330,7 @@ describe('Navbar', () => {
     const expected = {
       Services: '/services',
       'Battery Passport': '/passport',
+      Consortium: '/consortium',
       Contact: '/contact',
     };
 

@@ -99,6 +99,15 @@ export default function PrivacyPage() {
               correction, or deletion of your data at any time using the
               controls below.
             </p>
+            <p>
+              If you arrive at our consortium page from a campaign link, the
+              short campaign label carried in that link is kept in your
+              browser for the current session only, and it is sent to us
+              solely if you submit a consortium registration, where it is
+              stored alongside that registration. No cookie is set and no
+              analytics or tracking service is involved; the label is
+              discarded when you close the browser tab.
+            </p>
           </section>
 
           <section className="mb-5">

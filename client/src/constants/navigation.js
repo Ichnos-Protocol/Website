@@ -8,6 +8,10 @@
 // quo + milestones of the EU battery passport, the case for seamless
 // value-chain data flow, the Catena-X stack intro, and the ASEAN ↔ EU
 // localization). The legacy /data and /catena-x URLs 301-redirect here.
+//
+// Consortium routes to /consortium and is route-only like Battery Passport —
+// no `sectionId`/`activeSectionId`, so it never participates in the homepage
+// scrollspy.
 export const NAV_ITEMS = [
   {
     label: 'Company',
@@ -21,6 +25,7 @@ export const NAV_ITEMS = [
   },
   { label: 'Services', path: '/services', sectionId: 'services', activeSectionId: 'services' },
   { label: 'Battery Passport', path: '/passport' },
+  { label: 'Consortium', path: '/consortium' },
   { label: 'Contact', path: '/contact', sectionId: 'contact', activeSectionId: 'contact' },
 ];
 

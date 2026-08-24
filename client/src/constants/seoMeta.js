@@ -88,6 +88,24 @@ export const CONTACT_META = buildMeta({
     "contact Ichnos Protocol, battery systems advisory, battery passport consultation, Catena-X integration, ASEAN battery, EU 2023/1542",
 });
 
+export const CONSORTIUM_META = buildMeta({
+  path: "/consortium",
+  title: "Battery passport consortium — Ichnos Protocol",
+  description:
+    "Consortium for battery passport readiness: an anchor company and its suppliers in the Indonesian battery value chain. Register by 30 September 2026.",
+  keywords:
+    "battery passport consortium, Indonesian battery value chain, anchor company, supplier readiness, battery passport data, ASEAN battery, EU 2023/1542",
+});
+
+export const CONSORTIUM_TIERS_META = buildMeta({
+  path: "/consortium/tiers",
+  title: "Consortium tiers — Ichnos Protocol",
+  description:
+    "Participation options for registered consortium participants. This page is not indexed and requires a completed consortium registration.",
+  keywords:
+    "consortium tiers, consortium participation, registered participants",
+});
+
 export const PRIVACY_META = buildMeta({
   path: "/privacy",
   title: "Privacy & Data Management — Ichnos Protocol",
@@ -103,6 +121,8 @@ export const ALL_META = [
   TEAM_META,
   PASSPORT_META,
   CONTACT_META,
+  CONSORTIUM_META,
+  CONSORTIUM_TIERS_META,
   PRIVACY_META,
 ];
 

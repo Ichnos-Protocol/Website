@@ -6,7 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
 import ProtectedRoute from './ProtectedRoute';
 
-function renderWithAuth(isAuthenticated, loading = false) {
+function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
   const store = configureStore({
     reducer: { auth: authReducer },
     preloadedState: {
@@ -25,10 +25,11 @@ function renderWithAuth(isAuthenticated, loading = false) {
       <MemoryRouter initialEntries={['/protected']}>
         <Routes>
           <Route path="/" element={<p>Home</p>} />
+          <Route path="/consortium" element={<p>Consortium</p>} />
           <Route
             path="/protected"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute redirectTo={redirectTo}>
                 <p>Secret</p>
               </ProtectedRoute>
             }
@@ -56,6 +57,14 @@ describe('ProtectedRoute', () => {
   it('renders nothing while auth is loading', () => {
     renderWithAuth(false, true);
 
+    expect(screen.queryByText('Secret')).not.toBeInTheDocument();
+    expect(screen.queryByText('Home')).not.toBeInTheDocument();
+  });
+
+  it('redirects to the custom destination when not authenticated', () => {
+    renderWithAuth(false, false, '/consortium');
+
+    expect(screen.getByText('Consortium')).toBeInTheDocument();
     expect(screen.queryByText('Secret')).not.toBeInTheDocument();
     expect(screen.queryByText('Home')).not.toBeInTheDocument();
   });

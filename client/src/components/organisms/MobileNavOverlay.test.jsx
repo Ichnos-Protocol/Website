@@ -141,6 +141,7 @@ describe("MobileNavOverlay", () => {
     const expected = {
       Services: "/services",
       "Battery Passport": "/passport",
+      Consortium: "/consortium",
       Contact: "/contact",
     };
 
@@ -197,7 +198,7 @@ describe("MobileNavOverlay", () => {
     expect(servicesLink).toHaveClass("py-2");
     expect(servicesLink).not.toHaveClass("nav-link-default");
 
-    ["Battery Passport", "Contact"].forEach((label) => {
+    ["Battery Passport", "Consortium", "Contact"].forEach((label) => {
       const link = screen.getByRole("link", { name: label });
       expect(link).toHaveClass("nav-link-default");
       expect(link).not.toHaveClass("active");

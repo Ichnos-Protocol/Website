@@ -18,6 +18,7 @@ vi.mock("../config/firebase.js", () => ({
 
 vi.mock("../config/database.js", () => ({
   default: { query: (...args) => mockQuery(...args) },
+  withTransaction: (fn) => fn({ query: (...args) => mockQuery(...args) }),
 }));
 
 const { default: app } = await import("../app.js");

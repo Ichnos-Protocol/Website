@@ -233,11 +233,15 @@ describe('Footer', () => {
       });
     });
 
-    it('Products column has a single Battery Passport link → /passport', () => {
+    it('Products column has Battery Passport → /passport and Consortium → /consortium', () => {
       const productsCol = screen.getByTestId('footer-col-products');
       expect(
         within(productsCol).getByRole('link', { name: 'Battery Passport' }),
       ).toHaveAttribute('href', '/passport');
+      expect(
+        within(productsCol).getByRole('link', { name: 'Consortium' }),
+      ).toHaveAttribute('href', '/consortium');
+      expect(within(productsCol).getAllByRole('link')).toHaveLength(2);
       // Old separate Data + Catena-X links are consolidated; the standalone
       // Catena-X entry should NOT exist in the footer either.
       expect(

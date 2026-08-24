@@ -14,7 +14,9 @@ import contactRoutes from "./routes/contactRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import gdprRoutes from "./routes/gdprRoutes.js";
+import consortiumRoutes from "./routes/consortiumRoutes.js";
 import buildStatusPage from "./helpers/buildStatusPage.js";
+import { formatResponse } from "./helpers/formatResponse.js";
 import { ensureSeeded, seedStatus } from "../scripts/seedE2EOnPreview.js";
 
 const app = express();
@@ -50,8 +52,7 @@ app.use("/api/", limiter);
 
 // Root status page
 app.get("/", (_req, res) => {
-  const clientOrigin =
-    process.env.CORS_ORIGIN || "https://ichnos-protocol.com";
+  const clientOrigin = process.env.CORS_ORIGIN || "https://ichnos-protocol.com";
   const html = buildStatusPage({
     clientOrigin,
     env: process.env.NODE_ENV || "development",
@@ -92,28 +93,33 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/gdpr", gdprRoutes);
+app.use("/api/consortium", consortiumRoutes);
 
 // 404 handler for undefined routes
 app.use((_req, res) => {
   res
     .status(404)
-    .json({
-      error: "Not Found",
-      message: "The requested resource does not exist",
-    });
+    .json(
+      formatResponse(null, "The requested resource does not exist", "Not Found"),
+    );
 });
 
-// Global error handler
+// Global error handler.
+// Errors thrown by services (with a statusCode) reach the client through the
+// same { data, error, message } envelope as every successful response, so a
+// service-level refusal is not shaped differently from an auth or validation
+// refusal. `error` carries a machine-readable reason (string, or the issue
+// array validators supply) — never the boolean `true`.
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error("Error:", err);
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
+  const reason = err.code || err.message || "Internal Server Error";
 
   res.status(statusCode).json({
-    error: true,
-    message,
+    ...formatResponse(null, message, reason),
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
