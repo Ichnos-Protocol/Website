@@ -25,6 +25,9 @@ export const NAV_ITEMS = [
   },
   { label: 'Services', path: '/services', sectionId: 'services', activeSectionId: 'services' },
   { label: 'Battery Passport', path: '/passport' },
+  // Live demo of the passport app itself — a separate deployment (not part of
+  // this site), so it's a real external link, not a client-side route.
+  { label: 'Live Demo', href: 'https://passport.ichnos-protocol.com/demo', external: true },
   { label: 'Consortium', path: '/consortium' },
   { label: 'Contact', path: '/contact', sectionId: 'contact', activeSectionId: 'contact' },
 ];

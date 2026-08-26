@@ -80,7 +80,7 @@ describe("MobileNavOverlay", () => {
 
     FLAT_NAV_ITEMS.forEach((item) => {
       const link = screen.getByRole("link", { name: item.label });
-      expect(link).toHaveAttribute("href", item.path);
+      expect(link).toHaveAttribute("href", item.external ? item.href : item.path);
     });
   });
 
@@ -220,6 +220,21 @@ describe("MobileNavOverlay", () => {
       link.focus();
       expect(link).toHaveFocus();
     });
+  });
+
+  it("renders Live Demo as a real external link and still calls onClose on click", () => {
+    const onClose = vi.fn();
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={onClose} />);
+
+    const link = screen.getByRole("link", { name: "Live Demo" });
+    expect(link).toHaveAttribute("href", "https://passport.ichnos-protocol.com/demo");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+
+    mockNavigate.mockClear();
+    fireEvent.click(link);
+    expect(onClose).toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("has no accessibility violations", async () => {
