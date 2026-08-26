@@ -89,7 +89,7 @@ describe('Navbar', () => {
 
     FLAT_NAV_ITEMS.forEach((item) => {
       const link = screen.getByRole('link', { name: item.label });
-      expect(link).toHaveAttribute('href', item.path);
+      expect(link).toHaveAttribute('href', item.external ? item.href : item.path);
     });
   });
 
@@ -345,6 +345,21 @@ describe('Navbar', () => {
       expect(mockNavigate).toHaveBeenCalledWith(path);
       unmount();
     });
+  });
+
+  it('renders Live Demo as a real external link, opening in a new tab without client-side routing', () => {
+    renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
+      preloadedState: loggedOutState,
+    });
+
+    const link = screen.getByRole('link', { name: 'Live Demo' });
+    expect(link).toHaveAttribute('href', 'https://passport.ichnos-protocol.com/demo');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+
+    mockNavigate.mockClear();
+    fireEvent.click(link);
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('has no accessibility violations', async () => {
