@@ -1,6 +1,10 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.1 — 2026-09-11 · Status: normative · ready for one Traycer run**
+**Version 1.3, 2026-09-22 · Status: normative · ready for one Traycer run**
+
+*(1.3, owner input the same day: §6.5 carries the owner's actual schedule settings (title, Monday to Friday 10:00 to 18:00 Kuala Lumpur, 60 day window) and step by step instructions for adding the personal calendar to the availability check; §6.2 records the booking link for P1; §4.2.1.1 rules 3 and 6 record the owner's rulings: the founding price is financed by the reference and the introduction, a client who declines pays the standard price, and a second client signing at the founding price before the flip takes on the same conditions. §11 items 1 and 3 updated.)*
+
+*(1.2, owner decisions of 22 Sep 2026. **(a) Booking tool:** Calendly is replaced by a Google Calendar appointment schedule in the Ichnos Google Workspace account (Business Standard). §6.5 is rewritten for it. The §6.2 `?src=` attribution scheme is removed, because Google booking pages do not record URL parameters, and `BookingButton` loses its `src` prop. §0.7, §5, §6.1, §8 and §11 follow, and `[Cc]alendly` joins `FORBIDDEN`. **(b) First client prices:** each tier gets a founding price for its first signed client and reverts to its standard price afterwards. The founding price renders on the page as the tier's price, with no founding, introductory or cohort qualifier. The §4.2.1.1 founding block is removed from the page, the founding terms move to the engagement letter only, and the single `foundingCohortOpen` flag becomes one `foundingOpen` flag per tier. §4.2.1, §4.8, §7, §8, §9 and §11 follow.)*
 
 *(1.1, from the commercial review the same day: the pricing model is rebuilt on two independent axes because v1.0's currency-by-panel scheme overlapped on the case that matters most, an EU-exporting Asian cell maker, and priced the party carrying the legal obligation at par with the tier below it. Tier C added. Tier A reframed as a founding-client cohort so the low anchor has a stated reason. Four sections added: the window (§4.2.2), what happens next (§4.5.1), published work (§4.7.1) and the Calendly configuration (§6.5). §1 gains the outbound-collateral reframe, which reorders what the page optimises for.)*
 
@@ -17,12 +21,12 @@
 ## 0. Execution contract
 
 1. **This run changes routes.** It is the first route addition since pivot-3, and it is deliberate: pivot-4 §11 put routes out of scope for *that* run only. §2 governs.
-2. **One new dependency is permitted and only one:** none. The booking integration is a link-out, not an embed (§6.1). Any proposal to add a calendar SDK is a separate decision, not a Traycer judgement call.
+2. **One new dependency is permitted and only one:** none. The booking integration is a link-out, not an embed (§6.1). Any proposal to add a calendar SDK, including Google's appointment schedule embed script, is a separate decision, not a Traycer judgement call.
 3. Phases per §9. The 3-file cap holds unless a phase is marked *atomic*; every atomic phase here is pre-approved with its reason recorded. Do not re-ask.
 4. **Commit boundary is the semantic flip, not the file count** (pivot-3 §9.11/§9.12). Any consumer of a changed data shape lands in the same commit as the shape change.
 5. **Guards land in the earliest phase where they are green** (pivot-3 §7.2). The FORBIDDEN widening in §3 lands in P1 only if the corpus is already clean of each pattern; any pattern with live occurrences lands in the commit that deletes its last occurrence. A red P1 is never acceptable.
 6. **Tests locate by `data-testid` or role, never by copy** (pivot-3 §7.0). DOM assertions compare against imported constants and MUST NOT restate literals.
-7. **Owner-assigned, not Traycer:** creating the booking event type (§11), the live click-through check on desktop and mobile, Lighthouse, the three-viewport review, and re-verification of the membership claim in §4.7.
+7. **Owner-assigned, not Traycer:** creating and configuring the Google Calendar appointment schedule (§6.5, §11), the live click-through check on desktop and mobile, Lighthouse, the three-viewport review, and re-verification of the membership claim in §4.7.
 8. Green before commit, every phase.
 
 ---
@@ -144,34 +148,49 @@ The date in Panel B renders from `regulatoryDates.js` (the `battery-passport` en
 
 ### 4.2.1 Pricing model
 
-**Two independent axes. Do not collapse them into one.** v1.0 tied currency to the audience panel, which broke on the single most valuable case: an EU-exporting Korean, Japanese or Chinese cell maker is simultaneously a cell manufacturer and an economic operator, and the two panels quoted that buyer effectively the same money for materially different work.
+**Independent axes. Do not collapse them into one.** v1.0 tied currency to the audience panel, which broke on the single most valuable case: an EU-exporting Korean, Japanese or Chinese cell maker is simultaneously a cell manufacturer and an economic operator, and the two panels quoted that buyer effectively the same money for materially different work.
 
 - **Axis 1, currency, follows the buyer's domicile and billing entity.** An ASEAN-domiciled buyer is quoted and invoiced in SGD from the Singapore entity, in the currency it budgets in. A buyer domiciled in the EU, or one that requires an EU-facing invoice, is quoted in EUR. Nothing about currency is derived from which panel the visitor read.
 - **Axis 2, price, follows scope.** Three tiers, each existing in both currencies.
+- **Axis 3, time, follows the first sale per tier (v1.2).** Each tier has a founding price, which applies until the first engagement letter in that tier is signed, and a standard price afterwards. §4.2.1.1 governs.
 
-`PRICING` constant:
+`PRICING` constant, owner-confirmed 22 Sep 2026:
 
-| Tier | Scope | SGD | EUR |
-|---|---|---|---|
-| `component` | One material or component family, one site, one customer-facing data request. Active materials, electrodes, separator, electrolyte, cell housing. | **From 7,500** | **From 5,000** |
-| `cell` | One reference cell or pack, its bill of materials, and the supplier tiers behind it. | **From 15,000** | **From 10,000** |
-| `operator` | One reference product, multi-tier supplier map, the operator's own issuing path, and the incoming customer data requests it has to answer. | **From 25,000** | **From 16,000** |
+| Tier | Scope | Founding SGD | Founding EUR | Standard SGD | Standard EUR |
+|---|---|---|---|---|---|
+| `component` | One material or component family, one site, one customer-facing data request. Active materials, electrodes, separator, electrolyte, cell housing. | **From 4,500** | **From 3,000** | **From 7,500** | **From 5,000** |
+| `cell` | One reference cell or pack, its bill of materials, and the supplier tiers behind it. | **From 7,500** | **From 5,000** | **From 15,000** | **From 10,000** |
+| `operator` | One reference product, multi-tier supplier map, the operator's own issuing path, and the incoming customer data requests it has to answer. | **From 15,000** | **From 10,000** | **From 25,000** | **From 16,000** |
+
+Shape: per tier, `founding: { SGD, EUR }`, `standard: { SGD, EUR }` and a boolean `foundingOpen`, all `true` at launch. A single selector returns each tier's **current** price: `founding` while `foundingOpen` is true, `standard` otherwise. **Every consumer on the site (panels, FAQ, `seoMeta.js`, `structuredData.js`) reads the current price through that selector.** No consumer reads `founding` or `standard` directly, and no price is typed as a literal anywhere outside `PRICING`.
 
 **Why tier `operator` sits clearly above `cell`, rather than at par.** The economic operator carries the Article 77 exposure, works to a fixed external date it cannot move, and holds the largest budget of the three. v1.0 priced that party at par with a cell maker doing a narrower piece of work. The tier with the most at stake and the most willingness to pay MUST NOT be the cheapest line on the page in its own currency.
 
+**Mixed state, accepted (v1.2):** if tier `cell` has flipped to standard while tier `operator` is still at its founding price, both EUR figures stand at 10,000. This is transient, it ends with the operator tier's first contract, and the panels show the two tiers in different currencies, so the page never places them side by side.
+
 **Panel price blocks.** Each panel renders the tiers relevant to its audience, in the currency that audience most commonly budgets in. This is a display default, not the quoting rule: the engagement letter follows domicile per axis 1.
 
-**Panel A**
+**Panel A** (values shown are the launch state, all tiers at founding price)
 ```
-"From SGD 7,500 for a single component family.
-From SGD 15,000 for a cell or a pack, including the suppliers behind it."
+"From SGD {component.SGD} for a single component family.
+From SGD {cell.SGD} for a cell or a pack, including the suppliers behind it."
+
+renders at launch as:
+"From SGD 4,500 for a single component family.
+From SGD 7,500 for a cell or a pack, including the suppliers behind it."
 ```
 
 **Panel B**
 ```
-"From EUR 16,000 for a reference product, the supplier tiers behind it, and
+"From EUR {operator.EUR} for a reference product, the supplier tiers behind
+it, and the data requests your customers are already sending you."
+
+renders at launch as:
+"From EUR 10,000 for a reference product, the supplier tiers behind it, and
 the data requests your customers are already sending you."
 ```
+
+The `{tier.CURRENCY}` placeholders are interpolated from the current price selector. The fenced copy holds the placeholders, never the figures.
 
 Five normative rules attach:
 
@@ -181,28 +200,18 @@ Five normative rules attach:
 4. **A visitor is never shown both currencies for the same tier.** No toggle, no dual display, no "or local equivalent". The rendered panel shows one currency.
 5. **No price appears above the fold** and none appears on `/services` (§2.3). A price is the second question, not the first.
 
-### 4.2.1.1 The founding-client frame on tier `component`
+### 4.2.1.1 First client prices: founding terms stay off the page
 
-Tier `component` is deliberately below what the work costs in time. That is a defensible commercial choice and an indefensible accident, so the page states the reason.
+**Owner decision, 22 Sep 2026.** The first signed client in each tier pays that tier's founding price (§4.2.1). The page shows the founding price as the tier's price. **At launch every visitor therefore sees EUR 3,000 / 5,000 / 10,000 and SGD 4,500 / 7,500 / 15,000, never the standard prices, until that tier's first contract is signed and the tier flips.** The page does not say that the price is introductory, that it is reserved for a first client, or that it will rise. v1.1's "Founding client places" block is removed from the page and from `readinessAssessmentContent.js`.
 
-Published guidance on digital product passport compliance puts a small consumer-goods brand's **entire** first-year spend at roughly EUR 2,500 to 10,000. Tier `component` sits inside that band. A procurement officer who searches before the call will find those figures and file Ichnos alongside consumer-goods passport SaaS onboarding unless the page gives the number a different meaning. **Price is a positioning signal before it is a number.**
+Six rules:
 
-Therefore tier `component` renders with a founding-client qualifier, as its own short block beneath the Panel A price block:
-
-```
-label: "Founding client places"
-body:  "The component tier is an introductory price for a limited first
-cohort, in exchange for two things written into the engagement letter: a
-named reference once the work is delivered, and one introduction to a
-customer or supplier in your chain. When the cohort closes, the price
-moves to its standard level."
-```
-
-Three rules:
-
-1. The founding-client exchange is **a contractual term, not a marketing line.** It is in the engagement letter or it is not on the page. If the owner does not intend to write it into the contract, this block is deleted and tier `component` is repriced upward instead.
-2. The block MUST NOT state a countdown, a number of remaining places, or any scarcity figure that is not literally true and literally tracked. A fabricated counter is the one thing here that would damage the credibility the rest of the page is built to establish.
-3. `PRICING` carries a `foundingCohortOpen` boolean. When the owner flips it to false, the block stops rendering and the standard price renders in place of the introductory one. No code change, no redeploy decision, no stale promise left on a live page.
+1. **No qualifier on the page.** The page subtree MUST NOT contain `founding`, `introductory`, `cohort`, `early bird`, `launch price`, `launch offer`, `limited offer` or `limited places` (case insensitive; phrases rather than bare words, because §4.3's fenced copy legitimately says "product launches"), and MUST NOT show the standard price struck through beside the founding price. Tier-1 §8 item 9.
+2. **No scarcity device.** No countdown, no number of remaining places, no "this month only". Kept from v1.1: a fabricated counter would damage the credibility the rest of the page is built to establish.
+3. **The founding terms live in the scoping call and the engagement letter, never on the page.** The owner explains on the scoping call, before any proposal is sent, that the displayed price is financed by two things the client gives in return: a named reference once the work is delivered, and one introduction to a customer or supplier in the client's chain. The proposal and the engagement letter show the standard price, a founding discount down to the displayed price, and the founding client clause the discount is conditional on. **If the client declines the clause, the discount does not apply and the standard price is due.** The clause is a contractual term, not a marketing line.
+4. **Tiers flip independently.** When the first engagement letter in a tier is signed, the owner sets that tier's `foundingOpen` to false the same week. The page then renders the standard price for that tier. The flip is a one line change to the flag and a normal deploy; nothing else in the code changes.
+5. **Accepted risk, recorded.** v1.1 put a stated reason beside the low price because published guidance puts a small consumer goods brand's **entire** first year passport spend at roughly EUR 2,500 to 10,000, and a component price inside that band, with no reason given, invites a procurement officer to file Ichnos alongside consumer passport SaaS onboarding. The owner accepts that risk for the first sale in each tier. It ends when the tier flips.
+6. **Transition cases, owner rulings of 22 Sep 2026.** (a) Every engagement letter issued at the founding price carries the founding clause. A second client in the same tier who signs at the founding price before the owner flips the flag gets the founding price on the same conditions as the first: reference and introduction. (b) After the flip, new letters are issued at the standard price. (c) A client who declines the clause pays the standard price (rule 3).
 
 ### 4.2.2 The window
 
@@ -400,12 +409,18 @@ expose a formulation, it is carried behind an identifier. Which data is
 visible to whom is part of what the report specifies."
 
 Q: "What does it cost, and what moves the number?"
-A: "A single component family starts at SGD 7,500. A cell or a pack, with the
-suppliers behind it, starts at SGD 15,000. For a company placing batteries on
-the EU market, where the assessment also covers your issuing path and the data
-requests coming at you from customers, it starts at EUR 16,000. The number
-moves with how many product families, sites and source systems are in scope,
-and the scoping call fixes it before you commit to anything."
+A: "A single component family starts at SGD {component.SGD}. A cell or a pack,
+with the suppliers behind it, starts at SGD {cell.SGD}. For a company placing
+batteries on the EU market, where the assessment also covers your issuing path
+and the data requests coming at you from customers, it starts at
+EUR {operator.EUR}. The number moves with how many product families, sites
+and source systems are in scope, and the scoping call fixes it before you
+commit to anything."
+```
+
+The cost answer's `{tier.CURRENCY}` placeholders are interpolated from the current price selector (§4.2.1), exactly as in the panels. v1.1 held the figures as literals here, which would have gone stale at the first tier flip.
+
+```
 
 Q: "We are not in the EU. Does this apply to us?"
 A: "The obligation sits with whoever places the battery on the EU market. If
@@ -430,7 +445,7 @@ fallback: "Or send the question in writing"   → links to /contact
 |---|---|---|
 | `pages/ReadinessAssessmentPage.jsx` | page | Composition only. No copy literals. |
 | `molecules/Breadcrumb.jsx` | new | Parent label and route from constants. |
-| `molecules/BookingButton.jsx` | new | Single CTA implementation, used by both bands and by the §2.3 entry points. Carries the `src` parameter (§6.2). |
+| `molecules/BookingButton.jsx` | new | Single CTA implementation, used by both bands and by the §2.3 entry points. Renders `BOOKING_URL` unchanged, with no appended parameters (§6.2). Each instance carries its own `data-testid` for tests. |
 | `molecules/ProcessSteps.jsx` | new | §4.4. Not the regulatory timeline. |
 | `organisms/AudiencePanels.jsx` | new | §4.2. |
 | `organisms/DeliverablesGrid.jsx` | new | §4.3. |
@@ -446,15 +461,16 @@ Every new class ships with its CSS rule in the same commit (pivot-4 rule ii). Th
 
 ### 6.1 Link-out, not embed
 
-The booking CTA is an anchor to an external scheduling URL, `target="_blank"`, `rel="noopener noreferrer"`.
+The booking CTA is an anchor to the Google Calendar appointment schedule booking page, `target="_blank"`, `rel="noopener noreferrer"`.
 
-**Rejected: an embedded calendar widget.** It adds a third-party script and an iframe to the one page whose conversion depends on nothing going wrong, changes the cookie and privacy posture, and introduces a layout risk at 390px that the manual matrix would have to police forever. The link-out costs one click and zero dependencies. An embed may be revisited once the page has produced bookings and the friction is measured rather than assumed.
+**Rejected: an embedded calendar widget, including the inline booking page and the booking button script that Google Calendar offers under the schedule's share options.** It adds a third-party script and an iframe to the one page whose conversion depends on nothing going wrong, changes the cookie and privacy posture, and introduces a layout risk at 390px that the manual matrix would have to police forever. The link-out costs one click and zero dependencies. An embed may be revisited once the page has produced bookings and the friction is measured rather than assumed.
 
-### 6.2 Single source and attribution
+### 6.2 Single source, no attribution parameters
 
-- `BOOKING_URL` is a single constant. Every CTA on the site imports it. Zero hardcoded scheduling URLs.
-- Each CTA instance appends a source parameter so bookings are attributable without adding an analytics dependency: `?src=readiness-hero`, `?src=readiness-closing`, `?src=passport-band`, `?src=services-card`.
-- `BookingButton` takes `src` as a required prop. A test asserts each rendered CTA carries a distinct one.
+- `BOOKING_URL` is a single constant holding the booking page link exactly as Google Calendar gives it under the schedule's share link (a `https://calendar.app.google/...` short link, or the long `https://calendar.google.com/calendar/appointments/schedules/...` form). Every CTA on the site imports it. Zero hardcoded scheduling URLs. **Value for P1, set by the owner on 22 Sep 2026: `https://calendar.app.google/5AE4mhXGnPj2GutF7`.**
+- **No source parameters are appended.** v1.1 appended `?src=` values for attribution through Calendly's UTM passthrough. Google appointment schedules do not record URL parameters on the booking, so the parameters would be dead code that the tests then protect. They are removed. `BookingButton` renders `BOOKING_URL` exactly and takes no `src` prop.
+- **Attribution moves to the call.** At the booking volume the page can produce (§12), the owner asks on the scoping call how the prospect found the page and records the answer in the pipeline record. If attribution later needs to be systematic, the options are a fifth, optional booking form question or an analytics dependency. Either is a separate decision, not a Traycer judgement call.
+- **Calendly leaves the codebase.** `[Cc]alendly` joins `FORBIDDEN` for `client/src`, landing per §0.5: in P1 if the corpus is already clean, otherwise in the commit that deletes the last occurrence.
 
 ### 6.3 Fallback
 
@@ -464,21 +480,39 @@ Beneath the primary button on both bands, a plain text link to `/contact` (§4.9
 
 This page has no form, no newsletter field and no gated download. The only conversion is the booked call.
 
-### 6.5 Calendly configuration
+### 6.5 Google Calendar appointment schedule configuration
 
-The scheduling tool is Calendly, already held by the owner. The following is owner-configured, not implemented in code, but it is specified here because the page's conversion rate depends on it as much as on the copy.
+The scheduling tool is a **Google Calendar appointment schedule** in the Ichnos Google Workspace account. Business Standard includes every appointment schedule feature this section relies on, including checking availability across several calendars, so there is no additional subscription. The following is owner-configured, not implemented in code, but it is specified here because the page's conversion rate depends on it as much as on the copy.
+
+**Why Google and not Calendly (recorded 22 Sep 2026):** no extra cost on top of the existing Workspace plan; bookings land directly in the Ichnos calendar with a Google Meet link; prospects' booking data is processed by one vendor instead of two; and the personal calendar can block slots through calendar sharing, which the Calendly free plan cannot do (one connected calendar only). **Accepted loss:** Google records no source parameters, so booking attribution moves to the call (§6.2).
+
+**Created in the Ichnos Workspace account, never in the personal Gmail account.** The schedule, its bookings and the Meet links belong to the company, and the confirmation mail the prospect receives comes from the Ichnos identity.
 
 | Setting | Value | Why |
 |---|---|---|
-| Event name | The product name, not "intro call" or "discovery call" | The name appears in the invitee's calendar and in the confirmation mail, where it is read by people who were not on the booking page. It should say what the meeting is about. |
-| Duration | 30 minutes | Matches the page copy. If the copy and the event disagree, the copy is wrong, not the event. |
-| Price | Free | A booking fee filters hard, and filtering is what you do when demand exceeds delivery capacity. That is not the current condition. Revisit when the calendar is full. |
-| Timezone | Auto-detect for the invitee | The buyer population spans Jakarta, Seoul, Shenzhen and Central Europe. A mis-set timezone is a lost call that never reports itself. |
-| Buffer | After the meeting | Scoping calls run over when they are going well. |
-| Daily cap | Two or three bookings | The page exists to fill a calendar, not to shred the modelling and standards work that the offer is built on. |
-| UTM passthrough | Enabled | The `?src=` values in §6.2 arrive as tracked parameters, which is how the owner learns which of the three entry points converts. Without this the §6.2 parameter scheme produces nothing. |
+| Title | `Meeting with Francesco (Ichnos Protocol)` (owner setting, 22 Sep 2026) | Names the person and the company, so the calendar entry and the confirmation mail tell the invitee who the meeting is with. |
+| Duration | 30 minutes | Matches the page copy. If the copy and the schedule disagree, the copy is wrong, not the schedule. |
+| General availability | Monday to Friday, 10:00 to 18:00 Kuala Lumpur time, repeating weekly (owner setting, 22 Sep 2026) | Covers ASEAN, China and Korea business hours. 15:00 to 18:00 Kuala Lumpur is 08:00 to 11:00 in Central Europe in winter and 09:00 to 12:00 in summer, so European prospects still get morning slots. |
+| Schedule time zone | Kuala Lumpur | The owner's working day. The booking page presents slots to the visitor; the §8 test booking confirms a visitor in another time zone sees the correct local times. The buyer population spans Jakarta, Seoul, Shenzhen and Central Europe, and a time zone error is a lost call that never reports itself. |
+| Scheduling window | Bookable up to 60 days ahead; minimum notice 24 hours (owner setting, 22 Sep 2026) | The minimum notice guarantees the owner reads the screening answers before the call. |
+| Buffer time | 15 minutes between appointments | Scoping calls run over when they are going well. |
+| Maximum bookings per day | Two or three | The page exists to fill a calendar, not to shred the modelling and standards work that the offer is built on. |
+| Check availability | The Ichnos primary calendar **and** the owner's personal Gmail calendar | A personal commitment must remove the slot from the booking page. See the setup note below. |
+| Location / conferencing | Google Meet | Created automatically on each booking. No separate video tool. |
+| Payment | Off | A booking fee filters hard, and filtering is what you do when demand exceeds delivery capacity. That is not the current condition. Revisit when the calendar is full. |
+| Email verification | Off at launch | The page's traffic is prospects reached by outbound email, so spam bookings are unlikely, and a verification code is one more step on a phone. Turn it on if spam bookings appear. |
+| Booking confirmation and reminders | Confirmation on; email reminders at 24 hours and 1 hour before | Reduces no shows across time zones. Google does not allow editing the reminder text, which is acceptable. |
 
-**Screening questions on the booking form, four, all required:**
+**Setup note, personal calendar.** A calendar only appears in the schedule's availability list if the Ichnos account is subscribed to it, so the personal calendar has to be shared into the Ichnos account first. All steps on a computer at calendar.google.com; the phone app does not have these settings.
+
+1. **Personal Gmail account:** Settings, then under "Settings for my calendars" the personal calendar, then "Share with specific people or groups", "Add people and groups", the Ichnos address, permission **"See all event details"**, Send. Google does not document whether a free/busy only share is accepted for availability checking; "See all event details" is the setting that works. The share stays read only, and the Workspace account never gets edit rights on the personal calendar.
+2. **Ichnos account:** open the invitation email and click "Add this calendar", or in Google Calendar next to "Other calendars" click +, "Subscribe to calendar", and enter the personal Gmail address. The personal calendar now appears under "Other calendars".
+3. **Ichnos account:** open the appointment schedule, "Edit appointment schedule", open the **Calendars** section, turn on "Check calendars for availability" and tick the personal calendar next to the Ichnos calendar. Save.
+4. **Verify:** place a test event in the personal calendar and confirm the matching slot disappears from the booking page.
+
+If the personal calendar still does not appear in step 3: confirm the schedule sits on the Ichnos **primary** calendar (Google notes that a schedule created on a shared calendar may not allow other calendars to be checked), and that the account shown top right in Google Calendar is the Ichnos account, not the personal one.
+
+**Booking form: first name, last name and email are Google's fixed fields. Add the four screening questions below as additional items, each marked required:**
 
 ```
 1. "Company and your role"
@@ -501,10 +535,12 @@ They do two jobs. They qualify the call before it happens, and they arrive as pr
 title:       "Battery passport data readiness assessment | Ichnos Protocol"
 description: "A three week, fixed scope assessment mapping EU battery passport
 data requirements against the data your systems hold today, with a gap
-analysis and a sequenced remediation plan. From SGD 7,500."
+analysis and a sequenced remediation plan. From SGD {lowest current SGD}."
+
+renders at launch as "... From SGD 4,500."
 ```
 
-The meta description carries the **lowest** list price only. A meta description is read by every segment at once, so it cannot carry the ladder without contradicting §4.2.1 rule 4, and the entry price is the one that earns the click. It is imported from `PRICING`, not typed, so it cannot go stale when the tier is repriced or the founding cohort closes.
+The meta description carries the **lowest** list price only. A meta description is read by every segment at once, so it cannot carry the ladder without contradicting §4.2.1 rule 4, and the entry price is the one that earns the click. It is read through the current price selector, not typed, so it cannot go stale when a tier is repriced or flips from founding to standard.
 
 Per pivot-3 §7.4 item 21, `seoMeta.js` and `structuredData.js` MUST NOT state contradictory status claims, and any claim both make uses identical wording imported from the shared constant.
 
@@ -512,7 +548,7 @@ Per pivot-3 §7.4 item 21, `seoMeta.js` and `structuredData.js` MUST NOT state c
 
 Two additions:
 
-- A `Service` node: `provider` references the existing Organization node, `serviceType: "Regulatory data readiness assessment"`, `areaServed` covering the ASEAN markets already listed on the organization, and an `offers` array of **six** `Offer` nodes, one per tier-and-currency combination in `PRICING`, each carrying a `PriceSpecification` with its own `minPrice` and `priceCurrency` and a `name` distinguishing the tier. Values are imported from `PRICING`, never restated. The node MUST NOT carry any certification, accreditation or `hasCredential` claim.
+- A `Service` node: `provider` references the existing Organization node, `serviceType: "Regulatory data readiness assessment"`, `areaServed` covering the ASEAN markets already listed on the organization, and an `offers` array of **six** `Offer` nodes, one per tier-and-currency combination of the **current** price, each carrying a `PriceSpecification` with its own `minPrice` and `priceCurrency` and a `name` distinguishing the tier. Values are read through the current price selector (§4.2.1), never restated, so the markup changes with the page when a tier flips. The offer names MUST NOT carry founding or introductory wording (§4.2.1.1 rule 1). The node MUST NOT carry any certification, accreditation or `hasCredential` claim.
 
   Six offers is not a contradiction of §4.2.1 rule 4: that rule governs what a *visitor* is shown in the rendered panels. Structured data is a machine surface, and omitting real list prices from it would make the markup an inaccurate description of the service.
 
@@ -531,30 +567,30 @@ The canonical route is added. The redirecting sibling path (§2.1) is not.
 1. The route renders the page; the redirect sibling resolves to the canonical path.
 2. Every constant in `readinessAssessmentContent.js` is rendered somewhere in the page (the pivot-3 item-8 consumer contract, applied to the new file).
 3. Breadcrumb present, first crumb href equals the imported parent route constant.
-4. Both CTA bands render `BookingButton` sourcing the imported `BOOKING_URL`, each with a distinct `src`.
+4. Both CTA bands render `BookingButton` whose href equals the imported `BOOKING_URL` exactly, with no appended query parameters. `BOOKING_URL` is asserted to be an `https` URL on a Google Calendar booking host (`calendar.app.google` or `calendar.google.com`), which catches a leftover Calendly link without exact matching the operational URL.
 5. All five FAQ answers are present in the initial DOM.
 6. **Zero label assets in the page subtree** (rule 1), asserted as a not-contains against the imported asset constants.
 7. Panel B's date and the §4.2.2 window date are both the interpolated `regulatoryDates.js` value, not literals.
-8. Each rendered price equals its `PRICING` literal; the rendered panels carry one currency each (§4.2.1 rule 4); no currency symbol character appears in the page subtree.
-9. **`foundingCohortOpen` gates the §4.2.1.1 block both ways:** true renders the founding block and the introductory tier `component` price; false renders neither, and the standard price renders in its place. Both branches are asserted.
+8. Each rendered price equals the current price selector's value for its tier and currency; the rendered panels carry one currency each (§4.2.1 rule 4); no currency symbol character appears in the page subtree.
+9. **Each tier's `foundingOpen` flag gates its price both ways**, asserted per tier: true renders the `founding` value, false renders the `standard` value, in the panels, the FAQ answer, the meta description and the structured data alike. The page subtree contains none of the §4.2.1.1 rule 1 words and no struck through price, asserted in both branches.
 10. The §4.5.1 "what happens next" block renders and its link resolves to `/services` via the imported route constant.
 11. The §4.7.1 published-work list renders every item in its constant (item-8 consumer contract).
 12. No price renders above the fold, asserted structurally: no `PRICING` value appears in the hero component's subtree.
 
-**Tier-2, corpus:** the two new FORBIDDEN patterns from rule 2, landing per §0.5; the page's copy passes the existing vocabulary scan unchanged.
+**Tier-2, corpus:** three new FORBIDDEN patterns, the two from rule 2 and `[Cc]alendly` from §6.2, each landing per §0.5; the page's copy passes the existing vocabulary scan unchanged.
 
 **Tier-3:** **this run adds nothing.** The list stays closed at items 13 to 15. `BOOKING_URL` is configuration, not a claim: a wrong value is caught by the tier-1 sourcing assertion plus the owner's click check, and exact-matching it would freeze an operational URL behind a spec amendment.
 
 **Manual, owner:**
 13. **Phone first, desktop second** (§1). Open the live route on a real phone over a mobile connection before reviewing it on a laptop. The first screen must carry the headline, the subhead and the CTA without scrolling, and must be legible without zooming. This is the condition the page is actually used in.
-14. Click the live booking link on desktop and on a phone, and complete one test booking end to end, confirming the `src` parameter arrives in the Calendly booking record.
-15. Verify the §6.5 Calendly configuration item by item, in particular UTM passthrough and the four screening questions. The §6.2 parameter scheme produces nothing without it.
+14. Click the live booking link on desktop and on a phone, and complete one test booking end to end from a browser that is not signed in to either of the owner's Google accounts. Confirm: the booking lands in the Ichnos calendar with a Google Meet link; the four screening answers appear in the event; the confirmation mail carries the product name and the Ichnos identity; the booked slot disappears from the booking page. Repeat once from a device set to a Central European time zone and confirm the slots show in that local time.
+15. Verify the §6.5 appointment schedule configuration item by item, in particular the four required screening questions, the daily maximum, the 24 hour minimum notice, and the personal calendar check: a test event in the personal Gmail calendar removes the matching slot from the booking page.
 16. Three-viewport review at 1440, 768 and 390px, with rule 9 specifically checked: no price badge, no pricing-table styling on the panels, no Catena-X mention adjacent to a price.
 17. Lighthouse on the new route.
 18. If §4.7's optional sentence shipped: re-verify against the current membership list.
 19. Audit the §4.7.1 published-work list against reality before go-live, and again whenever an item is added. Every line must be a thing that happened, on a date, evidenceable on request.
 20. **Pricing review.** Re-check the SGD and EUR ladders against each other whenever EUR/SGD moves materially, and update `PRICING.REVIEWED_AS_OF` on every change. The two ladders are set independently and will drift; the review is what keeps the drift deliberate.
-21. **Founding cohort tracking.** Keep a count of founding-client engagements signed. When the intended cohort is filled, flip `foundingCohortOpen` to false the same week. A founding price still advertised after the cohort closed is the kind of small dishonesty this specification exists to prevent elsewhere.
+21. **First client tracking, per tier.** Record each signed founding client in the pipeline record with the tier and the signing date. The week the first engagement letter in a tier is signed, set that tier's `foundingOpen` to false. A founding price left on the page after its tier's first contract is a price the next prospect in that tier will expect to pay.
 
 ---
 
@@ -562,9 +598,9 @@ The canonical route is added. The redirecting sibling path (§2.1) is not.
 
 | P | Scope | Cap ruling |
 |---|---|---|
-| 1 | `readinessAssessmentContent.js` + `PRICING` (three tiers, two currencies, `REVIEWED_AS_OF`, `foundingCohortOpen`) + `BOOKING_URL` + colocated tests + FORBIDDEN widening | Within cap. Guards first, green now. `PRICING` ships with its own test asserting three tiers in both currencies, no conversion helper, a shaped `REVIEWED_AS_OF`, and a boolean cohort flag. |
+| 1 | `readinessAssessmentContent.js` + `PRICING` (three tiers, founding and standard values in two currencies, one `foundingOpen` flag per tier, the current price selector, `REVIEWED_AS_OF`) + `BOOKING_URL` + colocated tests + FORBIDDEN widening | Within cap. Guards first, green now. `PRICING` ships with its own test asserting three tiers with founding and standard values in both currencies, no conversion helper, a shaped `REVIEWED_AS_OF`, a boolean flag per tier, and the selector returning founding or standard per flag. |
 | 2 | Route constant, `App.jsx` wiring, page shell, `Breadcrumb`, redirect | **Atomic, pre-approved:** a route and its only consumer are one semantic unit. |
-| 3 | Hero, `AudiencePanels` with price blocks, the §4.2.1.1 founding block and its flag branch, `BookingButton` + CSS | **Atomic, pre-approved:** the button is the page's reason to exist, and the price blocks cannot ship without the flag branch that governs one of them. |
+| 3 | Hero, `AudiencePanels` with price blocks read through the current price selector, `BookingButton` + CSS | **Atomic, pre-approved:** the button is the page's reason to exist, and the price blocks cannot ship without the selector that governs them. |
 | 4 | §4.2.2 window, `DeliverablesGrid`, `ProcessSteps`, inputs block + CSS | Within cap if split; MAY run as two sub-commits. The window lands with this group because it renders between the panels and the deliverables. |
 | 5 | §4.5.1 what-happens-next, `ScopeBoundary`, who-runs-it, §4.7.1 published work + CSS | Within cap if split. The three credibility sections are one semantic group: each is a claim surface and they are reviewed together. |
 | 6 | `AssessmentFaq`, `CtaBand` + CSS | Within cap. |
@@ -583,9 +619,9 @@ The `/data` versus `/passport` route-naming question (pivot-3's ruling stands: t
 
 ## 11. Owner items before P3 can land
 
-1. **Configure the Calendly event per §6.5.** It exists; the configuration is what makes it work. In particular: rename it to the product name, enable UTM passthrough, add the four screening questions, set the daily cap.
-2. **Confirm the six list prices before P1.** Three checks worth making: tier `operator` at EUR 16,000 is the deliberate correction of v1.0's par pricing and should be sanity-checked against what a European economic operator actually pays a boutique for three weeks of specialist work; tier `component` is below cost in time and only makes sense with the founding-client exchange attached; and the SGD ladder should be what an ASEAN component supplier can approve without escalating to a board.
-3. **Decide the founding cohort size, and write the exchange into the engagement-letter template.** The named reference and the one supply-chain introduction are contractual terms per §4.2.1.1 rule 1. If they are not going into the contract, delete the founding block and reprice tier `component` upward instead. The block is not a marketing device on its own.
+1. **Google Calendar appointment schedule per §6.5, in the Ichnos Workspace account.** Done 22 Sep 2026: title, 30 minutes, Monday to Friday 10:00 to 18:00 Kuala Lumpur, 60 days ahead, 24 hours notice, booking link recorded in §6.2. **Open:** (a) share the personal Gmail calendar into the Ichnos account and tick it under "Check calendars for availability", per the §6.5 setup note; (b) confirm buffer time, maximum bookings per day, Google Meet, email reminders and the four required screening questions against the §6.5 table. If a Calendly event or account was ever set up for this offer, delete the event and cancel any paid plan, so a second booking link with the old configuration does not circulate in earlier emails.
+2. **Prices: confirmed 22 Sep 2026.** All twelve values in §4.2.1 are owner decisions. Set `REVIEWED_AS_OF` to 2026-09-22 in P1.
+3. **Write the founding client clause into the engagement letter template before the first letter goes out** (§4.2.1.1 rules 3 and 6): standard price, founding discount, the discount conditional on a named reference after delivery and one introduction to a customer or supplier in the client's chain, and the standard price due if the client declines. The second client and refusal cases are ruled in §4.2.1.1 rule 6. **Still open:** how the clause is enforced, since the reference falls due after delivery, when the discount has already been given. One option is that the discount becomes invoiceable if the reference or the introduction is not provided within an agreed period after delivery. Have the clause reviewed by a lawyer before the first letter.
 4. **Decide §4.7's optional membership sentence.** Default is omit.
 5. **Audit the §4.7.1 published-work list.** Five items are drafted from the project record. Confirm each is accurate as stated, that the standard request is described at the right stage (submitted, not adopted), and that you would be comfortable being asked for evidence of any of them on a call.
 6. **Withholding tax stays off the page.** Indonesian Article 26 and the NBRI host fee are engagement-letter matters. Putting "fees quoted net of withholding" into public copy trades a small competence signal for a large amount of friction at exactly the wrong moment. Handle it in the scoping call and the engagement letter, where it belongs.
