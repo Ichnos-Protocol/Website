@@ -1,6 +1,8 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.10, 2026-09-23 · Status: normative · in execution, paused at T9**
+**Version 1.11, 2026-09-23 · Status: normative · in execution, verification fixes**
+
+*(1.11, from Traycer's verification pass. One fenced-copy amendment: §4.5.1's hosting sentence said `a hosted service on EU servers operated by us` while the claim-discipline paragraph one line below mandated `EU-hosted, operated by Ichnos`. The fenced copy was wrong and now carries the required construction. Four other findings ruled without spec change: the route pin extracts `route:` mount arguments rather than any quoted string; both `.env.example` rows go now, since a template is not a live setting; the second booking-band assertion is declined as redundant with the shared `BookingButton` test; and the missing phase commits are reconstructed as two commits, not twelve.)*
 
 *(1.10, ruling on the collision between §8 item 7 and §4.7.1 that T9 surfaced. **The guard was too broad and the copy is correct.** v1.9's item 7(b) banned every rendered four-digit year page-wide; that was an overreach in my wording, not a defect in the implementation, and it made `International Battery Summit 2026` unrenderable. §3 rule 4 exists to stop a **regulatory obligation date** being hardcoded and going stale when the regulation moves, which is why `18 February 2025` and `18 August 2025` sit in `FORBIDDEN`. An event title is the inverse case: it cannot go stale, and §4.7.1 rules 1 and 5 require exactly that checkable specificity. Item 7 is now scoped in three parts: Panel B remains the sole passport-date carrier; the page minus the published-work subtree rejects bare years, month-year forms and ISO dates; and inside published work, month-year and ISO forms stay barred while a bare year is permitted. The exclusion is drawn on the component's `data-testid` boundary rather than an allowed string, because §4.7.1 rule 5 and §11 item 5 both anticipate the list growing. New §4.7.1 rule 6 states the copy-side constraint. No rework to T8's guard beyond adding the subtree exclusion and the inner assertion.)*
 
@@ -436,14 +438,14 @@ body: "The report is designed to be useful on its own, including to a team
 that takes it and acts without us. Where clients continue, it is usually one
 of three ways: closing the data gaps with your own systems team and your
 suppliers, standing up the exchange infrastructure so your customers can pull
-what they need, or running that infrastructure as a hosted service on EU
-servers operated by us. Which of those makes sense is a conclusion of the
-assessment, not a precondition for it."
+what they need, or running that infrastructure as a hosted service:
+EU-hosted, operated by Ichnos. Which of those makes sense is a conclusion
+of the assessment, not a precondition for it."
 
 link: "See the full service list"   → /services
 ```
 
-Claim discipline: the third option is the M4 hosting architecture and MUST use the fenced wording from pivot-4 §1, `EU-hosted, operated by Ichnos`. Never `certified`, `TISAX`, `compliant servers`. The first option explicitly includes the client proceeding **without** Ichnos, which is both true and the reason the paragraph is credible.
+Claim discipline: the third option is the M4 hosting architecture and MUST use the fenced wording from pivot-4 §1, `EU-hosted, operated by Ichnos`. **Fenced-copy amendment, 2026-09-23 (v1.11):** the sentence read `a hosted service on EU servers operated by us` from v1.0, which contradicted this paragraph and §3 rule 7 one line below it. The fenced copy now carries the required construction verbatim. This was a defect in the spec, not in the implementation, which correctly preserved the fenced string it was given. Never `certified`, `TISAX`, `compliant servers`. The first option explicitly includes the client proceeding **without** Ichnos, which is both true and the reason the paragraph is credible.
 
 ### 4.6 What it is not
 
