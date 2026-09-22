@@ -1,6 +1,8 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.3, 2026-09-22 · Status: normative · ready for one Traycer run**
+**Version 1.4, 2026-09-22 · Status: normative · ready for one Traycer run**
+
+*(1.4, owner rulings on the four mismatches Traycer raised against v1.3, all recorded the same day. **(a) The Calendly to Google migration is in scope and is a named sub-project, not a guard line.** v1.3 §6.2 treated `[Cc]alendly` as a FORBIDDEN widening that would land "if the corpus is already clean". The corpus is not clean: eleven live files, one npm dependency, two GDPR documents and two documented environment variables carry it. §6.6 is new and inventories every occurrence; §6.7 covers the legal and configuration documents; a new phase **P0** lands the whole migration before P1. `CalendlyModal` is renamed to `BookingModal` and adapted to the Google booking link, the `calendar-event` icon becomes the Google icon, and `react-calendly` is removed. **(b) Canonical route confirmed as `/passport/readiness-assessment`**, with `/data/readiness-assessment` and `/catena-x/readiness-assessment` both redirecting to it. v1.3 §2.1 anticipated one legacy sibling; the code has two. §2.1 is rewritten against the code. **(c) Route constants are extracted site-wide** into a new `constants/routes.js` with a colocated corpus guard, because leaving one consumer on a literal defeats the "zero hardcoded path strings" rule. **(d) The file-length cap is raised from 120 to 200 lines**, owner ruling, so `readinessAssessmentContent.js` ships as one cohesive file. `CLAUDE.md` §5.1 and §17 item 6 and `AGENTS.md` are updated in the same epic. §0, §2.1, §3, §5, §6.2, §8, §9, §10 and §11 all follow.)*
 
 *(1.3, owner input the same day: §6.5 carries the owner's actual schedule settings (title, Monday to Friday 10:00 to 18:00 Kuala Lumpur, 60 day window) and step by step instructions for adding the personal calendar to the availability check; §6.2 records the booking link for P1; §4.2.1.1 rules 3 and 6 record the owner's rulings: the founding price is financed by the reference and the introduction, a client who declines pays the standard price, and a second client signing at the founding price before the flip takes on the same conditions. §11 items 1 and 3 updated.)*
 
@@ -21,13 +23,15 @@
 ## 0. Execution contract
 
 1. **This run changes routes.** It is the first route addition since pivot-3, and it is deliberate: pivot-4 §11 put routes out of scope for *that* run only. §2 governs.
-2. **One new dependency is permitted and only one:** none. The booking integration is a link-out, not an embed (§6.1). Any proposal to add a calendar SDK, including Google's appointment schedule embed script, is a separate decision, not a Traycer judgement call.
+2. **Net dependency change is minus one.** No dependency is added: the booking integration is a link-out, not an embed (§6.1). One is removed: `react-calendly` (§6.6). Any proposal to add a calendar SDK, including Google's appointment schedule embed script or its script-free `<iframe>` embed, is a separate decision, not a Traycer judgement call.
 3. Phases per §9. The 3-file cap holds unless a phase is marked *atomic*; every atomic phase here is pre-approved with its reason recorded. Do not re-ask.
 4. **Commit boundary is the semantic flip, not the file count** (pivot-3 §9.11/§9.12). Any consumer of a changed data shape lands in the same commit as the shape change.
-5. **Guards land in the earliest phase where they are green** (pivot-3 §7.2). The FORBIDDEN widening in §3 lands in P1 only if the corpus is already clean of each pattern; any pattern with live occurrences lands in the commit that deletes its last occurrence. A red P1 is never acceptable.
+5. **Guards land in the earliest phase where they are green** (pivot-3 §7.2). The FORBIDDEN widening in §3 lands in the commit that deletes its last live occurrence. For `[Cc]alendly` that commit is **P0** (§6.6), not P1: v1.3 wrote "P1 if the corpus is already clean", and it is not. A red phase is never acceptable.
 6. **Tests locate by `data-testid` or role, never by copy** (pivot-3 §7.0). DOM assertions compare against imported constants and MUST NOT restate literals.
-7. **Owner-assigned, not Traycer:** creating and configuring the Google Calendar appointment schedule (§6.5, §11), the live click-through check on desktop and mobile, Lighthouse, the three-viewport review, and re-verification of the membership claim in §4.7.
+7. **Owner-assigned, not Traycer:** creating and configuring the Google Calendar appointment schedule (§6.5, §11), deleting the Calendly account and its Vercel environment variables (§6.7, §11), legal review of the amended GDPR documents (§6.7), the live click-through check on desktop and mobile, Lighthouse, the three-viewport review, and re-verification of the membership claim in §4.7.
 8. Green before commit, every phase.
+9. **This epic carries one refactor that is not part of the new page, and it is deliberate: the Calendly to Google migration (§6.6, §6.7), landing as P0.** It is here rather than in a follow-up because §6.2 makes `BOOKING_URL` the single source for every booking CTA on the site, and a single source that coexists with a second live booking link is not a single source. P0 is self-contained, ships green on its own, and touches no file the new page needs. The route-constant extraction (§2.1) is the second refactor; it lands inside P2 because the new route is its first consumer.
+10. **File-length cap for this epic and afterwards: 200 lines, not 120** (owner ruling, 22 Sep 2026). `CLAUDE.md` §5.1 and §17 item 6 and `AGENTS.md` are amended in P0. The function cap (20 lines) and the JSX-return cap (60 lines) are unchanged. `readinessAssessmentContent.js` ships as one cohesive file under the raised cap; it MUST NOT be split for the sake of the old number, and it MUST NOT be allowed to grow past the new one.
 
 ---
 
@@ -47,27 +51,49 @@ Five consequences that bind the rest of this document:
 
 ## 2. Placement and routing
 
-### 2.1 The parent route must be read from the code, not from the specs
+### 2.1 Routing, settled against the code (v1.4)
 
-pivot-3 records a standing documentation error: pivot-2 lists the routes as `/data (ex-/passport)` while `App.jsx:56-62` has it the other way round, and pivot-3's ruling is **the code is correct, do not change it to match**. That ruling still holds and this run does not resolve the naming question (§10).
+pivot-3 records a standing documentation error: pivot-2 lists the routes as `/data (ex-/passport)` while `App.jsx` has it the other way round, and pivot-3's ruling is **the code is correct, do not change it to match**. That ruling still holds and this run does not resolve the naming question (§10).
 
-**Therefore:** read `App.jsx` first. The battery passport page's live path is the parent. The new page is that path plus `/readiness-assessment`.
+**Code state, verified 22 Sep 2026.** `/passport` is the live battery passport page, under `CatenaXThemeLayout`. There are **two** legacy siblings, not one: `/data` and `/catena-x` each redirect to `/passport`, as a `Navigate replace` in `App.jsx` and as a `301` in `client/vercel.json`. Neither has a child route, so `/data/readiness-assessment` today falls through to `path="*" element={null}` and renders a blank page inside the site chrome, which is worse than a 404 because it returns 200.
 
-- Canonical child path: `<live passport path>/readiness-assessment`.
-- If the sibling name (`/data` or `/passport`, whichever is not live) resolves at all, its `/readiness-assessment` child MUST issue a permanent redirect to the canonical path. If it does not resolve, add nothing.
-- The route constant lives beside the existing route definitions, and every link in §2.3 imports it. **Zero hardcoded path strings in components or tests.**
+**Canonical route, owner decision 22 Sep 2026:**
+
+| Path | Behaviour |
+|---|---|
+| `/passport/readiness-assessment` | **Canonical.** The page renders here. Sitemap, `seoMeta.js` and the `BreadcrumbList` all name this path and only this path. |
+| `/data/readiness-assessment` | 301 to canonical. |
+| `/catena-x/readiness-assessment` | 301 to canonical. |
+
+The owner asked for the page to be reachable at `/data/readiness-assessment`. It is, through the redirect. It is **not** canonical there, for one reason: `/data` itself is a redirect, so a canonical child under it would give the §2.4 breadcrumb a parent crumb pointing at a 301, and would put the page's only indexable URL underneath a path the site has already told search engines is superseded.
+
+Both redirects land in **two places, in the same commit**, because the two mechanisms cover different traffic:
+
+- `client/vercel.json` `redirects`, `statusCode: 301`, beside the two existing entries. This is what a search engine and a cold-email click see.
+- `App.jsx` `<Route ... element={<Navigate replace to={...} />} />`, beside the two existing entries. This is what an in-app client-side navigation sees, and without it the SPA rewrite hands those paths to `path="*"` and renders the blank page described above.
+
+The `path="*" element={null}` fallthrough is **not** fixed by this run. It is a real defect and it predates this spec; recorded in §10.
+
+**Route constants, site-wide (v1.4).** v1.3 required "zero hardcoded path strings in components or tests" but no route-constants module exists, so the rule had nothing to bind to. This run creates one and retrofits every consumer.
+
+- New `client/src/constants/routes.js`, named exports, `UPPER_SNAKE_CASE`, one constant per public path: landing, services, team, contact, consortium, consortium tiers, privacy, passport, the new child, and the two legacy siblings with their child forms. Values are the literal paths; this file is the only place in `client/src` where those literals may appear.
+- Every existing consumer is retrofitted in P2: `App.jsx`, `constants/navigation.js`, `constants/landingContent.js` (`ctaHref`), `constants/services.js` (five `passportLink` values), `constants/seoMeta.js` (`path`), `constants/structuredData.js` (the breadcrumb `path` entries) and `components/molecules/FooterNavColumns.jsx`. Partial extraction is rejected: a guard that permits one literal consumer does not guard anything.
+- Colocated `routes.test.js` enforces it, on the `vocabulary.js` pattern: walk `client/src`, skipping `routes.js` and `routes.test.js`, and assert no source file contains a quoted string that exactly equals one of the exported route values. Test files are **in** the walk, because §0.6 already requires DOM assertions to compare against imported constants.
+- `client/public/sitemap.xml` is a static XML file outside the walk and keeps its literal URLs. It is covered by §7.3 and by the tier-1 assertion in §8 item 24 instead.
 
 ### 2.2 Not a top-level nav item
 
 The navbar does not gain an entry. A fixed-scope paid engagement sitting in primary navigation alongside `Services` and `Team` reads as a product catalogue and dilutes the passport page it depends on for context.
 
-### 2.3 Entry points (exactly three, all landing in P6)
+### 2.3 Entry points (exactly three, all landing in P7)
 
 | Surface | Treatment |
 |---|---|
-| Battery passport page | A CTA band at the foot of the page, after the existing `PassportOffer` strip. Primary button to the new route. |
+| Battery passport page (`/passport`) | A CTA band at the foot of the page, after the existing `PassportOffer` strip. Primary button to the new route. |
 | `/services`, Compliance pillar | The relevant card gains a text link to the new route. No new card, no price on the services page. |
 | Landing page, passport teaser | A secondary text link beside the existing `See services →` pattern. Not a second button. |
+
+The first two are the owner's stated requirement ("reachable under services and from the data page", 22 Sep 2026); `/passport` is the page referred to there as the data page (§2.1). The third is retained from v1.0. All three import the route constant from `routes.js` (§2.1) and none types the path.
 
 ### 2.4 Breadcrumb
 
@@ -451,7 +477,16 @@ fallback: "Or send the question in writing"   → links to /contact
 | `organisms/DeliverablesGrid.jsx` | new | §4.3. |
 | `organisms/ScopeBoundary.jsx` | new | §4.6. |
 | `organisms/AssessmentFaq.jsx` | new | §4.8, `<details>` based. |
-| `organisms/CtaBand.jsx` | new | §4.9, reused by the passport page entry point in P6. |
+| `organisms/CtaBand.jsx` | new | §4.9, reused by the passport page entry point in P7. |
+
+Two files outside this page change shape in **P0**, ahead of everything above (§6.6):
+
+| File | Kind | Note |
+|---|---|---|
+| `constants/routes.js` | new, P2 | §2.1. Only place in `client/src` where a route literal may appear. |
+| `organisms/BookingModal.jsx` | renamed, P0 | Was `CalendlyModal.jsx`. Keeps the Bootstrap `Modal` shell and the `{ isOpen, onClose }` contract, drops `react-calendly` and `VITE_CALENDLY_URL`, and renders a link-out to `BOOKING_URL` in the body. Its two call sites (`ContactForm`, `ContactPage`) update in the same commit, along with `CalendlyModal.test.jsx` → `BookingModal.test.jsx`. |
+
+`BookingModal` is built in P0, before `BookingButton` exists, so P0 renders the link-out inline. **P3 refactors `BookingModal`'s body to use `BookingButton`** once that molecule lands, so the site has exactly one CTA implementation (§5 row 3). That refactor is a same-commit consumer update under §0.4, not a separate phase.
 
 Every new class ships with its CSS rule in the same commit (pivot-4 rule ii). The new page reuses `.section-eyebrow` and MUST NOT apply `text-transform: uppercase` to it (pivot-4 rule iii: the class can contain `Catena-X`, whose casing CSS must not rewrite).
 
@@ -467,10 +502,11 @@ The booking CTA is an anchor to the Google Calendar appointment schedule booking
 
 ### 6.2 Single source, no attribution parameters
 
-- `BOOKING_URL` is a single constant holding the booking page link exactly as Google Calendar gives it under the schedule's share link (a `https://calendar.app.google/...` short link, or the long `https://calendar.google.com/calendar/appointments/schedules/...` form). Every CTA on the site imports it. Zero hardcoded scheduling URLs. **Value for P1, set by the owner on 22 Sep 2026: `https://calendar.app.google/5AE4mhXGnPj2GutF7`.**
+- `BOOKING_URL` is a single constant holding the booking page link exactly as Google Calendar gives it under the schedule's share link (a `https://calendar.app.google/...` short link, or the long `https://calendar.google.com/calendar/appointments/schedules/...` form). Every CTA on the site imports it. Zero hardcoded scheduling URLs. **Value, set by the owner on 22 Sep 2026: `https://calendar.app.google/5AE4mhXGnPj2GutF7`.** It lands in **P0**, not P1, because P0's migration needs it (§6.6).
+- **`BOOKING_URL` is a source constant, not an environment variable** (v1.4). It lives in `client/src/constants/companyInfo.js` beside `CONTACT_INFO`, because it is public, identical in every environment, and needed at render time by components a test mounts directly. The Calendly link was an env var (`VITE_CALENDLY_URL`, plus an undocumented-in-code `CALENDLY_LINK`) and that bought nothing but a CI stub, a Vercel setting and two lines of documentation to keep in sync. Both variables are deleted in P0 (§6.7).
 - **No source parameters are appended.** v1.1 appended `?src=` values for attribution through Calendly's UTM passthrough. Google appointment schedules do not record URL parameters on the booking, so the parameters would be dead code that the tests then protect. They are removed. `BookingButton` renders `BOOKING_URL` exactly and takes no `src` prop.
 - **Attribution moves to the call.** At the booking volume the page can produce (§12), the owner asks on the scoping call how the prospect found the page and records the answer in the pipeline record. If attribution later needs to be systematic, the options are a fifth, optional booking form question or an analytics dependency. Either is a separate decision, not a Traycer judgement call.
-- **Calendly leaves the codebase.** `[Cc]alendly` joins `FORBIDDEN` for `client/src`, landing per §0.5: in P1 if the corpus is already clean, otherwise in the commit that deletes the last occurrence.
+- **Calendly leaves the codebase, and the site, and the paperwork.** v1.3 wrote this as a one-line guard widening. It is a sub-project: §6.6 inventories the code, §6.7 the legal and configuration documents, and §9 gives both a phase (**P0**). `[Cc]alendly` joins `FORBIDDEN` in that same commit, which is the commit that deletes its last live occurrence under `client/src`.
 
 ### 6.3 Fallback
 
@@ -525,6 +561,52 @@ If the personal calendar still does not appear in step 3: confirm the schedule s
 
 They do two jobs. They qualify the call before it happens, and they arrive as preparation material, so the owner opens a scoping call already knowing which tier applies and which of the two audience panels the buyer belongs to. Question 3 determines the tier on the spot. Question 4 distinguishes a live commercial trigger from research, which is the difference between a deal and a pleasant conversation.
 
+### 6.6 Calendly to Google migration (v1.4, new)
+
+**Owner decision, 22 Sep 2026: full migration, in scope, this epic.** Every Calendly reference on the site becomes a Google appointment-schedule reference, the modal is renamed and adapted, the dependency is removed, and the orphaned references go with them. This is **P0**, and it lands before any readiness-assessment file.
+
+**Why it is not a follow-up.** §6.2 makes `BOOKING_URL` the single source for every booking CTA on the site. Shipping the new page while `/contact` still opens a Calendly embed would put two live booking links in front of the same prospect, pointing at two calendars with two different configurations, one of which (§11 item 1) the owner is about to cancel. A cancelled Calendly account behind a live button on `/contact` is a broken conversion path on the page the new CTAs fall back to (§6.3).
+
+**Inventory, verified 22 Sep 2026. Fourteen files, one dependency.**
+
+| # | File | Change |
+|---|---|---|
+| 1 | `client/package.json` | Delete the `react-calendly` dependency. `package-lock.json` regenerates in the same commit. |
+| 2 | `client/src/components/organisms/CalendlyModal.jsx` | **Rename to `BookingModal.jsx`.** Keep the `react-bootstrap` `Modal` shell, the `{ isOpen, onClose }` prop contract and the visible title `Schedule a Call`. Delete the `InlineWidget` import and the `VITE_CALENDLY_URL` read. The body becomes one line of copy plus a link-out to `BOOKING_URL`, `target="_blank"`, `rel="noopener noreferrer"`. The `CALENDLY_URL ? … : …` fallback branch disappears with the env var: `BOOKING_URL` is a source constant and cannot be absent. |
+| 3 | `client/src/components/organisms/CalendlyModal.test.jsx` | Rename to `BookingModal.test.jsx`. Assert the rendered href equals the imported `BOOKING_URL` exactly, per §8 item 4. Drop the missing-env-var branch test. |
+| 4 | `client/src/components/organisms/ContactForm.jsx` | Import `BookingModal`. Rename local state `calendlyOpen` → `bookingOpen`. `onBook` keeps its name: it is already tool-neutral. |
+| 5 | `client/src/components/organisms/ContactForm.test.jsx` | Follow the rename. |
+| 6 | `client/src/components/pages/ContactPage.jsx` | Import `BookingModal`; rename `calendlyOpen` → `bookingOpen`. **`CONTACT_PAGE_INTRO` is user-visible copy and names Calendly** (`…follow up by email, LinkedIn, or a Calendly call`). It becomes `…or a scheduled call`. Naming the scheduling vendor in body copy bought nothing and is exactly the kind of line that rots on a tooling change. The `Schedule a call` button label is unchanged, so the e2e role selector holds. |
+| 7 | `client/src/components/pages/ContactPage.test.jsx` | Follow the rename and the copy change. |
+| 8 | `client/src/constants/companyInfo.js` | Add `export const BOOKING_URL` (§6.2). Rename `CONTACT_INFO.calendly` → `CONTACT_INFO.booking`, valued from `BOOKING_URL` so there is one literal, not two. |
+| 9 | `client/src/components/organisms/Footer.jsx` | `SOCIAL_LINKS` booking entry: url → `BOOKING_URL`, **icon `calendar-event` → `google`**. Label `Book a Meeting` unchanged. |
+| 10 | `client/src/components/organisms/Footer.test.jsx` | Follow. Assert the href against the imported constant, never a literal (§0.6). |
+| 11 | `client/src/components/organisms/ContactSection.jsx` | Booking `ContactLink`: href → `BOOKING_URL`, **icon `calendar-event` → `google`**. Label `Book a Call` unchanged. |
+| 12 | `client/src/components/organisms/ContactSection.test.jsx` | Follow. |
+| 13 | `client/src/constants/vocabulary.js` | Add the `[Cc]alendly` and `react-calendly` patterns to `FORBIDDEN` (§8 tier-2). Green only once rows 1 to 12 have landed, which is why this is one commit. |
+| 14 | `e2e/tests/pages/ContactPage.js` | The section comment names the Calendly modal. Update the comment. **No selector changes**: every locator is a role or test-id whose name this migration does not move, which is the §0.6 rule paying for itself. |
+
+**The icon.** The owner's instruction is that the Calendly icon becomes the corresponding Google icon. Recorded honestly: the current glyph is `bi-calendar-event`, a generic calendar, not a Calendly brand mark, and **Bootstrap Icons ships no Google Calendar glyph**. The closest available mark is `bi-google`, the Google `G`, and that is what both call sites use. It reads correctly in the footer social row, where its neighbours (`bi-linkedin`, `bi-person-circle`) are also brand marks. If the `G` beside `Book a Meeting` reads as a sign-in affordance at the §8 item 16 three-viewport review, revert both call sites to `calendar-event` and record the reason here; that is a copy-and-icon judgement for the owner at review, not a Traycer decision.
+
+**Rejected, recorded.** Embedding the Google appointment schedule in `BookingModal` via its script-free `<iframe>` share option. It would preserve the current in-modal flow and add no npm dependency, but §6.1 rejects embeds on the new page for cookie-posture and 390px layout reasons, and running an embed on `/contact` while the new page link-outs would give the site two different booking experiences to test and police. One mechanism, everywhere. Revisit with §6.1.
+
+**Historical specification documents are records and are NOT rewritten.** `website_Catena_pivot_3.md`, `ichnos_website_CatenaX_pivot_spec_v3.md`, `newDesignEpic.md`, `designRefinementEpic.md`, `deploymentMigrationValidation.md` and `IBS2026_consortium_cta_spec.md` each mention Calendly as a statement about what was true when they were written. Editing them would falsify the record. They are outside the `FORBIDDEN` walk, which covers `client/src` plus `index.html` and `site.webmanifest` only, so they cannot turn the guard red. One of them carries an owner consequence rather than an edit: §11 item 9.
+
+### 6.7 Legal and configuration documents (v1.4, new)
+
+**Owner decision, 22 Sep 2026: in scope.** Removing a named sub-processor while the register still names it makes the register wrong, and a Record of Processing Activities that is wrong is worse than one that is merely out of date.
+
+| File | Change | Who |
+|---|---|---|
+| `legal/GDPR/ropa.md` | The sub-processor register row `Calendly \| Meeting scheduling \| Name, email \| USA \| Calendly DPA \| SCCs` is replaced by a Google row for appointment scheduling. **Drafted, not settled:** service `Meeting scheduling (Google Calendar appointment schedules, Google Workspace)`; data processed `Name, email, and the four §6.5 screening answers entered by the visitor on the Google booking page`; DPA `Google Workspace Cloud Data Processing Addendum`. **Location and transfer mechanism are left as `[VERIFY — legal]`**, matching the file's existing `[VERIFY]` convention on the xAI row. The existing Firebase row records Google as `USA / SCCs`, so the honest options are a second Google row or a merged one; that is a lawyer's call, not a Traycer one. Add a Review Log entry. | Traycer drafts, owner and lawyer confirm |
+| `legal/GDPR/cookie-policy.md` | The third-party table row `Calendly \| Meeting scheduling \| https://calendly.com/privacy` is replaced by `Google Calendar \| Meeting scheduling \| https://policies.google.com/privacy`. Lower risk than the ROPA row: it is a disclosure of which third parties the site links to, and the link-out design (§6.1) means the booking page sets its cookies on Google's origin, not ours. | Traycer |
+| `VERCEL_SETTINGS.md` | Delete the `CALENDLY_LINK` row and the `VITE_CALENDLY_URL` row. Add no replacement: `BOOKING_URL` is a source constant (§6.2). | Traycer |
+| `e2e/ENV_REFACTOR_PLAN.md` | Delete the `VITE_CALENDLY_LINK` row. | Traycer |
+| `.github/workflows/ci.yml` | Delete the `VITE_CALENDLY_URL: https://calendly.com/ci-stub` line from the Build step's env block. It is the last live Calendly string outside `client/src`. | Traycer |
+| `CLAUDE.md`, `AGENTS.md` | The 200-line file cap (§0.10). `CLAUDE.md` §5.1 "Max file length" and §17 item 6 "if a file approaches 120 lines"; `AGENTS.md` line 107. | Traycer |
+
+**Note on §0 permissions.** `CLAUDE.md` §17 lists root config, CI/CD and `CLAUDE.md` itself as requiring explicit confirmation even in automated mode. The owner gave that confirmation on 22 Sep 2026 for exactly the files in this table, and for nothing else. Any other root-level or CI file is still gated.
+
 ---
 
 ## 7. SEO and structured data
@@ -557,14 +639,16 @@ Two additions:
 
 ### 7.3 Sitemap
 
-The canonical route is added. The redirecting sibling path (§2.1) is not.
+`client/public/sitemap.xml` gains one `<url>` entry, `https://ichnos-protocol.com/passport/readiness-assessment`, `changefreq monthly`, `priority 0.9` (it matches `/services` and `/consortium`, the site's other conversion surfaces, and outranks `/passport` at 0.8 only if the owner says so at review; default `0.8`, same as its parent).
+
+**Neither redirecting sibling child is listed** (§2.1). The sitemap already omits `/data` and `/catena-x` for the same reason and this run does not change that.
 
 ---
 
 ## 8. Conformance
 
 **Tier-1, machine:**
-1. The route renders the page; the redirect sibling resolves to the canonical path.
+1. The canonical route renders the page. **Both** legacy sibling children (`/data/readiness-assessment`, `/catena-x/readiness-assessment`) resolve to the canonical path in the `App.jsx` router test, asserted against the imported route constants.
 2. Every constant in `readinessAssessmentContent.js` is rendered somewhere in the page (the pivot-3 item-8 consumer contract, applied to the new file).
 3. Breadcrumb present, first crumb href equals the imported parent route constant.
 4. Both CTA bands render `BookingButton` whose href equals the imported `BOOKING_URL` exactly, with no appended query parameters. `BOOKING_URL` is asserted to be an `https` URL on a Google Calendar booking host (`calendar.app.google` or `calendar.google.com`), which catches a leftover Calendly link without exact matching the operational URL.
@@ -577,7 +661,19 @@ The canonical route is added. The redirecting sibling path (§2.1) is not.
 11. The §4.7.1 published-work list renders every item in its constant (item-8 consumer contract).
 12. No price renders above the fold, asserted structurally: no `PRICING` value appears in the hero component's subtree.
 
-**Tier-2, corpus:** three new FORBIDDEN patterns, the two from rule 2 and `[Cc]alendly` from §6.2, each landing per §0.5; the page's copy passes the existing vocabulary scan unchanged.
+**Tier-1, machine, added in v1.4 (P0 and P2):**
+
+22. **`BookingModal` renders a link to `BOOKING_URL` exactly**, `target="_blank"`, `rel="noopener noreferrer"`, no appended query parameters, asserted against the imported constant. Lands in P0, ahead of item 4, and covers the two existing call sites (`ContactForm`, `ContactPage`) that item 4 does not reach.
+23. **One booking link, site-wide.** The footer social entry, the `ContactSection` booking link and `BookingModal` all resolve to the same imported `BOOKING_URL` value. Asserted by identity against the constant, not by string equality between the three rendered hrefs, so a test cannot pass on two components that are wrong in the same way.
+24. **Route-literal sweep** (§2.1). `routes.test.js` walks `client/src` excluding `routes.js` and its own file and asserts that no quoted string equals an exported route value. A separate assertion reads `client/public/sitemap.xml` and requires the canonical route's `<loc>` to be present and neither sibling child's to be.
+25. **Breadcrumb parent is not a redirect.** The first crumb's href equals the passport route constant, and that constant is asserted to be a path the router renders a page for, not one it answers with `Navigate`. This is the machine form of the §2.1 ruling and it is what would have caught a canonical page hung under `/data`.
+
+**Tier-2, corpus:** four new FORBIDDEN patterns:
+
+- the two from §3 rule 2 (`Catena-X [Rr]eadiness`, `Catena-X [Aa]ssessment`), landing per §0.5;
+- `/[Cc]alendly/` and `/react-calendly/`, both landing in **P0**, the commit that deletes their last live occurrence under `client/src` (§6.6).
+
+The page's copy passes the existing vocabulary scan unchanged. The `react-calendly` pattern is redundant against the bare `calendly` one and is kept anyway: it names the dependency specifically, so a future `npm install` that reintroduces it fails with a message that says what to do.
 
 **Tier-3:** **this run adds nothing.** The list stays closed at items 13 to 15. `BOOKING_URL` is configuration, not a claim: a wrong value is caught by the tier-1 sourcing assertion plus the owner's click check, and exact-matching it would freeze an operational URL behind a spec amendment.
 
@@ -592,15 +688,23 @@ The canonical route is added. The redirecting sibling path (§2.1) is not.
 20. **Pricing review.** Re-check the SGD and EUR ladders against each other whenever EUR/SGD moves materially, and update `PRICING.REVIEWED_AS_OF` on every change. The two ladders are set independently and will drift; the review is what keeps the drift deliberate.
 21. **First client tracking, per tier.** Record each signed founding client in the pipeline record with the tier and the signing date. The week the first engagement letter in a tier is signed, set that tier's `foundingOpen` to false. A founding price left on the page after its tier's first contract is a price the next prospect in that tier will expect to pay.
 
+**Manual, owner, added in v1.4. Items 26 and 27 gate P0's deploy, not the epic's:**
+
+26. **Walk every booking CTA on the deployed site after P0 and before cancelling Calendly** (§11 item 9): the footer icon on three pages, the `ContactSection` link on `/` and on `/contact`, the `Schedule a call` button on `/contact`, and the booking prompt on the inquiry success screen. Each must open the Google booking page in a new tab. Six clicks, and they are the difference between a vendor migration and a site with dead buttons on it.
+27. **Confirm both sibling redirects after P2 deploys**, on the deployed preview, not locally: `/data/readiness-assessment` and `/catena-x/readiness-assessment` must each land on the canonical path with a 301, and neither may render the blank 200 described in §2.1. `client/vercel.json` redirects do not apply to the Vite dev server, so this is the one §2.1 behaviour that a green local test suite cannot demonstrate.
+
 ---
 
 ## 9. Phases
 
 | P | Scope | Cap ruling |
 |---|---|---|
+| **0a** | **Conventions:** `CLAUDE.md` §5.1 and §17 item 6, `AGENTS.md` line 107 — file cap 120 → 200 (§0.10) | Within cap. Lands first so every later phase is measured against the number that is actually in force. No code. |
+| **0b** | **Calendly → Google, code** (§6.6 rows 1 to 12): `BOOKING_URL` + `CONTACT_INFO.booking` in `companyInfo.js`, `CalendlyModal` → `BookingModal` + its test, `ContactForm`, `ContactPage`, `Footer`, `ContactSection` and the four colocated tests, `react-calendly` dropped from `package.json` | **Atomic, pre-approved.** Twelve files, one semantic flip: the site's booking link changes vendor. §0.4 governs, so every consumer of `CONTACT_INFO.calendly` lands with the rename. Splitting it ships a site with two booking vendors live at once, which is the exact state §6.2 exists to prevent. |
+| **0c** | **Calendly → Google, guards and paperwork** (§6.6 rows 13 to 14, §6.7): `vocabulary.js` FORBIDDEN widening, `e2e/tests/pages/ContactPage.js` comment, `ci.yml`, `VERCEL_SETTINGS.md`, `e2e/ENV_REFACTOR_PLAN.md`, `legal/GDPR/ropa.md`, `legal/GDPR/cookie-policy.md` | **Atomic, pre-approved.** Seven files, no code paths. The guard goes green only because 0b landed, and the documents are wrong from the moment 0b lands, so the gap between 0b and 0c is a window in which the register misstates a sub-processor. Keep it to one commit. |
 | 1 | `readinessAssessmentContent.js` + `PRICING` (three tiers, founding and standard values in two currencies, one `foundingOpen` flag per tier, the current price selector, `REVIEWED_AS_OF`) + `BOOKING_URL` + colocated tests + FORBIDDEN widening | Within cap. Guards first, green now. `PRICING` ships with its own test asserting three tiers with founding and standard values in both currencies, no conversion helper, a shaped `REVIEWED_AS_OF`, a boolean flag per tier, and the selector returning founding or standard per flag. |
-| 2 | Route constant, `App.jsx` wiring, page shell, `Breadcrumb`, redirect | **Atomic, pre-approved:** a route and its only consumer are one semantic unit. |
-| 3 | Hero, `AudiencePanels` with price blocks read through the current price selector, `BookingButton` + CSS | **Atomic, pre-approved:** the button is the page's reason to exist, and the price blocks cannot ship without the selector that governs them. |
+| 2 | `constants/routes.js` + `routes.test.js`, retrofit of the seven existing consumers (§2.1), `App.jsx` wiring, page shell, `Breadcrumb`, both sibling redirects in `App.jsx` and `client/vercel.json` | **Atomic, pre-approved, and widened in v1.4:** a route and its consumers are one semantic unit, and the route-literal guard in `routes.test.js` is red until the last consumer is retrofitted, so the extraction cannot be split across commits. Twelve files. |
+| 3 | Hero, `AudiencePanels` with price blocks read through the current price selector, `BookingButton` + CSS, and the `BookingModal` body refactored onto `BookingButton` (§5) | **Atomic, pre-approved:** the button is the page's reason to exist, and the price blocks cannot ship without the selector that governs them. The `BookingModal` refactor rides along as a same-commit consumer update (§0.4) so the site ends P3 with exactly one CTA implementation. |
 | 4 | §4.2.2 window, `DeliverablesGrid`, `ProcessSteps`, inputs block + CSS | Within cap if split; MAY run as two sub-commits. The window lands with this group because it renders between the panels and the deliverables. |
 | 5 | §4.5.1 what-happens-next, `ScopeBoundary`, who-runs-it, §4.7.1 published work + CSS | Within cap if split. The three credibility sections are one semantic group: each is a claim surface and they are reviewed together. |
 | 6 | `AssessmentFaq`, `CtaBand` + CSS | Within cap. |
@@ -615,9 +719,19 @@ Deploy after green: PR → main → CI → merge → "Sync main → staging" →
 
 The `/data` versus `/passport` route-naming question (pivot-3's ruling stands: the code is correct) · chatbot and knowledge base · a pricing page · case studies of any kind · payment collection · the Supplier Kits page, which is a separate offer and needs its own spec · any change to the five fenced `catenax-*` cards · fonts.
 
+**Moved *into* scope by v1.4, recorded so the boundary is legible:** the Calendly to Google migration (§6.6), the GDPR and configuration documents that name Calendly (§6.7), the site-wide route-constant extraction (§2.1) and the file-length cap change (§0.10). v1.3 left all four unphased, which is what Traycer's review surfaced.
+
+**Explicitly still out of scope, v1.4:**
+
+- **The `path="*" element={null}` fallthrough in `App.jsx`.** Any unmatched path returns HTTP 200 with the site chrome and a blank body, which is worse for both users and crawlers than a 404. §2.1's two redirects close the two cases this page creates; the general defect predates this spec, affects every route, and deserves a `NotFoundPage` and its own spec. **Do not fix it in this run:** a 404 page is a design surface, not a router edit.
+- **Historical specification documents** that mention Calendly (§6.6, final paragraph). They are records of what was true when written.
+- **The chatbot knowledge base**, which may describe the booking flow in prose the corpus guard does not reach. Verifying and updating it is owner work, §11 item 10.
+
 ---
 
-## 11. Owner items before P3 can land
+## 11. Owner items before P0 and P3 can land
+
+*(v1.4: item 1 now gates **P0**, not P3, because `BOOKING_URL` is what P0's migration repoints every existing booking CTA at. Its value is already recorded in §6.2, so P0 is not blocked; the open sub-items are configuration of the schedule behind that link.)*
 
 1. **Google Calendar appointment schedule per §6.5, in the Ichnos Workspace account.** Done 22 Sep 2026: title, 30 minutes, Monday to Friday 10:00 to 18:00 Kuala Lumpur, 60 days ahead, 24 hours notice, booking link recorded in §6.2. **Open:** (a) share the personal Gmail calendar into the Ichnos account and tick it under "Check calendars for availability", per the §6.5 setup note; (b) confirm buffer time, maximum bookings per day, Google Meet, email reminders and the four required screening questions against the §6.5 table. If a Calendly event or account was ever set up for this offer, delete the event and cancel any paid plan, so a second booking link with the old configuration does not circulate in earlier emails.
 2. **Prices: confirmed 22 Sep 2026.** All twelve values in §4.2.1 are owner decisions. Set `REVIEWED_AS_OF` to 2026-09-22 in P1.
@@ -627,6 +741,13 @@ The `/data` versus `/passport` route-naming question (pivot-3's ruling stands: t
 6. **Withholding tax stays off the page.** Indonesian Article 26 and the NBRI host fee are engagement-letter matters. Putting "fees quoted net of withholding" into public copy trades a small competence signal for a large amount of friction at exactly the wrong moment. Handle it in the scoping call and the engagement letter, where it belongs.
 7. **Singapore GST.** Whether SGD prices are stated as GST-exclusive depends on Ichnos's registration status, and export of services to ASEAN customers is normally zero-rated. Confirm the treatment with your accountant, then decide whether the panel copy needs a "prices exclude GST where applicable" line. Default: no line, because at current turnover it says nothing and costs a sentence.
 8. **Currency codes, never symbols**, per §4.2.1 rule 3. No `€`, no `S$`, anywhere in copy or tests.
+
+**Added in v1.4, all arising from the Calendly to Google migration:**
+
+9. **Decommission Calendly, in this order.** (a) Confirm P0 has deployed and every booking CTA on the live site points at the Google link. (b) Delete the `CALENDLY_LINK` and `VITE_CALENDLY_URL` environment variables from **both** Vercel projects and every environment (Production, Preview), per §6.7. (c) Only then cancel the Calendly account or paid plan. Reversing (b) and (c) leaves the site building against a variable that no longer resolves to anything. **(d) A Calendly QR code was printed on slide S17 of the IBS 2026 consortium deck** (`docs/IBS2026_consortium_cta_spec.md`). That deck is in circulation. Cancelling the account kills that QR. Decide before cancelling whether to reissue the deck with the Google link, set up a Calendly redirect, or accept the breakage; the third is defensible for a deck presented in August, but it should be a decision rather than a discovery.
+10. **Check the chatbot knowledge base and any outbound email template** for prose that names Calendly or describes the old booking flow. Neither is reachable by the corpus guard (§10). Update what you find.
+11. **Get the amended `ropa.md` sub-processor row reviewed** (§6.7). Two open questions for the lawyer: whether Google appointment scheduling is a second Google row or folds into the existing Firebase one, and what to record as the transfer mechanism now that the Workspace Cloud Data Processing Addendum replaces the Calendly DPA. The row ships with `[VERIFY — legal]` in those two cells until that answer exists; do not let it ship with a guess in them.
+12. **Review the Google `G` icon at the §8 item 16 three-viewport pass** (§6.6, "The icon"). Bootstrap Icons has no Google Calendar glyph. If `bi-google` beside `Book a Meeting` reads as a sign-in affordance rather than a booking one, revert both call sites to `calendar-event` and record the reason in §6.6.
 
 ---
 

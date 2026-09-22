@@ -119,7 +119,7 @@ Follow the Atomic Design methodology strictly:
 ### 5.1 General Rules
 
 - **Language**: JavaScript (ES2022+). No TypeScript unless explicitly requested.
-- **Max file length**: 120 lines. If a file exceeds this, refactor into smaller modules.
+- **Max file length**: 200 lines (raised from 120 by owner ruling on 2026-09-22, so that cohesive content-constant files such as `readinessAssessmentContent.js` are not split against their grain). If a file exceeds this, refactor into smaller modules.
 - **Max function length**: 20 lines. Extract helper functions.
 - **Max component length**: 60 lines of JSX (return block). Decompose into smaller components if exceeded.
 - **Naming**:
@@ -454,7 +454,7 @@ When working on this project, Claude must:
 3. **Follow the folder structure exactly.** Place files in the correct directory per Section 3. Ask if unsure.
 4. **Respect layer boundaries.** Never put business logic in a controller. Never put DB queries in a service. Never put API calls in a component.
 5. **Extract helpers aggressively.** If a block of logic can be named and reused, extract it into a helper function.
-6. **Keep files short.** If a file approaches 120 lines, decompose it.
+6. **Keep files short.** If a file approaches 200 lines, decompose it.
 7. **Use existing patterns.** Before creating something new, check if a similar pattern already exists in the codebase and follow it.
 8. **Write tests alongside code.** When building a new module, write its tests in the same session.
 9. **Never hardcode secrets or URLs.** Use environment variables for all configuration.

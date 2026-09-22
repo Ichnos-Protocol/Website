@@ -104,7 +104,7 @@ cd server && vercel --prod   # deploy backend
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.
-- Max file: 120 lines. Max function: 20 lines. Max JSX return: 60 lines.
+- Max file: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines.
 - Components: `PascalCase`. Hooks: `useCamelCase`. Helpers: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - DB columns: `snake_case`. API endpoints: `kebab-case`.
 - Default exports for React components (atoms, molecules, organisms, pages, templates). Named exports for utilities, hooks, constants, Redux slices, helpers, and infrastructure files (store, providers).
