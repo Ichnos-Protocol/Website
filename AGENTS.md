@@ -104,7 +104,9 @@ cd server && vercel --prod   # deploy backend
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.
-- Max file: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines.
+- Max **source** file: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines.
+- Test files are exempt from the line cap; 29 are already over 200. Five source files are grandfathered over it (see CLAUDE.md §5.1). Nothing in the toolchain enforces the cap.
+- Prettier is declared in both packages but has never been run corpus-wide (169/233 client, 42/93 server files differ). Match the file you are editing; do not reformat as drive-by work. See CLAUDE.md §15.
 - Components: `PascalCase`. Hooks: `useCamelCase`. Helpers: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - DB columns: `snake_case`. API endpoints: `kebab-case`.
 - Default exports for React components (atoms, molecules, organisms, pages, templates). Named exports for utilities, hooks, constants, Redux slices, helpers, and infrastructure files (store, providers).

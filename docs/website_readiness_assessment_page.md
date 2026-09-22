@@ -33,7 +33,8 @@
 7. **Owner-assigned, not Traycer:** creating and configuring the Google Calendar appointment schedule (§6.5, §11), deleting the Calendly account and its Vercel environment variables (§6.7, §11), legal review of the amended GDPR documents (§6.7), the live click-through check on desktop and mobile, Lighthouse, the three-viewport review, and re-verification of the membership claim in §4.7.
 8. Green before commit, every phase.
 9. **This epic carries one refactor that is not part of the new page, and it is deliberate: the Calendly to Google migration (§6.6, §6.7), landing as P0.** It is here rather than in a follow-up because §6.2 makes `BOOKING_URL` the single source for every booking CTA on the site, and a single source that coexists with a second live booking link is not a single source. P0 is self-contained, ships green on its own, and touches no file the new page needs. The route-constant extraction (§2.1) is the second refactor; it lands inside P2 because the new route is its first consumer.
-10. **File-length cap for this epic and afterwards: 200 lines, not 120** (owner ruling, 22 Sep 2026). `CLAUDE.md` §5.1 and §17 item 6 and `AGENTS.md` are amended in P0. The function cap (20 lines) and the JSX-return cap (60 lines) are unchanged. `readinessAssessmentContent.js` ships as one cohesive file under the raised cap; it MUST NOT be split for the sake of the old number, and it MUST NOT be allowed to grow past the new one.
+10. **Verified starting state, measured 2026-09-22 before P0b.** `client`: 85 test files, 759 tests, all green; ESLint clean. `server`: 44 test files (4 skipped), 636 tests (20 skipped), all green; ESLint clean. **Every phase starts from this and ends at least this green.** Do not re-derive it, and do not start a phase on a red tree. Two traps this run must not fall into: `client`'s `npm test` used to be bare `vitest` (watch mode, hangs a non-interactive run); it is now `vitest run`, with `test:watch` for the interactive case. And **Prettier must not be run** — it is declared in both packages but has never been run corpus-wide, so `npm run format` would rewrite 169 client and 42 server files and make every diff in this epic unreadable. Match the file you are editing. CLAUDE.md §15 has the full note.
+11. **File-length cap for this epic and afterwards: 200 lines for source files, not 120** (owner ruling, 22 Sep 2026). `CLAUDE.md` §5.1 and §17 item 6 and `AGENTS.md` are amended in P0. The function cap (20 lines) and the JSX-return cap (60 lines) are unchanged. `readinessAssessmentContent.js` ships as one cohesive file under the raised cap; it MUST NOT be split for the sake of the old number, and it MUST NOT be allowed to grow past the new one.
 
 ---
 
@@ -630,7 +631,7 @@ They do two jobs. They qualify the call before it happens, and they arrive as pr
 | `VERCEL_SETTINGS.md` | Delete the `CALENDLY_LINK` row and the `VITE_CALENDLY_URL` row. Add no replacement: `BOOKING_URL` is a source constant (§6.2). | Traycer |
 | `e2e/ENV_REFACTOR_PLAN.md` | Delete the `VITE_CALENDLY_LINK` row. | Traycer |
 | `.github/workflows/ci.yml` | Delete the `VITE_CALENDLY_URL: https://calendly.com/ci-stub` line from the Build step's env block. It is the last live Calendly string outside `client/src`. | Traycer |
-| `CLAUDE.md`, `AGENTS.md` | The 200-line file cap (§0.10). `CLAUDE.md` §5.1 "Max file length" and §17 item 6 "if a file approaches 120 lines"; `AGENTS.md` line 107. **Landed ahead of the run in `010d56a`.** | Done |
+| `CLAUDE.md`, `AGENTS.md` | The 200-line file cap (§0.11). `CLAUDE.md` §5.1 "Max file length" and §17 item 6 "if a file approaches 120 lines"; `AGENTS.md` line 107. **Landed ahead of the run in `010d56a`.** | Done |
 | `README.md` | **Added v1.5.** Pre-Commit Checklist line 590, "No files exceed 120 lines" → 200. The fourth and last statement of the cap. **Landed with v1.5.** | Done |
 
 **Note on §0 permissions.** `CLAUDE.md` §17 lists root config, CI/CD and `CLAUDE.md` itself as requiring explicit confirmation even in automated mode. The owner gave that confirmation on 22 Sep 2026 for exactly the files in this table, and for nothing else. Any other root-level or CI file is still gated.
@@ -750,7 +751,7 @@ Deploy after green: PR → main → CI → merge → "Sync main → staging" →
 
 The `/data` versus `/passport` route-naming question (pivot-3's ruling stands: the code is correct) · chatbot and knowledge base · a pricing page · case studies of any kind · payment collection · the Supplier Kits page, which is a separate offer and needs its own spec · any change to the five fenced `catenax-*` cards · fonts.
 
-**Moved *into* scope by v1.4, recorded so the boundary is legible:** the Calendly to Google migration (§6.6), the GDPR and configuration documents that name Calendly (§6.7), the site-wide route-constant extraction (§2.1) and the file-length cap change (§0.10). v1.3 left all four unphased, which is what Traycer's review surfaced.
+**Moved *into* scope by v1.4, recorded so the boundary is legible:** the Calendly to Google migration (§6.6), the GDPR and configuration documents that name Calendly (§6.7), the site-wide route-constant extraction (§2.1) and the file-length cap change (§0.11). v1.3 left all four unphased, which is what Traycer's review surfaced.
 
 **Explicitly still out of scope, v1.4:**
 
