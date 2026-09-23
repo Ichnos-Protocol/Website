@@ -1,6 +1,8 @@
 # september_fixes_spec.md: cleanup and reconciliation, September 2026
 
-**Version 1.1, 2026-09-23. Status: normative for the `September-fixes` branch.**
+**Version 1.2, 2026-09-23. Status: normative for the `September-fixes` branch.**
+
+v1.2 answers Traycer's architecture validation of v1.1 (risks R9, R10, R11 and four questions; section 2.1). Every migration becomes additive and the owner runs all three up front; the one contraction moves to P14. P1 ships alone before 30 September. P13 splits into a configuration commit and a formatting commit, with CI enforcement in P14. The Qualified Advisor guard is specified by probe lists rather than by a regex, and the rewritten attribution surfaces get positive assertions. Traycer's P3a/P3b split is accepted.
 
 v1.1 records the owner's rulings on every decision that v1.0 left open (section 2), widens two phases accordingly (P3 gains a two-currency price list keyed on where the registrant is based; P7 reconciles every surface that attributes the Qualified Advisor qualification to the company), drops credential rotation from P10, and adds section 5, which answers the questions Traycer is expected to ask.
 
@@ -28,6 +30,7 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 10. **The consortium deadline test fails on 1 October 2026.** `ConsortiumPage.test.jsx:61-66` asserts the open-registration headline on the real clock.
 11. **The Qualified Advisor qualification is Francesco Maltoni's, not the company's** (pivot-3 §1.5; attestation 868 names him; owner ruling D3). Seven surfaces attribute it to the company today: `CATENA_X_STATUS_LINE` in the hero eyebrow, the second sentence of `TRADEMARK_NOTICE`, the advisor card in `CREDENTIALS` (landing strip and footer), the Organization description in `structuredData.js:45`, `DEFAULT_OG_IMAGE_ALT` in `seoMeta.js:33`, the Why-Ichnos paragraph at `landingContent.js:22` ("the practice ... as a Catena-X Qualified Advisor"), the eyebrow of `PassportOffer.jsx:13`, and the chatbot `SYSTEM_PROMPT` at `server/src/helpers/chatHelpers.js:9` ("Ichnos Protocol is a Catena-X Qualified Advisor").
 12. **Exchange rates used for D5**: USD 1 = SGD 1.275 and USD 1 = EUR 0.874, mid-market, 22 September 2026. Figures are rounded to the nearest thousand (nearest five hundred inside a range) and then fixed; nothing on the site converts.
+13. **Delivery mechanics.** No workflow or startup hook runs migrations; the owner runs `npm run migrate` by hand. Every push of a server change to `origin` produces a Vercel preview whose Neon branch is forked from the production database at that moment, and E2E runs on it automatically. A contracting migration applied to production before the code that writes the new value is deployed therefore breaks production and every new preview until that code lands. An additive migration breaks nothing, whichever side of the deploy it runs on.
 
 ---
 
@@ -43,6 +46,17 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 | D6 | Prettier configuration | Prettier defaults plus `endOfLine: "auto"`. The owner has no preference; this is the smallest config that survives a Windows checkout with `* text=auto`. |
 | D7 | Team page with one member | Title `Team` and the plural subtitle stay; a new member is expected. |
 | D8 | Leaked credentials | Not rotated. The cleanup removes them from HEAD and from the workflow's log output and feeds CI from GitHub variables and secrets holding the same values. Accepted risk, recorded here so nobody reopens it. |
+| D9 | Migrations | The owner runs every production migration by hand and wants them front-loaded. Consequence in section 2.1: every migration in this epic is additive. |
+
+### 2.1 Rulings on Traycer's architecture validation (2026-09-23)
+
+Traycer reported three risks and four questions against v1.1.
+
+- **R9 (critical), a migration-only push produces a red intermediate state.** Ruling: Traycer's option D, made stronger by D9. Every migration in this epic is additive. 007 becomes expand-only and keeps `nov_2026` in the CHECK beside `asap`; 008 adds a nullable column; 009 adds a table. The owner runs all three against production up front, in one sitting, before any code lands. Nothing is red in between, in production or on a preview branch forked from it, because old code and new code both satisfy the expanded constraint. The contraction (the `UPDATE` to `asap`, then a CHECK of `('asap', 'later')`) is migration 010 in P14, run only after P1 has been in production. P1 still ships alone and first: the production hero flips to "The first round closed" on 1 October and `ConsortiumPage.test.jsx` goes red on the real clock the same day, so P1 is merged to `main` and released before 30 September, ahead of P2. That is a copy and CI reason, not a database reason.
+- **R11 (critical), P13a cannot pass the gate it adds.** Ruling: Traycer's option A, the seventeen-ticket sequence. P13a adds the configuration, the ignore files and the narrowed scripts, measures the formatted output in a disposable copy, and records the cap ruling; it neither wires CI nor treats `format:check` as a gate. P13b is the pure formatting commit and the first on which `format:check` is green. P14 wires `format:check` into CI and the checklist. Cap ruling for `CLAUDE.md` §5.1: content-constant files, whose length follows the copy they hold and not any logic, are exempt from the 200-line cap in the way test files are. P13a names the files its dry run pushes past 200 lines and records them in §5.1 as content-exempt, not grandfathered.
+- **R10 (significant), the 40-character guard misses the live long-form claim.** Ruling: Traycer's option A, with the regex demoted to implementation. The normative artefact is the pair of probe lists in P7: every prohibited probe must match the guard and no permitted probe may, and `vocabulary.test.js` asserts both. Two traps are recorded there so the first draft does not repeat them.
+- **Q4, positive assertions.** Ruling: Traycer's option A. The guard proves the corporate claim is absent; five positive assertions, listed in P7, prove the qualification is still stated and attributed to Francesco.
+- **P3a/P3b.** Traycer's split is accepted: P3a establishes and persists `region` (form, validator, column, repositories, admin surfaces); P3b consumes it for pricing (config, helper, service, tier copy, link). P3a lands first. Null rows fall back to SGD and the API shape is unchanged.
 
 ---
 
@@ -54,6 +68,7 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 - Every booking CTA resolves to `BOOKING_URL` from `companyInfo.js`.
 - Tests import constants; they do not restate strings. The two tier-3 exact-match literals (`TRADEMARK_NOTICE`, `ADVISOR_CARD_NOTE`) are restated only in `catenaXStatus.test.js`, as today.
 - Each phase ends with `npm run lint && npm test` green in `client/` and `server/`, and the documentation that describes the changed behaviour updated in the same commit (`CLAUDE.md` and `AGENTS.md` kept aligned).
+- Every migration in this epic is additive and safe to run before its code lands (section 2.1, R9). A contraction is a separate numbered file, run only after the code that stops writing the old value has been in production.
 - Each P below is one Traycer epic. Traycer's own three-file phases apply inside it: constants land before their consumers, and a test is updated in the same Traycer phase as the code it pins, so the tree is green after every Traycer phase. Commit messages carry the epic number, for example `feat(client): withdraw the consortium deadline (P1)`.
 - **Owner confirmation.** `CLAUDE.md` §17 requires explicit confirmation for file deletions, root and CI edits, and migrations against production. The owner's approval of this spec version is that confirmation for every deletion and every root or CI edit named in a phase below. Running a migration against production stays a separate confirmation at the moment it happens.
 
@@ -70,14 +85,16 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 - `client/src/components/pages/ConsortiumPage.jsx`: delete `DEADLINE`, `HERO_CLOSED`, `pickHero` and the `useState` that picks the hero (keep any other state). One `HERO`: title `Join the consortium`, subtitle `One anchor company and up to five of its suppliers, one project, one test environment.` The "Register by" sentence goes. `OFFER_CARDS[2]` body becomes: `The readiness assessment comes first and is credited to the project. The group call is scheduled once the anchor company and its suppliers are registered, and the work starts after it. Scope and price are set out in the proposal; registered participants see the tier overview.`
 - `client/src/constants/seoMeta.js:112`: remove `Register by 30 September 2026.`
 - `client/src/components/pages/ConsortiumTiersPage.jsx:25-26`: `Thank you. You are registered for the consortium. We answer within five working days.`
-- Start-preference option: value `nov_2026` label `November 2026` becomes value `asap` label `As soon as the group is formed`. `later` / `Later` stays. Change `client/src/constants/consortiumContent.js:80-83` and `server/src/validators/contactSchemas.js:38` in the same commit as migration `server/migrations/007_20260923_consortium_preferred_start_open.sql`: idempotent `UPDATE user_profiles SET consortium_preferred_start = 'asap' WHERE consortium_preferred_start = 'nov_2026'`, then `ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS chk_user_profiles_consortium_preferred_start`, then re-add it with `('asap', 'later')`. Update the header comment of `consortiumContent.js` (it names migration 006 as the source of the option values; it now names 006 as amended by 007 and 008).
+- Start-preference option: value `nov_2026` label `November 2026` becomes value `asap` label `As soon as the group is formed`. `later` / `Later` stays. Migration `server/migrations/007_20260923_consortium_preferred_start_expand.sql` is expand-only: `ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS chk_user_profiles_consortium_preferred_start`, then re-add it with `('nov_2026', 'asap', 'later')`. No `UPDATE`. The owner runs it against production before any code lands (section 2.1). The code then changes in this phase: `client/src/constants/consortiumContent.js:80-83` and `server/src/validators/contactSchemas.js:38` accept `asap` and `later` only. Update the header comment of `consortiumContent.js`: the option values restate the CHECK of migration 006 as amended by 007, minus the retired `nov_2026`, which the database tolerates until migration 010 (P14) removes it.
 - Tests that name the old value: `client/src/components/organisms/contactFormHarness.jsx:94`, `ContactRequestForm.submit.test.jsx:65`, `server/src/validators/contactSchemas.test.js:96,206-221`, `services/contactService.test.js:58`, `repositories/userRepository.test.js:30,410`, `repositories/contactRepository.consortium.integration.test.js:35,75,192`, `e2e/tests/consortium/consortium-journey.spec.js:60` (`preferredStart: 'As soon as the group is formed'`), `e2e/tests/pages/ConsortiumPage.js:25-26,85` (comments).
 - Delete `ConsortiumPage.test.jsx:101-110` (the closed-state test). Add one test that sets the system time to 2 October 2026 and asserts the heading `Join the consortium`.
 - New `client/src/constants/dateGuards.js`, test data only in the manner of `vocabulary.js`: exports `YEAR_PATTERN`, `MONTH_YEAR_PATTERN`, `ISO_DATE_PATTERN` (moved from `ReadinessAssessmentPage.test.jsx`, which imports them from here) and `RELATIVE_TIME_PATTERN = /\b(this|next|last)\s+(year|quarter|month|week)\b/i`. Add `dateGuards.js` to `SKIP_FILES` in `vocabulary.js` beside `corpusScan.js`, for the same reason. `ConsortiumPage.test.jsx` and `ConsortiumTiersPage.test.jsx` gain a page-wide sweep of the rendered text against all four patterns; the readiness page test keeps its single permitted interpolated date.
 
-**Docs.** `docs/IBS2026_consortium_cta_spec.md` gains a dated v7 amendment block at the top, at most fifteen lines: deadline withdrawn, start option renamed, lines 52, 159, 447 to 459 and 473 superseded. `CLAUDE.md` §6.1 names migration 007.
+**Docs.** `docs/IBS2026_consortium_cta_spec.md` gains a dated v7 amendment block at the top, at most fifteen lines: deadline withdrawn, start option renamed, lines 52, 159, 447 to 459 and 473 superseded. `CLAUDE.md` §6.1 names migrations 007 and 010.
 
-**Owner action.** Confirm `npm run migrate` against production.
+**Owner action.** Run 007, with 008 and 009, against production before this phase's code is pushed (section 2.1).
+
+**Release.** P1 is merged to `main` and released on its own before 30 September 2026, ahead of every other phase.
 
 **Acceptance.** With the system clock at 2 October 2026 the page renders `Join the consortium`. No four-digit year, month name, ISO date or relative calendar phrase in the rendered consortium page or tiers page.
 
@@ -98,6 +115,8 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 **Why.** Items 3 and D5. Today the consortium's readiness tier shows `USD 10,000 to 12,000` while the readiness page shows a ladder by audience (SGD 4,500 / 7,500 / 15,000 at the founding price, with EUR equivalents). The owner wants the assessment priced the same on both surfaces, the higher consortium price explained by what it includes, and the consortium tiers shown in EUR to European customers and in SGD to ASEAN ones.
 
 **Why the readiness tier is by reference.** The readiness price is a ladder by audience and currency; the consortium tier is one figure. Copying any figure to the server creates a second source that a test cannot pin to the first across packages. The single source is a link.
+
+**Split.** P3a is the region answer (everything under "Changes, region"); P3b is the pricing (everything under "Changes, prices"). P3a lands first. Migration 008 is additive and is run up front by the owner (section 2.1).
 
 **Changes, region.**
 
@@ -136,7 +155,7 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 
 **Docs.** IBS spec v7 block: the pricing table at line 330 is superseded by this section; readiness tier by reference; one currency per registrant. `CLAUDE.md` §6.1 names migration 008.
 
-**Owner actions.** Confirm migration 008 against production. Adjust any figure in the table before the phase starts if the rounding is not to taste; the figures live in one file afterwards.
+**Owner actions.** Migration 008 is run up front (section 2.1). Adjust any figure in the table before P3b starts if the rounding is not to taste; the figures live in one file afterwards.
 
 **Acceptance.** A registrant with `region = eu` sees every figure prefixed `EUR`, one with `asean` or `other` sees `SGD`, and the readiness card shows no figure and one link.
 
@@ -209,8 +228,19 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 
 **Guards.**
 
-- `vocabulary.js` `FORBIDDEN` gains `CORPORATE_ADVISOR_CLAIM = /(?:Ichnos(?: Protocol)?(?: Pte\.? Ltd\.?)?|the (?:company|practice))[^.]{0,40}\b(?:is|as)\s+(?:a|an)\s+(?:Catena-X )?Qualified Advisor/i`, exported so the server test can import the same source text (the server copies the pattern literally with a comment naming its origin, since the packages share no module). Reason beside it: pivot-3 §1.5, owner ruling D3.
+- `vocabulary.js` gains an exported `CORPORATE_ADVISOR_CLAIM_PATTERNS` array, spread into `FORBIDDEN`, with the reason beside it (pivot-3 §1.5, owner ruling D3). The regexes are Traycer's to write. The probes below are normative: `vocabulary.test.js` asserts that every prohibited probe matches at least one pattern and that no permitted probe matches any. `chatHelpers.test.js` copies the patterns literally, with a comment naming their origin, since the packages share no module.
+  - Prohibited probes (each must match): `Ichnos Protocol is a Catena-X Qualified Advisor, an ordinary member of Catena-X Automotive Network e.V., and a member of the Catena-X Digital Product Passport Expert Group.` · `Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor.` · `The practice covers battery systems engineering, safety, mechanical development, and remanufacturing and extends into the EU battery-passport ecosystem as a Catena-X Qualified Advisor.` · `Ichnos Protocol, a Catena-X Qualified Advisor, works with ASEAN manufacturers.` · `As a Catena-X Qualified Advisor, Ichnos Protocol connects suppliers to Catena-X.` · `The company is a Catena-X Qualified Advisor.`
+  - Permitted probes (none may match): `Ichnos Protocol Pte. Ltd. is an ordinary member of the association. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor.` · `Francesco is a Catena-X Qualified Advisor, and through that qualification the practice extends into the EU battery-passport ecosystem.` · `Founded by a Catena-X Qualified Advisor.` · `Catena-X member, founded by a Qualified Advisor` · `He is a Catena-X Qualified Advisor, working to bring ASEAN battery manufacturers into the Catena-X data space.` · `Francesco Maltoni holds Qualified Advisor attestation 868.` · `Catena-X Qualified Advisor (founder)` · `Catena-X integration (Catena-X Qualified Advisor)` · `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, Catena-X Qualified Advisor)`.
+  - Traps: `Pte. Ltd.` and `e.V.` contain full stops, so a sentence bound written as `[^.]*` splits the notice before its subject; and the notice's old form has `is an ordinary member of the association and` between the subject and the title, so a pattern that requires `is a` directly before `Qualified Advisor` misses it. The guard is accepted when it passes both probe lists and the corpus sweep without any entry in `ALLOWED_EXCEPTIONS`.
 - The manual sweep for this phase is the list in fact 11 plus `README.md`, `client/index.html` and `client/public/site.webmanifest` (all three verified clean today).
+
+**Positive assertions (Q4).** The guard proves the corporate claim is gone; these prove the qualification is still stated and attributed. Each derives its expectation from the constant or function it pins.
+
+- `structuredData.test.js`: the Organization description contains `getCatenaXFounderLine()` and `CATENA_X_MEMBERSHIP_NOTE`; the Person schema description contains `getCatenaXFullTitle()`.
+- `seoMeta.test.js`: whichever exported meta carries the default Open Graph alt text contains `getCatenaXFounderLine()`.
+- `WhyIchnosSection.test.jsx`: the rendered second paragraph contains `Francesco is a ` immediately followed by `CATENA_X_TITLE_BASE`.
+- `TeamPage.test.jsx`: the one `img[src*="Qualified-Advisor"]` sits inside the profile section of the member whose id is `francesco`, and its `alt` is the advisor credential label.
+- `chatHelpers.test.js`: the prompt contains `Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor` and matches none of the copied guard patterns.
 
 **Docs.** `docs/website_Catena_pivot_3.md` gains a dated amendment block at the top; §1.5 adds "corporate surfaces may say that the founder holds the qualification, attributed by name or as founder, and must not say that the company holds it"; §2 rows for `CATENA_X_STATUS_LINE`, the §2.1 required notice text and the `credentials.js` row are updated; §4.4's confinement sentence becomes "the advisor label renders on the founder profile on `/team`; the member label on the landing strip and the footer"; manual conformance item 17 adds "and the advisor label only beside the person the attestation names". `docs/website_Catena_pivot_4.md`: the credential card block and the `ADVISOR_CARD_NOTE` value are marked superseded by this section. The comment at `teamContent.js:5-11` is extended. `CLAUDE.md` §13 adds one line under claims.
 
@@ -267,7 +297,7 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 **Changes.**
 
 - Delete `POST /api/auth/verify-token`: `server/src/routes/authRoutes.js:27`, `controllers/authController.js:23-39`, `services/authService.js:85-90`, `routes/authRoutes.test.js:191-220`, `services/authService.test.js:324-340`, `client/src/features/auth/authApi.js:31-35,54`, and the `CLAUDE.md` §11 row.
-- Migration `server/migrations/009_20260923_rate_limit_hits.sql`: `CREATE TABLE IF NOT EXISTS rate_limit_hits (key TEXT PRIMARY KEY, hits INTEGER NOT NULL, reset_at TIMESTAMPTZ NOT NULL)`.
+- Migration `server/migrations/009_20260923_rate_limit_hits.sql`: `CREATE TABLE IF NOT EXISTS rate_limit_hits (key TEXT PRIMARY KEY, hits INTEGER NOT NULL, reset_at TIMESTAMPTZ NOT NULL)`. Additive; run up front by the owner (section 2.1). The table sits unused until this phase's code lands.
 - New `server/src/repositories/rateLimitRepository.js` (SQL stays in the repository layer, `CLAUDE.md` §5.4): `incrementHit(key, windowMs)` runs one `INSERT ... ON CONFLICT (key) DO UPDATE` that resets `hits` to 1 and `reset_at` to now plus the window when `reset_at` has passed, and increments otherwise, returning `{ hits, resetAt }`; `decrementHit(key)`; `resetKey(key)`; `getHit(key)`.
 - New `server/src/middleware/pgRateLimitStore.js`: a class implementing the `express-rate-limit` `Store` contract (`init(options)` captures `windowMs`; `get`, `increment`, `decrement`, `resetKey` delegate to the repository, with a `prefix` option). Fail-open: a repository error is logged and `increment` returns `{ totalHits: 1, resetTime }`, so a database blip does not turn every request into a 500. Under 120 lines each, unit-tested with the existing `pg` mocking pattern.
 - `server/src/app.js`: the global limiter keeps its window and limits and gains `store: new PgRateLimitStore({ prefix: "global:" })`, `standardHeaders: "draft-7"`, `legacyHeaders: false`. A second limiter with `prefix: "auth:"`, 20 requests per 15 minutes per IP (preview relaxed the same way as the global one), is mounted on `/api/auth` before `authRoutes`. `/api/chat/message` keeps its database-backed daily quota. `trust proxy` is already set, so the default IP key generator sees the client address.
@@ -275,7 +305,7 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 
 **Docs.** `CLAUDE.md` §11 (row removed), §13 (store named), §6.1 (table added). `AGENTS.md` mirrored.
 
-**Owner actions.** Confirm migration 009 against production. Optional: if the Vercel plan includes Firewall rate limiting, a rule on `/api/auth/*` is a zero-code second layer.
+**Owner actions.** Migration 009 is run up front (section 2.1). Optional: if the Vercel plan includes Firewall rate limiting, a rule on `/api/auth/*` is a zero-code second layer.
 
 **Acceptance.** On a preview, 21 requests to `/api/auth/me` from one IP inside 15 minutes return 429 on the 21st with a `RateLimit` header, across cold starts.
 
@@ -295,24 +325,29 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 
 **Acceptance.** Lowering any threshold below the measured value makes `npm run test:coverage` fail.
 
-### P13. Prettier: adopt once, last
+### P13. Prettier: configure, then format, in two commits
 
-**Why.** Fact 7. Adoption is a one-commit decision that must not land inside another change. It is last so every earlier phase's diff stays readable.
+**Why.** Fact 7 and R11. Adoption must not land inside another change, and the configuration must be reviewable on its own, which it cannot be if the same commit rewrites 244 files. Late in the epic so every earlier diff stays readable.
 
-**Changes.**
+**P13a, configuration (no gate).**
 
 - Root `.prettierrc.json`: `{ "endOfLine": "auto" }` (D6; everything else default).
 - `client/.prettierignore`: `dist/`, `coverage/`, `.vercel/`, `public/brand/`. `server/.prettierignore`: `knowledge-base/`, `scripts/python/`, `coverage/`, `.vercel/`, `migrations/`. `e2e/.prettierignore`: `playwright-report/`, `test-results/`.
 - Scripts narrowed to code. `client`: `"format": "prettier --write \"src/**/*.{js,jsx,css}\""`, `"format:check": "prettier --check \"src/**/*.{js,jsx,css}\""`. `server`: the same over `"src/**/*.js" "scripts/**/*.js" "api/**/*.js"`. `e2e`: the same over `"**/*.js"` (Prettier skips `node_modules` on its own). Markdown, JSON and SQL are not formatted.
-- One commit that changes nothing else: `style: format the corpus with prettier`. Reviewed by `git diff --stat`, lint and tests green.
-- Then `format:check` is added to `ci.yml` after `lint` in both jobs and to the `CLAUDE.md` §15 checklist. The §15 Prettier paragraph is rewritten to describe the adopted state.
+- Dry run in a disposable copy of the tree (a `git worktree`, deleted afterwards): record the number of files that change per package and the list of source files that exceed 200 lines after formatting.
+- `CLAUDE.md` §5.1 cap ruling (section 2.1, R11): content-constant files are exempt from the 200-line cap, listed by name from the dry run as content-exempt. `AGENTS.md` mirrored.
+- `ci.yml` and the §15 checklist are untouched. `format:check` fails on this commit by construction and is not run as a gate.
 
-**Acceptance.** `npm run format:check` is clean in all three packages and runs in CI.
+**P13b, the formatting commit.** `style: format the corpus with prettier`, and nothing else. `format:check` is green from this commit on. Reviewed by `git diff --stat`, lint and tests green.
 
-### P14. Riders
+**Acceptance.** After P13b, `npm run format:check` is clean in all three packages.
 
+### P14. Riders and closing gates
+
+- `ci.yml`: `format:check` runs after `lint` in both jobs. `CLAUDE.md` §15 checklist gains it; the §15 Prettier paragraph is rewritten to describe the adopted state.
+- Migration `server/migrations/010_20260923_consortium_preferred_start_contract.sql`: idempotent `UPDATE user_profiles SET consortium_preferred_start = 'asap' WHERE consortium_preferred_start = 'nov_2026'`, then drop and re-add `chk_user_profiles_consortium_preferred_start` with `('asap', 'later')`. The owner runs it only after P1 has been in production. The `consortiumContent.js` header comment then names 010 as the current constraint source.
 - Delete `test.txt` at the repository root.
-- `CLAUDE.md` §15 baseline counts refreshed after P13 (last verified: client 102 files / 959 tests, server 66 files).
+- `CLAUDE.md` §15 baseline counts refreshed after P13b (last verified: client 102 files / 959 tests, server 66 files).
 - `AGENTS.md` mirrors every `CLAUDE.md` change made in P1 to P13.
 
 ---
@@ -344,6 +379,12 @@ Verified on 2026-09-23 against the repository, the Vercel API, the GitHub API an
 23. **Does the hero eyebrow test change?** No. `Hero.test.jsx` reads `HERO_CONTENT.eyebrow`; the string changes through `CATENA_X_STATUS_LINE`.
 24. **The `CORPORATE_ADVISOR_CLAIM` pattern: does it hit Francesco's own bio?** No. The subject alternatives are the company, the practice and Ichnos; `He is a Catena-X Qualified Advisor` does not match.
 25. **P10 removes the committed file but the same values are still in history.** Yes. Ruling D8, recorded in section 2.
+26. **Can migration 007 run before P1's code is deployed?** Yes. It is expand-only; old code writes `nov_2026` and new code writes `asap`, and both pass the CHECK. That is the point of D9.
+27. **Does the consortium journey on a preview pass between 007 and P1?** Yes, for the same reason. The E2E spec's label changes with P1, in the same commit as the client option.
+28. **When does the contraction run?** Migration 010, at P14, after P1 has been in production. Until then the database tolerates a value the validator no longer accepts, which is harmless.
+29. **Must P13a pass `format:check`?** No. It adds the configuration and measures; P13b is the first green commit; P14 makes it a CI gate.
+30. **Which files become content-exempt from the 200-line cap?** The ones P13a's dry run pushes past 200, named in `CLAUDE.md` §5.1 in that commit. The rule is that their length follows the copy, not the logic.
+31. **What is the exact regex for the Qualified Advisor guard?** Traycer's to write. The two probe lists in P7 are normative and the test asserts both; a draft that passes them without an `ALLOWED_EXCEPTIONS` entry is accepted.
 
 ---
 
@@ -363,4 +404,4 @@ Named so that Traycer does not ask: a 404 page for `path="*"`; an error boundary
 - P9: a push to `release` yields one Vercel production deployment per project and no Actions run.
 - P10: `git ls-files | grep -i "\.env"` shows only example files; the E2E log shows no API key.
 - P11: 429 on the 21st auth request from one IP on a preview.
-- Owner checklist: confirm migrations 007, 008 and 009; run the sync script once before P10 step 3; check the Firestore knowledge base for the departed member's name; adjust the P3 figures if the rounding is not to taste.
+- Owner checklist: run migrations 007, 008 and 009 against production before any code is pushed, and 010 after P1 is in production; merge and release P1 before 30 September; run the sync script once before P10 step 3; check the Firestore knowledge base for the departed member's name; adjust the P3 figures if the rounding is not to taste.
