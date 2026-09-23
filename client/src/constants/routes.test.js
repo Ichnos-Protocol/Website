@@ -248,7 +248,10 @@ describe("route constants (App.test.jsx value pin)", () => {
 // pin) and minus organisms/Navbar.jsx, whose single occurrence was a stale
 // comment quoting a removed pathname check and was rewritten as prose rather
 // than converted — that file consumes no route constant and must not be
-// forced to import one.
+// forced to import one. The list is the route-constant consumer allow-list,
+// not only the measured-literal set: constants/consortiumContent.js never
+// carried a literal and was added by P3b as an approved consumer, importing
+// ROUTE_READINESS_ASSESSMENT for the readiness tier's price link.
 const RETROFITTED_FILES = [
   "src/App.jsx",
   "src/components/molecules/ContactFormProfile.jsx",
@@ -274,6 +277,7 @@ const RETROFITTED_FILES = [
   "src/components/pages/ConsortiumTiersPage.test.jsx",
   "src/components/pages/PrivacyPage.test.jsx",
   "src/components/pages/ServicesPage.test.jsx",
+  "src/constants/consortiumContent.js",
   "src/constants/landingContent.js",
   "src/constants/navigation.js",
   "src/constants/passportContent.js",
@@ -304,7 +308,7 @@ function importsRoutesModule(source) {
 
 describe("route constants (import integrity)", () => {
   it("has every retrofitted file importing the routes module", () => {
-    expect(RETROFITTED_FILES).toHaveLength(35);
+    expect(RETROFITTED_FILES).toHaveLength(36);
     const missing = RETROFITTED_FILES.filter(
       (path) =>
         !importsRoutesModule(readFileSync(resolve(CLIENT_ROOT, path), "utf8")),

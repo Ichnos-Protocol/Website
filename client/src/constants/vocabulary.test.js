@@ -144,6 +144,10 @@ describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
     "Catena-X membership application pending.",
     "Our Catena-X membership application is pending review.",
     "Ichnos has a pending Catena-X membership application.",
+    // Conformance adjectives beside a numbered standard.
+    "Our passports are CX-0160 compliant.",
+    "The data model is conformant with CX-0160.",
+    "A CX-0160-conformant pipeline.",
   ];
 
   it.each(PROBES)("matches the prohibited claim %j", (probe) => {
@@ -157,6 +161,8 @@ describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
     "Catena-X member & Qualified Advisor",
     "Business Partner Number (BPN)",
     "the relationship is partner-and-channel, not competition",
+    "passport data in the CX-0160 data model",
+    "The battery passport standard is CX-0160.",
   ];
 
   it.each(PERMITTED)("leaves permitted copy alone: %j", (permitted) => {

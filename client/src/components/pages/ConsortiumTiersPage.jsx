@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Alert from "react-bootstrap/Alert";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
@@ -70,6 +71,11 @@ export default function ConsortiumTiersPage() {
                   <Card.Title>{tier.title}</Card.Title>
                   <Card.Text>{tier.description}</Card.Text>
                   {tier.priceLabel && <p>{tier.priceLabel}</p>}
+                  {tier.priceLink && (
+                    <p>
+                      <Link to={tier.priceLink}>{tier.priceLinkLabel}</Link>
+                    </p>
+                  )}
                   <Button
                     aria-label={`Choose ${tier.title}`}
                     onClick={() => handleSelect(tier.tierId)}

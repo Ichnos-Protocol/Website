@@ -5,7 +5,10 @@
  * position -> tier mapping. Pricing lives server-side only
  * (server/src/config/consortiumTiers.js) and reaches the client through
  * the authenticated /api/consortium/tiers endpoint. Tier prose here
- * describes scope of work, nothing else.
+ * describes scope of work, nothing else. That rule still holds absolutely:
+ * the readiness tier's price is a link to the readiness assessment page
+ * (priceLink), never a figure copied from it. CX-0160 may be named as the
+ * data model, but never beside a conformance adjective (vocabulary.js).
  *
  * The option values restate the CHECK constraints of migration
  * 006_20260823_add_consortium_columns.sql as amended by
@@ -15,6 +18,8 @@
  * 008_20260923_consortium_region.sql. Those migrations are the authoritative
  * source; a change there must be mirrored here in the same commit.
  */
+
+import { ROUTE_READINESS_ASSESSMENT } from "./routes";
 
 export const CONSORTIUM_POSITION_LABEL =
   "What is your position in the consortium?";
@@ -99,22 +104,24 @@ export const CONSORTIUM_TIER_DESCRIPTIONS = Object.freeze({
   readiness: {
     title: "Readiness assessment",
     description:
-      "A short engagement that reviews your existing data, names the gaps against the battery passport data model, and returns a written plan for closing them.",
+      "A short engagement that reviews your existing data, names the gaps against the battery passport data model, and returns a written plan for closing them. It is priced as the readiness assessment on its own page, and the fee is credited against the consortium tier you choose.",
+    priceLink: ROUTE_READINESS_ASSESSMENT,
+    priceLinkLabel: "Readiness assessment scope and price",
   },
   pilot: {
     title: "Pilot",
     description:
-      "One product line taken end to end: we map your data, generate passports for a real batch, and hand you the working pipeline together with its documentation.",
+      "One product line taken end to end: we map your data, generate passports for a real batch, and hand you the working pipeline together with its documentation. The price covers implementation of the value chain data flow through to passport data in the CX-0160 data model, which is why it sits above the assessment.",
   },
   consortium_anchor: {
     title: "Consortium — anchor company",
     description:
-      "The anchor role in the shared programme. You set the product line the group works on, bring your suppliers into the same data flow, and steer the roadmap alongside the other anchors.",
+      "The anchor role in the shared programme. You set the product line the group works on, bring your suppliers into the same data flow, and steer the roadmap alongside the other anchors. The price covers implementation of the value chain data flow through to passport data in the CX-0160 data model, which is why it sits above the assessment.",
   },
   consortium_supplier: {
     title: "Consortium — supplier",
     description:
-      "A supplier seat in the shared programme. You connect your own data to the anchor company that invited you and reuse the group data model instead of building one on your own.",
+      "A supplier seat in the shared programme. You connect your own data to the anchor company that invited you and reuse the group data model instead of building one on your own. The price covers implementation of the value chain data flow through to passport data in the CX-0160 data model, which is why it sits above the assessment.",
   },
   member: {
     title: "Member",

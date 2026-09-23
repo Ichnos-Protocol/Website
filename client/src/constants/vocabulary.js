@@ -67,6 +67,11 @@ export const FORBIDDEN = [
   // site.webmanifest instance in the 2026-08-10 audit.
   /Catena-X[\s-]*(?:compatible|compliant|conformant|conforming)/i,
   /(?:compatible|compliant|conformant)\s+with\s+Catena-X/i,
+  // The same family against a numbered Catena-X standard (IP Regs 6.3).
+  // Naming the standard is permitted ("the CX-0160 data model"); a
+  // conformance adjective beside it is not.
+  /CX-\d{4}[\s-]*(?:compatible|compliant|conformant|conforming)/i,
+  /(?:compatible|compliant|conformant)\s+with\s+CX-\d{4}/i,
   /(?:membership|application)[^.]{0,40}in\s+progress/i,
   // Pending wording is prohibited in both word orders ("membership
   // application pending" / "pending membership application"). `qualification`

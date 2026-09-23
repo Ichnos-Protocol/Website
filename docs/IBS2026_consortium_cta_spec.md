@@ -13,6 +13,13 @@
 > November 2026"), line 159 (confirmation naming an October group call), line 188 (the
 > `consortium_preferred_start` CHECK row), lines 447 to 459 (page copy with "Register by 30 September
 > 2026", the timeline and the closed-round headline) and line 473 (the preferred-start option list).
+>
+> **P3b note, 23 Sep 2026 (september-fixes P3b).** The indicative-price table of §4.5 and its recurring
+> fee lines are superseded, without editing them. Figures are shown in EUR or SGD, resolved from
+> `consortium_region`: EU in EUR, ASEAN and elsewhere in SGD, a NULL region in SGD. One registrant sees
+> one currency. The readiness tier carries no figure and links to the readiness assessment page. The
+> USD source figures, the exchange rates and their date now live in
+> `server/src/config/consortiumTiers.js`.
 
 Status: spec v6, 23 Aug 2026. Supersedes v5 section 4. The standalone `consortium_registrations`
 table of v5 is replaced by the **shared-record design**: the consortium answers are columns on
