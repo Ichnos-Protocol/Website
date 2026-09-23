@@ -4,6 +4,16 @@
 > repo (`docs/Catena-X/presentations/IBS2026_consortium_cta_spec.md`) is frozen at v5 and carries a
 > stale-copy notice; keep this one up to date, never the other.
 
+> **v7 amendment, 23 Sep 2026 (september-fixes P1).** The registration deadline is withdrawn: the
+> site no longer names 30 September 2026, no longer switches to a closed-round headline, and names no
+> month for the group call or the start of work. The preferred-start option `nov_2026` ("November
+> 2026") is renamed `asap`, labelled "As soon as the group is formed"; `later` is unchanged.
+> Migration 007 widens the CHECK to (`nov_2026`,`asap`,`later`); migration 010 (P14) narrows it to
+> (`asap`,`later`). This block supersedes, without editing them: line 52 (capacity, "earliest start
+> November 2026"), line 159 (confirmation naming an October group call), line 188 (the
+> `consortium_preferred_start` CHECK row), lines 447 to 459 (page copy with "Register by 30 September
+> 2026", the timeline and the closed-round headline) and line 473 (the preferred-start option list).
+
 Status: spec v6, 23 Aug 2026. Supersedes v5 section 4. The standalone `consortium_registrations`
 table of v5 is replaced by the **shared-record design**: the consortium answers are columns on
 `user_profiles`, every consortium submission goes through the existing contact submit path and

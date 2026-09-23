@@ -32,7 +32,7 @@ const answers = {
   customerRequest: "OEM asked for a passport-ready datasheet",
   dataExtract: "not_yet",
   dataNeeds: "Cell-level carbon footprint",
-  preferredStart: "nov_2026",
+  preferredStart: "asap",
   source: "landing_page",
   consentTimestamp: "2026-02-16T12:00:00Z",
   consentVersion: "v1",
@@ -189,7 +189,7 @@ describeIf("consortium registration (integration)", () => {
     expect(profile.consortium_position).toBe("supplier");
     expect(profile.consortium_chain_role).toBe("cathode_material");
     expect(profile.consortium_data_extract).toBe("not_yet");
-    expect(profile.consortium_preferred_start).toBe("nov_2026");
+    expect(profile.consortium_preferred_start).toBe("asap");
     expect(profile.consortium_tier).toBe("pilot");
     expect(profile.consortium_status).toBe("registered");
 

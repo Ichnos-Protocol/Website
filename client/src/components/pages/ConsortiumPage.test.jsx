@@ -24,6 +24,12 @@ import {
   ROUTE_CONSORTIUM,
   ROUTE_CONSORTIUM_TIERS,
 } from "../../constants/routes";
+import {
+  YEAR_PATTERN,
+  MONTH_YEAR_PATTERN,
+  ISO_DATE_PATTERN,
+  RELATIVE_TIME_PATTERN,
+} from "../../constants/dateGuards";
 import ConsortiumPage from "./ConsortiumPage";
 
 const mockNavigate = vi.fn();
@@ -52,6 +58,18 @@ function renderPage(
 ) {
   const store = createStore(auth);
   return renderWithProviders(<ConsortiumPage />, { route, store });
+}
+
+// A subtree's text with every text node separated by a space, the idiom of
+// ReadinessAssessmentPage.test.jsx: raw `textContent` glues sibling nodes, so
+// a year ending one node and a letter starting the next would lose the word
+// boundary the date sweep depends on.
+function subtreeText(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const parts = [];
+
+  while (walker.nextNode()) parts.push(walker.currentNode.nodeValue);
+  return parts.join(" ");
 }
 
 describe("ConsortiumPage", () => {
@@ -98,15 +116,23 @@ describe("ConsortiumPage", () => {
     );
   });
 
-  it("shows the later-round headline once the deadline has passed", () => {
+  it("keeps the same headline whatever the clock reads", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-10-01T00:00:00Z"));
+    vi.setSystemTime(new Date("2026-10-02T00:00:00Z"));
     renderPage();
     expect(
-      screen.getByRole("heading", {
-        name: "The first round closed on 30 September 2026",
-      }),
+      screen.getByRole("heading", { name: "Join the consortium" }),
     ).toBeInTheDocument();
+  });
+
+  it("renders no calendar date or relative time", () => {
+    const { container } = renderPage();
+    const text = subtreeText(container);
+
+    expect(text).not.toMatch(YEAR_PATTERN);
+    expect(text).not.toMatch(MONTH_YEAR_PATTERN);
+    expect(text).not.toMatch(ISO_DATE_PATTERN);
+    expect(text).not.toMatch(RELATIVE_TIME_PATTERN);
   });
 
   it("has no accessibility violations", async () => {

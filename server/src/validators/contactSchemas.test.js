@@ -93,7 +93,7 @@ describe("contactSubmitSchema — consortium", () => {
     customerRequest: "Automotive OEM asked for a passport-ready datasheet",
     dataExtract: "not_yet",
     dataNeeds: "Cell-level carbon footprint",
-    preferredStart: "nov_2026",
+    preferredStart: "asap",
     source: "landing_page-1",
     consentTimestamp: "2026-02-16T12:00:00Z",
     consentVersion: "v1",

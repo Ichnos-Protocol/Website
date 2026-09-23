@@ -22,8 +22,8 @@ export class ConsortiumPage {
 
   // ─── /consortium — registration section ───
 
-  // The #register section and its heading are the date-stable anchors for
-  // /consortium — the hero copy flips after the registration deadline.
+  // The #register section and its heading are the stable anchors for
+  // /consortium: they carry the form, which the hero copy does not.
   get registerSection() {
     return this.page.locator('#register');
   }
@@ -82,7 +82,7 @@ export class ConsortiumPage {
 
   // Radios render as inline Form.Check, so the accessible name is the option
   // label ("Yes", "Not yet, but we could prepare one", "No",
-  // "Not applicable" / "November 2026", "Later").
+  // "Not applicable" / "As soon as the group is formed", "Later").
   dataExtractRadio(label) {
     return this.page.getByRole('radio', { name: label });
   }

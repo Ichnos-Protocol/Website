@@ -55,7 +55,7 @@ const consortiumAnswers = {
   chainRole: "cathode_material",
   productLine: "NMC cathode powders",
   dataExtract: "not_yet",
-  preferredStart: "nov_2026",
+  preferredStart: "asap",
   consentTimestamp: "2026-01-01T00:00:00Z",
   consentVersion: "consortium-v1",
 };

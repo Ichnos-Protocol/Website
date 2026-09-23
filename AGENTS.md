@@ -105,6 +105,8 @@ cd server && vercel --prod   # deploy backend
 
 Any page selling a paid engagement follows `docs/commercial_offer_page_pattern.md`: fixed section order, a heading on every section, and copy rules derived from rejected lines rather than from taste. Read it before planning one. `docs/website_readiness_assessment_page.md` is the worked example.
 
+The September 2026 cleanup epic (consortium deadline withdrawal, price reconciliation, team page changes, PageTransition removal, promotion workflow removal, secrets, rate-limit store, coverage, Prettier adoption) is specified in `docs/september_fixes_spec.md`. Its section 1 records the verified facts each phase rests on and its section 2 the owner decisions; do not re-derive either.
+
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.

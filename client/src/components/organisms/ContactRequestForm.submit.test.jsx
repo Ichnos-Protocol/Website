@@ -62,7 +62,7 @@ describe("ContactRequestForm submission", () => {
       chainRole: "module_pack",
       productLine: "48V pack line",
       dataExtract: "not_yet",
-      preferredStart: "nov_2026",
+      preferredStart: "asap",
       consentVersion: "consortium-v1",
     });
     expect(body.consentVersion).toBe("v1");

@@ -99,7 +99,7 @@ describe("vocabulary corpus (file set)", () => {
     // Kept identical to vocabulary.js's SKIP_FILES: a stale mirror silently
     // weakens the assertion it exists for.
     const excluded = FILES.map((file) => basename(file)).filter((name) =>
-      /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js|corpusScan\.js)$/.test(
+      /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js|corpusScan\.js|dateGuards\.js)$/.test(
         name,
       ),
     );
