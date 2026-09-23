@@ -65,8 +65,7 @@ const CURRENCIES = ["SGD", "EUR"];
 // User-facing copy only, enumerated rather than introspected (the
 // `vocabulary.js` convention). `PRICING` is deliberately absent: its
 // `founding` / `foundingOpen` keys are implementation names and must not be
-// swept by the section 4.2.1.1 rule 1 word check. `factDate` is audit
-// metadata that never renders, so it is excluded too.
+// swept by the section 4.2.1.1 rule 1 word check.
 const COPY_EXPORTS = [
   ASSESSMENT_HERO,
   ASSESSMENT_SEO_SUMMARY,
@@ -383,9 +382,8 @@ describe("copy discipline", () => {
   });
 
   // A blanket 4-digit sweep would fail on fenced copy that legitimately says
-  // "MS 2818" and "CX-0160" in section 4.8. The
-  // invariant that matters is narrower: no figure from `PRICING` is typed
-  // into copy, in either its raw or its grouped form.
+  // "MS 2818" in the FAQ. The invariant that matters is narrower: no figure
+  // from `PRICING` is typed into copy, in either its raw or its grouped form.
   it("types no price figure into copy", () => {
     const figures = Object.values(PRICING).flatMap((tier) =>
       [

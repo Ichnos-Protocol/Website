@@ -224,8 +224,13 @@ describe("ReadinessAssessmentPage", () => {
 /*
  * Section 8 item 7 in its v1.10 form: Panel B's date is the interpolated
  * `regulatoryDates.js` value, and no other regulatory date renders anywhere
- * on the page. The one scoped relaxation is a bare year inside published
- * work (notes 7 to 11).
+ * on the page. Nothing on the page is scoped out.
+ *
+ * The sweep is intentionally page-wide, over the whole rendered subtree
+ * rather than over named sections, so the sections later tickets add
+ * (4.8, 4.9) are covered without amending this file. Nothing is scoped
+ * out; the one legitimate date is stripped (note 3) and the rest of the
+ * page is swept.
  *
  * 1. This is the v1.9 replacement for the old item 7, which asserted that
  *    both Panel B and the section 4.2.2 window render an interpolated
@@ -236,19 +241,14 @@ describe("ReadinessAssessmentPage", () => {
  *    is therefore the page's only rendered regulatory date.
  *    `AssessmentWindow.test.jsx` already tripwires that fenced copy for a
  *    `{passportDate}` token; this block is the page-level counterpart.
- * 3. The sweep is intentionally page-wide, over the whole rendered subtree
- *    rather than over named sections, so the sections later tickets add
- *    (4.8, 4.9) are covered without amending this file. That is the half of
- *    item 7 which enforces section 3 rule 4. The only subtree it scopes out
- *    is published work, and that subtree has a sweep of its own (note 9).
- * 4. Why the single exclusion exists: `getPassportDateLabel()` is the one
+ * 3. Why the single exclusion exists: `getPassportDateLabel()` is the one
  *    date that is supposed to render, so it is removed before the year and
  *    month-year sweeps. The exclusion cannot hide a regression, because the
  *    first test pins both the label's presence and its occurrence count. A
  *    duplicated passport-date literal added anywhere raises the count and
  *    fails, and any other date literal survives the strip and fails the
  *    sweeps.
- * 5. EXPECTED_DATE_TOKENS and EXPECTED_DATE_RENDERS encode section 4.2.2's
+ * 4. EXPECTED_DATE_TOKENS and EXPECTED_DATE_RENDERS encode section 4.2.2's
  *    "Panel B and only Panel B" as fixed numbers, and DATED_PANEL_INDEX /
  *    DATED_PANEL_ID pin which panel that is. None of the three is derived
  *    from the current fenced copy, because a guard that counts what is there
@@ -257,42 +257,6 @@ describe("ReadinessAssessmentPage", () => {
  *    interpolates the passport date a second time, or moves it to another
  *    panel, raising these constants is a deliberate, reviewable act, on the
  *    same reasoning as the routes.test.js skip set.
- * 6. `factDate` is audit metadata and must never render.
- *    ASSESSMENT_PUBLISHED_WORK items carry it for the section 8 item 19
- *    review. If a sweep goes red because a `factDate` reached the DOM, that
- *    is a real defect in the rendering component: fix the component, do not
- *    weaken the assertion. Every dated `factDate` is an ISO string, so the
- *    ISO assertion of sweep (c) is now the page-level tripwire for it.
- * 7. The forward collision recorded here before T9 is resolved by the v1.10
- *    ruling. ASSESSMENT_PUBLISHED_WORK.items[0].text carries a conference
- *    year inside its fenced copy, and it renders. A bare year is permitted
- *    only inside published work, because an event year such as a
- *    conference title is permanently true and is what makes the claim
- *    checkable (section 4.7.1 rules 1 and 5). Section 3 rule 4 exists to
- *    stop a regulatory obligation date going stale. The two are opposite
- *    failure modes, so one pattern cannot serve both scopes.
- * 8. The boundary is the component subtree, resolved from the
- *    `published-work` test id, not a string exception. Section 4.7.1 rule 5
- *    and section 11 item 5 both anticipate the list growing, and a per-item
- *    exception list would have to grow with it. That is the antipattern
- *    already rejected for ALLOWED_EXCEPTIONS and in the `corpusScan.js`
- *    placement ruling. Exclusion is by text node, not by string
- *    subtraction, so identical copy elsewhere on the page is still swept.
- * 9. Sweep (c) is what keeps the exclusion honest. Without it, a stale
- *    regulatory date could render inside the one section whose credibility
- *    depends on every line being checkable, and sweep (b) would never see
- *    it. The published-work root is also asserted to exist, so a renamed
- *    test id fails loudly instead of silently emptying both scopes.
- * 10. Month-year and ISO forms stay barred everywhere, published work
- *    included. Only the bare-year form is relaxed, and only inside that
- *    subtree.
- * 11. The resulting scopes:
- *    (a) Panel B and the page: token count, sole carrier, and the rendered
- *        value equals the interpolated source.
- *    (b) The page minus the published-work subtree, passport date
- *        stripped: no bare year, no written month-year, no ISO date.
- *    (c) The published-work subtree: no written month-year, no ISO date.
- *        A bare year is permitted.
  */
 
 const DATE_TOKEN = "{passportDate}";
