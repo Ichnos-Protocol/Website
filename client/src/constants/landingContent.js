@@ -8,7 +8,7 @@ import {
 export const HERO_CONTENT = {
   eyebrow: `Based in Singapore · Serving ASEAN manufacturers · ${CATENA_X_STATUS_LINE}`,
   headline:
-    "From regulatory compliance to seamless integration into the circular value chain.",
+    "Getting ASEAN battery value chains and their data ready for the EU market",
   subhead:
     "Practitioner-led advisory in battery systems engineering, safety, mechanical development, remanufacturing and integration into the Catena-X battery-passport ecosystem.",
   ctaText: "Explore Our Services",
