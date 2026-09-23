@@ -4,9 +4,11 @@ import TeamPage from './TeamPage';
 import { TEAM_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 import {
+  TEAM_CTA,
   TEAM_MEMBERS,
   TEAM_PAGE_HEADER,
 } from '../../constants/teamContent';
+import { BOOKING_URL } from '../../constants/companyInfo';
 
 vi.mock('../../hooks/useReducedMotion', () => ({
   useReducedMotion: vi.fn(() => true),
@@ -126,6 +128,11 @@ describe('TeamPage', () => {
         PAGE_STRUCTURED_DATA.team[0],
       );
     });
+    // Literal count: the guard against the bundle drifting silently.
+    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(3);
+    expect(
+      PAGE_STRUCTURED_DATA.team.filter((s) => s['@type'] === 'Person'),
+    ).toHaveLength(1);
   });
 
   it('renders page title', () => {
@@ -137,6 +144,7 @@ describe('TeamPage', () => {
   });
 
   it('renders one FounderProfile per team member with correct names', () => {
+    expect(TEAM_MEMBERS).toHaveLength(1);
     TEAM_MEMBERS.forEach((member) => {
       expect(
         screen.getByRole('heading', { level: 2, name: member.name }),
@@ -154,6 +162,42 @@ describe('TeamPage', () => {
     const blocks = screen.getAllByTestId('recognition-block');
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toHaveTextContent('Recognition');
+  });
+
+  it('renders the team booking band with the TEAM_CTA label', () => {
+    expect(screen.getByTestId('team-cta')).toBeInTheDocument();
+    expect(screen.getByTestId('team-cta-booking')).toHaveTextContent(
+      TEAM_CTA.label,
+    );
+  });
+
+  it('points the team booking band at BOOKING_URL unchanged', () => {
+    const href = screen.getByTestId('team-cta-booking').getAttribute('href');
+    expect(href).toBe(BOOKING_URL);
+    expect(href).not.toContain('?');
+  });
+
+  it('renders the booking band after the last profile and before VisionStatement', () => {
+    const lastProfile = screen.getByRole('heading', {
+      level: 2,
+      name: TEAM_MEMBERS[TEAM_MEMBERS.length - 1].name,
+    });
+    const band = screen.getByTestId('team-cta');
+    const vision = screen.getByTestId('vision-statement');
+    expect(
+      lastProfile.compareDocumentPosition(band) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      band.compareDocumentPosition(vision) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('renders exactly one link to BOOKING_URL', () => {
+    const links = [...document.querySelectorAll('a[href]')].filter(
+      (a) => a.getAttribute('href') === BOOKING_URL,
+    );
+    expect(links).toHaveLength(1);
   });
 
   it('renders VisionStatement component', () => {

@@ -57,7 +57,6 @@ export const ORGANIZATION_SCHEMA = {
   ],
   founder: [
     { "@type": "Person", name: "Francesco Maltoni" },
-    { "@type": "Person", name: "Ihsan Ahmad" },
   ],
   areaServed: ["EU", "ID", "MY", "SG"],
   knowsAbout: [
@@ -104,23 +103,6 @@ export const FOUNDER_PERSON_SCHEMA = {
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
 
-export const COFOUNDER_PERSON_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: "Ihsan Ahmad",
-  jobTitle: "Co-Founder",
-  worksFor: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
-  alumniOf: [
-    { "@type": "CollegeOrUniversity", name: "Karlsruhe Institute of Technology" },
-    { "@type": "CollegeOrUniversity", name: "Universität Mannheim" },
-  ],
-  knowsAbout: [
-    "AI Integration",
-    "Quantitative Modelling",
-    "Notified-Body Coordination",
-  ],
-};
-
 function breadcrumb(items) {
   return {
     "@context": "https://schema.org",
@@ -152,7 +134,6 @@ export const PAGE_STRUCTURED_DATA = {
       { name: "Team", path: ROUTE_TEAM },
     ]),
     FOUNDER_PERSON_SCHEMA,
-    COFOUNDER_PERSON_SCHEMA,
   ],
   passport: [
     ORGANIZATION_SCHEMA,

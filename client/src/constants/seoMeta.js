@@ -82,9 +82,9 @@ export const SERVICES_META = buildMeta({
 export const TEAM_META = buildMeta({
   path: ROUTE_TEAM,
   title: "Team — Ichnos Protocol",
-  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
+  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}).`,
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Qualified Advisor, battery passport, ASEAN battery advisory",
+    "Francesco Maltoni, FEV battery expert, Catena-X Qualified Advisor, battery passport, ASEAN battery advisory",
 });
 
 export const PASSPORT_META = buildMeta({

@@ -103,7 +103,10 @@ describe('RecognitionBlock', () => {
   });
 
   it('renders nothing for a member without recognition data', () => {
-    const { container } = render(<RecognitionBlock memberId="ihsan" />);
+    // Deliberately synthetic id, so no real member id is pinned here.
+    const { container } = render(
+      <RecognitionBlock memberId="member-without-recognition" />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 

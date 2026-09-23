@@ -1,7 +1,4 @@
-import {
-  CAREER_TIMELINE_FRANCESCO,
-  CAREER_TIMELINE_IHSAN,
-} from "./teamTimelines";
+import { CAREER_TIMELINE_FRANCESCO } from "./teamTimelines";
 // Team copy states the Qualified Advisor qualification only. That
 // qualification is personal to Francesco — attestation 868 names him.
 // Association membership and Digital Product Passport Expert Group
@@ -33,26 +30,10 @@ export const TEAM_MEMBERS = [
     showTimeline: true,
     timeline: CAREER_TIMELINE_FRANCESCO,
   },
-  {
-    id: "ihsan",
-    name: "Ihsan Ahmad",
-    title: "Co-Founder",
-    photo: "/ihsan.png",
-    bio: [
-      "Ihsan Ahmad is Co-Founder of Ichnos Protocol, bringing methodical excellence to the company's digital strategy and product development.",
-      "A mathematician by training (M.Sc. Wirtschaftsmathematik, Karlsruhe Institute of Technology), Ihsan combines analytical rigour with hands-on execution across AI integration, quantitative financial modelling, and coordination of testing with notified bodies in the chemical industry.",
-      "At Ichnos Protocol, Ihsan leads the digital and analytical workstreams supporting the Battery Passport product — applying his AI-integration background and process discipline to the data, intelligence, and certification layers of the platform.",
-    ],
-    skillsChips: [
-      "AI Integration",
-      "Quantitative Modelling",
-      "Notified-Body Coordination",
-      "Methodical Excellence",
-    ],
-    showTimeline: false, // hidden — flip after content review
-    timeline: CAREER_TIMELINE_IHSAN,
-  },
 ];
+
+// Label for the closing booking band on the team page (spec P6).
+export const TEAM_CTA = { label: "Book a call with me" };
 
 export const VISION_STATEMENT = {
   quote:
