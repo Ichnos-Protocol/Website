@@ -339,6 +339,7 @@ Rules:
 - When introducing a new env var, update the corresponding `.env.example` in the same commit.
 - Client vars are prefixed with `VITE_` (exposed at build time). Server vars are runtime-only.
 - GitHub Actions secrets, Vercel env vars, and local `.env` files are three separate environments — see `AGENTS.md` and `devOpsLessonsLearned.md` for the full credential mapping.
+- E2E CI configuration comes from GitHub repository **variables** (the non-secret names: Firebase project fields, `E2E_BASE_URL`, `E2E_API_BASE_URL`, role emails and UIDs) plus **secrets** (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords). `e2e/.env.e2e` is local-only and gitignored; `e2e/.env.e2e.example` is its template.
 
 ---
 

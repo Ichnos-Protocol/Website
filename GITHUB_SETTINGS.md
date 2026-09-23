@@ -12,7 +12,7 @@ The GitHub repository requires the following settings to support the 3-branch li
 
 | Area                      | What                                                                                    | Why                                                                                                                         |
 | ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Repository Secrets**    | 6 secrets for CI/E2E (one optional), `SYNC_PAT` + 2 deploy-hook URLs for staging sync, 2 optional Neon secrets for preview-branch cleanup | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
+| **Repository Secrets**    | 8 secrets for CI/E2E (7 P10 E2E configuration secrets + `VERCEL_AUTOMATION_BYPASS_SECRET`, all required), `SYNC_PAT` + 2 deploy-hook URLs for staging sync, 2 optional Neon secrets for preview-branch cleanup | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
 | **Environments**          | `production` environment optional — no workflow references it                           | The production gate is the required pull request into `release`, not an environment approval                                |
 | **Branch Protections**    | `main` (5 required checks + PR required) and `release` (1 required check + PR required) | Enforces the CI → Preview → E2E → merge pipeline and the `main`-only release policy                                         |
 | **Old Rule Cleanup**      | Remove stale branch protections and rulesets from previous configurations               | Stale rules (e.g., for `e2e-testing` or different check names) can block merges or silently bypass the pipeline              |
@@ -57,7 +57,7 @@ Navigate to **Settings → Secrets and variables → Actions → New repository 
 
 ### E2E Test Account Secrets
 
-Three test accounts are required for Playwright E2E tests. Non-sensitive values (emails, UIDs, Firebase API key, URLs) are in the committed `e2e/.env.e2e` file. Only passwords need to be GitHub Secrets. The canonical way to create these accounts and populate their secrets is the provisioning script:
+Three test accounts are required for Playwright E2E tests. `e2e.yml` reads non-secret E2E configuration (emails, UIDs, Firebase project names, target URLs) from GitHub repository **variables** and credentials (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords) from repository **secrets**. The local `e2e/.env.e2e` is gitignored and never read by CI; copy it from `e2e/.env.e2e.example`. The canonical way to create these accounts and populate their secrets is the provisioning script:
 
 ```bash
 node e2e/scripts/provision-e2e-firebase-users.js
@@ -65,21 +65,45 @@ node e2e/scripts/provision-e2e-firebase-users.js
 
 > The root wrapper `node scripts/provision-e2e-firebase-users.js` also works (it delegates to `e2e/scripts/provision-e2e-firebase-users.js`).
 
-This script reads `e2e/.env.e2e`, provisions Firebase users, and syncs passwords to GitHub Secrets and emails/UIDs to Vercel Preview environment variables. The provisioning script is a **local/manual developer/admin tool** — it is not executed by `ci.yml` or `e2e.yml`. CI and E2E workflows consume the synced secrets after the script has run.
+This script reads the local `e2e/.env.e2e`, provisions Firebase users, syncs the secrets and variables below to GitHub, and syncs emails/UIDs to Vercel Preview environment variables. The provisioning script is a **local/manual developer/admin tool** — it is not executed by `ci.yml` or `e2e.yml`. CI and E2E workflows consume the synced secrets after the script has run.
 
 After running the script, the following GitHub Actions secrets will be set automatically:
 
 | Secret                             | Description                            |
 | ---------------------------------- | -------------------------------------- |
+| `FIREBASE_API_KEY`                 | Firebase Web API key of the E2E project |
+| `E2E_SIGNUP_PASSWORD`              | Default password for accounts created by `signUpAs` |
 | `E2E_ADMIN_PASSWORD`               | Admin test account password            |
 | `E2E_USER_PASSWORD`                | Regular user test account password     |
 | `E2E_SUPER_ADMIN_PASSWORD`         | Super-admin test account password      |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD` | Manage-admin target account password   |
-| `E2E_INCOMPLETE_USER_PASSWORD`     | Incomplete-profile test account password (optional: without it, `profile-completion.spec.js` skips both of its tests) |
+| `E2E_INCOMPLETE_USER_PASSWORD`     | Incomplete-profile test account password |
 
-> `e2e.yml` passes `E2E_INCOMPLETE_USER_PASSWORD` to Playwright. If it is missing, `e2e/tests/auth/profile-completion.spec.js` skips both of its tests without failing the run, so profile completion goes untested.
+> All seven secrets above are required. `e2e.yml`'s `Validate E2E configuration` step fails the run, naming each empty one, before any test runs.
 
-> **Note:** Test account emails, UIDs, and Firebase API key are in the committed `e2e/.env.e2e` file — they are not GitHub Secrets. Firebase UIDs (`E2E_*_UID`) are also synced to Vercel Preview environment variables by the provisioning script (see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §2).
+### E2E Repository Variables
+
+Navigate to **Settings → Secrets and variables → Actions → Variables → New repository variable**. `e2e.yml` maps each of these into its job-level `env:` block and fails the run, naming the empty ones, if any is unset. The provisioning script syncs them.
+
+| Variable                        | Description                                                 |
+| ------------------------------- | ----------------------------------------------------------- |
+| `FIREBASE_PROJECT_ID`           | Firebase project ID of the E2E project                      |
+| `FIREBASE_AUTH_DOMAIN`          | Firebase auth domain of the E2E project                     |
+| `FIREBASE_STORAGE_BUCKET`       | Firebase storage bucket of the E2E project                  |
+| `E2E_BASE_URL`                  | Stable E2E client URL (ephemeral preview, never `staging`)  |
+| `E2E_API_BASE_URL`              | Stable E2E API URL (ephemeral preview, never `staging`)     |
+| `E2E_ADMIN_EMAIL`               | Admin test account email                                    |
+| `E2E_ADMIN_UID`                 | Admin test account Firebase UID                             |
+| `E2E_USER_EMAIL`                | Regular user test account email                             |
+| `E2E_USER_UID`                  | Regular user test account Firebase UID                      |
+| `E2E_INCOMPLETE_USER_EMAIL`     | Incomplete-profile test account email                       |
+| `E2E_INCOMPLETE_USER_UID`       | Incomplete-profile test account Firebase UID                |
+| `E2E_SUPER_ADMIN_EMAIL`         | Super-admin test account email                              |
+| `E2E_SUPER_ADMIN_UID`           | Super-admin test account Firebase UID                       |
+| `E2E_MANAGE_ADMIN_TARGET_EMAIL` | Manage-admin target account email                           |
+| `E2E_MANAGE_ADMIN_TARGET_UID`   | Manage-admin target account Firebase UID                    |
+
+> **Note:** Firebase UIDs (`E2E_*_UID`) are also synced to Vercel Preview environment variables by the provisioning script (see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §2).
 >
 > **Manual fallback (exception only):** If the provisioning script is unavailable (e.g., missing Firebase service account credentials), you can create the accounts manually in Firebase Console → Authentication → Users and set the password secrets above by hand in Settings → Secrets → Actions. However, the script-based flow is the canonical path and should be used whenever possible.
 >
@@ -95,7 +119,7 @@ This secret is required by `e2e.yml` for Playwright tests to bypass Vercel Deplo
 
 > **Critical:** The bypass secret value **must be identical** on both the client and server Vercel projects. The E2E workflow uses a single `VERCEL_AUTOMATION_BYPASS_SECRET` GitHub secret to probe both deployments; if the two Vercel projects hold different bypass values, one of the readiness checks will return 401. When rotating or regenerating the secret, update **both** Vercel projects (Settings → Deployment Protection → "Protection Bypass for Automation") and the GitHub Actions secret in one pass.
 
-> **Note:** `FIREBASE_API_KEY` is no longer a GitHub Secret — it is in the committed `e2e/.env.e2e` file.
+> **Note:** `FIREBASE_API_KEY` is a GitHub Secret (see the E2E secrets table above), not a repository variable.
 
 ### Former Production Promotion Secrets
 
@@ -155,7 +179,7 @@ Configure branch protection rules in **Settings → Branches** (or **Settings �
 >
 > - **`Client — Lint & Test`** and **`Server — Lint & Test`**: Produced by `ci.yml`. Run linting, unit tests, and client build verification.
 > - **Vercel deployment checks** (e.g., `Vercel – ichnos-protocol` and `Vercel – ichnos-protocol-server`): Produced by Vercel's native Git integration. These checks confirm that preview deployments build and deploy successfully. **The exact check names are determined by your Vercel project names and may differ from the examples shown here.** To find the correct names: open a recent PR, scroll to the status checks section, and copy the exact Vercel check context strings. Use those exact strings when configuring required status checks — a mismatch will block all merges.
-> - **`E2E Tests (Playwright)`**: Produced by `e2e.yml`, triggered by `repository_dispatch: vercel.deployment.success` events after the **server** Vercel project completes a preview deployment (Repository Dispatch Events are only enabled on the server project). The server is the slower deployment — by the time the dispatch fires, the server is live and the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Tests run against the stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL` / `E2E_API_BASE_URL`). Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve targets from this file — the `workflow_dispatch` mode does not accept manual URL inputs. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run; denylist updates require maintainer-reviewed PRs. The gate is fail-closed — missing/empty denylist constants or unparseable URLs abort the workflow. API readiness is determined by `seed.mode` from `/api/health`: `seeded` or `skipped` → ready; `failed` → immediate failure. See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) §3 for full details.
+> - **`E2E Tests (Playwright)`**: Produced by `e2e.yml`, triggered by `repository_dispatch: vercel.deployment.success` events after the **server** Vercel project completes a preview deployment (Repository Dispatch Events are only enabled on the server project). The server is the slower deployment — by the time the dispatch fires, the server is live and the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Tests run against the stable E2E URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords. Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve targets from these variables — the `workflow_dispatch` mode does not accept manual URL inputs. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run; denylist updates require maintainer-reviewed PRs. The gate is fail-closed — missing/empty denylist constants or unparseable URLs abort the workflow. API readiness is determined by `seed.mode` from `/api/health`: `seeded` or `skipped` → ready; `failed` → immediate failure. See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) §3 for full details.
 
 ### `release` branch
 
@@ -180,7 +204,7 @@ The `staging` branch does **not** have a branch protection rule — this is inte
 
 > **Production-backed environment (accepted risk):** The `staging` Vercel preview uses **production Firebase** and **production Neon DB** credentials via branch-scoped environment variable overrides (configured in Vercel, not GitHub). Manual QA actions performed on `staging` write directly to the production database — this is explicitly accepted to enable realistic QA. `SKIP_E2E_SEED=true` is set on `staging` to prevent automated E2E seed injection.
 >
-> **E2E target isolation:** `E2E_BASE_URL` and `E2E_API_BASE_URL` (in the committed `e2e/.env.e2e` file) must point to **ephemeral preview** targets — never to the `staging` branch URL. The staging manual-QA environment and E2E test targets are intentionally separate. Repointing E2E URLs at `staging` would run automated tests against production data.
+> **E2E target isolation:** `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) must point to **ephemeral preview** targets — never to the `staging` branch URL. The staging manual-QA environment and E2E test targets are intentionally separate. Repointing E2E URLs at `staging` would run automated tests against production data.
 >
 > See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) and [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) for full setup details.
 
@@ -212,11 +236,28 @@ After completing setup (or when verifying an existing configuration), confirm ev
 
 | Setting                                                  | Expected State                                     | How to Verify                                          |
 | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| `FIREBASE_PROJECT_ID` variable                           | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_AUTH_DOMAIN` variable                          | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_STORAGE_BUCKET` variable                       | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_BASE_URL` variable                                  | Set to an ephemeral preview URL, never `staging`   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_API_BASE_URL` variable                              | Set to an ephemeral preview URL, never `staging`   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_ADMIN_EMAIL` variable                               | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_ADMIN_UID` variable                                 | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_USER_EMAIL` variable                                | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_USER_UID` variable                                  | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_INCOMPLETE_USER_EMAIL` variable                     | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_INCOMPLETE_USER_UID` variable                       | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_SUPER_ADMIN_EMAIL` variable                         | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_SUPER_ADMIN_UID` variable                           | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_MANAGE_ADMIN_TARGET_EMAIL` variable                 | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `E2E_MANAGE_ADMIN_TARGET_UID` variable                   | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_API_KEY` secret                                | Set, non-empty                                     | Settings → Secrets → Actions                           |
+| `E2E_SIGNUP_PASSWORD` secret                             | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `E2E_ADMIN_PASSWORD` secret                              | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `E2E_USER_PASSWORD` secret                               | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `E2E_SUPER_ADMIN_PASSWORD` secret                        | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD` secret                | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_INCOMPLETE_USER_PASSWORD` secret (optional)         | Set, non-empty, or profile-completion E2E skips    | Settings → Secrets → Actions                           |
+| `E2E_INCOMPLETE_USER_PASSWORD` secret                    | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` secret                 | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `NEON_API_KEY` secret (optional, E2E branch cleanup)     | Set, non-empty                                     | Settings → Secrets → Actions                           |
 | `NEON_PROJECT_ID` secret (optional, E2E branch cleanup)  | Set, non-empty                                     | Settings → Secrets → Actions                           |
@@ -240,13 +281,30 @@ After completing setup (or when verifying an existing configuration), confirm ev
 Use this checklist when setting up a new repository or verifying an existing one:
 
 - [ ] **Old rules cleaned up** — No stale branch protections or rulesets from previous configurations (§1)
-- [ ] **Committed config** — `e2e/.env.e2e` exists with non-sensitive E2E config (emails, UIDs, Firebase API key, URLs)
-- [ ] **Secrets (CI/E2E)** — All 6 CI/E2E secrets are set (§2)
+- [ ] **Variables (E2E)** — All 15 E2E repository variables are set (§2)
+  - [ ] `FIREBASE_PROJECT_ID`
+  - [ ] `FIREBASE_AUTH_DOMAIN`
+  - [ ] `FIREBASE_STORAGE_BUCKET`
+  - [ ] `E2E_BASE_URL`
+  - [ ] `E2E_API_BASE_URL`
+  - [ ] `E2E_ADMIN_EMAIL`
+  - [ ] `E2E_ADMIN_UID`
+  - [ ] `E2E_USER_EMAIL`
+  - [ ] `E2E_USER_UID`
+  - [ ] `E2E_INCOMPLETE_USER_EMAIL`
+  - [ ] `E2E_INCOMPLETE_USER_UID`
+  - [ ] `E2E_SUPER_ADMIN_EMAIL`
+  - [ ] `E2E_SUPER_ADMIN_UID`
+  - [ ] `E2E_MANAGE_ADMIN_TARGET_EMAIL`
+  - [ ] `E2E_MANAGE_ADMIN_TARGET_UID`
+- [ ] **Secrets (CI/E2E)** — All 8 CI/E2E secrets are set (§2)
+  - [ ] `FIREBASE_API_KEY`
+  - [ ] `E2E_SIGNUP_PASSWORD`
   - [ ] `E2E_ADMIN_PASSWORD`
   - [ ] `E2E_USER_PASSWORD`
   - [ ] `E2E_SUPER_ADMIN_PASSWORD`
   - [ ] `E2E_MANAGE_ADMIN_TARGET_PASSWORD`
-  - [ ] `E2E_INCOMPLETE_USER_PASSWORD` (optional; without it profile-completion E2E skips)
+  - [ ] `E2E_INCOMPLETE_USER_PASSWORD`
   - [ ] `VERCEL_AUTOMATION_BYPASS_SECRET`
 - [ ] **Secrets (staging sync)** — All 3 set; `sync-staging.yml` fails without either hook (§2)
   - [ ] `SYNC_PAT`

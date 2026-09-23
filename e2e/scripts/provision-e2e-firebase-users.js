@@ -1,4 +1,4 @@
-/** E2E Credential Pipeline — Orchestrator. See .env.e2e.example for usage. */
+/** E2E Credential Pipeline — Orchestrator. See e2e/.env.e2e.example for usage. */
 import { existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
@@ -23,7 +23,7 @@ function assertGitHubConfigComplete(values) {
   if (missing.length === 0) return;
   throw new Error(
     `Missing GitHub config value(s): ${missing.join(", ")}\n` +
-      "Set them in e2e/.env.e2e and re-run.",
+      "Set them in the local, gitignored e2e/.env.e2e (or export the E2E_*_PASSWORD values in your shell, which take precedence) and re-run.",
   );
 }
 

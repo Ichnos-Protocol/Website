@@ -53,7 +53,7 @@ sequenceDiagram
 | Workflow file                   | Name                                 | Trigger                      | Purpose                                                                                                                                 |
 | ------------------------------- | ------------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yml`                        | CI                                   | `pull_request` to `main`     | Lint + unit tests + client build verification                                                                                           |
-| `e2e.yml`                       | E2E Tests (Playwright)               | `repository_dispatch (vercel.deployment.success)` + `workflow_dispatch` (manual) | Run E2E when the server project emits a deployment dispatch (the slower deployment, includes Neon DB seed). Tests target stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL` / `E2E_API_BASE_URL`). Manual `workflow_dispatch` runs use the same file — no manual `base_url` input |
+| `e2e.yml`                       | E2E Tests (Playwright)               | `repository_dispatch (vercel.deployment.success)` + `workflow_dispatch` (manual) | Run E2E when the server project emits a deployment dispatch (the slower deployment, includes Neon DB seed). Tests target stable E2E URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords. Manual `workflow_dispatch` runs use the same variables and secrets — no manual `base_url` input |
 | `release-policy-check.yml`      | Release Policy Check                 | `pull_request` to `release`  | Fails if PR head branch is not `main`                                                                                                   |
 | `sync-staging.yml`              | Sync main → staging                  | `workflow_dispatch` (manual) | Force-push `main` to `staging` with `SYNC_PAT`, then call the client and server staging deploy hooks so Vercel builds the new tip. Staging previews use production Firebase + Neon for manual QA. |
 
@@ -69,17 +69,17 @@ E2E tests are triggered by **`repository_dispatch (vercel.deployment.success)`**
 
 1. **Trigger**: Only the **server** Vercel project has Repository Dispatch Events enabled (see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §1). The client project does not emit dispatch events.
 2. **Filter**: The `e2e.yml` job has an `if` condition: `contains(github.event.client_payload.project.name || '', 'server')`. This is a safety guard — since only the server project emits dispatches, it effectively always passes for `repository_dispatch` events.
-3. **Target URL**: Tests run against the stable E2E client URL from `E2E_BASE_URL` (loaded from the committed `e2e/.env.e2e` file), not the per-deployment hash URL from the dispatch payload. This avoids stale/cancelled deployment URLs.
-4. **API URL**: The API base URL is read from `E2E_API_BASE_URL` (also from `e2e/.env.e2e`).
-5. **Client readiness**: After the server dispatch fires, the workflow polls the `E2E_BASE_URL` from `e2e/.env.e2e` with `curl` to verify the client is also ready before starting Playwright. It then polls `/api/health` for **API + seed readiness** using the `seed.mode` field: `seeded` and `skipped` are terminal-ready states that allow tests to proceed; `failed` causes an immediate workflow failure; `in_progress` keeps polling until the timeout is reached.
-6. **`workflow_dispatch`**: Manual/ad-hoc runs resolve targets from the committed `e2e/.env.e2e` file — there is no `base_url` input. The only configurable inputs are `browser_profile` and `test_suite`.
+3. **Target URL**: Tests run against the stable E2E client URL from `E2E_BASE_URL` (a repository variable), not the per-deployment hash URL from the dispatch payload. This avoids stale/cancelled deployment URLs.
+4. **API URL**: The API base URL is read from `E2E_API_BASE_URL` (also a repository variable).
+5. **Client readiness**: After the server dispatch fires, the workflow polls the `E2E_BASE_URL` repository variable with `curl` to verify the client is also ready before starting Playwright. It then polls `/api/health` for **API + seed readiness** using the `seed.mode` field: `seeded` and `skipped` are terminal-ready states that allow tests to proceed; `failed` causes an immediate workflow failure; `in_progress` keeps polling until the timeout is reached.
+6. **`workflow_dispatch`**: Manual/ad-hoc runs resolve targets from the same repository variables and secrets — there is no `base_url` input. The only configurable inputs are `browser_profile` and `test_suite`.
 7. **URL safety gate (production-host denylist)**: `e2e.yml` defines canonical denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) as workflow-level `env` values. Before any test runs, a validation step hard-fails if: (a) a target hostname exactly matches a denylist entry, (b) a URL cannot be parsed, or (c) a denylist constant is empty/missing. Hostname comparison is exact match after lowercase normalization and port removal.
 
 ### Key details
 
 - Only the server project emits `repository_dispatch` events, so the `E2E Tests (Playwright)` check is produced once per deployment cycle. The client project does not emit dispatches — no client-event skip path exists.
 - Detection uses the `project.name` field from the dispatch payload as a safety guard, **not** hostname pattern matching or a Vercel project ID secret. A separate denylist validation step performs exact-hostname matching against production hosts as an additional safety gate.
-- Non-sensitive config (emails, UIDs, Firebase API key, URLs) lives in the committed `e2e/.env.e2e` file — visible in the repo and easy to verify. Credentials use **Secrets** (`secrets.*`).
+- Non-secret config (emails, UIDs, Firebase project names, URLs) comes from repository **Variables** (`vars.*`), mapped in the job-level `env:` block. Credentials (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords, the bypass secret) use **Secrets** (`secrets.*`). A `Validate E2E configuration` step fails the run before the denylist gate, naming any empty variable or secret without printing values.
 - Workflow constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API` in `e2e.yml`) are the **canonical** source for the denylist. This document and other docs are **descriptive only**. Changes to the denylist require maintainer-reviewed PRs on `.github/workflows/e2e.yml`.
 - Hostname matching semantics: URLs are parsed (via Python `urlparse`), ports are stripped, hostnames are lowercased, and comparison is exact string equality — no substring, glob, or regex matching.
 
@@ -92,7 +92,7 @@ When investigating E2E check results, use this table to interpret the status:
 | **Passed**                                       | Playwright tests executed against stable staging URL and passed                                              | No action needed                                                                                                                |
 | **Failed** — Playwright test failure             | Tests executed against the staging URL and failed                                                            | Check the Playwright HTML report artifact uploaded to the workflow run                                                          |
 | **Failed** — readiness check timeout             | Client or API did not respond within the polling window, or `seed.mode` remained `in_progress` beyond the polling window | Check the readiness-check step logs for HTTP status codes, `seed.mode` values, and error details                                |
-| **Failed** — denylist blocked                    | Target URL hostname matched a production denylist entry                                                      | Verify `E2E_BASE_URL` and `E2E_API_BASE_URL` in `e2e/.env.e2e` point to staging/preview URLs, not production                           |
+| **Failed** — denylist blocked                    | Target URL hostname matched a production denylist entry                                                      | Verify the `E2E_BASE_URL` and `E2E_API_BASE_URL` repository variables point to staging/preview URLs, not production                           |
 | **Failed** — seed mode `failed`                  | API is healthy but `seed.mode` is `failed` (permanent config error)                                          | Check server logs and Vercel Preview env vars for missing seed variables (`E2E_ADMIN_UID`, `E2E_ADMIN_EMAIL`)                   |
 | **Cancelled**                                    | Workflow run was cancelled mid-execution                                                                     | Re-run the workflow or push a new commit to trigger a fresh deployment                                                          |
 
@@ -114,7 +114,7 @@ When investigating E2E check results, use this table to interpret the status:
 
 ### E2E isolation
 
-E2E targets (`E2E_BASE_URL`, `E2E_API_BASE_URL` in `e2e/.env.e2e`) remain pointed at ephemeral preview URLs — **never** at the `staging` URL. The staging and E2E environments are completely separate: different URLs, different database connections (staging uses production Neon; E2E uses ephemeral Neon branches), and different Firebase credentials.
+E2E targets (the `E2E_BASE_URL` and `E2E_API_BASE_URL` repository variables) remain pointed at ephemeral preview URLs — **never** at the `staging` URL. The staging and E2E environments are completely separate: different URLs, different database connections (staging uses production Neon; E2E uses ephemeral Neon branches), and different Firebase credentials.
 
 ### Accepted risk
 
@@ -130,18 +130,20 @@ Full GitHub repository settings — secrets, environments, branch protections, a
 
 Kept here for quick reference. [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) is the authoritative source.
 
-#### CI and E2E secrets (6)
+#### CI and E2E secrets (8)
 
 | Secret                              | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
+| `FIREBASE_API_KEY`                  | Firebase Web API key of the E2E project                |
+| `E2E_SIGNUP_PASSWORD`               | Default password for accounts created by `signUpAs`    |
 | `E2E_ADMIN_PASSWORD`                | Admin test account password                            |
 | `E2E_USER_PASSWORD`                 | Regular user test account password                     |
 | `E2E_SUPER_ADMIN_PASSWORD`          | Super-admin test account password                      |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD`  | Manage-admin target account password                   |
-| `E2E_INCOMPLETE_USER_PASSWORD`      | Incomplete-profile test account password. Optional: without it `profile-completion.spec.js` skips both of its tests |
+| `E2E_INCOMPLETE_USER_PASSWORD`      | Incomplete-profile test account password               |
 | `VERCEL_AUTOMATION_BYPASS_SECRET`   | Vercel Deployment Protection bypass for E2E automation — **same value must be set on both** the `ichnos-client` and `ichnos-protocolserver` Vercel projects (Settings → Deployment Protection → Protection Bypass for Automation) |
 
-> Non-sensitive E2E config (test account emails, UIDs, Firebase API key, target URLs) is in the committed `e2e/.env.e2e` file. `E2E_BASE_URL` and `E2E_API_BASE_URL` are no longer GitHub Variables — they are also in the committed file.
+> Non-secret E2E config comes from 15 GitHub repository **variables**: `FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, `E2E_BASE_URL`, `E2E_API_BASE_URL`, and `E2E_{ADMIN,USER,INCOMPLETE_USER,SUPER_ADMIN,MANAGE_ADMIN_TARGET}_{EMAIL,UID}`. See [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) §2 for the full list.
 
 > **Bypass secret invariant:** The E2E workflow uses a single GitHub Actions secret to authorize requests against both Vercel projects. If the two projects hold different bypass values, the client readiness probe or the API readiness probe will fail with 401. When rotating, update both Vercel projects and the GitHub secret atomically.
 
@@ -149,11 +151,11 @@ E2E test data is seeded automatically by the preview server on startup — no se
 
 These secrets are sufficient for CI, E2E, and preview deployments. Preview deployments are handled entirely by Vercel's native Git integration — no Vercel API tokens or project IDs are needed.
 
-> **Managing E2E secrets:** The provisioning script is a **local/manual admin tool** run from a developer's machine. Neither `ci.yml` nor `e2e.yml` execute it — they consume the synced outputs. The committed `e2e/.env.e2e` file is the source of truth for non-sensitive values (emails, UIDs, Firebase API key, URLs). The E2E GitHub Secrets are the passwords and the bypass secret (6 total). Run `node e2e/scripts/provision-e2e-firebase-users.js` (or `node scripts/provision-e2e-firebase-users.js` from repo root via wrapper). The script reads `e2e/.env.e2e`, provisions Firebase users, and syncs passwords to GitHub Secrets and emails/UIDs to Vercel Preview env vars. For sync-only (skip Firebase provisioning): `node e2e/scripts/provision-e2e-firebase-users.js --sync-only`.
+> **Managing E2E secrets:** The provisioning script is a **local/manual admin tool** run from a developer's machine. Neither `ci.yml` nor `e2e.yml` execute it — they consume the synced outputs. CI reads non-secret values (emails, UIDs, Firebase project names, URLs) from repository variables and credentials from secrets: `FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords and the bypass secret (8 total). The local `e2e/.env.e2e` is gitignored and copied from `e2e/.env.e2e.example`. Run `node e2e/scripts/provision-e2e-firebase-users.js` (or `node scripts/provision-e2e-firebase-users.js` from repo root via wrapper). The script reads the local `e2e/.env.e2e`, provisions Firebase users, syncs the variables and secrets to GitHub, and syncs emails/UIDs to Vercel Preview env vars. For sync-only (skip Firebase provisioning): `node e2e/scripts/provision-e2e-firebase-users.js --sync-only`.
 >
 > **Important:** Vercel Preview environment variable changes only take effect on **new preview deployments**. After syncing, trigger a new preview deployment or redeploy an existing one for the changes to be picked up.
 >
-> **Environment note:** The provisioning script depends on local CLI installation/PATH, `gh` and `vercel` CLI auth state, `server/.vercel/project.json` linkage, and local `server/.env` files. Different terminals, shell sessions, or machines may produce different results. If you encounter terminal-related errors, check: (1) `e2e/.env.e2e` exists (committed) with emails, UIDs, and passwords for provisioning, (2) `server/.env` exists with Firebase admin credentials (needed unless running `--sync-only`), (3) you are in the repo root, (4) `gh auth status`, (5) `vercel whoami`, (6) `cd server && vercel link`.
+> **Environment note:** The provisioning script depends on local CLI installation/PATH, `gh` and `vercel` CLI auth state, `server/.vercel/project.json` linkage, and local `server/.env` files. Different terminals, shell sessions, or machines may produce different results. If you encounter terminal-related errors, check: (1) the local, gitignored `e2e/.env.e2e` exists with emails, UIDs, and passwords for provisioning, (2) `server/.env` exists with Firebase admin credentials (needed unless running `--sync-only`), (3) you are in the repo root, (4) `gh auth status`, (5) `vercel whoami`, (6) `cd server && vercel link`.
 
 #### Former production promotion secrets
 
@@ -219,7 +221,7 @@ Two critical invariants to maintain:
 
 ## 9. Vercel Quota Protection
 
-Preview deployments are managed by Vercel's native Git integration, which builds on every push. E2E tests run against the stable E2E URLs from the committed `e2e/.env.e2e` file (not per-deployment hash URLs), so no extra Vercel build is triggered for testing.
+Preview deployments are managed by Vercel's native Git integration, which builds on every push. E2E tests run against the stable E2E URLs from the `E2E_BASE_URL` / `E2E_API_BASE_URL` repository variables (not per-deployment hash URLs), so no extra Vercel build is triggered for testing.
 
 Fork PRs do not receive preview deployments with secrets because Vercel's Git integration does not expose environment variables to builds from forks by default.
 

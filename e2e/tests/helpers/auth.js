@@ -113,10 +113,16 @@ export async function loginAsSuperAdmin(page) {
  * @returns {Promise<{email: string, password: string, name: string, surname: string, company: string}>}
  */
 export async function signUpAs(page, overrides = {}) {
+  const defaultPassword = process.env.E2E_SIGNUP_PASSWORD;
+  if (!defaultPassword && !overrides.password) {
+    throw new Error(
+      'E2E_SIGNUP_PASSWORD is not set. Set it in the local e2e/.env.e2e or as the E2E_SIGNUP_PASSWORD repository secret.',
+    );
+  }
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const creds = {
     email: `e2e-consortium-${token}@example.com`,
-    password: 'TestPass123!',
+    password: defaultPassword,
     name: 'E2E',
     surname: 'Consortium',
     company: `E2E Consortium ${token}`,
