@@ -353,6 +353,7 @@ Rules:
 - **Auth tokens**: Verify Firebase ID tokens server-side on every protected request. Never store tokens in localStorage — use httpOnly cookies or in-memory storage.
 - **Helmet**: Use `helmet` middleware for HTTP security headers.
 - **Dependencies**: Run `npm audit` regularly. No packages with known critical vulnerabilities.
+- **Claims**: the Catena-X Qualified Advisor qualification is Francesco's, not the company's. Corporate surfaces attribute it to the founder, and `CORPORATE_ADVISOR_CLAIM_PATTERNS` in `client/src/constants/vocabulary.js` guards the corporate form.
 
 ---
 

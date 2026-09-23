@@ -10,7 +10,6 @@ import {
 } from '../../constants/passportContent';
 import { ROUTE_READINESS_ASSESSMENT } from '../../constants/routes';
 import { BOOKING_URL } from '../../constants/companyInfo';
-import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
 vi.mock('../organisms/ContactSection', () => ({
   default: () => <div data-testid="contact-section">ContactSection</div>,
@@ -123,11 +122,6 @@ describe('PassportPage', () => {
     expect(link).toHaveAttribute('href', 'https://catena-x.net/en/about-us');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link.getAttribute('rel')).toContain('noopener');
-  });
-
-  it('renders the offer eyebrow with the Catena-X credential', () => {
-    const eyebrow = screen.getByTestId('passport-offer-eyebrow');
-    expect(eyebrow).toHaveTextContent(CATENA_X_TITLE_BASE);
   });
 
   it('links the readiness band to the assessment route, same tab', () => {

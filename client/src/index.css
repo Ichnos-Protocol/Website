@@ -298,24 +298,8 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing — font-parity model (v4 §13, supersedes the §5.2
-   bounding-box ratio, which left the wordmark at ~2/3 the member's and the
-   "Qualified Advisor" line illegible). Measured wordmark fractions: member
-   "Catena-X" = 0.478 of its canvas height; cropped advisor "Catena-X" =
-   0.318. Equal wordmarks therefore need advisor height ≈ 1.5× member height
-   (54 ≈ 1.5 × 36 → both wordmarks ≈ 17px). The display file is the
-   viewBox-trimmed derivative (no baked margins), so clear space is supplied
-   here as padding — content-box so it never eats the declared height.
-   Values §7.4-tunable ±15%; the 1.5 ratio is normative. */
-.footer-label-img--advisor {
-  box-sizing: content-box;
-  height: 54px;
-  padding: 18px 8px;
-}
-
 /* Member-label clear space. The member SVG is tight-cropped
-   (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin), unlike the 16:9
-   advisor files which carry their own baked-in clear space. Brand Governance
+   (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin). Brand Governance
    defines clear space as the height of the figurative mark; the padding below
    adds space AROUND the mark and never crops it — box-sizing: content-box is
    mandatory, since Bootstrap Reboot's global border-box would otherwise
@@ -396,17 +380,6 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing — font-parity model, same reasoning as
-   .footer-label-img--advisor: advisor height ≈ 1.5× member height equalises
-   the "Catena-X" wordmark height (60 ≈ 1.5 × 40 → both wordmarks ≈ 19px).
-   Cropped display file carries no baked margins, so clear space is supplied
-   here as padding (content-box). Values §7.4-tunable ±15%; ratio normative. */
-.credential-strip__label-img--advisor {
-  box-sizing: content-box;
-  height: 60px;
-  padding: 20px 8px;
-}
-
 /* Member-label clear space — same reasoning as .footer-label-img--member:
    the tight-cropped member SVG needs clear space added around the mark,
    content-box keeps the padding from eating the declared 40px visible
@@ -416,6 +389,16 @@ body {
   box-sizing: content-box;
   height: 40px;
   padding: 30px 12px;
+}
+
+/* Qualified Advisor label on the founder profile (/team), september-fixes
+   P7. Height is the pivot-4 §5.2 strip height for the advisor file, tunable
+   ±15%. Official positive file, unmodified: sized by height only,
+   aspect-preserved, never cropped. */
+.founder-credential-label {
+  height: 74px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* ========== Landing Sections ========== */

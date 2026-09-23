@@ -35,6 +35,15 @@ describe('WhyIchnosSection', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('attributes the qualification to Francesco in the second paragraph', () => {
+    // september-fixes P7: the holder is named, never the practice.
+    const { container } = renderWithProviders(<WhyIchnosSection />);
+    const paragraphs = container.querySelectorAll('p.lead');
+    expect(paragraphs[1].textContent).toContain(
+      'Francesco is a ' + CATENA_X_TITLE_BASE,
+    );
+  });
+
   it('renders a section with id="company"', () => {
     const { container } = renderWithProviders(<WhyIchnosSection />);
     expect(container.querySelector('section#company')).toBeInTheDocument();

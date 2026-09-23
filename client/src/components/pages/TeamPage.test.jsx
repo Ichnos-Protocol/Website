@@ -9,6 +9,10 @@ import {
   TEAM_PAGE_HEADER,
 } from '../../constants/teamContent';
 import { BOOKING_URL } from '../../constants/companyInfo';
+import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
+
+const ADVISOR_LABEL_SELECTOR = 'img[src*="Qualified-Advisor"]';
+const CATENA_X_LINK_SELECTOR = 'a[href="https://catena-x.net"]';
 
 vi.mock('../../hooks/useReducedMotion', () => ({
   useReducedMotion: vi.fn(() => true),
@@ -198,6 +202,33 @@ describe('TeamPage', () => {
       (a) => a.getAttribute('href') === BOOKING_URL,
     );
     expect(links).toHaveLength(1);
+  });
+
+  it('renders exactly one Qualified Advisor label image', () => {
+    expect(document.body.querySelectorAll(ADVISOR_LABEL_SELECTOR)).toHaveLength(
+      1,
+    );
+  });
+
+  it('renders exactly one catena-x.net link, wrapping the advisor label', () => {
+    const links = document.body.querySelectorAll(CATENA_X_LINK_SELECTOR);
+    expect(links).toHaveLength(1);
+    expect(links[0]).toContainElement(
+      document.body.querySelector(ADVISOR_LABEL_SELECTOR),
+    );
+  });
+
+  it("places the advisor label in the attested founder's profile section", () => {
+    // september-fixes P7: the label sits beside the person the attestation
+    // names. The member comes from TEAM_MEMBERS, not a retyped name.
+    const founder = TEAM_MEMBERS[0];
+    expect(founder.cxLabel).toBe('advisor');
+    const section = screen
+      .getByRole('heading', { level: 2, name: founder.name })
+      .closest('section');
+    const img = document.body.querySelector(ADVISOR_LABEL_SELECTOR);
+    expect(section).toContainElement(img);
+    expect(img).toHaveAttribute('alt', CATENA_X_TITLE_BASE);
   });
 
   it('renders VisionStatement component', () => {

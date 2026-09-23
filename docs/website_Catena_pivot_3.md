@@ -1,5 +1,7 @@
 # website_Catena_pivot_3.md — Specification
 
+> **Amendment, 2026-09-24 (september-fixes P7, owner ruling D3).** The Qualified Advisor qualification is Francesco's, and corporate surfaces now say so. §1.5 gains the corporate-attribution rule; the §2 `CATENA_X_STATUS_LINE` row, the §2.1 notice text and the `credentials.js` row are updated; §4.4 moves the advisor label to the founder profile on `/team`; manual item 17 is widened. `CORPORATE_ADVISOR_CLAIM_PATTERNS` in `vocabulary.js` guards the corporate form. Where this document and `docs/september_fixes_spec.md` P7 differ, P7 governs.
+
 **Subject:** Catena-X status representation, label rendering, name use in copy, and excluded vocabulary on `ichnos-protocol.com`
 **Version 3.11 — 2026-08-10 · Status: normative · in execution**
 *(3.11, from T1 execution review: additional live conformance-adjective instances found in client copy and server prompt text beyond the two §2 exposures — the family was added to `FORBIDDEN` in 3.3 and the corpus was never re-swept with the new patterns. §7.2 gains the pattern-widening re-sweep rule so the class cannot recur; §2 records the finding; the `ALLOWED_EXCEPTIONS` contract is hardened: false positives only, never genuine violations.)*
@@ -100,6 +102,7 @@ The two held statuses attach to **different legal persons**, and surfaces must n
 
 - The **Qualified Advisor qualification is personal** — the operating model classes qualification labels as *individual*, and attestation 868 names Francesco. It belongs on personal surfaces: the team bio, `TEAM_META`, the founder profile.
 - **Association membership and expert-group participation are corporate** — Ichnos Protocol Pte. Ltd. is the ordinary member. They belong on corporate surfaces: hero, footer, credentials, structured data, webmanifest.
+- *(Amended 2026-09-24, september-fixes P7.)* Corporate surfaces may say that the founder holds the qualification, attributed by name or as founder, and must not say that the company holds it.
 
 Consequence: `teamContent.js` continues to state the Advisor qualification **only**, and that is a design decision, not an omission — *"Francesco is a Catena-X member"* would be imprecise, because he is not; the company is. A comment at the `catenaXStatus` import in `teamContent.js` **MUST** record this so the asymmetry is never "fixed". The bio **MAY** reference the company's membership in company terms (*"…at Ichnos Protocol, an ordinary member of the association…"*) if a later copy pass wants it, but nothing here requires it.
 
@@ -115,7 +118,7 @@ One repair while in that file: `teamContent.js:16` renders *"He is **an** ${CATE
 | `constants/catenaXStatus.js` → `CATENA_X_TITLE_BASE` | `"Catena-X Qualified Advisor"` — correct today, no change |
 | `constants/catenaXStatus.js` → `CATENA_X_MEMBERSHIP_NOTE` | `"Ordinary member — Catena-X Automotive Network e.V."` (em dash — reconciled with §2.2 so constant and credential are **one string**). **Consumer: `credentials.js` imports it as the member credential's `note`**; `structuredData.js` **MAY** also consume it |
 | `constants/catenaXStatus.js` → `CATENA_X_COMMITTEE_NOTE` | **Rename to `CATENA_X_EXPERT_GROUP_NOTE`** — the old name perpetuates the §1.4 confusion — with value `"member of the Catena-X Digital Product Passport Expert Group"` (prose form, lowercase start, built for interpolation into sentences). The current value says *expert committee* (a term that does not exist) and *Battery Passport* (not the group's name). **Consumer: `structuredData.js` Organization/ProfessionalService description**, where the expert-group status **MUST** now be stated |
-| `constants/catenaXStatus.js` → `CATENA_X_STATUS_LINE` | **New.** `"Catena-X member & Qualified Advisor"` — the composed hero form. Plain constant, not derived from `CATENA_X_TITLE_BASE` (deriving would need string surgery to elide the repeated "Catena-X"; fragile cleverness). Comment **MUST** note it elides the second "Catena-X" deliberately and changes in lockstep with `CATENA_X_TITLE_BASE`. **Consumer: the hero eyebrow** |
+| `constants/catenaXStatus.js` → `CATENA_X_STATUS_LINE` | *(Amended 2026-09-24, september-fixes P7: value is now `"Catena-X member, founded by a Qualified Advisor"`, attributing the qualification to the founder.)* **New.** `"Catena-X member & Qualified Advisor"` — the composed hero form. Plain constant, not derived from `CATENA_X_TITLE_BASE` (deriving would need string surgery to elide the repeated "Catena-X"; fragile cleverness). Comment **MUST** note it elides the second "Catena-X" deliberately and changes in lockstep with `CATENA_X_TITLE_BASE`. **Consumer: the hero eyebrow** |
 | `client/public/site.webmanifest` `description` | **Live IP-Regs 6.3 exposure — fix before go-live.** Currently *"Catena-X-compatible ASEAN data layer for the European battery passport."* — a conformance claim (§1.2) plus a non-standard passport name (§1.4). Replace with: `"Ichnos Protocol makes companies across the ASEAN battery value chain ready for the EU Battery Passport by connecting them to Catena-X."` Readiness is asserted against the **regulation**, connection against Catena-X — never write `Catena-X-ready`, which would re-enter §1.2 conformance territory |
 | `client/index.html` static fallback meta | Clean of claims (verified 2026-08-10; "Catena-X onboarding" is descriptive). `SHOULD`: reorder "Singapore · Europe" to the ASEAN-first pattern of pivot 2 §3.4 when next touched |
 | `constants/seoMeta.js:68` (`TEAM_META.keywords`) | **Live violation, not merely a target state.** Still contains the retired v5 wording `Catena-X Advisory Provider`, which §1.2 prohibits and the §7.2 `FORBIDDEN` set catches. Replace with `Catena-X Qualified Advisor`. Listed alongside the webmanifest as a current exposure. **SEO conservatism does not apply to this swap**: the string is a §1.2 legality defect, and the replacement is also the term buyers actually search — the association's own programme name |
@@ -124,7 +127,7 @@ One repair while in that file: `teamContent.js:16` renders *"He is **an** ${CATE
 | `constants/catenaXStatus.js` → `CATENA_X_MEMBER_LABEL_ASSET`, `..._NEG` | Defined, both `null`, with the lifecycle comment in §3.1. **Exempt from conformance item 8 while null** (§7.1) — dormant landing zone for the member label file, not status strings |
 | `constants/catenaXStatus.js` → `TRADEMARK_NOTICE` | **New home for the §2.1 notice.** The string currently lives hardcoded in `molecules/FooterTrademark.jsx` — a component, which §1.3 prohibits for status claims, and the notice asserts two. Move the literal here; the component imports it. This also puts the tier-3 exact string and the §7.2 `REQUIRED` scan on the same file |
 | `molecules/FooterTrademark.jsx` | Renders `TRADEMARK_NOTICE` by import — membership stated, **not** hardcoded as pending, no local string literal. Required text in §2.1 |
-| `constants/credentials.js` | Carries a membership entry, **first in the array**, whose `note` **imports** `CATENA_X_MEMBERSHIP_NOTE` |
+| `constants/credentials.js` | Carries a membership entry, **first in the array**, whose `note` **imports** `CATENA_X_MEMBERSHIP_NOTE`. *(Amended 2026-09-24, september-fixes P7: the advisor entry is labelled `Catena-X Qualified Advisor (founder)` and carries neither `cxLabel` nor `href`; the advisor label image renders on the founder profile.)* |
 | `constants/landingContent.js` hero eyebrow | Final segment interpolates **`CATENA_X_STATUS_LINE`** (today it interpolates `CATENA_X_TITLE_BASE`) |
 | `constants/seoMeta.js` | No `Catena-X Advisory Provider`. `Catena-X member` present where `Catena-X consulting` already appears |
 | `constants/structuredData.js` | Status wording identical to `seoMeta.js` (pivot 2 §3.0-6 parity), **and consumes `CATENA_X_EXPERT_GROUP_NOTE`** in the organisation description |
@@ -135,7 +138,7 @@ One repair while in that file: `teamContent.js:16` renders *"He is **an** ${CATE
 
 `molecules/FooterTrademark.jsx` **MUST** render exactly:
 
-> Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.
+> Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.
 
 The final sentence is load-bearing — it is the explicit disclaimer that makes descriptive name use elsewhere on the site safe (§4). It **MUST NOT** be removed or shortened. The notice appears **once**, site-wide, in the footer.
 
@@ -408,7 +411,7 @@ The line therefore falls between two kinds of use:
 
 - Claim certification, conformance, endorsement, approval or partnership. §1.2 is the operative list.
 - Present a Catena-X KIT, standard or component as an Ichnos product.
-- Place any Catena-X **label or logo** on, beside, or within a services section, a pricing element, a case study, or any offering surface. **This is the sharpest rule in §4**, because it is the trademark association Sec. 6.3 aims at, and it is the rule most easily broken by a well-meaning design change. Labels are confined to the credentials strip and the footer recognitions row (pivot 2 §2.2-3).
+- Place any Catena-X **label or logo** on, beside, or within a services section, a pricing element, a case study, or any offering surface. **This is the sharpest rule in §4**, because it is the trademark association Sec. 6.3 aims at, and it is the rule most easily broken by a well-meaning design change. Labels are confined as follows: the advisor label renders on the founder profile on `/team`; the member label on the landing strip and the footer. *(Amended 2026-09-24, september-fixes P7; previously the credentials strip and the footer recognitions row, pivot 2 §2.2-3.)*
 - Style "Catena-X" as a brand mark in Ichnos copy — no logotype imitation, no lockup, no colour treatment that reads as the official wordmark. Plain text in the surrounding typeface.
 - Use `Catena-X` as the leading element of a proprietary product or service **name** (as distinct from a descriptive section heading). `Catena-X onboarding services` is descriptive; `Catena-X Connect by Ichnos` is a product name and prohibited.
 
@@ -669,7 +672,7 @@ Nothing else. In particular, no service card body, no card title, no lede, no he
 Not automatable; verified by review before promotion.
 
 16. No CSS `filter`, `transform`-based inversion, `object-fit: cover`, fixed non-16:9 box or opacity change applies to any label image.
-17. No Catena-X label or logo appears within any services, pricing or case-study section — checked at 1440 px, 768 px and 390 px.
+17. No Catena-X label or logo appears within any services, pricing or case-study section, and the advisor label only beside the person the attestation names — checked at 1440 px, 768 px and 390 px.
 18. "Catena-X" appears in body copy as plain text in the surrounding typeface, never as a styled mark or logotype imitation.
 19. Every official artefact name is linked to its official source.
 20. `og-image.jpg` regenerated post-pivot and verified by a real link unfurl, not by opening the file.

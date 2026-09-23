@@ -15,6 +15,7 @@ import {
 } from '../../constants/companyInfo';
 import { CREDENTIALS } from '../../constants/credentials';
 import {
+  ADVISOR_CARD_NOTE,
   CATENA_X_TITLE_BASE,
   CX_LABEL_ASSETS,
   TRADEMARK_NOTICE,
@@ -326,13 +327,19 @@ describe('Footer', () => {
       });
     });
 
-    it('footer-omits the marketing notes of the two label credentials', () => {
-      // The strip cards carry MEMBER_CARD_NOTE / ADVISOR_CARD_NOTE; the footer
-      // pairs title + image only (Francesco, 2026-08-12).
+    it('footer-omits the marketing note of the label credential', () => {
+      // The strip card carries MEMBER_CARD_NOTE; the footer pairs title +
+      // image only (Francesco, 2026-08-12).
       const member = screen.getByTestId(MEMBER_TESTID);
-      const advisor = screen.getByTestId(ADVISOR_TESTID);
       expect(member).not.toHaveTextContent(MEMBER_CREDENTIAL.note);
-      expect(advisor).not.toHaveTextContent(ADVISOR_CREDENTIAL.note);
+    });
+
+    it('shows the advisor note, since the advisor credential carries no label', () => {
+      // september-fixes P7: the advisor entry lost `cxLabel`, so it falls to
+      // the note branch like the expert-group entry.
+      const advisor = screen.getByTestId(ADVISOR_TESTID);
+      expect(advisor).toHaveTextContent(ADVISOR_CARD_NOTE);
+      expect(within(advisor).queryByRole('img')).toBeNull();
     });
 
     it('every recognitions image is either a negative variant or plaque-wrapped', () => {
@@ -348,19 +355,6 @@ describe('Footer', () => {
       ).toEqual([]);
     });
 
-    it('renders the Qualified Advisor label as the bare negative asset', () => {
-      const item = screen.getByTestId(ADVISOR_TESTID);
-      const img = within(item).getByRole('img');
-      expect(img).toHaveAttribute('src', CX_LABEL_ASSETS.advisor.neg);
-      expect(img).toHaveAttribute('alt', ADVISOR_CREDENTIAL.label);
-      expect(img).toHaveAttribute('loading', 'lazy');
-      expect(img).toHaveAttribute('decoding', 'async');
-      expect(img).toHaveClass('footer-label-img');
-      expect(img).not.toHaveClass('footer-label-img--member');
-      expect(img.closest('.footer-label-plaque')).toBeNull();
-      expect(document.querySelector('.footer-label-plaque')).toBeNull();
-    });
-
     it('renders the Association member label as the bare negative asset', () => {
       const item = screen.getByTestId(MEMBER_TESTID);
       const img = within(item).getByRole('img');
@@ -374,18 +368,18 @@ describe('Footer', () => {
       expect(document.querySelector('.footer-label-plaque')).toBeNull();
     });
 
-    it('renders exactly two label images in the recognitions block', () => {
+    it('renders exactly one label image in the recognitions block', () => {
       const recognitions = screen.getByTestId('footer-recognitions');
-      expect(recognitions.querySelectorAll('img')).toHaveLength(2);
+      expect(recognitions.querySelectorAll('img')).toHaveLength(1);
     });
 
     it('recognitions carry no link; the one permitted linked instance is elsewhere', () => {
       // At most one linked instance of the label per page. The footer renders
-      // on every route, so the single catena-x.net link lives in
-      // CredentialStrip (asserted in CredentialStrip.test.jsx), not here.
+      // on every route, so no credential carries an `href`: the single
+      // catena-x.net link is the advisor label on the founder profile
+      // (asserted in TeamPage.test.jsx), not here.
       const linked = CREDENTIALS.filter(({ href }) => href);
-      expect(linked).toHaveLength(1);
-      expect(linked[0].href).toBe('https://catena-x.net');
+      expect(linked).toHaveLength(0);
       const recognitions = screen.getByTestId('footer-recognitions');
       expect(within(recognitions).queryAllByRole('link')).toHaveLength(0);
     });
@@ -416,7 +410,7 @@ describe('Footer', () => {
   });
 
   describe('when the negative label variants are available', () => {
-    it('renders both bare, with no plaque', async () => {
+    it('renders the member label bare, with no plaque', async () => {
       await renderFooterWithAssets({
         advisor: {
           pos: CX_LABEL_ASSETS.advisor.pos,
@@ -429,10 +423,10 @@ describe('Footer', () => {
       });
       const recognitions = screen.getByTestId('footer-recognitions');
       const images = recognitions.querySelectorAll('img');
-      expect(images).toHaveLength(2);
+      expect(images).toHaveLength(1);
       expect(
         Array.from(images).map((img) => img.getAttribute('src')),
-      ).toEqual([FAKE_MEMBER_NEG_ASSET, FAKE_ADVISOR_NEG_ASSET]);
+      ).toEqual([FAKE_MEMBER_NEG_ASSET]);
       expect(document.querySelector('.footer-label-plaque')).toBeNull();
       expect(
         findUnplaquedImages(recognitions, [
@@ -444,17 +438,17 @@ describe('Footer', () => {
   });
 
   describe('when only the positive label variants are available', () => {
-    it('renders both images plaque-wrapped', async () => {
+    it('renders the member image plaque-wrapped', async () => {
       await renderFooterWithAssets({
         advisor: { pos: CX_LABEL_ASSETS.advisor.pos, neg: null },
         member: { pos: CX_LABEL_ASSETS.member.pos, neg: null },
       });
       const recognitions = screen.getByTestId('footer-recognitions');
       const images = recognitions.querySelectorAll('img');
-      expect(images).toHaveLength(2);
+      expect(images).toHaveLength(1);
       expect(
         Array.from(images).map((img) => img.getAttribute('src')),
-      ).toEqual([CX_LABEL_ASSETS.member.pos, CX_LABEL_ASSETS.advisor.pos]);
+      ).toEqual([CX_LABEL_ASSETS.member.pos]);
       Array.from(images).forEach((img) => {
         expect(img.closest('.footer-label-plaque')).not.toBeNull();
       });

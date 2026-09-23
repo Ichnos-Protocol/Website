@@ -5,7 +5,7 @@
 // Canonical domain is ichnos-protocol.com (hyphenated). The unhyphenated
 // variant is intentionally NOT used anywhere — see DEPLOYMENT_GITHUB_ACTIONS.md.
 
-import { getCatenaXFullTitle } from "./catenaXStatus";
+import { getCatenaXFounderLine, getCatenaXFullTitle } from "./catenaXStatus";
 import { COMPANY_INFO } from "./companyInfo";
 import {
   ROUTE_CONSORTIUM,
@@ -30,7 +30,7 @@ const SITE_NAME = "Ichnos Protocol";
 const LOCALE = "en_US";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 // Positioning line single-sourced from companyInfo.js (2026-08-12).
-const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol: ${COMPANY_INFO.tagline} ${getCatenaXFullTitle()}.`;
+const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol: ${COMPANY_INFO.tagline} ${getCatenaXFounderLine()}.`;
 
 function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
   const url = `${BASE_URL}${path}`;

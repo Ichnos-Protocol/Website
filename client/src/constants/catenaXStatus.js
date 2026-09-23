@@ -39,14 +39,16 @@ export const CATENA_X_EXPERT_GROUP_NOTE =
 export const MEMBER_CARD_NOTE =
   "Well connected across the network, especially with European OEMs and their supply chains.";
 export const ADVISOR_CARD_NOTE =
-  "Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.";
+  "Francesco Maltoni holds Qualified Advisor attestation 868. Advising Asian manufacturers from Singapore, on site across ASEAN.";
 
 // One-line status summary for the hero eyebrow (wired in T4 via
 // `landingContent.js`). Deliberately a plain constant, NOT derived from
-// `CATENA_X_TITLE_BASE` (deriving would require string surgery), and it
-// deliberately elides the second "Catena-X". Keep it in lockstep with
-// `CATENA_X_TITLE_BASE` — if the base title changes, update this too.
-export const CATENA_X_STATUS_LINE = "Catena-X member & Qualified Advisor";
+// `CATENA_X_TITLE_BASE` (deriving would require string surgery). It
+// attributes the qualification to the founder, not the company
+// (september-fixes P7). Keep it in lockstep with `CATENA_X_TITLE_BASE` —
+// if the base title changes, update this too.
+export const CATENA_X_STATUS_LINE =
+  "Catena-X member, founded by a Qualified Advisor";
 
 // Site-wide trademark and participation disclaimer. This is a tier-3
 // exact-match string (§7.3 item 13) and the target of the §7.2 REQUIRED
@@ -54,17 +56,18 @@ export const CATENA_X_STATUS_LINE = "Catena-X member & Qualified Advisor";
 // it into concatenated fragments; the final sentence is the load-bearing
 // disclaimer and may not be shortened.
 export const TRADEMARK_NOTICE =
-  "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.";
+  "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.";
 
 // Official Qualified Advisor label assets in the positive and the
-// negative/dark variant. The DISPLAY files are viewBox-trimmed derivatives
-// of the official 16:9 deliveries (which stay in /brand as the
-// `_16x9.svg` masters): the artwork itself is byte-identical — only the
-// empty canvas around it is trimmed, and the mandated clear space is
-// re-supplied as CSS padding, exactly the treatment the tight-cropped
-// member file below already receives. Trim recorded 2026-08-12
-// (Francesco: font-parity request — the 16:9 canvas made the label
-// illegible at card scale). Lifecycle/legal: use only while the
+// negative/dark variant. The POSITIVE is the official 16:9 delivery,
+// unmodified: its canvas carries the mandated clear space, so the
+// founder profile (september-fixes P7) renders it with no CSS padding
+// and the clear space stays uncropped. The NEGATIVE is still a
+// viewBox-trimmed derivative of its `_16x9.svg` master (artwork
+// byte-identical, only the empty canvas trimmed, clear space re-supplied
+// in CSS), recorded 2026-08-12 as a font-parity fix. The positive
+// `_cropped` derivative stays in /brand but is no longer referenced.
+// Lifecycle/legal: use only while the
 // qualification holds — set to `null` (and drop the files) if it lapses;
 // renew by 2027-07-06. Governed by Logo Use Agreement §6.1 (revocation
 // with immediate effect, no notice), which is also cause to set these to
@@ -72,7 +75,7 @@ export const TRADEMARK_NOTICE =
 // renders it bare and the white plaque is dormant — dormant, not
 // deleted: nulling the negative falls the footer back to the plaque.
 export const CATENA_X_LABEL_ASSET =
-  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg";
+  "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg";
 export const CATENA_X_LABEL_ASSET_NEG =
   "/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg";
 
@@ -130,4 +133,13 @@ export function getCatenaXQualifierText() {
 // schema.org descriptions).
 export function getCatenaXFullTitle() {
   return computeCatenaXFullTitle(CATENA_X_QUALIFICATION_GRANTED);
+}
+
+// Corporate-surface form of the title (september-fixes P7, approach M5):
+// the qualification is the founder's, so company copy says "Founded by a
+// ..." rather than claiming the title itself. Derived from
+// `getCatenaXFullTitle()` so the pending-qualifier suffix still applies
+// if the qualification is ever not granted.
+export function getCatenaXFounderLine() {
+  return "Founded by a " + getCatenaXFullTitle();
 }

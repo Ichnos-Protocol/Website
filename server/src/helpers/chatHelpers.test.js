@@ -15,6 +15,16 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+// Copied literally from CORPORATE_ADVISOR_CLAIM_PATTERNS in
+// client/src/constants/vocabulary.js (september-fixes P7). Duplicated
+// because client and server share no module; keep the two in lockstep.
+const CORPORATE_ADVISOR_CLAIM_PATTERNS = [
+  /(?:Ichnos(?:\s+Protocol)?(?:\s+Pte\.\s*Ltd\.)?|[Tt]he\s+(?:company|practice))\s+(?:is|are)\s+[^.]{0,60}?\ba\s+(?:Catena-X\s+)?Qualified\s+Advisor/i,
+  /Ichnos(?:\s+Protocol)?(?:\s+Pte\.\s*Ltd\.)?,\s*an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b/i,
+  /(?:Ichnos(?:\s+Protocol)?|[Tt]he\s+(?:company|practice))[^.]{0,200}\bas\s+an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b/i,
+  /\bas\s+an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b[^.]{0,40}\bIchnos\b/i,
+];
+
 describe("buildError", () => {
   it("creates an Error with the given message and statusCode", () => {
     const err = buildError("Not found", 404);
@@ -227,6 +237,15 @@ describe("SYSTEM_PROMPT", () => {
     expect(SYSTEM_PROMPT).toContain("Catena-X Qualified Advisor");
     expect(SYSTEM_PROMPT).toContain("ordinary member");
     expect(SYSTEM_PROMPT).toContain("Catena-X Automotive Network e.V.");
+  });
+
+  it("attributes the Qualified Advisor qualification to the founder", () => {
+    expect(SYSTEM_PROMPT).toContain(
+      "Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor",
+    );
+    CORPORATE_ADVISOR_CLAIM_PATTERNS.forEach((pattern) => {
+      expect(SYSTEM_PROMPT).not.toMatch(pattern);
+    });
   });
 
   it("states the held Digital Product Passport Expert Group membership", () => {

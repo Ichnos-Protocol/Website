@@ -1,9 +1,9 @@
 import { ADVISOR_CARD_NOTE, MEMBER_CARD_NOTE } from './catenaXStatus';
 
 // Shared credentials/recognitions list, consumed by CredentialStrip
-// (homepage) and the Footer recognitions block. Two credentials carry an
-// official Catena-X label, selected by `cxLabel` ('member' | 'advisor');
-// only the Qualified Advisor is linkable. Array order is meaningful:
+// (homepage) and the Footer recognitions block. One credential carries an
+// official Catena-X label, selected by `cxLabel` ('member'), and none is
+// linkable. Array order is meaningful:
 // association membership comes first. The fourth card is an experience
 // card, not a degree card: the doctorate itself is carried by the
 // Why-Ichnos copy (`landingContent.js`) and the team page
@@ -22,13 +22,11 @@ export const CREDENTIALS = [
   },
   {
     id: 'catenax-qualified-advisor',
-    label: 'Catena-X Qualified Advisor',
+    label: 'Catena-X Qualified Advisor (founder)',
     note: ADVISOR_CARD_NOTE,
-    cxLabel: 'advisor',
-    // Logo Use Agreement §4: a label may link only to catena-x.net, and
-    // at most one linked label may appear per page. This is that one —
-    // no other credential may carry an `href`.
-    href: 'https://catena-x.net',
+    // The qualification is Francesco's (september-fixes P7): no label
+    // image and no `href` here. The single linked advisor label lives on
+    // the founder profile (`FounderProfile.jsx`, via `teamContent.js`).
   },
   // Label and note are literals here rather than
   // `CATENA_X_EXPERT_GROUP_NOTE`: that constant is prose shaped for

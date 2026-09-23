@@ -46,6 +46,29 @@ export const FILES = [
   resolve(CLIENT_ROOT, "public/site.webmanifest"),
 ];
 
+// The Qualified Advisor qualification is Francesco's, not the company's
+// (pivot-3 §1.5, owner ruling D3, spec v1.2 P7). Corporate copy may say the
+// founder holds it; it may not make Ichnos, the company or the practice the
+// holder. Each pattern traces to a prohibited probe in vocabulary.test.js:
+//  1. "<company> is/are ... a Qualified Advisor" (probes 1, 2, 6).
+//  2. "<company>, a Qualified Advisor" (probe 4).
+//  3. "<company> ... as a Qualified Advisor" (probe 3).
+//  4. "As a Qualified Advisor, ... Ichnos" (probe 5).
+// Traps. `Pte. Ltd.` and `e.V.` contain full stops, so the abbreviation is
+// an explicit optional part of the SUBJECT and no `[^.]` run ever has to
+// cross it. The old notice put "an ordinary member of the association and "
+// (42 chars) between "is" and the title, so pattern 1 does not require
+// adjacency: `[^.]{0,60}?` admits that clause, while the full stop in the new
+// notice ("... of the association. Its founder, ...") ends the run. The 60
+// ceiling is load-bearing. Pattern 3's 200 window fits probe 3's clause
+// chain, which has no full stop.
+export const CORPORATE_ADVISOR_CLAIM_PATTERNS = [
+  /(?:Ichnos(?:\s+Protocol)?(?:\s+Pte\.\s*Ltd\.)?|[Tt]he\s+(?:company|practice))\s+(?:is|are)\s+[^.]{0,60}?\ba\s+(?:Catena-X\s+)?Qualified\s+Advisor/i,
+  /Ichnos(?:\s+Protocol)?(?:\s+Pte\.\s*Ltd\.)?,\s*an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b/i,
+  /(?:Ichnos(?:\s+Protocol)?|[Tt]he\s+(?:company|practice))[^.]{0,200}\bas\s+an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b/i,
+  /\bas\s+an?\s+(?:Catena-X\s+)?Qualified\s+Advisor\b[^.]{0,40}\bIchnos\b/i,
+];
+
 // Terms that may never appear in client source. Regexes are deliberately
 // narrow so that legitimate text does not trip them:
 //  - EU Battery Pass\b(?!port) misses both "EU Battery Passport" and
@@ -127,6 +150,9 @@ export const FORBIDDEN = [
   // not a fix.
   /[Cc]alendly/,
   /react-calendly/,
+  // Corporate Qualified Advisor claims (pivot-3 §1.5, owner ruling D3,
+  // spec v1.2 P7); rationale above the array.
+  ...CORPORATE_ADVISOR_CLAIM_PATTERNS,
 ];
 
 // Groups not yet joined (§1). Move an entry out only when membership is
