@@ -10,6 +10,12 @@ import {
 } from "../../test-utils";
 import { CONSORTIUM_TIER_DESCRIPTIONS } from "../../constants/consortiumContent";
 import { ROUTE_CONSORTIUM_TIERS } from "../../constants/routes";
+import {
+  YEAR_PATTERN,
+  MONTH_YEAR_PATTERN,
+  ISO_DATE_PATTERN,
+  RELATIVE_TIME_PATTERN,
+} from "../../constants/dateGuards";
 import ConsortiumTiersPage from "./ConsortiumTiersPage";
 
 const OFFER = {
@@ -54,6 +60,18 @@ function renderPage() {
   return renderWithProviders(<ConsortiumTiersPage />, {
     route: ROUTE_CONSORTIUM_TIERS,
   });
+}
+
+// A subtree's text with every text node separated by a space, the idiom of
+// ReadinessAssessmentPage.test.jsx: raw `textContent` glues sibling nodes, so
+// a year ending one node and a letter starting the next would lose the word
+// boundary the date sweep depends on.
+function subtreeText(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const parts = [];
+
+  while (walker.nextNode()) parts.push(walker.currentNode.nodeValue);
+  return parts.join(" ");
 }
 
 describe("ConsortiumTiersPage", () => {
@@ -107,6 +125,26 @@ describe("ConsortiumTiersPage", () => {
     expect(screen.getByText(/could not be loaded/)).toBeInTheDocument();
     expect(screen.queryByRole("link", REGISTER_LINK)).toBeNull();
     expect(screen.queryByText(GATE_TEXT)).toBeNull();
+  });
+
+  // Scanned after a tier is chosen, so the conditional success message is
+  // swept together with the loaded tier content in the same subtree.
+  it("renders no calendar date or relative time", async () => {
+    const user = userEvent.setup();
+    const { container } = renderPage();
+    await user.click(
+      screen.getByRole("button", { name: `Choose ${PILOT.title}` }),
+    );
+    await screen.findByRole("alert");
+    const text = subtreeText(container);
+
+    expect(text).toContain(READINESS.description);
+    expect(text).toContain("You are registered");
+
+    expect(text).not.toMatch(YEAR_PATTERN);
+    expect(text).not.toMatch(MONTH_YEAR_PATTERN);
+    expect(text).not.toMatch(ISO_DATE_PATTERN);
+    expect(text).not.toMatch(RELATIVE_TIME_PATTERN);
   });
 
   it("has no accessibility violations", async () => {

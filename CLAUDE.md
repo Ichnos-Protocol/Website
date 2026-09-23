@@ -200,7 +200,7 @@ Helpers are the primary tool for keeping code readable and short:
 | `questions` | Follow-up questions attached to a request |
 | `question_topics` | Topic classification output |
 
-Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`.
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `010` is the pending contraction to `('asap','later')`, run by the owner only after P1 is live in production.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 

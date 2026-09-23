@@ -8,9 +8,11 @@
  * describes scope of work, nothing else.
  *
  * The option values restate the CHECK constraints of migration
- * 006_20260823_add_consortium_columns.sql verbatim. That migration is the
- * authoritative source; a change there must be mirrored here in the same
- * commit.
+ * 006_20260823_add_consortium_columns.sql as amended by
+ * 007_20260923_consortium_preferred_start_expand.sql, minus the retired
+ * preferred-start value nov_2026, which the database still tolerates until
+ * migration 010 (P14) removes it. Those migrations are the authoritative
+ * source; a change there must be mirrored here in the same commit.
  */
 
 export const CONSORTIUM_POSITION_LABEL =
@@ -78,7 +80,7 @@ export const CONSORTIUM_DATA_EXTRACT_OPTIONS = Object.freeze([
 ]);
 
 export const CONSORTIUM_PREFERRED_START_OPTIONS = Object.freeze([
-  { value: "nov_2026", label: "November 2026" },
+  { value: "asap", label: "As soon as the group is formed" },
   { value: "later", label: "Later" },
 ]);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
@@ -15,20 +15,14 @@ import ContactRequestForm from "../organisms/ContactRequestForm";
 
 const SRC_PATTERN = /^[a-z0-9_-]{1,40}$/;
 const SRC_STORAGE_KEY = "consortium_src";
-const DEADLINE = Date.UTC(2026, 8, 30, 23, 59, 59);
 const HERO_EYEBROW = "INDONESIAN BATTERY VALUE CHAIN · CONSORTIUM";
 const REGISTER_TITLE = "Register";
 
-const HERO_OPEN = {
+const HERO = Object.freeze({
   title: "Join the consortium",
   subtitle:
-    "One anchor company and up to five of its suppliers, one project, one test environment. Register by 30 September 2026.",
-};
-
-const HERO_CLOSED = {
-  title: "The first round closed on 30 September 2026",
-  subtitle: "Later entries join the next round.",
-};
+    "One anchor company and up to five of its suppliers, one project, one test environment.",
+});
 
 const OFFER_CARDS = Object.freeze([
   {
@@ -41,13 +35,9 @@ const OFFER_CARDS = Object.freeze([
   },
   {
     title: "How it runs",
-    body: "The readiness assessment comes first and is credited to the project. The first group call is in October 2026, the work starts in November 2026. Scope and price are set out in the proposal; registered participants see the tier overview.",
+    body: "The readiness assessment comes first and is credited to the project. The group call is scheduled once the anchor company and its suppliers are registered, and the work starts after it. Scope and price are set out in the proposal; registered participants see the tier overview.",
   },
 ]);
-
-function pickHero(now) {
-  return now <= DEADLINE ? HERO_OPEN : HERO_CLOSED;
-}
 
 function storeCampaignSource(value) {
   if (!value || !SRC_PATTERN.test(value)) return;
@@ -62,7 +52,6 @@ export default function ConsortiumPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const src = searchParams.get("src");
-  const [hero] = useState(() => pickHero(Date.now()));
   useEffect(() => {
     storeCampaignSource(src);
   }, [src]);
@@ -76,8 +65,8 @@ export default function ConsortiumPage() {
       <PageTransition>
         <AdvisoryPageHero
           eyebrow={HERO_EYEBROW}
-          title={hero.title}
-          subtitle={hero.subtitle}
+          title={HERO.title}
+          subtitle={HERO.subtitle}
         />
         <Container className="py-5">
           <Row className="g-4 mb-5">
