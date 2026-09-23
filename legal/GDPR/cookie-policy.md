@@ -59,7 +59,7 @@ Our website may load resources from third-party services:
 | Service           | Purpose               | Their Privacy Policy                        |
 | ----------------- | --------------------- | ------------------------------------------- |
 | Firebase (Google) | Authentication        | https://firebase.google.com/support/privacy |
-| Calendly          | Meeting scheduling    | https://calendly.com/privacy                |
+| Google Calendar   | Meeting scheduling    | https://policies.google.com/privacy         |
 | Vercel            | Hosting and analytics | https://vercel.com/legal/privacy-policy     |
 
 These services may set their own cookies. We encourage you to review their

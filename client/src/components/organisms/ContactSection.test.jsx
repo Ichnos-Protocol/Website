@@ -14,6 +14,7 @@ import ContactSection from './ContactSection';
 import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
+  BOOKING_URL,
 } from '../../constants/companyInfo';
 
 describe('ContactSection', () => {
@@ -53,7 +54,7 @@ describe('ContactSection', () => {
       screen.getByRole('link', {
         name: CONTACT_SECTION_CONTENT.links.bookCall,
       }),
-    ).toHaveAttribute('href', CONTACT_INFO.calendly);
+    ).toHaveAttribute('href', BOOKING_URL);
   });
 
   it('mounts ChatPanel inline with persistState=false by default', () => {

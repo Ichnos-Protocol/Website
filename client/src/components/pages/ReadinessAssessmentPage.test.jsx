@@ -154,6 +154,9 @@ describe("ReadinessAssessmentPage", () => {
     expect(href).toBe(BOOKING_URL);
     expect(href).not.toContain("?");
     expect(url.protocol).toBe("https:");
+    expect(["calendar.app.google", "calendar.google.com"]).toContain(
+      url.hostname,
+    );
   });
 
   it("gives the closing band a plain text fallback to the contact page", () => {

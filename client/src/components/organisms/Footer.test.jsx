@@ -8,7 +8,11 @@ import {
   fireEvent,
 } from '../../test-utils';
 import Footer from './Footer';
-import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import {
+  COMPANY_INFO,
+  CONTACT_INFO,
+  BOOKING_URL,
+} from '../../constants/companyInfo';
 import { CREDENTIALS } from '../../constants/credentials';
 import {
   CATENA_X_TITLE_BASE,
@@ -146,7 +150,7 @@ describe('Footer', () => {
       expect(emailLink).toHaveAttribute('href', `mailto:${CONTACT_INFO.email}`);
     });
 
-    it('renders SocialLinks with LinkedIn and Calendly icons by aria-label', () => {
+    it('renders SocialLinks with LinkedIn and booking icons by aria-label', () => {
       expect(screen.getByLabelText('LinkedIn Company')).toBeInTheDocument();
       expect(screen.getByLabelText('LinkedIn Founder')).toBeInTheDocument();
       expect(screen.getByLabelText('Book a Meeting')).toBeInTheDocument();
@@ -162,7 +166,7 @@ describe('Footer', () => {
       );
     });
 
-    it('social icon hrefs match CONTACT_INFO values', () => {
+    it('social icon hrefs match their source constants', () => {
       expect(screen.getByLabelText('LinkedIn Company')).toHaveAttribute(
         'href',
         CONTACT_INFO.linkedInCompany,
@@ -173,7 +177,7 @@ describe('Footer', () => {
       );
       expect(screen.getByLabelText('Book a Meeting')).toHaveAttribute(
         'href',
-        CONTACT_INFO.calendly,
+        BOOKING_URL,
       );
     });
 

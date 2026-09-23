@@ -143,7 +143,6 @@ Three scopes: Production, Preview/main (E2E), Preview/staging (QA).
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production value | Test value | Production value |
 | `VITE_FIREBASE_APP_ID` | Production value | Test value | Production value |
 | `VITE_API_HOST` | `ichnos-protocolserver.vercel.app` | `e2e-api.ichnos-protocol.com` | `staging-api.ichnos-protocol.com` |
-| `VITE_CALENDLY_LINK` | Production link | Same | Same |
 
 **Key rule**: Every `VITE_FIREBASE_*` var needs THREE entries in Vercel:
 1. Production scope

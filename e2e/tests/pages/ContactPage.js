@@ -20,7 +20,7 @@ export class ContactPage {
     return this.page.getByRole('button', { name: 'Send message' });
   }
 
-  // ─── Page-level CTAs (open the contact-form / Calendly modals) ───
+  // ─── Page-level CTAs (open the contact-form / booking modals) ────
 
   get submitInquiryButton() {
     return this.page.getByRole('button', { name: 'Submit a detailed inquiry' });

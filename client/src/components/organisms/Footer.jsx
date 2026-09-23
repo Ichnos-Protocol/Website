@@ -3,7 +3,11 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { Link } from 'react-router-dom';
 
-import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import {
+  COMPANY_INFO,
+  CONTACT_INFO,
+  BOOKING_URL,
+} from '../../constants/companyInfo';
 import { ROUTE_CONTACT } from '../../constants/routes';
 import SocialLinks from '../molecules/SocialLinks';
 import FooterNavColumns from '../molecules/FooterNavColumns';
@@ -29,8 +33,8 @@ const SOCIAL_LINKS = [
     label: 'LinkedIn Founder',
   },
   {
-    url: CONTACT_INFO.calendly,
-    icon: 'calendar-event',
+    url: BOOKING_URL,
+    icon: 'google',
     label: 'Book a Meeting',
   },
 ];

@@ -14,11 +14,11 @@ import MyInquiriesList from '../molecules/MyInquiriesList';
 import SeoHead from '../molecules/SeoHead';
 import ContactSection from '../organisms/ContactSection';
 import ContactForm from '../organisms/ContactForm';
-import CalendlyModal from '../organisms/CalendlyModal';
+import BookingModal from '../organisms/BookingModal';
 
 const CONTACT_PAGE_TITLE = 'Contact Ichnos Protocol';
 const CONTACT_PAGE_INTRO =
-  'Talk to Ichnos Protocol about ASEAN battery data flows into Catena-X, Catena-X onboarding, or battery-systems advisory. Ask the AI assistant for instant answers, then follow up by email, LinkedIn, or a Calendly call. Authenticated visitors keep their full conversation history and pending questions.';
+  'Talk to Ichnos Protocol about ASEAN battery data flows into Catena-X, Catena-X onboarding, or battery-systems advisory. Ask the AI assistant for instant answers, then follow up by email, LinkedIn, or a scheduled call. Authenticated visitors keep their full conversation history and pending questions.';
 const AI_EXAMPLE_PROMPTS = [
   'What data do you collect from ASEAN sites?',
   'How do you onboard an ASEAN supplier into Catena-X?',
@@ -29,7 +29,7 @@ const AI_EXAMPLE_PROMPTS = [
 export default function ContactPage() {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
-  const [calendlyOpen, setCalendlyOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const { data: requestsData, isLoading } = useGetMyRequestsQuery(undefined, {
     skip: !isAuthenticated,
@@ -86,7 +86,7 @@ export default function ContactPage() {
             </Button>
             <Button
               variant="outline-primary"
-              onClick={() => setCalendlyOpen(true)}
+              onClick={() => setBookingOpen(true)}
             >
               Schedule a call
             </Button>
@@ -95,7 +95,7 @@ export default function ContactPage() {
       </PageTransition>
 
       <ContactForm />
-      <CalendlyModal isOpen={calendlyOpen} onClose={() => setCalendlyOpen(false)} />
+      <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
     </div>
   );
 }

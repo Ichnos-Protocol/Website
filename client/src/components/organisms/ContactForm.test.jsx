@@ -65,10 +65,10 @@ vi.mock("../../config/firebase", () => ({
   auth: { currentUser: null },
 }));
 
-vi.mock("./CalendlyModal", () => ({
-  default: function MockCalendlyModal({ isOpen }) {
+vi.mock("./BookingModal", () => ({
+  default: function MockBookingModal({ isOpen }) {
     if (!isOpen) return null;
-    return <div data-testid="calendly-modal" />;
+    return <div data-testid="booking-modal" />;
   },
 }));
 
@@ -294,7 +294,7 @@ describe("ContactForm", () => {
     });
   });
 
-  it("opens CalendlyModal when Book a Meeting is clicked from the success state", async () => {
+  it("opens BookingModal when Book a Meeting is clicked from the success state", async () => {
     const user = userEvent.setup();
     mockUnwrap.mockResolvedValue({ data: {} });
 
@@ -319,11 +319,11 @@ describe("ContactForm", () => {
       expect(screen.getByText(/inquiry submitted/i)).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId("calendly-modal")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("booking-modal")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Book a Meeting" }));
 
-    expect(screen.getByTestId("calendly-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("booking-modal")).toBeInTheDocument();
   });
 
   it("shows error alert on submission failure", async () => {
