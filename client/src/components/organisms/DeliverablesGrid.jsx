@@ -20,8 +20,11 @@ import { ASSESSMENT_DELIVERABLES } from '../../constants/readinessAssessmentCont
 export default function DeliverablesGrid() {
   return (
     <section className="py-5" data-testid="deliverables-grid">
+      <h2 className="section-heading mb-4" data-testid="deliverables-grid-heading">
+        {ASSESSMENT_DELIVERABLES.heading}
+      </h2>
       <Row>
-        {ASSESSMENT_DELIVERABLES.map((item) => (
+        {ASSESSMENT_DELIVERABLES.items.map((item) => (
           <Col xs={12} md={6} className="mb-4" key={item.id}>
             <Card
               className="h-100 readiness-deliverable"

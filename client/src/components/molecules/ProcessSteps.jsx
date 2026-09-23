@@ -16,8 +16,11 @@ import { ASSESSMENT_PROCESS } from '../../constants/readinessAssessmentContent';
 export default function ProcessSteps() {
   return (
     <section className="py-5" data-testid="process-steps">
+      <h2 className="section-heading mb-4" data-testid="process-steps-heading">
+        {ASSESSMENT_PROCESS.heading}
+      </h2>
       <ol className="list-unstyled mb-0">
-        {ASSESSMENT_PROCESS.map((step) => (
+        {ASSESSMENT_PROCESS.steps.map((step) => (
           <li
             className="mb-4"
             key={step.id}

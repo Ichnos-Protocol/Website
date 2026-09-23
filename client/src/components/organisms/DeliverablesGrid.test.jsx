@@ -5,7 +5,7 @@ import { ASSESSMENT_DELIVERABLES } from '../../constants/readinessAssessmentCont
 
 /*
  * Section 4.3 in its rendered form. Every expected value is derived from
- * ASSESSMENT_DELIVERABLES and never restated here, so an amendment to the
+ * ASSESSMENT_DELIVERABLES.items and never restated here, so an amendment to the
  * fenced copy moves the expectation with the source.
  */
 
@@ -17,11 +17,11 @@ describe('DeliverablesGrid', () => {
       .map((card) => card.getAttribute('data-testid'));
 
     expect(rendered).toEqual(
-      ASSESSMENT_DELIVERABLES.map((item) => `deliverable-${item.id}`),
+      ASSESSMENT_DELIVERABLES.items.map((item) => `deliverable-${item.id}`),
     );
   });
 
-  ASSESSMENT_DELIVERABLES.forEach((item) => {
+  ASSESSMENT_DELIVERABLES.items.forEach((item) => {
     it(`renders the ${item.id} card copy from the constants`, () => {
       renderWithProviders(<DeliverablesGrid />);
       const card = screen.getByTestId(`deliverable-${item.id}`);
