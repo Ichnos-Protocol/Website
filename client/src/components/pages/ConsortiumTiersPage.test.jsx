@@ -9,6 +9,7 @@ import {
   waitFor,
 } from "../../test-utils";
 import { CONSORTIUM_TIER_DESCRIPTIONS } from "../../constants/consortiumContent";
+import { ROUTE_CONSORTIUM_TIERS } from "../../constants/routes";
 import ConsortiumTiersPage from "./ConsortiumTiersPage";
 
 const OFFER = {
@@ -51,7 +52,7 @@ vi.mock("../../hooks/useReducedMotion", () => ({
 
 function renderPage() {
   return renderWithProviders(<ConsortiumTiersPage />, {
-    route: "/consortium/tiers",
+    route: ROUTE_CONSORTIUM_TIERS,
   });
 }
 

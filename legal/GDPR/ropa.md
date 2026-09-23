@@ -160,19 +160,20 @@
 
 ## Sub-Processor Register
 
-| Sub-Processor     | Service                                 | Data Processed                                              | Location | DPA in Place                       | Transfer Mechanism        |
-| ----------------- | --------------------------------------- | ----------------------------------------------------------- | -------- | ---------------------------------- | ------------------------- |
-| Google (Firebase) | Authentication                          | Firebase UID, email, password hash                          | USA      | Yes — Google Cloud DPA             | SCCs                      |
-| Neon Tech         | PostgreSQL database                     | All structured data (profiles, requests, questions, topics) | EU / USA | Yes — Neon DPA                     | SCCs / Adequacy           |
-| Vercel            | Website hosting, serverless functions   | Request data in transit, edge logs                          | USA      | Yes — Vercel DPA                   | SCCs                      |
-| xAI               | AI chat responses, topic classification | Question text only (no PII)                                 | USA      | [VERIFY — check if xAI offers DPA] | SCCs / No PII transferred |
-| Calendly          | Meeting scheduling                      | Name, email (entered by user on Calendly)                   | USA      | Yes — Calendly DPA                 | SCCs                      |
+| Sub-Processor      | Service                                                                      | Data Processed                                                                                | Location         | DPA in Place                                    | Transfer Mechanism        |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------- | ------------------------- |
+| Google (Firebase)  | Authentication                                                               | Firebase UID, email, password hash                                                            | USA              | Yes — Google Cloud DPA                          | SCCs                      |
+| Neon Tech          | PostgreSQL database                                                          | All structured data (profiles, requests, questions, topics)                                   | EU / USA         | Yes — Neon DPA                                  | SCCs / Adequacy           |
+| Vercel             | Website hosting, serverless functions                                        | Request data in transit, edge logs                                                            | USA              | Yes — Vercel DPA                                | SCCs                      |
+| xAI                | AI chat responses, topic classification                                      | Question text only (no PII)                                                                   | USA              | [VERIFY — check if xAI offers DPA]              | SCCs / No PII transferred |
+| Google (Workspace) | Meeting scheduling (Google Calendar appointment schedules, Google Workspace) | Name, email, and the four screening answers entered by the visitor on the Google booking page | [VERIFY — legal] | Google Workspace Cloud Data Processing Addendum | [VERIFY — legal]          |
 
 ---
 
 ## Review Log
 
-| Date   | Reviewer    | Changes Made         |
-| ------ | ----------- | -------------------- |
-| [DATE] | [YOUR NAME] | Initial ROPA created |
-|        |             |                      |
+| Date       | Reviewer    | Changes Made                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [DATE]     | [YOUR NAME] | Initial ROPA created                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-09-22 | [YOUR NAME] | Calendly sub-processor row replaced with a draft Google appointment-scheduling row, following the move of the booking flow from Calendly to Google Calendar appointment schedules. Location and Transfer Mechanism are left as [VERIFY — legal] pending legal review, which must also decide whether this stays a separate row or folds into the existing Google (Firebase) row. |
+|            |             |                                                                                                                                                                                                                                                                                                                                                                                  |

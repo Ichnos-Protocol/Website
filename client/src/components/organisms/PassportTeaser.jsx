@@ -28,6 +28,13 @@ export default function PassportTeaser() {
                   >
                     {PASSPORT_TEASER.ctaLabel}
                   </Link>
+                  <Link
+                    to={PASSPORT_TEASER.readinessHref}
+                    className="link-light ms-3"
+                    data-testid="passport-teaser-readiness-link"
+                  >
+                    {PASSPORT_TEASER.readinessLabel}
+                  </Link>
                 </Card.Body>
               </Card>
             </Col>

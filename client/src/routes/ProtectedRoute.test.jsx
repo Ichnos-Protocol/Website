@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 
 import authReducer from '../features/auth/authSlice';
+import { ROUTE_CONSORTIUM } from '../constants/routes';
 import ProtectedRoute from './ProtectedRoute';
 
 function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
@@ -25,7 +26,7 @@ function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
       <MemoryRouter initialEntries={['/protected']}>
         <Routes>
           <Route path="/" element={<p>Home</p>} />
-          <Route path="/consortium" element={<p>Consortium</p>} />
+          <Route path={ROUTE_CONSORTIUM} element={<p>Consortium</p>} />
           <Route
             path="/protected"
             element={
@@ -62,7 +63,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('redirects to the custom destination when not authenticated', () => {
-    renderWithAuth(false, false, '/consortium');
+    renderWithAuth(false, false, ROUTE_CONSORTIUM);
 
     expect(screen.getByText('Consortium')).toBeInTheDocument();
     expect(screen.queryByText('Secret')).not.toBeInTheDocument();

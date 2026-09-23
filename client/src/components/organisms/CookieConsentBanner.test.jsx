@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { renderWithProviders, screen } from '../../test-utils';
+import { ROUTE_PRIVACY } from '../../constants/routes';
 import CookieConsentBanner from './CookieConsentBanner';
 
 describe('CookieConsentBanner', () => {
@@ -25,6 +26,6 @@ describe('CookieConsentBanner', () => {
 
     const link = screen.getByText('Privacy Policy');
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/privacy');
+    expect(link).toHaveAttribute('href', ROUTE_PRIVACY);
   });
 });

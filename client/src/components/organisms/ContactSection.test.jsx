@@ -9,10 +9,12 @@ vi.mock('../molecules/ChatPanel', () => ({
   default: (props) => mockChatPanel(props),
 }));
 
+import { ROUTE_CONTACT } from '../../constants/routes';
 import ContactSection from './ContactSection';
 import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
+  BOOKING_URL,
 } from '../../constants/companyInfo';
 
 describe('ContactSection', () => {
@@ -52,7 +54,7 @@ describe('ContactSection', () => {
       screen.getByRole('link', {
         name: CONTACT_SECTION_CONTENT.links.bookCall,
       }),
-    ).toHaveAttribute('href', CONTACT_INFO.calendly);
+    ).toHaveAttribute('href', BOOKING_URL);
   });
 
   it('mounts ChatPanel inline with persistState=false by default', () => {
@@ -79,7 +81,7 @@ describe('ContactSection', () => {
   it('renders "Open the full contact page →" link when showFullContactLink=true', () => {
     renderWithProviders(<ContactSection showFullContactLink={true} />);
     const link = screen.getByTestId('contact-section-full-link');
-    expect(link).toHaveAttribute('href', '/contact');
+    expect(link).toHaveAttribute('href', ROUTE_CONTACT);
     expect(link).toHaveTextContent('Open the full contact page →');
   });
 

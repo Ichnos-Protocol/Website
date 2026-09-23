@@ -6,6 +6,7 @@ import {
   SERVICE_PILLARS,
   getServicesByPillar,
 } from "./services";
+import { ROUTE_PASSPORT, ROUTE_READINESS_ASSESSMENT } from "./routes";
 import { SERVICE_SCHEMAS } from "./structuredData";
 
 // Retired-vocabulary sweep. The forbidden terms are assembled from character
@@ -87,7 +88,7 @@ describe("SERVICES_LIST", () => {
     );
     expect(catenaXCards).toHaveLength(5);
     catenaXCards.forEach((card) => {
-      expect(card.passportLink).toBe("/passport");
+      expect(card.passportLink).toBe(ROUTE_PASSPORT);
     });
   });
 
@@ -189,5 +190,14 @@ describe("getServicesByPillar", () => {
 
   it("returns an empty array for an unknown pillar", () => {
     expect(getServicesByPillar("nope")).toEqual([]);
+  });
+});
+
+describe("readiness assessment entry point", () => {
+  it("is carried by the EU–ASEAN Compliance Bridge card only", () => {
+    const carriers = SERVICES_LIST.filter((s) => s.readinessLink);
+    expect(carriers.map((s) => s.id)).toEqual(["eu-asean-compliance-bridge"]);
+    expect(carriers[0].readinessLink).toBe(ROUTE_READINESS_ASSESSMENT);
+    expect(carriers[0].readinessLabel).toBeTruthy();
   });
 });

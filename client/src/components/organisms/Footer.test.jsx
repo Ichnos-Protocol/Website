@@ -8,13 +8,25 @@ import {
   fireEvent,
 } from '../../test-utils';
 import Footer from './Footer';
-import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import {
+  COMPANY_INFO,
+  CONTACT_INFO,
+  BOOKING_URL,
+} from '../../constants/companyInfo';
 import { CREDENTIALS } from '../../constants/credentials';
 import {
   CATENA_X_TITLE_BASE,
   CX_LABEL_ASSETS,
   TRADEMARK_NOTICE,
 } from '../../constants/catenaXStatus';
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from '../../constants/routes';
 
 function LocationProbe() {
   const location = useLocation();
@@ -139,7 +151,7 @@ describe('Footer', () => {
       expect(emailLink).toHaveAttribute('href', `mailto:${CONTACT_INFO.email}`);
     });
 
-    it('renders SocialLinks with LinkedIn and Calendly icons by aria-label', () => {
+    it('renders SocialLinks with LinkedIn and booking icons by aria-label', () => {
       expect(screen.getByLabelText('LinkedIn Company')).toBeInTheDocument();
       expect(screen.getByLabelText('LinkedIn Founder')).toBeInTheDocument();
       expect(screen.getByLabelText('Book a Meeting')).toBeInTheDocument();
@@ -155,7 +167,7 @@ describe('Footer', () => {
       );
     });
 
-    it('social icon hrefs match CONTACT_INFO values', () => {
+    it('social icon hrefs match their source constants', () => {
       expect(screen.getByLabelText('LinkedIn Company')).toHaveAttribute(
         'href',
         CONTACT_INFO.linkedInCompany,
@@ -166,7 +178,7 @@ describe('Footer', () => {
       );
       expect(screen.getByLabelText('Book a Meeting')).toHaveAttribute(
         'href',
-        CONTACT_INFO.calendly,
+        BOOKING_URL,
       );
     });
 
@@ -177,7 +189,7 @@ describe('Footer', () => {
       ).toHaveAttribute('href', '/');
       expect(
         within(companyCol).getByRole('link', { name: 'Team' }),
-      ).toHaveAttribute('href', '/team');
+      ).toHaveAttribute('href', ROUTE_TEAM);
       expect(
         within(companyCol).queryByRole('link', { name: 'Why Ichnos Protocol' }),
       ).toBeNull();
@@ -200,7 +212,7 @@ describe('Footer', () => {
       labels.forEach((label) => {
         expect(
           within(servicesCol).getByRole('link', { name: label }),
-        ).toHaveAttribute('href', '/services');
+        ).toHaveAttribute('href', ROUTE_SERVICES);
       });
       expect(within(servicesCol).getAllByRole('link')).toHaveLength(4);
       // Delivery Models is intentionally not surfaced in the footer — there is
@@ -225,7 +237,7 @@ describe('Footer', () => {
         const link = within(servicesCol).getByRole('link', { name: label });
         fireEvent.click(link);
         expect(screen.getByTestId('probe-pathname')).toHaveTextContent(
-          '/services',
+          ROUTE_SERVICES,
         );
         expect(screen.getByTestId('probe-scroll-to')).toHaveTextContent(
           scrollTo,
@@ -233,15 +245,26 @@ describe('Footer', () => {
       });
     });
 
-    it('Products column has Battery Passport → /passport and Consortium → /consortium', () => {
+    it('Products column lists the assessment first, then Battery Passport and Consortium', () => {
       const productsCol = screen.getByTestId('footer-col-products');
       expect(
+        within(productsCol).getByRole('link', { name: 'Readiness Assessment' }),
+      ).toHaveAttribute('href', ROUTE_READINESS_ASSESSMENT);
+      expect(
         within(productsCol).getByRole('link', { name: 'Battery Passport' }),
-      ).toHaveAttribute('href', '/passport');
+      ).toHaveAttribute('href', ROUTE_PASSPORT);
       expect(
         within(productsCol).getByRole('link', { name: 'Consortium' }),
-      ).toHaveAttribute('href', '/consortium');
-      expect(within(productsCol).getAllByRole('link')).toHaveLength(2);
+      ).toHaveAttribute('href', ROUTE_CONSORTIUM);
+
+      // Order is the point of the owner's ruling, not just membership.
+      const links = within(productsCol).getAllByRole('link');
+      expect(links).toHaveLength(3);
+      expect(links.map((link) => link.textContent)).toEqual([
+        'Readiness Assessment',
+        'Battery Passport',
+        'Consortium',
+      ]);
       // Old separate Data + Catena-X links are consolidated; the standalone
       // Catena-X entry should NOT exist in the footer either.
       expect(
@@ -256,7 +279,7 @@ describe('Footer', () => {
       const contactCol = screen.getByTestId('footer-col-contact');
       expect(
         within(contactCol).getByRole('link', { name: 'Submit an Inquiry' }),
-      ).toHaveAttribute('href', '/contact');
+      ).toHaveAttribute('href', ROUTE_CONTACT);
     });
 
     it('contact column does not render a text link labeled "LinkedIn Company"', () => {

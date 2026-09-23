@@ -4,14 +4,14 @@ import Modal from "react-bootstrap/Modal";
 
 import { closeModal } from "../../features/contact/contactSlice";
 import ContactRequestForm from "./ContactRequestForm";
-import CalendlyModal from "./CalendlyModal";
+import BookingModal from "./BookingModal";
 
 export default function ContactForm() {
   const dispatch = useDispatch();
   const isOpen = useSelector((s) => s.contact.isOpen);
   const requestId = useSelector((s) => s.contact.requestId);
 
-  const [calendlyOpen, setCalendlyOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
   const handleClose = () => {
@@ -31,13 +31,13 @@ export default function ContactForm() {
           <ContactRequestForm
             key={formKey}
             requestId={requestId}
-            onBook={() => setCalendlyOpen(true)}
+            onBook={() => setBookingOpen(true)}
           />
         </Modal.Body>
       </Modal>
-      <CalendlyModal
-        isOpen={calendlyOpen}
-        onClose={() => setCalendlyOpen(false)}
+      <BookingModal
+        isOpen={bookingOpen}
+        onClose={() => setBookingOpen(false)}
       />
     </>
   );

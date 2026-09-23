@@ -7,6 +7,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { configureStore } from '@reduxjs/toolkit';
 
 import authReducer from '../../features/auth/authSlice';
+import { ROUTE_PRIVACY } from '../../constants/routes';
 import { PRIVACY_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 
@@ -79,7 +80,7 @@ function renderPage(overrides = {}) {
   return render(
     <Provider store={store}>
       <HelmetProvider>
-        <MemoryRouter initialEntries={['/privacy']}>
+        <MemoryRouter initialEntries={[ROUTE_PRIVACY]}>
           <PrivacyPage />
         </MemoryRouter>
       </HelmetProvider>

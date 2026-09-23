@@ -1,4 +1,9 @@
 import { CATENA_X_STATUS_LINE, CATENA_X_TITLE_BASE } from "./catenaXStatus";
+import {
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+} from "./routes";
 
 export const HERO_CONTENT = {
   eyebrow: `Based in Singapore · Serving ASEAN manufacturers · ${CATENA_X_STATUS_LINE}`,
@@ -7,7 +12,7 @@ export const HERO_CONTENT = {
   subhead:
     "Practitioner-led advisory in battery systems engineering, safety, mechanical development, remanufacturing and integration into the Catena-X battery-passport ecosystem.",
   ctaText: "Explore Our Services",
-  ctaHref: "/services",
+  ctaHref: ROUTE_SERVICES,
 };
 
 export const WHY_ICHNOS = {
@@ -22,5 +27,7 @@ export const PASSPORT_TEASER = {
   heading: "The European battery passport: what it means for ASEAN suppliers.",
   body: "From 2027, every battery sold in Europe has to carry a digital passport: a structured record along the whole value chain, from raw-materials suppliers through cell makers and pack integrators into the European importers and OEMs. The chain only works if every supplier passes the passport-relevant data on to the next tier. The Catena-X network is establishing itself as a standard in the automotive, chemical and other industries, to enable suppliers to do that within a rich ecosystem of certified applications, maintaining their data ownership. Ichnos helps each supplier hand over exactly what their customer needs while keeping control of their own data.",
   ctaLabel: "Read the passport overview →",
-  ctaHref: "/passport",
+  ctaHref: ROUTE_PASSPORT,
+  readinessLabel: "Data readiness assessment →",
+  readinessHref: ROUTE_READINESS_ASSESSMENT,
 };

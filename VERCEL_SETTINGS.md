@@ -67,7 +67,6 @@ Set in **Vercel Dashboard → ichnos-protocolserver → Settings → Environment
 | `CRON_SECRET`             | Production, Preview | Shared secret for Vercel cron job authentication                                      |
 | `RESEND_API_KEY`          | Production, Preview | Resend API key for transactional email                                                |
 | `ADMIN_EMAILS`            | Production, Preview | Comma-separated admin email addresses for notifications                               |
-| `CALENDLY_LINK`           | Production, Preview | Calendly booking link                                                                 |
 | `CONTACT_CONSENT_VERSION` | Production, Preview | GDPR consent version string (default: `v1`)                                           |
 | `CONTACT_CONSENT_TEXT`    | Production, Preview | GDPR consent text shown to users (optional)                                           |
 | `PRIVACY_POLICY_URL`      | Production, Preview | Link to privacy policy page (optional)                                                |
@@ -93,7 +92,6 @@ Set in **Vercel Dashboard → ichnos-client → Settings → Environment Variabl
 | `VITE_FIREBASE_STORAGE_BUCKET`      | Production, Preview | Firebase Storage bucket      |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview | Firebase messaging sender ID |
 | `VITE_FIREBASE_APP_ID`              | Production, Preview | Firebase app ID              |
-| `VITE_CALENDLY_URL`                 | Production, Preview | Calendly booking embed URL   |
 
 > **Reminder:** All client environment variables must be prefixed with `VITE_` to be exposed to the Vite build process.
 

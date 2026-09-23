@@ -12,10 +12,10 @@ Monorepo: `client/` (React frontend) + `server/` (Express backend).
 | Frontend    | React 18+, Vite, Bootstrap 5, Redux Toolkit (RTK Query), React Router v6+ |
 | Backend     | Express.js 5, REST API, ES modules                                        |
 | SQL DB      | PostgreSQL (Neon Tech)                                                    |
-| NoSQL/Files | Firebase Firestore + Storage                                              |
+| NoSQL       | Firebase Firestore — chatbot `knowledge_base` only. No Storage, no uploads |
 | Auth        | Firebase Authentication                                                   |
 | Chatbot     | X.ai Grok API (RAG)                                                       |
-| LinkedIn    | Third-party embed widget                                                  |
+| LinkedIn    | Profile links only. No feed or embed is built                             |
 | Testing     | Vitest, React Testing Library, Supertest, Playwright (E2E)                |
 | Deployment  | Vercel (Monorepo)                                                         |
 | Linting     | ESLint + Prettier                                                         |
@@ -32,7 +32,7 @@ client/
       organisms/       # Navbar, footer, chatbot, forms
       templates/       # Page layouts (public, admin)
       pages/           # Route-level (thin wrappers)
-    features/          # Redux slices + RTK Query (auth, chat, linkedin, requests, services)
+    features/          # Redux slices + RTK Query. Exactly six: admin, auth, chat, consortium, contact, gdpr
     hooks/             # Custom hooks
     helpers/           # Pure utility functions
     constants/         # Config and constants
@@ -101,10 +101,17 @@ cd server && vercel --prod   # deploy backend
 - Services: all business logic. No direct DB access.
 - Repositories: all data access. No business logic.
 
+## Commercial offer pages
+
+Any page selling a paid engagement follows `docs/commercial_offer_page_pattern.md`: fixed section order, a heading on every section, and copy rules derived from rejected lines rather than from taste. Read it before planning one. `docs/website_readiness_assessment_page.md` is the worked example.
+
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.
-- Max file: 120 lines. Max function: 20 lines. Max JSX return: 60 lines.
+- Max **source** file: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines.
+- Test files are exempt from the line cap; 29 are already over 200. Four source files are grandfathered over it (see CLAUDE.md §5.1). Nothing in the toolchain enforces the cap.
+- Prettier is declared in both packages but has never been run corpus-wide (202/271 client, 42/93 server files differ as of 2026-09-23). Match the file you are editing; do not reformat as drive-by work. See CLAUDE.md §15.
+- Route paths live in `client/src/constants/routes.js` (fourteen `ROUTE_*` constants). No route literal belongs anywhere else in `client/src`; `routes.test.js` sweeps for them. `App.test.jsx` is excluded by design, because its literal mounts pin the constants to real values.
 - Components: `PascalCase`. Hooks: `useCamelCase`. Helpers: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - DB columns: `snake_case`. API endpoints: `kebab-case`.
 - Default exports for React components (atoms, molecules, organisms, pages, templates). Named exports for utilities, hooks, constants, Redux slices, helpers, and infrastructure files (store, providers).

@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import { auth } from '../config/firebase';
 import { authApi } from '../features/auth/authApi';
+import { ROUTE_ADMIN } from '../constants/routes';
 import {
   setUser,
   setAdmin,
@@ -42,7 +43,7 @@ export const useAuthInit = () => {
             }
 
             const isAdminRoute =
-              window.location.pathname.startsWith('/admin');
+              window.location.pathname.startsWith(ROUTE_ADMIN);
 
             if (
               !isAdminRoute &&

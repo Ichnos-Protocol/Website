@@ -46,9 +46,9 @@ vi.mock("../organisms/ContactForm", () => ({
   },
 }));
 
-vi.mock("../organisms/CalendlyModal", () => ({
-  default: function MockCalendlyModal({ isOpen }) {
-    return isOpen ? <div data-testid="calendly-modal" /> : null;
+vi.mock("../organisms/BookingModal", () => ({
+  default: function MockBookingModal({ isOpen }) {
+    return isOpen ? <div data-testid="booking-modal" /> : null;
   },
 }));
 
@@ -253,11 +253,11 @@ describe("ContactPage", () => {
     expect(screen.getByTestId("contact-form")).toBeInTheDocument();
   });
 
-  it("opens CalendlyModal when the scheduler action is clicked", async () => {
+  it("opens BookingModal when the scheduler action is clicked", async () => {
     await renderPage();
-    expect(screen.queryByTestId("calendly-modal")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("booking-modal")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /schedule a call/i }));
-    expect(screen.getByTestId("calendly-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("booking-modal")).toBeInTheDocument();
   });
 
   it("no longer renders the legacy modal-CTA buttons", async () => {

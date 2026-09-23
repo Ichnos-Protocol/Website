@@ -9,24 +9,33 @@ Always create the Traycer YOLO completion artifact at the end of each Traycer-ru
 ## 1. Project Overview
 
 **Ichnos Protocol** is a company website showcasing the Ichnos Battery Passport solution.
-The site includes public-facing pages (landing, team, services/products), an AI-powered chatbot for visitor engagement, a contact/document-upload flow, and an admin dashboard for managing customer requests.
+The site includes public-facing pages (landing, services, team, contact, battery passport, consortium), an AI-powered chatbot for visitor engagement, an authenticated contact-request flow, GDPR self-service, and an admin dashboard.
 
 ### Pages
 
 | Route             | Access | Purpose                                                        |
 | ----------------- | ------ | -------------------------------------------------------------- |
-| `/`               | Public | Landing page — hero, value proposition, CTA, LinkedIn feed     |
-| `/team`           | Public | Team members and roles                                         |
-| `/services`       | Public | Services, products, and the Battery Passport showcase          |
-| `/admin/requests` | Admin  | View customer contact requests and download uploaded documents |
+| `/`                  | Public       | Landing page — hero, value proposition, CTA, passport teaser |
+| `/services`          | Public       | Services, products, and the Battery Passport showcase      |
+| `/team`              | Public       | Team members and roles                                     |
+| `/contact`           | Public       | Contact page — inline chat, contact links, inquiry modal   |
+| `/passport`          | Public       | Battery Passport page (`CatenaXThemeLayout`)               |
+| `/passport/readiness-assessment` | Public | Battery passport data readiness assessment. Canonical; `/data/readiness-assessment` and `/catena-x/readiness-assessment` 301 here |
+| `/consortium`        | Public       | Consortium landing                                         |
+| `/consortium/tiers`  | Protected    | Tier detail, `ProtectedRoute redirectTo="/consortium"`     |
+| `/privacy`           | Protected    | Privacy / GDPR self-service                                |
+| `/admin`             | Admin        | Admin dashboard (`AdminRoute`)                             |
+| `/data`, `/catena-x` | → `/passport` | Legacy SEO paths. 301 in `client/vercel.json`, `Navigate replace` in `App.jsx` |
+
+**Route paths are constants.** `client/src/constants/routes.js` exports fourteen `ROUTE_*` values and is the only place in `client/src` where a route literal may appear; `routes.test.js` enforces that by sweeping the corpus. `App.test.jsx` is excluded from the sweep on purpose: its literal mounts are what pin the constants to real values. **Read `client/src/App.jsx` as the authority on routing, not this table.** Every public page except `/passport` sits under `AdvisoryThemeLayout`; `/passport` sits under `CatenaXThemeLayout`. Unmatched paths currently hit `path="*" element={null}`, which renders the site chrome with a blank body at HTTP 200 rather than a 404. That is a known defect, not a design choice.
 
 ### Core Integrations
 
-- **Chatbot (Grok by X.ai)** — RAG-powered assistant answering questions about the company, services, pricing, and ongoing work. Includes a contact-us flow and document upload.
-- **Firebase Authentication** — User/admin authentication.
-- **Firestore** — NoSQL document storage for uploaded files (returns a public URL).
-- **Neon Tech PostgreSQL** — Relational database for customer contact requests. Stores a reference (public URL) to each Firestore-uploaded file.
-- **LinkedIn Feed** — Latest company posts displayed on the landing page via a third-party embed widget.
+- **Chatbot (Grok by X.ai)** — RAG-powered assistant answering questions about the company, services, pricing, and ongoing work. Includes a contact-us flow. **No document upload** — see §6.2.
+- **Firebase Authentication** — User/admin authentication. Three server-side tiers: `auth` → `admin` → `superAdmin`.
+- **Firestore** — Holds the chatbot's `knowledge_base` collection. Not used for file storage.
+- **Neon Tech PostgreSQL** — Relational database: users, profiles, contact requests, questions, topics, consortium registrations.
+- **LinkedIn** — Profile links only, in the footer and contact section (`CONTACT_INFO.linkedInCompany` / `linkedInFounder`). There is no post feed or embed widget — see §10.
 
 ---
 
@@ -41,13 +50,13 @@ The site includes public-facing pages (landing, team, services/products), an AI-
 | Routing      | React Router v6+                                  |                                              |
 | Backend      | Express.js 5                                      | REST API, ES modules (`"type": "module"`)    |
 | SQL DB       | PostgreSQL (Neon Tech)                            | Accessed via `pg`                            |
-| NoSQL DB     | Firestore                                         | File storage + document metadata             |
+| NoSQL DB     | Firestore                                         | Chatbot `knowledge_base` only — no file storage |
 | Auth         | Firebase Authentication                           | JWT-based, verified server-side              |
 | Chatbot      | X.ai Grok API                                     | RAG integration                              |
-| LinkedIn     | Third-party embed widget                          | SociableKIT, Elfsight, or Juicer             |
+| LinkedIn     | Profile links only                                | No feed/embed is built — see §10             |
 | Testing      | Vitest + React Testing Library                    | Unit + component tests; Supertest for API    |
 | E2E Testing  | Playwright                                        | End-to-end tests against Vercel previews     |
-| Linting      | ESLint + Prettier                                 | Enforced via pre-commit hook                 |
+| Linting      | ESLint + Prettier                                 | **No pre-commit hook exists.** Run them yourself |
 | Deployment   | Vercel (Monorepo)                                 | `client/` and `server/` as separate projects |
 | MCP Servers  | GitHub, Neon, Vercel, DBHub, Playwright, Context7 | Repo, DB, deployment, E2E, docs access       |
 
@@ -60,7 +69,7 @@ Monorepo: `client/` (React frontend) + `server/` (Express backend) + `e2e/` (Pla
 **Key directories** (use the filesystem to explore — don't memorize):
 
 - `client/src/components/` — Atomic Design: `atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`
-- `client/src/features/` — Redux slices + RTK Query APIs (auth, chat, contact, admin, gdpr, linkedin)
+- `client/src/features/` — Redux slices + RTK Query APIs. Exactly six: `admin`, `auth`, `chat`, `consortium`, `contact`, `gdpr`. There is no `linkedin` feature.
 - `client/src/hooks/`, `helpers/`, `constants/` — reusable logic
 - `server/src/` — `controllers/` → `services/` → `repositories/` (strict layer order)
 - `server/api/index.js` — Vercel serverless entry (thin wrapper, all setup in `src/app.js`)
@@ -119,7 +128,10 @@ Follow the Atomic Design methodology strictly:
 ### 5.1 General Rules
 
 - **Language**: JavaScript (ES2022+). No TypeScript unless explicitly requested.
-- **Max file length**: 120 lines. If a file exceeds this, refactor into smaller modules.
+- **Max file length**: 200 lines for **source modules** (raised from 120 by owner ruling on 2026-09-22, so that cohesive content-constant files such as `readinessAssessmentContent.js` are not split against their grain). If a source file exceeds this, refactor into smaller modules.
+  - **Test files are exempt.** A `.test.js`/`.test.jsx` file grows with the number of cases it covers, and splitting one to hit a line count scatters related assertions across files for no gain. Twenty-nine test files are already over 200 lines, the largest at 782. That is acceptable; splitting a test file is a decision about cohesion, never about length.
+  - Four source files currently exceed the cap and are grandfathered: `server/src/repositories/adminRepository.js` (351), `server/src/repositories/userRepository.js` (253), `server/src/controllers/adminController.js` (252), `server/src/services/adminService.js` (223). `client/src/constants/structuredData.js` left the list when P8 executed the readiness assessment spec §7.2.1 split into `serviceSchemas.js`. Do not refactor them as drive-by work; split one only when you are already changing it for another reason.
+  - Nothing enforces this cap in the toolchain. There is no ESLint `max-lines` rule. It is a review convention.
 - **Max function length**: 20 lines. Extract helper functions.
 - **Max component length**: 60 lines of JSX (return block). Decompose into smaller components if exceeded.
 - **Naming**:
@@ -178,52 +190,37 @@ Helpers are the primary tool for keeping code readable and short:
 
 ### 6.1 PostgreSQL (Neon Tech) — Relational Data
 
-Primary use: **customer contact requests** and structured relational data.
+**`server/migrations/*.sql` is the authority.** Read the migration before writing a query. The tables are:
 
-Key table:
+| Table | Purpose |
+| ----- | ------- |
+| `users` | Identity only: `firebase_uid` PK, `deleted_at`, timestamps |
+| `user_profiles` | `user_id` PK/FK, `name`, `surname`, `email`, `phone`, `company`, `linkedin` |
+| `contact_requests` | `id` SERIAL PK, `user_id` FK, `contact_consent_timestamp`, `contact_consent_version`, `status`, `admin_notes`, timestamps |
+| `questions` | Follow-up questions attached to a request |
+| `question_topics` | Topic classification output |
 
-```sql
-CREATE TABLE customer_requests (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name          VARCHAR(255) NOT NULL,
-    email         VARCHAR(255) NOT NULL,
-    company       VARCHAR(255),
-    message       TEXT NOT NULL,
-    document_url  TEXT,                  -- Public Firestore URL (nullable)
-    status        VARCHAR(50) DEFAULT 'new',
-    created_at    TIMESTAMPTZ DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ DEFAULT NOW()
-);
-```
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`.
+
+**Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
+
+`contact_requests.status` is constrained to `new | contacted | in_progress | resolved`.
 
 Rules:
 
 - Always use parameterized queries. **Never** interpolate user input into SQL strings.
-- Use migrations for schema changes (e.g., `node-pg-migrate` or Prisma Migrate).
-- Store Firestore file URLs as `document_url` — this is the **single reference** linking SQL to Firestore.
+- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `npm run migrate` (`server/scripts/runMigrations.js`). There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
 
-### 6.2 Firestore — Document/File Storage
+### 6.2 Firestore — Chatbot Knowledge Base
 
-Primary use: **uploaded files** from the chatbot contact flow.
+**Primary and only use: the RAG knowledge base.** One collection, `knowledge_base`, accessed solely through `server/src/repositories/knowledgeRepository.js`.
 
-Collection structure:
-
-```
-uploads/
-  {documentId}/
-    fileName: string
-    contentType: string
-    uploadedBy: string (email or 'anonymous')
-    publicUrl: string
-    requestId: string (FK → customer_requests.id)
-    createdAt: timestamp
-```
+**There is no file upload anywhere in this application.** No `/api/contact/upload` endpoint, no multer, no `FormData`/multipart path, no file input in any form, no Firebase Storage usage, no `uploads` collection, and no `document_url` column. Earlier revisions of this file described such a feature in §1, §6, §8, §9 and §13; none of it was ever built. If document upload is wanted, it is new work needing its own spec, not a feature to wire up.
 
 Rules:
 
-- Files are uploaded to **Firebase Storage**, metadata is stored in **Firestore**.
-- After upload, retrieve the public download URL and persist it in both Firestore and the `customer_requests.document_url` column in PostgreSQL.
-- Firestore security rules must restrict read access to authenticated admin users only.
+- Firestore access stays inside `knowledgeRepository.js`, per the repository-layer rule in §4.1.
+- `server/src/config/firebase.js` owns `firebase-admin` initialization. Nothing else calls it directly.
 
 ---
 
@@ -231,9 +228,10 @@ Rules:
 
 - **Firebase Authentication** handles sign-in (email/password at minimum).
 - On the frontend, Firebase SDK provides the ID token. Attach it as `Authorization: Bearer <token>` on every API request via an RTK Query `baseQuery` wrapper.
-- On the backend, a middleware verifies the Firebase ID token using `firebase-admin` SDK. Extract `uid` and `role` from custom claims.
-- **Admin role**: Set via Firebase custom claims (`{ role: 'admin' }`). Only users with this claim can access `/admin/*` routes.
-- Frontend route guards: A `ProtectedRoute` component checks auth state and role before rendering admin pages. Redirect unauthenticated users to login.
+- On the backend, `server/src/middleware/auth.js` verifies the Firebase ID token with the `firebase-admin` SDK and attaches `req.user`. Firebase returns custom claims as **top-level properties** of the decoded token.
+- **Admin claims are booleans, not a role string.** `server/src/middleware/admin.js` checks `req.user.admin === true`; `superAdmin.js` checks `req.user.superAdmin === true`. There is no `{ role: 'admin' }` claim — do not write code that reads `req.user.role`.
+- Middleware chains compose left to right: `auth` → `admin` → `superAdmin`. A fourth, `cronOrAdmin` (`middleware/cronAuth.js`), gates the scheduled retention-sweep and digest endpoints so a cron caller or an admin can both reach them.
+- Frontend route guards: `AdminRoute` wraps `/admin`; `ProtectedRoute` wraps `/consortium/tiers` (with `redirectTo="/consortium"`) and `/privacy`. They are separate components with different jobs.
 - Never trust client-side role checks alone. Always verify server-side.
 - **`POST /api/auth/sync-profile`** is auth-protected (Bearer token required). The `auth` middleware runs before the controller. The server derives user identity from `req.user.uid` — the verified token claim. The client must **not** send `firebaseUid` in the request body; the body carries only profile fields (`name`, `surname`, `phone`, `company`, `linkedin`).
 - **Auth API response shape**: `GET /api/auth/me` returns `data.user` in camelCase: `{ firebaseUid, email, name, surname, phone, company, linkedin }`. DB snake_case keys (`firebase_uid`) are normalized via `mapUserRow` at the service layer and must never appear in API responses or Redux state.
@@ -249,31 +247,35 @@ Rules:
 - Messages are sent to the backend (`POST /api/chat/message`), which proxies to the X.ai Grok API with RAG context.
 - **RAG context**: The backend maintains a knowledge base (company info, services, pricing, current projects). This context is injected into the Grok API prompt alongside the user's message.
 - The chatbot offers a **"Contact Us"** action that:
-  1. Collects name, email, company (optional), message.
-  2. Optionally allows file upload (documents for the Battery Passport or general inquiries).
-  3. Uploads the file to Firestore via the backend.
-  4. Creates a `customer_requests` row in PostgreSQL with the Firestore public URL.
-  5. Confirms submission to the user in the chat.
+  1. Requires the visitor to be signed in — `POST /api/contact/submit` is auth-protected and the request row is keyed on `user_id` (§6.1). An unauthenticated send triggers the auth modal.
+  2. Records the consent timestamp and version, and creates a `contact_requests` row.
+  3. Stores the visitor's questions in `questions`, linked to that request.
+  4. Confirms submission in the chat, offering a booking link and a follow-up question path (`POST /api/contact/:id/question`).
+
+  **No file upload step exists.** Name, email and company come from `user_profiles`, not from fields collected in the flow.
 
 ---
 
 ## 9. Admin Dashboard
 
-- Route: `/admin/requests` — protected, admin-only.
-- Fetches customer requests from PostgreSQL via `GET /api/admin/customer-requests`.
-- Displays a table: name, email, company, message preview, status, date, document link.
-- Each row with a `document_url` has a "View" / "Download" action that opens/downloads the file from Firestore.
-- Status can be updated (e.g., `new` → `in_progress` → `resolved`) via `PATCH /api/admin/customer-requests/:id`.
+- Route: **`/admin`** — protected by `AdminRoute`, admin-only. There is no `/admin/requests` route.
+- The dashboard is user-centric, not request-centric: it lists users (`GET /api/admin/users`) and drills into one user's requests (`GET /api/admin/requests/:userId`).
+- Other panels: chat leads, topic analysis, CSV export, consortium registrations, retention sweep, notification digest, and admin management. See `client/src/features/admin/adminApi.js` for the authoritative endpoint list.
+- A request is updated with `PUT /api/admin/request/:id` and removed with `DELETE /api/admin/request/:id`. **There is no `PATCH` endpoint anywhere in the admin API.**
+- Three authorization tiers exist server-side, not two: `auth` → `admin` → `superAdmin`. `superAdmin` gates admin management and destructive operations.
 
 ---
 
-## 10. LinkedIn Feed Integration
+## 10. LinkedIn Feed Integration — NOT BUILT
 
-- Third-party embed widget (SociableKIT or similar) — no direct LinkedIn API.
-- `LinkedInFeed.jsx` organism wraps the widget. Load script lazily via `useEffect`.
-- Widget config (container ID, data source URL) in `constants/` or env vars, not hardcoded.
-- Graceful fallback: "Follow us on LinkedIn" link if widget fails to load.
-- Feature directory: `features/linkedin/`.
+**This section describes a feature that does not exist.** There is no `LinkedInFeed.jsx`, no `features/linkedin/`, no embed widget, no SociableKIT/Elfsight/Juicer script, and no LinkedIn post feed on the landing page or anywhere else. The only LinkedIn presence is two profile links in `CONTACT_INFO`.
+
+It is kept here, marked, rather than deleted, so that the intent is not lost and nobody re-adds it as a half-remembered requirement. If the feed is wanted, it is new work needing its own spec. The design sketch below is a **proposal, not a description**:
+
+- Third-party embed widget, no direct LinkedIn API.
+- Organism wraps the widget; load the script lazily via `useEffect`.
+- Widget config in `constants/` or env vars, never hardcoded.
+- Graceful fallback: a "Follow us on LinkedIn" link if the widget fails to load.
 
 ---
 
@@ -281,14 +283,44 @@ Rules:
 
 All endpoints are prefixed with `/api`.
 
-| Method | Endpoint                           | Auth   | Description                        |
-| ------ | ---------------------------------- | ------ | ---------------------------------- |
-| POST   | `/api/chat/message`                | Public | Send a chat message, receive reply |
-| POST   | `/api/contact`                     | Public | Submit a contact request           |
-| POST   | `/api/contact/upload`              | Public | Upload a document (multipart)      |
-| GET    | `/api/admin/customer-requests`     | Admin  | List all customer requests         |
-| GET    | `/api/admin/customer-requests/:id` | Admin  | Get a single request with details  |
-| PATCH  | `/api/admin/customer-requests/:id` | Admin  | Update request status              |
+Six routers are mounted in `server/src/app.js`: `/api/auth`, `/api/contact`, `/api/chat`, `/api/admin`, `/api/gdpr`, `/api/consortium`.
+
+**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole.
+
+| Method | Endpoint                          | Auth       | Description                          |
+| ------ | --------------------------------- | ---------- | ------------------------------------ |
+| POST   | `/api/auth/verify-token`          | auth       | Verify token, upsert user            |
+| GET    | `/api/auth/me`                    | auth       | Current user profile (camelCase)     |
+| POST   | `/api/auth/sync-profile`          | auth       | Upsert profile from token `uid` (§7) |
+| PUT    | `/api/auth/profile`               | auth       | Update profile fields                |
+| POST   | `/api/auth/admin/claim`           | auth       | Claim/refresh the admin custom claim |
+| POST   | `/api/contact/submit`             | auth       | Submit a contact request             |
+| GET    | `/api/contact/my-requests`        | auth       | The caller's own requests            |
+| POST   | `/api/contact/:id/question`       | auth       | Add a follow-up question             |
+| POST   | `/api/chat/message`               | auth       | Send a chat message, receive reply   |
+| GET    | `/api/chat/history`               | auth       | Caller's chat history                |
+| GET    | `/api/gdpr/download`              | auth       | Export the caller's data             |
+| POST   | `/api/gdpr/delete`                | auth       | Erasure request                      |
+| GET    | `/api/consortium/me`              | auth       | Caller's registration                |
+| GET    | `/api/consortium/tiers`           | auth       | Tier catalogue (server-priced)       |
+| PUT    | `/api/consortium/tier`            | auth       | Set the caller's tier                |
+| GET    | `/api/admin/users`                | admin      | List users                           |
+| GET    | `/api/admin/requests/:userId`     | admin      | One user's requests                  |
+| GET    | `/api/admin/chat-leads`           | admin      | Chat leads list                      |
+| GET    | `/api/admin/chat-leads/:userId`   | admin      | One lead's detail                    |
+| PUT    | `/api/admin/request/:id`          | admin      | Update a request                     |
+| DELETE | `/api/admin/request/:id`          | admin      | Delete a request                     |
+| POST   | `/api/admin/analyze-topics`       | admin      | Run topic classification             |
+| GET    | `/api/admin/topics`               | admin      | Topic list                           |
+| GET    | `/api/admin/export`               | admin      | CSV export                           |
+| GET    | `/api/admin/consortium`           | admin      | Consortium registrations             |
+| POST   | `/api/admin/manage-admins`        | superAdmin | Grant/revoke admin                   |
+| GET    | `/api/admin/retention-sweep`      | cronOrAdmin | Retention sweep status              |
+| POST   | `/api/admin/retention-sweep`      | cronOrAdmin | Run the retention sweep             |
+| GET    | `/api/admin/notifications/digest` | cronOrAdmin | Digest status                       |
+| POST   | `/api/admin/notifications/digest` | cronOrAdmin | Send the digest                     |
+
+**This table is a convenience copy. `server/src/routes/*.js` is the authority** — check there before building against an endpoint, and update this table in the same commit when you add one.
 
 Rules:
 
@@ -317,7 +349,7 @@ Rules:
 - **XSS**: React escapes by default. Never use `dangerouslySetInnerHTML`.
 - **CORS**: Restrict to the frontend origin only.
 - **Rate limiting**: Apply `express-rate-limit` to public endpoints, especially `/api/chat/message` and `/api/contact`.
-- **File uploads**: Validate file type and size on both client and server. Max 10MB. Allow only specific MIME types (PDF, DOCX, PNG, JPG).
+- **File uploads**: none exist (§6.2). If one is ever added, validate type and size on both client and server, cap at 10MB, and allow only PDF, DOCX, PNG, JPG.
 - **Auth tokens**: Verify Firebase ID tokens server-side on every protected request. Never store tokens in localStorage — use httpOnly cookies or in-memory storage.
 - **Helmet**: Use `helmet` middleware for HTTP security headers.
 - **Dependencies**: Run `npm audit` regularly. No packages with known critical vulnerabilities.
@@ -405,7 +437,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 <type>(<scope>): <short description>
 
 Types: feat, fix, refactor, test, chore, docs, style
-Scope: client, server, db, chat, auth, admin, linkedin
+Scope: client, server, db, chat, auth, admin, consortium
 ```
 
 Examples:
@@ -416,14 +448,30 @@ Examples:
 
 ### Pre-Commit Checklist
 
-Before every commit, verify:
+**There is no pre-commit hook in this repository** (no `.husky/`, no non-sample `.git/hooks/`). Nothing runs automatically. Run this yourself, in `client/` and `server/` separately — there is no root `package.json`:
+
+```bash
+npm run lint && npm test
+```
+
+Then verify:
 
 - [ ] ESLint passes with zero warnings.
-- [ ] Prettier formatting is applied.
 - [ ] All tests pass.
 - [ ] No `.env` files or secrets are staged.
-- [ ] No files exceed the length limits.
+- [ ] No **source** file exceeds 200 lines (§5.1; test files are exempt).
 - [ ] New code follows the layer responsibilities defined in Section 4.
+
+**Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 102 test files / 959 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
+
+**Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-23 with line endings normalized: **202 of 271 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
+
+Consequences, so nobody rediscovers this the hard way:
+
+- `npm run format` exists in `server` and would rewrite 42 files. `format` and `format:check` now exist in `client` too and would rewrite 202. **Do not run either to tidy up.** A several-hundred-file reformat landing mid-epic makes every review diff unreadable and collides with every in-flight branch.
+- `format:check` is deliberately **not** in the checklist above, because it fails today on files nobody touched.
+- Adopting Prettier is a real decision with a one-commit cost: pick a config (start from `endOfLine: "auto"` given `.gitattributes` sets `* text=auto` on a Windows checkout, plus a quote ruling), run it once across both packages in a commit that changes nothing else, then add `format:check` to this checklist. Schedule it **between** epics, never inside one.
+- Until then, **match the file you are editing.** Do not convert a file's quote style while changing something else.
 
 ---
 
@@ -454,7 +502,7 @@ When working on this project, Claude must:
 3. **Follow the folder structure exactly.** Place files in the correct directory per Section 3. Ask if unsure.
 4. **Respect layer boundaries.** Never put business logic in a controller. Never put DB queries in a service. Never put API calls in a component.
 5. **Extract helpers aggressively.** If a block of logic can be named and reused, extract it into a helper function.
-6. **Keep files short.** If a file approaches 120 lines, decompose it.
+6. **Keep files short.** If a file approaches 200 lines, decompose it.
 7. **Use existing patterns.** Before creating something new, check if a similar pattern already exists in the codebase and follow it.
 8. **Write tests alongside code.** When building a new module, write its tests in the same session.
 9. **Never hardcode secrets or URLs.** Use environment variables for all configuration.
@@ -463,6 +511,7 @@ When working on this project, Claude must:
 12. **All API communication** goes through RTK Query. No raw fetch/axios in components.
 13. **Validate inputs** at the boundary: Zod on the server, form validation on the client.
 14. **When creating a new page**, wire up the route in the router, add it to the navigation if public, and protect it if admin-only.
+14a. **When creating a commercial offer page** — any page selling a paid engagement — read `docs/commercial_offer_page_pattern.md` first and follow it. It fixes the section order, the heading rules and the copy discipline, and every rule in it exists because a specific line was rejected in owner review. Do not re-derive it per page.
 15. **Run a mental test.** Before presenting code, mentally trace through the user flow to catch obvious issues.
 16. **Use MCP integrations first.** Prefer GitHub MCP for repo operations, Neon MCP for database queries and schema inspection, Vercel MCP for deployment logs and env vars, Playwright MCP for E2E tests, and Context7 for library docs. See Section 18 for details.
 

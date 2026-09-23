@@ -1,5 +1,7 @@
 import ReactCookieConsent from 'react-cookie-consent';
 
+import { ROUTE_PRIVACY } from '../../constants/routes';
+
 export default function CookieConsentBanner() {
   return (
     <ReactCookieConsent
@@ -12,7 +14,7 @@ export default function CookieConsentBanner() {
     >
       We use cookies to improve your experience. By continuing, you
       accept our cookie policy.{' '}
-      <a href="/privacy" className="cookie-consent-link" data-testid="cookie-consent-link">
+      <a href={ROUTE_PRIVACY} className="cookie-consent-link" data-testid="cookie-consent-link">
         Privacy Policy
       </a>
     </ReactCookieConsent>

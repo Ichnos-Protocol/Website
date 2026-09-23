@@ -1,6 +1,15 @@
 import Col from 'react-bootstrap/Col';
 import { Link } from 'react-router-dom';
 
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_LANDING,
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from '../../constants/routes';
+
 const MENUS = [
   {
     heading: 'Company',
@@ -8,10 +17,10 @@ const MENUS = [
     links: [
       {
         label: 'Why Ichnos',
-        to: '/',
+        to: ROUTE_LANDING,
         state: { scrollTo: 'company' },
       },
-      { label: 'Team', to: '/team' },
+      { label: 'Team', to: ROUTE_TEAM },
     ],
   },
   {
@@ -20,22 +29,22 @@ const MENUS = [
     links: [
       {
         label: 'Engineering',
-        to: '/services',
+        to: ROUTE_SERVICES,
         state: { scrollTo: 'engineering' },
       },
       {
         label: 'Catena-X services',
-        to: '/services',
+        to: ROUTE_SERVICES,
         state: { scrollTo: 'catena-x' },
       },
       {
         label: 'Compliance',
-        to: '/services',
+        to: ROUTE_SERVICES,
         state: { scrollTo: 'compliance' },
       },
       {
         label: 'Circularity',
-        to: '/services',
+        to: ROUTE_SERVICES,
         state: { scrollTo: 'circularity' },
       },
     ],
@@ -44,8 +53,11 @@ const MENUS = [
     heading: 'Products',
     testId: 'footer-col-products',
     links: [
-      { label: 'Battery Passport', to: '/passport' },
-      { label: 'Consortium', to: '/consortium' },
+      // First by owner decision 2026-09-23: the assessment is the offer with
+      // a price behind it, and the footer is one of its five entry points.
+      { label: 'Readiness Assessment', to: ROUTE_READINESS_ASSESSMENT },
+      { label: 'Battery Passport', to: ROUTE_PASSPORT },
+      { label: 'Consortium', to: ROUTE_CONSORTIUM },
     ],
   },
 ];

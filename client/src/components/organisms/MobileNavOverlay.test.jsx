@@ -2,6 +2,14 @@ import { axe } from "vitest-axe";
 import { renderWithProviders, screen, fireEvent } from "../../test-utils";
 import MobileNavOverlay from "./MobileNavOverlay";
 import { NAV_ITEMS } from "../../constants/navigation";
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from "../../constants/routes";
 
 // Mobile overlay renders all NAV_ITEMS as flat links (no dropdowns remain).
 const FLAT_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.children);
@@ -94,7 +102,7 @@ describe("MobileNavOverlay", () => {
     // Children — "Why Ichnos" (homepage scroll target) and "Team" (route).
     expect(
       screen.getByRole("link", { name: "Team" }),
-    ).toHaveAttribute("href", "/team");
+    ).toHaveAttribute("href", ROUTE_TEAM);
   });
 
   it("clicking any flat NAV_ITEMS entry calls onClose", () => {
@@ -126,30 +134,51 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on / homepage, clicking Battery Passport navigates to /passport", () => {
+  // Battery Passport is a dropdown parent since 2026-09-23. On mobile the
+  // parent renders as a plain section label and its children render as links,
+  // so the route is reached through "Overview" rather than through the parent.
+  it("on / homepage, clicking Overview navigates to /passport", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
       { route: "/" },
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/passport");
+    fireEvent.click(screen.getByRole("link", { name: "Overview" }));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PASSPORT);
+  });
+
+  it("renders the Battery Passport section label and both of its children", () => {
+    renderWithProviders(
+      <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
+      { route: "/" },
+    );
+
+    expect(screen.getByText("Battery Passport")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Battery Passport" }),
+    ).toBeNull();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "href",
+      ROUTE_PASSPORT,
+    );
+    expect(
+      screen.getByRole("link", { name: "Readiness Assessment" }),
+    ).toHaveAttribute("href", ROUTE_READINESS_ASSESSMENT);
   });
 
   it("on /services route, clicking each flat link navigates to its path", () => {
     const expected = {
-      Services: "/services",
-      "Battery Passport": "/passport",
-      Consortium: "/consortium",
-      Contact: "/contact",
+      Services: ROUTE_SERVICES,
+      Consortium: ROUTE_CONSORTIUM,
+      Contact: ROUTE_CONTACT,
     };
 
     Object.entries(expected).forEach(([label, path]) => {
       mockNavigate.mockClear();
       const { unmount } = renderWithProviders(
         <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
-        { route: "/services" },
+        { route: ROUTE_SERVICES },
       );
 
       fireEvent.click(screen.getByRole("link", { name: label }));
@@ -158,15 +187,15 @@ describe("MobileNavOverlay", () => {
     });
   });
 
-  it("on /services route, Battery Passport still navigates to /passport", () => {
+  it("on /services route, Overview still navigates to /passport", () => {
     mockNavigate.mockClear();
     renderWithProviders(
       <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
-      { route: "/services" },
+      { route: ROUTE_SERVICES },
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Battery Passport" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/passport");
+    fireEvent.click(screen.getByRole("link", { name: "Overview" }));
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PASSPORT);
   });
 
   it("renders nav links with default token-aware classes on non-matching route", () => {
@@ -188,7 +217,7 @@ describe("MobileNavOverlay", () => {
 
   it("marks the active link with active/nav-link-active classes when the route matches", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
-      route: "/services",
+      route: ROUTE_SERVICES,
     });
 
     const servicesLink = screen.getByRole("link", { name: "Services" });
@@ -198,7 +227,7 @@ describe("MobileNavOverlay", () => {
     expect(servicesLink).toHaveClass("py-2");
     expect(servicesLink).not.toHaveClass("nav-link-default");
 
-    ["Battery Passport", "Consortium", "Contact"].forEach((label) => {
+    ["Consortium", "Contact"].forEach((label) => {
       const link = screen.getByRole("link", { name: label });
       expect(link).toHaveClass("nav-link-default");
       expect(link).not.toHaveClass("active");
@@ -207,7 +236,7 @@ describe("MobileNavOverlay", () => {
 
   it("on /team route, the Team flat link is marked active", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
-      route: "/team",
+      route: ROUTE_TEAM,
     });
     expect(screen.getByRole("link", { name: "Team" })).toHaveClass("active");
   });

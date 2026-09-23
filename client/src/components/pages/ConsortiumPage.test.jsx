@@ -20,6 +20,10 @@ import {
   createStore,
   submitRegistration,
 } from "../organisms/contactFormHarness";
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONSORTIUM_TIERS,
+} from "../../constants/routes";
 import ConsortiumPage from "./ConsortiumPage";
 
 const mockNavigate = vi.fn();
@@ -43,7 +47,7 @@ vi.mock("../../features/consortium/consortiumApi", () => consortiumApiMock());
 vi.mock("../../config/firebase", () => firebaseMock());
 
 function renderPage(
-  route = "/consortium",
+  route = ROUTE_CONSORTIUM,
   auth = { isAuthenticated: false, user: null },
 ) {
   const store = createStore(auth);
@@ -82,12 +86,15 @@ describe("ConsortiumPage", () => {
   it("moves to the tier overview once the registration succeeds", async () => {
     const user = userEvent.setup();
     mocks.unwrap.mockResolvedValue({ data: {} });
-    renderPage("/consortium", { isAuthenticated: true, user: { uid: "u1" } });
+    renderPage(ROUTE_CONSORTIUM, {
+      isAuthenticated: true,
+      user: { uid: "u1" },
+    });
 
     await submitRegistration(user);
 
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/consortium/tiers"),
+      expect(mockNavigate).toHaveBeenCalledWith(ROUTE_CONSORTIUM_TIERS),
     );
   });
 

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Element } from 'react-scroll';
 import Container from 'react-bootstrap/Container';
 
+import { ROUTE_SERVICES } from '../../constants/routes';
 import { SERVICE_PILLARS, getServicesByPillar } from '../../constants/services';
 import ServicesGroup from './ServicesGroup';
 
@@ -23,7 +24,7 @@ export default function ServicesSnapshot() {
             />
           ))}
           <div className="text-center mt-4">
-            <Link to="/services" className="fw-semibold">
+            <Link to={ROUTE_SERVICES} className="fw-semibold">
               See full services →
             </Link>
           </div>

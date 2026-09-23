@@ -3,6 +3,8 @@
 // hard-coded here — surfaces that show it derive it from catenaXStatus.js via
 // the runtime toggle (see PassportOffer organism).
 
+import { ROUTE_READINESS_ASSESSMENT, ROUTE_SERVICES } from "./routes";
+
 // §5.3 Hero
 export const PASSPORT_HERO = {
   eyebrow: "EU BATTERY REGULATION 2023/1542",
@@ -108,7 +110,14 @@ export const PASSPORT_LOCALIZATION = {
 export const PASSPORT_OFFER = {
   pointer: "Full service list on the Services page.",
   ctaLabel: "See services →",
-  ctaHref: "/services",
+  ctaHref: ROUTE_SERVICES,
+};
+
+// Readiness-assessment entry band, rendered after the offer. Same-tab route.
+export const PASSPORT_READINESS_CTA = {
+  headline: "Battery passport data readiness assessment",
+  ctaLabel: "See the assessment",
+  ctaHref: ROUTE_READINESS_ASSESSMENT,
 };
 
 // §5.10–5.12 (spec v5). Copy is authoritative; render it verbatim. The

@@ -6,7 +6,9 @@ import Col from 'react-bootstrap/Col';
 import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
+  BOOKING_URL,
 } from '../../constants/companyInfo';
+import { ROUTE_CONTACT } from '../../constants/routes';
 import Icon from '../atoms/Icon';
 import ChatPanel from '../molecules/ChatPanel';
 
@@ -57,8 +59,8 @@ export default function ContactSection({
               external
             />
             <ContactLink
-              href={CONTACT_INFO.calendly}
-              icon="calendar-event"
+              href={BOOKING_URL}
+              icon="google"
               label={CONTACT_SECTION_CONTENT.links.bookCall}
               external
             />
@@ -70,7 +72,7 @@ export default function ContactSection({
         {showFullContactLink && (
           <div className="text-center mt-4">
             <Link
-              to="/contact"
+              to={ROUTE_CONTACT}
               className="fw-semibold"
               data-testid="contact-section-full-link"
             >

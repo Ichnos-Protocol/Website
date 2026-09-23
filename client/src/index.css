@@ -1373,6 +1373,78 @@ h1.page-title {
   color: var(--color-text-secondary);
 }
 
+/* ========== Readiness Assessment (spec sections 4.1 / 4.2) ========== */
+/* Vertical padding only, and deliberately one step below
+   .advisory-page-hero's --spacing-3xl: the headline, subhead and CTA have to
+   fit the first phone screen (section 8 item 13), and this rule plus the
+   page's tightened breadcrumb container are the two levers on that.
+   No background image belongs here. .hero-section, .hero-section--advisory
+   and .advisory-page-hero all attach the bg-advisory.jpg treatment — the
+   first of them through .theme-catenax .hero-section, which is the scope
+   this page mounts under — and section 4.1 specifies no giant visual. */
+.readiness-hero {
+  padding: var(--spacing-2xl) 0;
+}
+
+/* Both audience panels share this one class and identical markup. Section
+   4.2 gives the two audiences equal weight, so no --recommended modifier,
+   accent border, background tint or elevation variant may ever be added
+   here or as a sibling rule. Surface, border and radius match the
+   .roadmap-card / .contact-card neighbours above. */
+.readiness-panel {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(139, 157, 195, 0.15);
+  border-radius: 8px;
+}
+
+/* Body emphasis only. Claim rule 9: this rule must never gain background,
+   border, border-radius or padding, because any of those turns a price line
+   into a badge, which is exactly what the rule forbids. */
+.readiness-price-line {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* No media query in this block, on purpose: Col xs={12} md={6} in
+   AudiencePanels.jsx already stacks the panels at 390px and sets them side
+   by side from 768px. A breakpoint added here would only duplicate
+   Bootstrap's and could fight it. */
+
+/* ========== Readiness Assessment (spec sections 4.2.2 / 4.3) ========== */
+/* Deliberately mirrors .readiness-panel above, so the two card families on
+   this page read as one page rather than two. All four deliverables share
+   this one class and identical markup: it must never gain a price-card,
+   ribbon, numbering or --featured variant, here or as a sibling rule. */
+.readiness-deliverable {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(139, 157, 195, 0.15);
+  border-radius: 8px;
+}
+
+/* Quiet emphasis only, for the single section 4.2.2 closing line. This rule
+   must never gain animation, transition, background, border or any other
+   countdown or urgency treatment: the copy makes its point in prose and the
+   section renders no clock. */
+.readiness-window-closing {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* No media query in this block either: Col xs={12} md={6} in
+   DeliverablesGrid.jsx already gives one column at 390px and a 2x2 grid
+   from 768px. A breakpoint added here would only duplicate Bootstrap's and
+   could fight it. */
+
+/* ========== Readiness Assessment (spec sections 4.8 / 4.9) ========== */
+/* The section 4.8 disclosure is native <details>/<summary>; this rule only
+   marks the summary as clickable. It must never gain display: none,
+   max-height, transitions or anything else that could hide an answer: every
+   answer has to stay in the initial DOM (spec section 8 item 5). */
+.readiness-faq-summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+}
+
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
   *,

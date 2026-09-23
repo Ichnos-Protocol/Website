@@ -1,5 +1,9 @@
 import { axe } from "vitest-axe";
 import { renderWithProviders, screen, cleanup } from "../../test-utils";
+import {
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+} from "../../constants/routes";
 import ServicesGroup from "./ServicesGroup";
 
 const FIXTURE_SERVICES = [
@@ -24,17 +28,26 @@ const FIXTURE_SERVICES = [
     icon: "bi-shield-fill-check",
     title: "Passport Card",
     description: "Passport description.",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
   },
   {
     id: "card-coming-soon",
     icon: "bi-clock-history",
     title: "Coming Soon Card",
     description: "Coming soon description.",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     comingSoon: true,
   },
 ];
+
+const READINESS_SERVICE = {
+  id: "card-readiness",
+  icon: "bi-globe-asia-australia",
+  title: "Readiness Card",
+  description: "Readiness description.",
+  readinessLink: ROUTE_READINESS_ASSESSMENT,
+  readinessLabel: "Readiness link →",
+};
 
 function renderGroup(props = {}) {
   return renderWithProviders(
@@ -117,7 +130,7 @@ describe("ServicesGroup", () => {
   it("renders a Learn more → link to /passport for a passportLink service", () => {
     renderGroup();
     const link = screen.getByRole("link", { name: "Learn more →" });
-    expect(link).toHaveAttribute("href", "/passport");
+    expect(link).toHaveAttribute("href", ROUTE_PASSPORT);
   });
 
   it("does not render an eyebrow even when a service carries a stale eyebrow prop", () => {
@@ -150,6 +163,37 @@ describe("ServicesGroup", () => {
       container.querySelector(".service-card--coming-soon"),
     ).not.toBeNull();
     expect(screen.queryByRole("link", { name: "Learn more →" })).toBeNull();
+  });
+
+  it("renders the readiness link as a plain text link for a card carrying the fields", () => {
+    const { container } = renderGroup({ services: [READINESS_SERVICE] });
+    const link = screen.getByRole("link", {
+      name: READINESS_SERVICE.readinessLabel,
+    });
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveAttribute("href", ROUTE_READINESS_ASSESSMENT);
+    expect(link.className).not.toMatch(/\bbtn\b/);
+    expect(link).toHaveAttribute("data-testid", "card-readiness-readiness-link");
+    expect(container.querySelector("button")).toBeNull();
+  });
+
+  it("renders no readiness link for cards without the fields", () => {
+    const { container } = renderGroup();
+    expect(
+      container.querySelector('[data-testid$="-readiness-link"]'),
+    ).toBeNull();
+  });
+
+  it("renders neither CTA for a coming-soon card carrying both link fields", () => {
+    renderGroup({
+      services: [
+        { ...READINESS_SERVICE, passportLink: ROUTE_PASSPORT, comingSoon: true },
+      ],
+    });
+    expect(screen.queryByRole("link", { name: "Learn more →" })).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: READINESS_SERVICE.readinessLabel }),
+    ).toBeNull();
   });
 
   it("has no accessibility violations", async () => {
