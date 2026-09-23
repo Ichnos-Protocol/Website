@@ -33,6 +33,22 @@ function renderTopItem(item, ctx) {
     );
   }
 
+  // Real external link (e.g. the passport app's live demo, a separate
+  // deployment) — a plain anchor, not client-side routing via navigate().
+  if (item.external) {
+    return (
+      <a
+        key={item.label}
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="nav-link px-3 py-2 nav-link-default"
+      >
+        {item.label}
+      </a>
+    );
+  }
+
   const { isHome, activeSection, pathname, onSelect } = ctx;
   const isActive = isHome
     ? Boolean(item.activeSectionId && activeSection === item.activeSectionId)

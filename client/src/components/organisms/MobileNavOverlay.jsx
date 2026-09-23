@@ -75,6 +75,23 @@ export default function MobileNavOverlay({ isOpen, onClose }) {
             );
           }
 
+          // Real external link (e.g. the passport app's live demo, a
+          // separate deployment) — a plain anchor, not client-side routing.
+          if (item.external) {
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onClose}
+                className="nav-link mobile-nav-link-item px-3 py-2 nav-link-default"
+              >
+                {item.label}
+              </a>
+            );
+          }
+
           const isActive =
             pathname === item.path || pathname.startsWith(`${item.path}/`);
           const stateClass = isActive

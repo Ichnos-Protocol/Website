@@ -34,6 +34,10 @@ export const NAV_ITEMS = [
   },
   { label: 'Services', path: ROUTE_SERVICES, sectionId: 'services', activeSectionId: 'services' },
   { label: 'Battery Passport', path: ROUTE_PASSPORT },
+  // Live demo of the passport app itself — a separate deployment (not part of
+  // this site), so it's a real external link, not a client-side route. It
+  // carries `href`, not `path`, so it is deliberately not a ROUTE_* constant.
+  { label: 'Live Demo', href: 'https://passport.ichnos-protocol.com/demo', external: true },
   { label: 'Consortium', path: ROUTE_CONSORTIUM },
   { label: 'Contact', path: ROUTE_CONTACT, sectionId: 'contact', activeSectionId: 'contact' },
 ];
