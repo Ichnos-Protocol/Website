@@ -4,7 +4,7 @@ import BookingButton from "../molecules/BookingButton";
 import Breadcrumb from "../molecules/Breadcrumb";
 import ProcessSteps from "../molecules/ProcessSteps";
 import SeoHead from "../molecules/SeoHead";
-import AssessmentAuthor from "../organisms/AssessmentAuthor";
+import AssessmentAudience from "../organisms/AssessmentAudience";
 import AssessmentFaq from "../organisms/AssessmentFaq";
 import AssessmentInputs from "../organisms/AssessmentInputs";
 import AssessmentNextSteps from "../organisms/AssessmentNextSteps";
@@ -12,7 +12,6 @@ import AssessmentWindow from "../organisms/AssessmentWindow";
 import AudiencePanels from "../organisms/AudiencePanels";
 import CtaBand from "../organisms/CtaBand";
 import DeliverablesGrid from "../organisms/DeliverablesGrid";
-import PublishedWork from "../organisms/PublishedWork";
 import ReadinessAssessmentHero from "../organisms/ReadinessAssessmentHero";
 import ScopeBoundary from "../organisms/ScopeBoundary";
 import { ASSESSMENT_CTA_BAND } from "../../constants/readinessAssessmentContent";
@@ -20,20 +19,27 @@ import { ROUTE_CONTACT } from "../../constants/routes";
 import { READINESS_ASSESSMENT_META } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 
-// Composition only. The page now assembles the breadcrumb, the section 4.1
-// hero, the section 4.2 audience panels, the section 4.2.2 window, the
-// section 4.3 deliverables, the section 4.4 process, the section 4.5
-// inputs, the section 4.5.1 next steps, the section 4.6 scope boundary, the
-// section 4.7 author line, the section 4.7.1 published work, the section 4.8
-// questions and the section 4.9 closing band. Every copy string, price and
-// date lives in `readinessAssessmentContent.js` and reaches the DOM through
-// the organisms, so this file holds no copy, calls no `interpolate` and
-// imports no pricing. Passing ASSESSMENT_CTA_BAND values and a BookingButton
-// node into CtaBand props is composition, not copy ownership: the band's
-// action is deliberately supplied here, so the same band serves the passport
-// page with a different action. The head block is composition too: SeoHead
-// receives the meta and schema constants, and the page still holds no copy
-// and imports no pricing.
+// Composition only. Every copy string, price and date lives in
+// `readinessAssessmentContent.js` and reaches the DOM through the organisms,
+// so this file holds no copy, calls no `interpolate` and imports no pricing.
+// Passing ASSESSMENT_CTA_BAND values and a BookingButton node into CtaBand
+// props is composition, not copy ownership: the band's action is deliberately
+// supplied here, so the same band serves the passport page with a different
+// action. The head block is composition too.
+//
+// Section order, reworked by owner amendment 2026-09-23, reads as a
+// consultation rather than a brochure: what it is (hero), why now (window),
+// who it applies to (audience plus panels), what you get (deliverables), how
+// it runs (process), what we need (inputs), what it is not (boundary), act
+// (mid band), where it leads (next steps), objections (FAQ), act again
+// (final band).
+//
+// Two bands, at the page's two highest-intent moments. The mid band follows
+// the boundary, where the reader has the full picture; it keeps a headline
+// and the quieter written fallback. The final band follows the FAQ, where the
+// last objection has just been answered; it is a button alone, so nothing
+// competes with it. Sections 4.7 and 4.7.1, the author line and the published
+// work, were deleted in the same amendment.
 //
 // The breadcrumb container is deliberately tighter than the page default:
 // the hero has to start high enough that its headline, subhead and CTA all
@@ -51,26 +57,35 @@ export default function ReadinessAssessmentPage() {
       </Container>
       <ReadinessAssessmentHero />
       <Container>
-        <AudiencePanels />
         <AssessmentWindow />
+        <AssessmentAudience />
+        <AudiencePanels />
         <DeliverablesGrid />
         <ProcessSteps />
         <AssessmentInputs />
-        <AssessmentNextSteps />
         <ScopeBoundary />
-        <AssessmentAuthor />
-        <PublishedWork />
-        <AssessmentFaq />
         <CtaBand
-          headline={ASSESSMENT_CTA_BAND.headline}
+          testId="readiness-cta-mid"
+          headline={ASSESSMENT_CTA_BAND.midHeadline}
           action={
             <BookingButton
-              label={ASSESSMENT_CTA_BAND.ctaLabel}
-              testId="readiness-cta-booking"
+              label={ASSESSMENT_CTA_BAND.midCtaLabel}
+              testId="readiness-cta-mid-booking"
             />
           }
           fallbackTo={ROUTE_CONTACT}
           fallbackLabel={ASSESSMENT_CTA_BAND.fallbackLabel}
+        />
+        <AssessmentNextSteps />
+        <AssessmentFaq />
+        <CtaBand
+          testId="readiness-cta-final"
+          action={
+            <BookingButton
+              label={ASSESSMENT_CTA_BAND.finalCtaLabel}
+              testId="readiness-cta-final-booking"
+            />
+          }
         />
       </Container>
     </div>

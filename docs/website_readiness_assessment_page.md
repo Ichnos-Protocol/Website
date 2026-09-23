@@ -1,6 +1,8 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.11, 2026-09-23 · Status: normative · in execution, verification fixes**
+**Version 1.12, 2026-09-23 · Status: normative · shipped, reworked on owner review**
+
+*(1.12, owner rework after reviewing the deployed staging page. The architecture holds; the copy and the section order did not. **(a) Section order rebuilt** to read as a consultation rather than a brochure: what it is, why now, who it applies to, what you get, how it runs, what we need, what it is not, act, where it leads, objections, act. §4.2.2 now precedes the panels, and a new §4.2.0 frames them. **(b) Fenced-copy amendments** to §4.1 (headline, subhead, meta), §4.2.2 (heading, body, closing) and §4.9 (both bands). **(c) §4.7 and §4.7.1 deleted.** The author facts are carried by the global footer on this very page; the five published-work facts leave the site entirely and are not relocated. **(d) §2.2 amended**: no top-level navbar entry still, but a child under Battery Passport is permitted. **(e) §2.3** grows from three entry points to five. **(f) §8 item 7** loses scope (c); the date sweep is now page-wide, which is stronger. §1, §5, §8 and §11 follow.)*
 
 *(1.11, from Traycer's verification pass. One fenced-copy amendment: §4.5.1's hosting sentence said `a hosted service on EU servers operated by us` while the claim-discipline paragraph one line below mandated `EU-hosted, operated by Ichnos`. The fenced copy was wrong and now carries the required construction. Four other findings ruled without spec change: the route pin extracts `route:` mount arguments rather than any quoted string; both `.env.example` rows go now, since a template is not a live setting; the second booking-band assertion is declined as redundant with the shared `BookingButton` test; and the missing phase commits are reconstructed as two commits, not twelve.)*
 
@@ -58,7 +60,7 @@ Five consequences that bind the rest of this document:
 
 - **Success is booked calls.** Time on page, scroll depth and newsletter-style engagement are not goals and MUST NOT drive layout decisions.
 - **This is an offering surface with a price anchor.** That triggers the sharpest rule in pivot-3 §4.4: **no Catena-X label or logo may appear on, beside or within this page.** §3 makes it machine-checkable rather than a matter of designer discipline.
-- **There are no clients to name.** The page ships with zero case studies and zero named references, and MUST NOT be written in a way that implies prior engagements. The credibility carriers are the credential line (§4.7), the published-work strip (§4.7.1) and the specificity of the deliverables (§4.3).
+- **There are no clients to name.** The page ships with zero case studies and zero named references, and MUST NOT be written in a way that implies prior engagements. **As of v1.12 the credibility carriers are the specificity of the deliverables (§4.3) and the credentials in the global footer.** The credential line and the published-work strip were removed by owner decision; §4.7 records what that costs.
 - **This is outbound collateral that happens to have a URL.** It will not be found by search in the time that matters. Its real job is to be the link inside a cold email, opened on a phone in Jakarta or Shenzhen thirty seconds after that email arrives, by someone deciding whether the sender is serious. **That reorders the priorities:** above-the-fold clarity, mobile rendering and load time are load-bearing; keyword depth, FAQ length and long-form SEO are not. Where the two conflict, the phone wins. The §8 manual review is conducted on a phone first, desktop second.
 - **The page does not compete on explaining the regulation.** Regulatory-interpretation consultancies already serve this buyer population, including Chinese exporters to the EU. The differentiators are data-space depth, standards participation and physical presence in ASEAN. Copy that re-explains what the regulation says is copy that puts Ichnos into a crowded comparison it does not win.
 
@@ -176,19 +178,27 @@ A file that was Prettier-non-conformant before and conformant after, or the reve
 
 **Rejected: splitting P2a by directory.** Three commits with no semantic seam between them, each leaving the guard red until the last, which is the state P2a's single-commit shape exists to avoid. The diff is large because the corpus is large; the answer is a mechanical check, not smaller unreviewable pieces.
 
-### 2.2 Not a top-level nav item
+### 2.2 Not a top-level nav item, but a child under Battery Passport (v1.12)
 
-The navbar does not gain an entry. A fixed-scope paid engagement sitting in primary navigation alongside `Services` and `Team` reads as a product catalogue and dilutes the passport page it depends on for context.
+The navbar gains no **top-level** entry. A fixed-scope paid engagement sitting in primary navigation alongside `Services` and `Team` reads as a product catalogue and dilutes the passport page it depends on for context.
 
-### 2.3 Entry points (exactly three, all landing in P7)
+**Owner amendment, 2026-09-23: a child under Battery Passport is permitted**, and lands. That is not the case the rule was written against: the entry is subordinate to the page that gives it context, which is what §2.2 was protecting, rather than competing with it one level up.
+
+**Implementation constraint, load-bearing.** `NavDropdown` renders a dropdown parent as a `<button>`, never an anchor, and `Navbar.jsx` tests `item.children` before every other branch. A parent that kept its own `path` would therefore stop linking anywhere, silently. Battery Passport follows the existing **Company** pattern instead: parent with no `path`, and the route moved down to an `Overview` child beside `Readiness Assessment`. This also fixes active state, because `isDropdownActive` matches on children paths, so both `/passport` and the child light the parent.
+
+### 2.3 Entry points (five since v1.12)
 
 | Surface | Treatment |
 |---|---|
 | Battery passport page (`/passport`) | A CTA band at the foot of the page, after the existing `PassportOffer` strip. Primary button to the new route. |
 | `/services`, Compliance pillar | The relevant card gains a text link to the new route. No new card, no price on the services page. |
 | Landing page, passport teaser | A secondary text link beside the existing `See services →` pattern. Not a second button. |
+| Navbar (v1.12) | A `Readiness Assessment` child under the `Battery Passport` dropdown, beside `Overview`. Never a top-level entry (§2.2). |
+| Footer, Products column (v1.12) | First item, ahead of `Battery Passport`. Owner decision: the assessment is the offer with a price behind it. |
 
-The first two are the owner's stated requirement ("reachable under services and from the data page", 22 Sep 2026); `/passport` is the page referred to there as the data page (§2.1). The third is retained from v1.0. All three import the route constant from `routes.js` (§2.1) and none types the path.
+Two more were added by owner decision on 2026-09-23, taking the total to five: the **navbar**, as a child under Battery Passport (§2.2), and the **footer**, as the first item in the Products column, ahead of Battery Passport itself.
+
+The first two of the original three are the owner's stated requirement ("reachable under services and from the data page", 22 Sep 2026); `/passport` is the page referred to there as the data page (§2.1). The third is retained from v1.0. All five import the route constant from `routes.js` (§2.1) and none types the path.
 
 ### 2.4 Breadcrumb
 
@@ -219,18 +229,39 @@ This page is where the site's claim rules are most likely to be broken, because 
 
 New constants file `client/src/constants/readinessAssessmentContent.js`. Every string below is **fenced copy**: it may be rendered, reordered or split across elements, but MUST NOT be rewritten under this specification without a recorded amendment.
 
-Section order is normative.
+**Section order is normative, and was rebuilt in v1.12** so the page reads as a consultation rather than a brochure. The rendered order is:
+
+| # | Section | Reads as |
+|---|---|---|
+| 1 | §4.1 Hero | what it is |
+| 2 | §4.2.2 The window | why now |
+| 3 | §4.2.0 Who this applies to, then §4.2 the two panels | who it is for |
+| 4 | §4.3 What you get | what you get |
+| 5 | §4.4 How it runs | how it runs |
+| 6 | §4.5 What we need from you | what it costs you in effort |
+| 7 | §4.6 Disclaimer | what it is not |
+| 8 | §4.9 mid CTA band | act |
+| 9 | §4.5.1 What usually follows | where it leads |
+| 10 | §4.8 FAQ | objections |
+| 11 | §4.9 final CTA band | act |
+
+Three properties of that order are deliberate. The offer is named before it is justified. The reader is told explicitly whether it applies to them rather than inferring it from two cards. And the boundaries arrive **before** the first ask rather than after it, which reads as candour rather than backpedalling.
+
+The numbering below is historical and no longer matches the rendered order; the table above governs.
 
 ### 4.1 Hero
 
+**Fenced-copy amendment, 2026-09-23.** The v1.0 headline was an outcome claim with a number in it; the replacement says what the thing is, which is what a reader opening a cold-email link on a phone needs in the first five seconds. The subhead lost a clause, lost "assess" twice over (the headline already opens with it), and lost "compliant data models", which attributed a conformance property to an artifact and collided with §3 rule 3. The owner's wording, "the appropriate data models for your products and processes", is used: accurate, no conformance claim, and it tells the reader the mapping is specific to them.
+
 ```
-headline: "Three weeks to know exactly where your battery data falls short."
+headline: "Assess your readiness for the EU battery passport"
 
-subhead: "A fixed-scope assessment that maps every data point the EU battery
-passport will demand against what your systems actually hold today, and tells
-you what to do about the gap."
+subhead: "What data your customers will require from you, how it maps to the
+appropriate data models for your products and processes, where your systems
+fall short today, and what to do about it."
 
-meta: "Fixed scope. Three weeks. Remote, with one optional site visit."
+meta: "Results in three weeks from kickoff. Remote, with one optional site
+visit."
 
 cta: "Book a 30-minute scoping call"
 ```
@@ -334,34 +365,49 @@ Six rules:
 5. **Accepted risk, recorded.** v1.1 put a stated reason beside the low price because published guidance puts a small consumer goods brand's **entire** first year passport spend at roughly EUR 2,500 to 10,000, and a component price inside that band, with no reason given, invites a procurement officer to file Ichnos alongside consumer passport SaaS onboarding. The owner accepts that risk for the first sale in each tier. It ends when the tier flips.
 6. **Transition cases, owner rulings of 22 Sep 2026.** (a) Every engagement letter issued at the founding price carries the founding clause. A second client in the same tier who signs at the founding price before the owner flips the flag gets the founding price on the same conditions as the first: reference and introduction. (b) After the flip, new letters are issued at the standard price. (c) A client who declines the clause pays the standard price (rule 3).
 
-### 4.2.2 The window
+### 4.2.0 Who this applies to (v1.12, new)
 
-Renders immediately after the audience panels, before the deliverables. This section is the highest-conversion element on the page and it costs nothing but arithmetic.
-
-The reader knows the February 2027 date. What the reader has not done is count backwards from it. The page does that for them, honestly, and lets the arithmetic do the work that urgency copy would otherwise do badly.
+Renders **between the window and the audience panels**, and nowhere else. It exists to make the two panels a routing device rather than decoration: without it the reader meets two cards with no instruction and has to infer that they are meant to self-sort into one. Naming both parties and saying the work differs is also what makes the price difference legible one section later.
 
 ```
-heading: "What the date actually means for your timeline"
+heading: "Who this applies to"
 
-body: "Working backwards from the passport obligation: a remediation plan
-is only useful if there is time to run it. Closing a supplier data gap
-takes a quarter, because it moves at your supplier's pace, not yours. A
-system change to carry a new field takes longer. An assessment that
-finishes in the fourth quarter leaves one clear quarter to act in. One
-that starts in the new year leaves the gaps you find unclosed on the day
-the obligation applies."
-
-closing: "This is the last quarter in which finding out is still useful."
+body: "The passport obligation sits with the economic operator who places the
+battery on the EU market. The data it needs comes from the suppliers behind
+it. Both are in scope, and the work is different in each case."
 ```
 
 Normative constraints:
 
-- **This section renders no date, and that is deliberate (v1.9).** The fenced copy contains no date and no `{passportDate}` placeholder, and it MUST NOT gain one. Panel B (§4.2) states the date; this section counts backwards from it. Restating February 2027 two sections later weakens the one move the section exists to make, and §4.2.1 rule 4's principle applies: the page does not show the same fact twice in two places.
-  - v1.3 to v1.8 carried a constraint reading "the passport date is interpolated from `regulatoryDates.js`, never a literal", which Traycer correctly read as requiring a date here, against fenced copy that never had one. That bullet was a conditional about **how** a date renders, not an instruction **that** one must. §3 rule 4's mechanism is a prohibition, `this page MUST NOT hardcode any date`, and dateless copy satisfies it. §8 item 7 is amended to match.
-  - The rule that survives, and it now binds the whole page rather than this section: **no date literal appears anywhere in the page subtree.** Where a date renders, it is the interpolated `regulatoryDates.js` value. Today that is Panel B and only Panel B.
-- The copy MUST NOT state a due diligence or carbon-footprint deadline. Due diligence is deferred to 18 August 2027 by Reg. (EU) 2025/1561 and the CFP delegated act is not adopted. This section speaks only to the passport date.
+- **No price and no date.** The panels immediately below carry every figure on the page and Panel B carries the only passport date. A figure here would duplicate one; a date here would fail §8 item 7.
+- The section is a heading and one paragraph. It MUST NOT grow into a third audience card.
+
+### 4.2.2 The window
+
+Renders **immediately after the hero and before §4.2.0**, reordered by owner amendment 2026-09-23. The page now reads what it is, why now, who it applies to.
+
+**Fenced-copy amendment, 2026-09-23.** The v1.0 copy was replaced wholesale. It was abstract where it needed to be concrete, and it was written from Q4 2026 in language that could not survive the calendar: "the fourth quarter", "the new year", "This is the last quarter in which finding out is still useful." The heading was a question about a date the section never stated.
+
+The replacement states the mechanism instead of the mood: data has to travel up the chain and be aggregated before the finished battery carries a passport, so suppliers are needed earlier than the deadline suggests. The closing line states a **consequence of starting later** rather than naming a quarter, so it stays true without maintenance.
+
+```
+heading: "Your data is needed before the deadline, not on it"
+
+body: "By the time the EU battery passport is mandatory, every supplier must
+already have provided the data for the batteries entering the EU market. Data
+from all suppliers is aggregated into the passport of a finished battery, so
+suppliers have to be ready well in advance."
+
+closing: "Starting later leaves the gaps you find unclosed on the day the
+obligation applies."
+```
+
+Normative constraints:
+
+- **No date renders here, and no token.** The section states no year, no quarter and no month. §8 item 7(b) now sweeps the whole page, so a year here fails, and `AssessmentWindow.test.jsx` independently bars both `\d{4}` and any `{` token in the constant. The owner's draft ended "Q4 of 2026 is the last quarter to realistically meet the deadline"; that would have failed both guards and gone false on 1 January 2027.
+- The copy MUST NOT state a due diligence or carbon-footprint deadline. Due diligence is deferred to 18 August 2027 by Reg. (EU) 2025/1561 and the CFP delegated act is not adopted. This section speaks only to the passport obligation.
 - No countdown timer, no animated clock, no "days remaining" component.
-- **The copy is time-relative and does NOT stay true without maintenance (v1.9).** v1.1 claimed "the arithmetic is stated in prose and stays true without maintenance". That is wrong, and it is wrong in a way nothing will catch, precisely because there is no date here to go stale visibly. `finishes in the fourth quarter`, `starts in the new year` and `This is the last quarter in which finding out is still useful` are all written from Q4 2026. By Q2 2027 the closing line is false. No test can detect this, because the copy is a fenced string that renders correctly forever. It is an owner obligation instead: §11 item 13.
+- **This copy no longer goes stale on its own.** Owner item §11.13 stays, because a quarterly read is still cheap insurance, but the specific liability it was written for is gone.
 
 ### 4.3 What you get
 
@@ -447,9 +493,11 @@ link: "See the full service list"   → /services
 
 Claim discipline: the third option is the M4 hosting architecture and MUST use the fenced wording from pivot-4 §1, `EU-hosted, operated by Ichnos`. **Fenced-copy amendment, 2026-09-23 (v1.11):** the sentence read `a hosted service on EU servers operated by us` from v1.0, which contradicted this paragraph and §3 rule 7 one line below it. The fenced copy now carries the required construction verbatim. This was a defect in the spec, not in the implementation, which correctly preserved the fenced string it was given. Never `certified`, `TISAX`, `compliant servers`. The first option explicitly includes the client proceeding **without** Ichnos, which is both true and the reason the paragraph is credible.
 
-### 4.6 What it is not
+### 4.6 What it is not, headed "Disclaimer" (v1.12)
 
 A scope boundary, rendered in a quieter treatment than the deliverables. It builds trust and it discharges claim rules 3 and 6 in visible copy.
+
+**Amendment, 2026-09-23: the section gains the heading `Disclaimer`.** The four lines each open "It is not", and without a heading the reader has to work out what they are reading partway through the second one. The heading sets the expectation first and reads as professional caution rather than defensiveness. It is a heading **only**: it must never grow body copy that softens or qualifies the four lines beneath it, every one of which is load-bearing.
 
 ```
 "It is not a certification, an audit or a conformity assessment. No notified
@@ -465,49 +513,21 @@ you would need, including options that are not ours."
 do it."
 ```
 
-### 4.7 Who runs it
+### 4.7 Who runs it, and 4.7.1 Published work: both REMOVED (v1.12)
 
-Text only. **No label images on this route** (rule 1).
+**Owner decision, 2026-09-23.** Both sections are deleted from the page. `ASSESSMENT_AUTHOR` and `ASSESSMENT_PUBLISHED_WORK` are gone from `readinessAssessmentContent.js`, and `AssessmentAuthor.jsx` and `PublishedWork.jsx` are deleted.
 
-```
-"The assessment is run by Francesco Maltoni, Dr.-Ing., Catena-X Qualified
-Advisor and member of the Digital Product Passport expert group, with more
-than ten years in battery development at PEM RWTH Aachen and FEV."
-```
+**§4.7, the author line, was genuine duplication.** Every fact in it appears on at least two other surfaces, and three of the four reach the reader through the **global footer, which renders on this very page**: Catena-X Qualified Advisor, the Digital Product Passport expert group and the PEM RWTH Aachen / FEV background all sit in `FooterRecognitions`. The name, the doctorate and the career detail are on `/team` and in the Organization JSON-LD that every page emits. Removing the paragraph costs the reader nothing they cannot see by scrolling.
 
-**Optional second sentence, owner-gated:** the "only Southeast Asian member of the Catena-X Association" line is a strong differentiator and a factual claim with a shelf life (verified against the membership list of 3 Aug 2026). If it ships, it lands as its own constant with a `VERIFIED_AS_OF` sibling, following the `regulatoryDates.js` pattern, and §8's manual list gains a re-verification obligation at every membership-list refresh. If the owner does not want that maintenance obligation, omit the sentence. **Default: omit.**
+**§4.7.1, the published work, was not duplication, and its removal has a cost.** Verified against `client/src` on 2026-09-23: the International Battery Summit talk, the CX-0160 standard request, the PCF Interoperability expert group membership, the gap analysis against published supplier-side data models and the component-level aspect models existed **nowhere else in the codebase**. They now exist nowhere on the site. Only the "Digital Product Passport expert group" half of one item was carried elsewhere.
 
-### 4.7.1 Published work
+The owner was told this before deciding and chose deletion without relocation. Recorded here rather than lost, because:
 
-The page has no case studies because there are no clients. It does have evidence of a different kind, and that evidence is stronger than a logo wall for this buyer: it shows the author working inside the standard the buyer will have to comply with.
+1. **§1's premise changes.** It read "the credibility carriers are the credential line (§4.7), the published-work strip (§4.7.1) and the specificity of the deliverables (§4.3)". Two of the three are gone. What remains is the deliverables and the footer credentials, and §1 is amended to say so.
+2. **Nothing in the toolchain will flag the absence.** No guard asserts these facts exist. Putting any of them back, here or on `/team`, is a fresh decision rather than a restoration.
+3. **The differentiator §1 names is now unevidenced on the page.** §1 argues the page does not compete on explaining the regulation, and that the differentiators are data-space depth and standards participation. The standards-participation evidence was this list.
 
-A compact list, rendered as text beneath §4.7. Each item links to its public source where one exists, and carries no client name.
-
-```
-heading: "Published work"
-
-items:
- - "Conference talk, International Battery Summit 2026, Jakarta: EU battery
-    regulation compliance, digital product passports and upstream cell data
-    infrastructure."
- - "Standard request submitted against CX-0160, the Catena-X battery passport
-    standard, on component and upstream supplier integration."
- - "Member of the Digital Product Passport expert group and the PCF
-    Interoperability expert group."
- - "Gap analysis of the EU passport data points against the published
-    supplier-side data models."
- - "Component-level aspect models, validated against the Catena-X semantic
-    framework."
-```
-
-Six rules:
-
-1. **Every item is a fact with a date behind it**, held in the constant alongside the copy so the owner can audit the list against reality. Nothing aspirational, nothing in progress described as done.
-2. The standard-request item MUST NOT imply the request has been accepted, adopted or published. Submission is the claim; acceptance is not.
-3. No Catena-X label or logo accompanies this list (§3 rule 1). It sits on an offering surface.
-4. Expert-group membership uses the pivot-4 §12.1 construction: member **of** the group, group **under** the committee. Never a phrasing that reads as an official role in the association.
-5. The list is a `MAY` for items the owner cannot evidence on request. If a prospect asks for the underlying document and it cannot be shared, the item still has to be verifiable as having happened.
-6. **A bare four-digit year MAY appear in an item, and nothing else date-shaped may (v1.10).** `International Battery Summit 2026` is an event title and the year is the evidence, so §8 item 7 excludes this subtree from the page-wide year ban. It does **not** excuse a written month-and-year or an ISO date here: an item MUST NOT read `Standard request submitted 18 February 2025`. A regulatory date in this list is the same stale claim it would be anywhere else, and §8 item 7(c) asserts it. Keep obligation dates in `regulatoryDates.js` and evidence dates in the item's audit metadata (rule 1).
+**The owner-gated membership sentence goes with it.** The "only Southeast Asian member of the Catena-X Association" line (v1.3 default: omit) has no section left to live in. If it is ever wanted, it needs a new home and the `VERIFIED_AS_OF` sibling that decision always required.
 
 ### 4.8 FAQ
 
@@ -554,13 +574,29 @@ will arrive with a deadline attached. If you are the one placing it, the
 obligation is directly yours."
 ```
 
-### 4.9 Closing CTA band
+### 4.9 CTA bands (two since v1.12)
+
+**Fenced-copy amendment, 2026-09-23.** The v1.0 headline, "Thirty minutes is enough to tell you whether this is worth doing.", is **deleted**: it hedged, and invited the reader to conclude it might not be worth doing.
+
+Two bands now, at the page's two highest-intent moments.
+
+**Mid band**, after the disclaimer (§4.6), where the reader has the full picture and the boundaries have been stated:
 
 ```
-headline: "Thirty minutes is enough to tell you whether this is worth doing."
-cta:      "Book a scoping call"
-fallback: "Or send the question in writing"   → links to /contact
+midHeadline:  "Find out what the passport will require of you."
+midCtaLabel:  "Book a 30-minute scoping call"
+fallbackLabel: "Or send the question in writing"   → links to /contact
 ```
+
+**Final band**, after the FAQ (§4.8), where the last objection has just been answered:
+
+```
+finalCtaLabel: "Book an introductory call"
+```
+
+The final band is a **button alone**: no headline, no fallback link. Nothing may compete with the action at the one moment the reader is most likely to take it, and a headline there would reintroduce the hedge this amendment removed. `CtaBand` omits the `h2` element rather than rendering it empty.
+
+**Note on the label.** "Book an introductory call" trips the §4.2.1.1 rule 1 corpus sweep for `introductory`. That pattern was written against **pricing** qualifiers and is narrowed to the phrases it meant (`introductory price`, `introductory offer`, `introductory rate`) in both the constants test and the page test. The rule is unweakened: it still bars framing the price as introductory, which is what it exists for.
 
 ---
 
@@ -575,6 +611,7 @@ fallback: "Or send the question in writing"   → links to /contact
 | `organisms/AudiencePanels.jsx` | new | §4.2. |
 | `organisms/DeliverablesGrid.jsx` | new | §4.3. |
 | `organisms/ScopeBoundary.jsx` | new | §4.6. |
+| `organisms/AssessmentAudience.jsx` | new, v1.12 | §4.2.0. Heading plus body, rendered immediately above `AudiencePanels` and nowhere else. Carries no price and no date: the panels below hold every figure and the only passport date, so an interpolation here fails the page guard. |
 | `organisms/AssessmentFaq.jsx` | new | §4.8, `<details>` based. |
 | `organisms/CtaBand.jsx` | new | §4.9. Renders a headline plus **an action passed in by its parent**, not a hardcoded `BookingButton`. On this page the action is a `BookingButton`; on the passport page in P7 it is a router `Link` to `ROUTE_READINESS_ASSESSMENT`. One band, two destinations, per the open/closed rule in CLAUDE.md §4.2. |
 
@@ -595,6 +632,10 @@ Two files outside this page change shape in **P0**, ahead of everything above (�
 No third component is needed. The services and landing entry points are plain text links (§2.3 forbids a second button in the landing teaser), and the passport entry point is a `CtaBand` whose action is a `Link` styled as a button.
 
 **`BookingButton` is built in P0b, not P3 (v1.6).** v1.4 had P0b ship an inline link-out and P3 rewrite that body onto `BookingButton` two phases later, which meant touching one file twice with P1 and P2 in between and running a second CTA implementation in the meantime. The button depends only on `BOOKING_URL` and on nothing in P1, P2 or the new page, so there is no reason it cannot be born with its first consumer. `BookingModal` renders it from the start, and P3 does not touch either file.
+
+**Deleted in v1.12:** `organisms/AssessmentAuthor.jsx` and `organisms/PublishedWork.jsx`, with their tests (§4.7).
+
+**`CtaBand` takes an optional headline since v1.12.** The page ends on a band that is a button alone, so the `h2` is omitted rather than emptied: an empty heading still occupies heading space and lands in the accessibility tree as a nameless heading. The passport page's use of the band is unaffected.
 
 Every new class ships with its CSS rule in the same commit (pivot-4 rule ii). The new page reuses `.section-eyebrow` and MUST NOT apply `text-transform: uppercase` to it (pivot-4 rule iii: the class can contain `Catena-X`, whose casing CSS must not rewrite).
 
@@ -788,17 +829,14 @@ The file is 224 lines today and grandfathered over the 200-line cap. P8 takes it
 4. Both CTA bands render `BookingButton` whose href equals the imported `BOOKING_URL` exactly, with no appended query parameters. `BOOKING_URL` is asserted to be an `https` URL on a Google Calendar booking host (`calendar.app.google` or `calendar.google.com`), which catches a leftover Calendly link without exact matching the operational URL.
 5. All five FAQ answers are present in the initial DOM.
 6. **Zero label assets in the page subtree** (rule 1), asserted as a not-contains against the imported asset constants.
-7. **Dates, amended v1.9, scoped v1.10.** Three assertions. (a) Panel B is the sole carrier of the passport-date token and its rendered value equals the interpolated `regulatoryDates.js` value. (b) Across the page subtree **minus the published-work subtree**, after stripping that one token: no bare four-digit year, no written month-and-year, no ISO date. (c) **Inside** the published-work subtree (§4.7.1): no written month-and-year and no ISO date; a bare four-digit year is permitted.
+7. **Dates, amended v1.9, scoped v1.10, simplified v1.12.** Two assertions. (a) Panel B is the sole carrier of the passport-date token and its rendered value equals the interpolated `regulatoryDates.js` value. (b) Across the **whole page subtree**, after stripping that one token: no bare four-digit year, no written month-and-year, no ISO date.
 
-   **Why (c) exists, and why the exclusion is a subtree and not a string.** v1.9 wrote (b) as a page-wide ban on every rendered year. That was an overreach on my part and it made §4.7.1 unimplementable: `Conference talk, International Battery Summit 2026, Jakarta` cannot render under it. §3 rule 4 protects against **a regulatory obligation date hardcoded into copy, going stale silently when the regulation moves**. That is why `18 February 2025` and `18 August 2025` are in `FORBIDDEN`: the amending regulation moved them and the page kept asserting them. An event title is the inverse failure mode. A talk given at IBS 2026 was given at IBS 2026 permanently; the year is what makes the claim checkable, and §4.7.1 rules 1 and 5 require exactly that checkability.
+   v1.10's scope (c) and the published-work subtree exclusion are both **gone**, because §4.7.1 is gone (§4.7). The guard is now stronger than at any point in its history: one scope, no carve-out, covering every section including ones added later. The §4.2.2 rewrite was checked against it, which is why the new closing line states a consequence of starting later rather than naming a quarter.
 
-   The exclusion is drawn on the published-work component's `data-testid` boundary, not on an allowed string, because §4.7.1 rule 5 and §11 item 5 both anticipate the list changing. A string exception would need a new entry per dated item, which is the exception-list-absorbing-a-class antipattern already rejected in §2.1.1 and in the `corpusScan.js` ruling. A subtree boundary is stable as the list grows.
-
-   (c) is what keeps the exclusion honest: the month-year and ISO forms stay barred **inside** published work too, so no regulatory date can be smuggled in there under cover of the year allowance. Rule 4's protection is unbroken; only the bare-year form is permitted, and only where an event title needs it. The corpus-level `FORBIDDEN` patterns for the two superseded dates apply independently of all of this, at source level.
 8. Each rendered price equals the current price selector's value for its tier and currency; the rendered panels carry one currency each (§4.2.1 rule 4); no currency symbol character appears in the page subtree.
 9. **Each tier's `foundingOpen` flag gates its price both ways**, asserted per tier: true renders the `founding` value, false renders the `standard` value, in the panels, the FAQ answer, the meta description and the structured data alike. The page subtree contains none of the §4.2.1.1 rule 1 words and no struck through price, asserted in both branches.
 10. The §4.5.1 "what happens next" block renders and its link resolves to `/services` via the imported route constant.
-11. The §4.7.1 published-work list renders every item in its constant (item-8 consumer contract).
+11. ~~The §4.7.1 published-work list renders every item in its constant.~~ **Removed v1.12** with the section (§4.7). Replaced by a negative assertion: the page renders neither `assessment-author` nor `published-work`, so reinstating either is a visible decision rather than a quiet reappearance.
 12. No price renders above the fold, asserted structurally: no `PRICING` value appears in the hero component's subtree.
 
 **Tier-1, machine, added in v1.4 (P0b and P2a/P2b), extended v1.5 and v1.6:**
@@ -826,8 +864,8 @@ The page's copy passes the existing vocabulary scan unchanged. The `react-calend
 15. Verify the §6.5 appointment schedule configuration item by item, in particular the four required screening questions, the daily maximum, the 24 hour minimum notice, and the personal calendar check: a test event in the personal Gmail calendar removes the matching slot from the booking page.
 16. Three-viewport review at 1440, 768 and 390px, with rule 9 specifically checked: no price badge, no pricing-table styling on the panels, no Catena-X mention adjacent to a price.
 17. Lighthouse on the new route.
-18. If §4.7's optional sentence shipped: re-verify against the current membership list.
-19. Audit the §4.7.1 published-work list against reality before go-live, and again whenever an item is added. Every line must be a thing that happened, on a date, evidenceable on request.
+18. ~~If §4.7's optional sentence shipped: re-verify against the current membership list.~~ **Removed v1.12:** §4.7 is gone, so there is no section for the sentence to ship in.
+19. ~~Audit the §4.7.1 published-work list against reality before go-live.~~ **Removed v1.12:** the list is gone (§4.7).
 20. **Pricing review.** Re-check the SGD and EUR ladders against each other whenever EUR/SGD moves materially, and update `PRICING.REVIEWED_AS_OF` on every change. The two ladders are set independently and will drift; the review is what keeps the drift deliberate.
 21. **First client tracking, per tier.** Record each signed founding client in the pipeline record with the tier and the signing date. The week the first engagement letter in a tier is signed, set that tier's `foundingOpen` to false. A founding price left on the page after its tier's first contract is a price the next prospect in that tier will expect to pay.
 
@@ -880,8 +918,8 @@ The `/data` versus `/passport` route-naming question (pivot-3's ruling stands: t
 1. **Google Calendar appointment schedule per §6.5, in the Ichnos Workspace account.** Done 22 Sep 2026: title, 30 minutes, Monday to Friday 10:00 to 18:00 Kuala Lumpur, 60 days ahead, 24 hours notice, booking link recorded in §6.2. **Open:** (a) share the personal Gmail calendar into the Ichnos account and tick it under "Check calendars for availability", per the §6.5 setup note; (b) confirm buffer time, maximum bookings per day, Google Meet, email reminders and the four required screening questions against the §6.5 table. If a Calendly event or account was ever set up for this offer, delete the event and cancel any paid plan, so a second booking link with the old configuration does not circulate in earlier emails.
 2. **Prices: confirmed 22 Sep 2026.** All twelve values in §4.2.1 are owner decisions. Set `REVIEWED_AS_OF` to 2026-09-22 in P1.
 3. **Write the founding client clause into the engagement letter template before the first letter goes out** (§4.2.1.1 rules 3 and 6): standard price, founding discount, the discount conditional on a named reference after delivery and one introduction to a customer or supplier in the client's chain, and the standard price due if the client declines. The second client and refusal cases are ruled in §4.2.1.1 rule 6. **Still open:** how the clause is enforced, since the reference falls due after delivery, when the discount has already been given. One option is that the discount becomes invoiceable if the reference or the introduction is not provided within an agreed period after delivery. Have the clause reviewed by a lawyer before the first letter.
-4. **Decide §4.7's optional membership sentence.** Default is omit.
-5. **Audit the §4.7.1 published-work list.** Five items are drafted from the project record. Confirm each is accurate as stated, that the standard request is described at the right stage (submitted, not adopted), and that you would be comfortable being asked for evidence of any of them on a call.
+4. ~~**Decide §4.7's optional membership sentence.**~~ **Closed v1.12 by deletion of §4.7.** The sentence needs a new home before it can be decided again, and the `VERIFIED_AS_OF` obligation still attaches to it.
+5. ~~**Audit the §4.7.1 published-work list.**~~ **Removed v1.12:** the list no longer exists (§4.7). The obligation goes with it.
 6. **Withholding tax stays off the page.** Indonesian Article 26 and the NBRI host fee are engagement-letter matters. Putting "fees quoted net of withholding" into public copy trades a small competence signal for a large amount of friction at exactly the wrong moment. Handle it in the scoping call and the engagement letter, where it belongs.
 7. **Singapore GST.** Whether SGD prices are stated as GST-exclusive depends on Ichnos's registration status, and export of services to ASEAN customers is normally zero-rated. Confirm the treatment with your accountant, then decide whether the panel copy needs a "prices exclude GST where applicable" line. Default: no line, because at current turnover it says nothing and costs a sentence.
 8. **Currency codes, never symbols**, per §4.2.1 rule 3. No `€`, no `S$`, anywhere in copy or tests.
