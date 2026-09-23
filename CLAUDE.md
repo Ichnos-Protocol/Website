@@ -511,6 +511,7 @@ When working on this project, Claude must:
 12. **All API communication** goes through RTK Query. No raw fetch/axios in components.
 13. **Validate inputs** at the boundary: Zod on the server, form validation on the client.
 14. **When creating a new page**, wire up the route in the router, add it to the navigation if public, and protect it if admin-only.
+14a. **When creating a commercial offer page** — any page selling a paid engagement — read `docs/commercial_offer_page_pattern.md` first and follow it. It fixes the section order, the heading rules and the copy discipline, and every rule in it exists because a specific line was rejected in owner review. Do not re-derive it per page.
 15. **Run a mental test.** Before presenting code, mentally trace through the user flow to catch obvious issues.
 16. **Use MCP integrations first.** Prefer GitHub MCP for repo operations, Neon MCP for database queries and schema inspection, Vercel MCP for deployment logs and env vars, Playwright MCP for E2E tests, and Context7 for library docs. See Section 18 for details.
 

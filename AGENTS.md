@@ -101,6 +101,10 @@ cd server && vercel --prod   # deploy backend
 - Services: all business logic. No direct DB access.
 - Repositories: all data access. No business logic.
 
+## Commercial offer pages
+
+Any page selling a paid engagement follows `docs/commercial_offer_page_pattern.md`: fixed section order, a heading on every section, and copy rules derived from rejected lines rather than from taste. Read it before planning one. `docs/website_readiness_assessment_page.md` is the worked example.
+
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.
