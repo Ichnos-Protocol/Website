@@ -27,7 +27,7 @@ const consortiumAnswers = {
   customerRequest: null,
   dataExtract: "not_yet",
   dataNeeds: null,
-  preferredStart: "nov_2026",
+  preferredStart: "asap",
   source: "landing_page",
   consentTimestamp: "2026-02-16T12:00:00Z",
   consentVersion: "v1",

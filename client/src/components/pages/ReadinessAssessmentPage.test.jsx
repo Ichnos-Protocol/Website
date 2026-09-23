@@ -25,6 +25,11 @@ import {
   SEO_BASE_URL,
 } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
+import {
+  YEAR_PATTERN,
+  MONTH_YEAR_PATTERN,
+  ISO_DATE_PATTERN,
+} from "../../constants/dateGuards";
 
 /*
  * Composition guard for the assembled page: section 8 items 6, 7 and 12, and
@@ -322,27 +327,6 @@ const DATED_PANEL = ASSESSMENT_PANELS[DATED_PANEL_INDEX];
 // label in the DOM. Raising either is a deliberate, reviewable edit here.
 const EXPECTED_DATE_TOKENS = 1;
 const EXPECTED_DATE_RENDERS = 1;
-
-// The constants module keeps its own MONTHS private, so the detector
-// alphabet is rebuilt here with the same space-separated split(" ") idiom.
-// This is a detector alphabet, not a restatement of the passport date: the
-// expected date still comes only from getPassportDateLabel().
-const MONTHS =
-  "January February March April May June July August September October November December".split(
-    " ",
-  );
-
-// The (19|20) prefix plus word boundaries is what keeps "MS 2818" (section
-// 4.8 FAQ) and "CX-0160" (section 4.7.1) out of the match when those
-// sections land. formatPrice output is comma-grouped, so no four-digit run
-// reaches the DOM from a price either.
-const YEAR_PATTERN = /\b(19|20)\d{2}\b/;
-
-// Deliberately not narrowed to (19|20): a month name already disambiguates,
-// so the broader year form is the stronger assertion here, not a looser one.
-const MONTH_YEAR_PATTERN = new RegExp(`\\b(?:${MONTHS.join("|")})\\s+\\d{4}\\b`);
-
-const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}/;
 
 // Removes every occurrence of the one date that is supposed to render. Split
 // and join rather than a regex, because the label is data and there is

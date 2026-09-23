@@ -109,7 +109,7 @@ export const CONSORTIUM_META = buildMeta({
   path: ROUTE_CONSORTIUM,
   title: "Battery passport consortium — Ichnos Protocol",
   description:
-    "Consortium for battery passport readiness: an anchor company and its suppliers in the Indonesian battery value chain. Register by 30 September 2026.",
+    "Consortium for battery passport readiness: an anchor company and its suppliers in the Indonesian battery value chain.",
   keywords:
     "battery passport consortium, Indonesian battery value chain, anchor company, supplier readiness, battery passport data, ASEAN battery, EU 2023/1542",
 });

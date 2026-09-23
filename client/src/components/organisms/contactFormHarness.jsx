@@ -10,7 +10,12 @@ import {
   CONSORTIUM_PRODUCT_LINE_LABEL,
   CONSORTIUM_CONSENT_LABEL,
   CONSORTIUM_INTEREST_LABEL,
+  CONSORTIUM_PREFERRED_START_OPTIONS,
 } from "../../constants/consortiumContent";
+
+const ASAP_LABEL = CONSORTIUM_PREFERRED_START_OPTIONS.find(
+  (option) => option.value === "asap",
+).label;
 
 const AUTH_STATE = {
   user: { uid: "u1" },
@@ -91,7 +96,7 @@ export async function fillConsortium(user) {
   await user.click(
     screen.getByRole("radio", { name: "Not yet, but we could prepare one" }),
   );
-  await user.click(screen.getByRole("radio", { name: "November 2026" }));
+  await user.click(screen.getByRole("radio", { name: ASAP_LABEL }));
   await user.click(consortiumConsent());
 }
 

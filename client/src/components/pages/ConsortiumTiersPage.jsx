@@ -23,7 +23,7 @@ import Button from "../atoms/Button";
 const PAGE_TITLE = "Consortium tiers";
 const PAGE_SUBTITLE = "The participation options open to your registration.";
 const SUCCESS_MESSAGE =
-  "Thank you. You are registered for the consortium. We answer within five working days; the first group call is in October 2026.";
+  "Thank you. You are registered for the consortium. We answer within five working days.";
 const SELECT_ERROR = "Something went wrong. Please try again.";
 
 // Figures come from the server, prose from the client; a tier id the client

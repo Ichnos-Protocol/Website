@@ -200,7 +200,7 @@ Helpers are the primary tool for keeping code readable and short:
 | `questions` | Follow-up questions attached to a request |
 | `question_topics` | Topic classification output |
 
-Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`.
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `010` is the pending contraction to `('asap','later')`, run by the owner only after P1 is live in production.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 
@@ -469,8 +469,9 @@ Then verify:
 Consequences, so nobody rediscovers this the hard way:
 
 - `npm run format` exists in `server` and would rewrite 42 files. `format` and `format:check` now exist in `client` too and would rewrite 202. **Do not run either to tidy up.** A several-hundred-file reformat landing mid-epic makes every review diff unreadable and collides with every in-flight branch.
+- **Do not run `npm run format` in `server/` at all until a `.prettierignore` exists.** There is none, Prettier does not read `.gitignore`, and the script is `prettier --write .`: it walks `server/knowledge-base/`, 270 MB in 366 ignored files (PDFs, SQLite databases with journals, a Playwright browser profile). `format:check` errors out on the same tree today, which is why no CI job has ever called it. `docs/september_fixes_spec.md` P13 adds the ignore files and narrows the scripts to source globs.
 - `format:check` is deliberately **not** in the checklist above, because it fails today on files nobody touched.
-- Adopting Prettier is a real decision with a one-commit cost: pick a config (start from `endOfLine: "auto"` given `.gitattributes` sets `* text=auto` on a Windows checkout, plus a quote ruling), run it once across both packages in a commit that changes nothing else, then add `format:check` to this checklist. Schedule it **between** epics, never inside one.
+- Adopting Prettier is a real decision with a one-commit cost: pick a config (start from `endOfLine: "auto"` given `.gitattributes` sets `* text=auto` on a Windows checkout, plus a quote ruling), add the ignore files first, run it once across all three packages in a commit that changes nothing else, then add `format:check` to this checklist. It is specified as the last phase of `docs/september_fixes_spec.md` (P13) so that every other diff in that epic stays readable. Never run it inside another change.
 - Until then, **match the file you are editing.** Do not convert a file's quote style while changing something else.
 
 ---

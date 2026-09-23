@@ -29,8 +29,8 @@ test.describe('Consortium Journey', { tag: ['@consortium'] }, () => {
     // ─── 1. Arrive from the QR URL, anonymous ───
     await waitForAppReady(page, '/consortium?src=ibs2026');
 
-    // Assert the registration section rather than the hero: the hero copy is
-    // deadline-dependent, while the route and the form are not.
+    // Assert the registration section rather than the hero: the section and
+    // its heading are the stable anchors, and they carry the form.
     await expect(consortium.registerSection).toBeVisible();
     await expect(consortium.registerHeading).toBeVisible();
 
@@ -57,7 +57,7 @@ test.describe('Consortium Journey', { tag: ['@consortium'] }, () => {
       chainRole: 'module_pack',
       productLine: 'E2E battery module line',
       dataExtract: 'Not yet, but we could prepare one',
-      preferredStart: 'November 2026',
+      preferredStart: 'As soon as the group is formed',
     });
     // Question 1 stays empty on purpose — a zero-question submission is what
     // produces the consortium-kind row.
