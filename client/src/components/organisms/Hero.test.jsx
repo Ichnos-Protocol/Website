@@ -2,6 +2,7 @@ import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, cleanup } from '../../test-utils';
 import Hero from './Hero';
 import { HERO_CONTENT } from '../../constants/landingContent';
+import { ROUTE_SERVICES } from '../../constants/routes';
 
 function precedes(first, second) {
   return Boolean(
@@ -41,7 +42,7 @@ describe('Hero', () => {
   it('renders the CTA linking to /services with the hero-cta-btn class', () => {
     renderWithProviders(<Hero />);
     const cta = screen.getByRole('link', { name: HERO_CONTENT.ctaText });
-    expect(cta).toHaveAttribute('href', '/services');
+    expect(cta).toHaveAttribute('href', ROUTE_SERVICES);
     expect(cta).toHaveClass('hero-cta-btn');
   });
 

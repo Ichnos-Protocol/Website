@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 
 import authReducer from '../features/auth/authSlice';
+import { ROUTE_ADMIN } from '../constants/routes';
 import AdminRoute from './AdminRoute';
 
 function renderWithAuth(isAuthenticated, isAdmin, loading = false) {
@@ -22,11 +23,11 @@ function renderWithAuth(isAuthenticated, isAdmin, loading = false) {
 
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/admin']}>
+      <MemoryRouter initialEntries={[ROUTE_ADMIN]}>
         <Routes>
           <Route path="/" element={<p>Home</p>} />
           <Route
-            path="/admin"
+            path={ROUTE_ADMIN}
             element={
               <AdminRoute>
                 <p>Admin Panel</p>

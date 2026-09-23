@@ -5,6 +5,11 @@ import { signOut } from 'firebase/auth';
 
 import { auth } from '../../config/firebase';
 import { logout } from '../../features/auth/authSlice';
+import {
+  ROUTE_ADMIN,
+  ROUTE_CONTACT,
+  ROUTE_PRIVACY,
+} from '../../constants/routes';
 import { getUserInitial, getUserDisplayName } from '../../helpers/userInitial';
 import Icon from '../atoms/Icon';
 
@@ -33,16 +38,16 @@ export default function UserMenu() {
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="user-menu-dropdown">
-        <Dropdown.Item onClick={() => navigate('/contact')}>
+        <Dropdown.Item onClick={() => navigate(ROUTE_CONTACT)}>
           <Icon name="envelope" className="me-2" />
           My Inquiry Status
         </Dropdown.Item>
-        <Dropdown.Item onClick={() => navigate('/privacy')}>
+        <Dropdown.Item onClick={() => navigate(ROUTE_PRIVACY)}>
           <Icon name="shield-lock" className="me-2" />
           My Data
         </Dropdown.Item>
         {isAdmin && (
-          <Dropdown.Item onClick={() => navigate('/admin')}>
+          <Dropdown.Item onClick={() => navigate(ROUTE_ADMIN)}>
             <Icon name="gear" className="me-2" />
             Admin Panel
           </Dropdown.Item>

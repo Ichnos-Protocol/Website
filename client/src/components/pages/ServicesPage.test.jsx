@@ -3,7 +3,24 @@ import { renderWithProviders, screen, waitFor, cleanup } from '../../test-utils'
 import ServicesPage from './ServicesPage';
 import { SERVICES_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
+import {
+  ROUTE_LEGACY_CATENA_X,
+  ROUTE_LEGACY_DATA,
+  ROUTE_READINESS_ASSESSMENT,
+} from '../../constants/routes';
 import { SERVICES_PAGE_CONTENT } from '../../constants/services';
+import {
+  PRICING,
+  formatPrice,
+} from '../../constants/readinessAssessmentContent';
+
+// Every figure in the readiness price table, derived rather than restated, so
+// a price change cannot silently leak onto /services.
+const PRICE_FIGURES = Object.values(PRICING).flatMap((tier) =>
+  [tier.founding, tier.standard].flatMap((prices) =>
+    Object.values(prices).map(formatPrice),
+  ),
+);
 
 const SECTION_IDS = ['engineering', 'catena-x', 'compliance', 'circularity'];
 
@@ -201,6 +218,23 @@ describe('ServicesPage', () => {
     expect(titles).toEqual(['EU–ASEAN Compliance Bridge']);
   });
 
+  it('links the single Compliance card to the readiness assessment', () => {
+    const compliance = document.getElementById('compliance');
+    expect(compliance.querySelectorAll('.service-card').length).toBe(1);
+    const hrefs = [...compliance.querySelectorAll('a[href]')].map((a) =>
+      a.getAttribute('href'),
+    );
+    expect(hrefs).toContain(ROUTE_READINESS_ASSESSMENT);
+  });
+
+  it('shows no price on the page', () => {
+    const text = document.body.textContent;
+    expect(text).not.toMatch(/\bSGD\b|\bEUR\b|[€$£]/);
+    PRICE_FIGURES.forEach((figure) => {
+      expect(text).not.toContain(figure);
+    });
+  });
+
   it('renders ContactSection after the four pillar groups', () => {
     const circularity = document.getElementById('circularity');
     const contact = screen.getByTestId('contact-section');
@@ -214,8 +248,10 @@ describe('ServicesPage', () => {
     const hrefs = [...document.querySelectorAll('a[href]')].map((a) =>
       a.getAttribute('href'),
     );
-    expect(hrefs).not.toContain('/data');
-    expect(hrefs).not.toContain('/catena-x');
+    // Inverted on purpose: both constants are live redirect sources, so the
+    // page must link to neither.
+    expect(hrefs).not.toContain(ROUTE_LEGACY_DATA);
+    expect(hrefs).not.toContain(ROUTE_LEGACY_CATENA_X);
   });
 
   it('has no accessibility violations', async () => {

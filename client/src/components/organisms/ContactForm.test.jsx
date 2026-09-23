@@ -294,6 +294,38 @@ describe("ContactForm", () => {
     });
   });
 
+  it("opens CalendlyModal when Book a Meeting is clicked from the success state", async () => {
+    const user = userEvent.setup();
+    mockUnwrap.mockResolvedValue({ data: {} });
+
+    const { default: ContactForm } = await import("./ContactForm");
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <ContactForm />
+        </MemoryRouter>
+      </Provider>,
+    );
+
+    const textarea = screen.getByLabelText("Question 1");
+    await user.type(textarea, "My question");
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/inquiry submitted/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("calendly-modal")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Book a Meeting" }));
+
+    expect(screen.getByTestId("calendly-modal")).toBeInTheDocument();
+  });
+
   it("shows error alert on submission failure", async () => {
     const user = userEvent.setup();
     mockUnwrap.mockRejectedValue(new Error("fail"));

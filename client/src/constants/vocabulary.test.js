@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { basename, dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { stripNonConsuming } from "./corpusScan";
 import {
   ALLOWED_EXCEPTIONS,
   ASSET_PATH_EXPORTS,
@@ -95,8 +96,12 @@ describe("vocabulary corpus (file set)", () => {
     expect(paths.length).toBeGreaterThan(0);
     expect(paths).toContain("index.html");
     expect(paths).toContain("public/site.webmanifest");
+    // Kept identical to vocabulary.js's SKIP_FILES: a stale mirror silently
+    // weakens the assertion it exists for.
     const excluded = FILES.map((file) => basename(file)).filter((name) =>
-      /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js)$/.test(name),
+      /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js|corpusScan\.js)$/.test(
+        name,
+      ),
     );
     expect(excluded).toEqual([]);
   });
@@ -185,21 +190,6 @@ const CONSUMER_EXCLUDED = new Set([
 const CONSUMER_FILES = FILES.filter(
   (file) => /\.(js|jsx)$/.test(file) && !CONSUMER_EXCLUDED.has(basename(file)),
 );
-
-// An unused uppercase import survives lint (varsIgnorePattern: "^[A-Z_]") and a
-// comment mention satisfies a raw text search, so both are removed before the
-// identifier is counted. Import stripping is multiline-aware: a line filter
-// misses the identifier inside a multiline `import { … }` block. The side-effect
-// form is stripped first so its statement cannot be swallowed by the `from`
-// form's non-greedy span. `import` must be followed by whitespace or a quote,
-// so a dynamic `import(` is never stripped.
-function stripNonConsuming(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
-    .replace(/^import\s*['"][^'"]*['"];?/gm, "")
-    .replace(/^import\s[\s\S]*?from\s*['"][^'"]*['"];?/gm, "");
-}
 
 describe("vocabulary corpus (status-string consumers)", () => {
   it("has a real consumer for every status-string export", () => {

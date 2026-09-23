@@ -16,6 +16,14 @@ export const CONTACT_INFO = {
   calendly: "https://calendly.com/maltonif",
 };
 
+// Booking link imported by the readiness-assessment CTAs. Transitional: it
+// currently aliases the existing Calendly schedule so the URL appears once.
+// The footer and the contact section still read CONTACT_INFO.calendly
+// directly. The vendor flip, and the collapse of every booking CTA onto this
+// one constant, happen in the migration commit. Never append query
+// parameters to it.
+export const BOOKING_URL = CONTACT_INFO.calendly;
+
 export const CONTACT_SECTION_CONTENT = {
   heading: "Get in touch",
   subhead:

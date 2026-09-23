@@ -7,6 +7,7 @@ import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
 } from '../../constants/companyInfo';
+import { ROUTE_CONTACT } from '../../constants/routes';
 import Icon from '../atoms/Icon';
 import ChatPanel from '../molecules/ChatPanel';
 
@@ -70,7 +71,7 @@ export default function ContactSection({
         {showFullContactLink && (
           <div className="text-center mt-4">
             <Link
-              to="/contact"
+              to={ROUTE_CONTACT}
               className="fw-semibold"
               data-testid="contact-section-full-link"
             >

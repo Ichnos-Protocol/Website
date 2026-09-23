@@ -15,6 +15,13 @@ import {
   CX_LABEL_ASSETS,
   TRADEMARK_NOTICE,
 } from '../../constants/catenaXStatus';
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_PASSPORT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from '../../constants/routes';
 
 function LocationProbe() {
   const location = useLocation();
@@ -177,7 +184,7 @@ describe('Footer', () => {
       ).toHaveAttribute('href', '/');
       expect(
         within(companyCol).getByRole('link', { name: 'Team' }),
-      ).toHaveAttribute('href', '/team');
+      ).toHaveAttribute('href', ROUTE_TEAM);
       expect(
         within(companyCol).queryByRole('link', { name: 'Why Ichnos Protocol' }),
       ).toBeNull();
@@ -200,7 +207,7 @@ describe('Footer', () => {
       labels.forEach((label) => {
         expect(
           within(servicesCol).getByRole('link', { name: label }),
-        ).toHaveAttribute('href', '/services');
+        ).toHaveAttribute('href', ROUTE_SERVICES);
       });
       expect(within(servicesCol).getAllByRole('link')).toHaveLength(4);
       // Delivery Models is intentionally not surfaced in the footer — there is
@@ -225,7 +232,7 @@ describe('Footer', () => {
         const link = within(servicesCol).getByRole('link', { name: label });
         fireEvent.click(link);
         expect(screen.getByTestId('probe-pathname')).toHaveTextContent(
-          '/services',
+          ROUTE_SERVICES,
         );
         expect(screen.getByTestId('probe-scroll-to')).toHaveTextContent(
           scrollTo,
@@ -237,10 +244,10 @@ describe('Footer', () => {
       const productsCol = screen.getByTestId('footer-col-products');
       expect(
         within(productsCol).getByRole('link', { name: 'Battery Passport' }),
-      ).toHaveAttribute('href', '/passport');
+      ).toHaveAttribute('href', ROUTE_PASSPORT);
       expect(
         within(productsCol).getByRole('link', { name: 'Consortium' }),
-      ).toHaveAttribute('href', '/consortium');
+      ).toHaveAttribute('href', ROUTE_CONSORTIUM);
       expect(within(productsCol).getAllByRole('link')).toHaveLength(2);
       // Old separate Data + Catena-X links are consolidated; the standalone
       // Catena-X entry should NOT exist in the footer either.
@@ -256,7 +263,7 @@ describe('Footer', () => {
       const contactCol = screen.getByTestId('footer-col-contact');
       expect(
         within(contactCol).getByRole('link', { name: 'Submit an Inquiry' }),
-      ).toHaveAttribute('href', '/contact');
+      ).toHaveAttribute('href', ROUTE_CONTACT);
     });
 
     it('contact column does not render a text link labeled "LinkedIn Company"', () => {

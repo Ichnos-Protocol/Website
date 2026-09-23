@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 import { renderWithProviders, screen, waitFor } from '../../test-utils';
+import { ROUTE_CONTACT, ROUTE_PRIVACY } from '../../constants/routes';
 import UserMenu from './UserMenu';
 
 const mockNavigate = vi.fn();
@@ -81,7 +82,7 @@ describe('UserMenu', () => {
     await user.click(screen.getByText('John'));
     await user.click(screen.getByText('My Inquiry Status'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/contact');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_CONTACT);
   });
 
   it('navigates to /privacy on My Data click', async () => {
@@ -93,7 +94,7 @@ describe('UserMenu', () => {
     await user.click(screen.getByText('John'));
     await user.click(screen.getByText('My Data'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/privacy');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PRIVACY);
   });
 
   it('calls signOut and navigates home on logout', async () => {

@@ -20,7 +20,11 @@ const CLIENT_ROOT = resolve(
 // NOT listed: §6 deletes that directory, and a skip entry for a directory
 // that must not exist would quietly mask its reappearance.
 const SKIP_DIRS = new Set(["node_modules", "dist"]);
-const SKIP_FILES = /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js)$/;
+// corpusScan.js sits beside vocabulary.js for the same reason vocabulary.js
+// itself is skipped: scanner infrastructure must not scan its own regex and
+// comment sources.
+const SKIP_FILES =
+  /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js|corpusScan\.js)$/;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {

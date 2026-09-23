@@ -74,9 +74,9 @@ export default function Navbar({ onMenuToggle }) {
       {/* `text-reset` keeps the wordmark on the theme's text token instead of
           inheriting Bootstrap's link colour.
           Always the dual-tone mark: every route's navbar is a light surface
-          since the Catena-X pivot. The old `pathname === '/passport'` switch
-          served the white mark on the white passport navbar, which made the
-          tree invisible (Francesco, 2026-08-12). The white mark remains a
+          since the Catena-X pivot. The old passport-route check served the
+          white mark on the white passport navbar, which made the tree
+          invisible (Francesco, 2026-08-12). The white mark remains a
           dark-surface asset — the footer uses it via theme="dark". */}
       <a href="/" className="text-decoration-none text-reset">
         <Logo className="logo-img" theme="light" withWordmark />

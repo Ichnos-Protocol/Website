@@ -5,6 +5,7 @@ import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 
+import { ROUTE_CONSORTIUM_TIERS } from "../../constants/routes";
 import { CONSORTIUM_META } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 import PageTransition from "../templates/PageTransition";
@@ -17,7 +18,6 @@ const SRC_STORAGE_KEY = "consortium_src";
 const DEADLINE = Date.UTC(2026, 8, 30, 23, 59, 59);
 const HERO_EYEBROW = "INDONESIAN BATTERY VALUE CHAIN · CONSORTIUM";
 const REGISTER_TITLE = "Register";
-const TIERS_ROUTE = "/consortium/tiers";
 
 const HERO_OPEN = {
   title: "Join the consortium",
@@ -96,7 +96,7 @@ export default function ConsortiumPage() {
             <h2 className="mb-4">{REGISTER_TITLE}</h2>
             <ContactRequestForm
               mode="consortium"
-              onSuccess={() => navigate(TIERS_ROUTE)}
+              onSuccess={() => navigate(ROUTE_CONSORTIUM_TIERS)}
             />
           </section>
         </Container>

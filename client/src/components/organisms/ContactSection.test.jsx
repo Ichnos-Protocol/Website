@@ -9,6 +9,7 @@ vi.mock('../molecules/ChatPanel', () => ({
   default: (props) => mockChatPanel(props),
 }));
 
+import { ROUTE_CONTACT } from '../../constants/routes';
 import ContactSection from './ContactSection';
 import {
   CONTACT_INFO,
@@ -79,7 +80,7 @@ describe('ContactSection', () => {
   it('renders "Open the full contact page →" link when showFullContactLink=true', () => {
     renderWithProviders(<ContactSection showFullContactLink={true} />);
     const link = screen.getByTestId('contact-section-full-link');
-    expect(link).toHaveAttribute('href', '/contact');
+    expect(link).toHaveAttribute('href', ROUTE_CONTACT);
     expect(link).toHaveTextContent('Open the full contact page →');
   });
 

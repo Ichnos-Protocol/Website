@@ -7,6 +7,23 @@
 
 import { getCatenaXFullTitle } from "./catenaXStatus";
 import { COMPANY_INFO } from "./companyInfo";
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONSORTIUM_TIERS,
+  ROUTE_CONTACT,
+  ROUTE_LANDING,
+  ROUTE_PASSPORT,
+  ROUTE_PRIVACY,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from "./routes";
+import {
+  ASSESSMENT_SEO_SUMMARY,
+  PRICING,
+  formatPrice,
+  getCurrentPrice,
+} from "./readinessAssessmentContent";
 
 const BASE_URL = "https://ichnos-protocol.com";
 const SITE_NAME = "Ichnos Protocol";
@@ -45,7 +62,7 @@ function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) 
 }
 
 export const LANDING_META = buildMeta({
-  path: "/",
+  path: ROUTE_LANDING,
   title: "Ichnos Protocol — Battery advisory & passport integration",
   description:
     "Practitioner-led battery advisory: systems engineering, safety, mechanical development, remanufacturing, and EU battery-passport integration for ASEAN.",
@@ -54,7 +71,7 @@ export const LANDING_META = buildMeta({
 });
 
 export const SERVICES_META = buildMeta({
-  path: "/services",
+  path: ROUTE_SERVICES,
   title: "Services — Ichnos Protocol",
   description:
     "Battery systems engineering, mechanical development, technical leadership, EU 2023/1542 compliance, Catena-X battery-passport integration, remanufacturing, and circular-economy services. Singapore-incorporated.",
@@ -63,7 +80,7 @@ export const SERVICES_META = buildMeta({
 });
 
 export const TEAM_META = buildMeta({
-  path: "/team",
+  path: ROUTE_TEAM,
   title: "Team — Ichnos Protocol",
   description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
   keywords:
@@ -71,7 +88,7 @@ export const TEAM_META = buildMeta({
 });
 
 export const PASSPORT_META = buildMeta({
-  path: "/passport",
+  path: ROUTE_PASSPORT,
   title: "The European battery passport — Ichnos Protocol",
   description:
     "Status quo and milestones of the EU 2023/1542 battery passport, the Catena-X network, custom translation of ASEAN battery passport into EU-compliant ones and the ASEAN ↔ EU value chain. Singapore-incorporated.",
@@ -80,7 +97,7 @@ export const PASSPORT_META = buildMeta({
 });
 
 export const CONTACT_META = buildMeta({
-  path: "/contact",
+  path: ROUTE_CONTACT,
   title: "Contact — Ichnos Protocol",
   description:
     "Talk to Ichnos Protocol about battery systems engineering, EU 2023/1542 battery-passport implementation, Catena-X integration consulting, or remanufacturing. Singapore + EU.",
@@ -89,7 +106,7 @@ export const CONTACT_META = buildMeta({
 });
 
 export const CONSORTIUM_META = buildMeta({
-  path: "/consortium",
+  path: ROUTE_CONSORTIUM,
   title: "Battery passport consortium — Ichnos Protocol",
   description:
     "Consortium for battery passport readiness: an anchor company and its suppliers in the Indonesian battery value chain. Register by 30 September 2026.",
@@ -98,7 +115,7 @@ export const CONSORTIUM_META = buildMeta({
 });
 
 export const CONSORTIUM_TIERS_META = buildMeta({
-  path: "/consortium/tiers",
+  path: ROUTE_CONSORTIUM_TIERS,
   title: "Consortium tiers — Ichnos Protocol",
   description:
     "Participation options for registered consortium participants. This page is not indexed and requires a completed consortium registration.",
@@ -107,12 +124,40 @@ export const CONSORTIUM_TIERS_META = buildMeta({
 });
 
 export const PRIVACY_META = buildMeta({
-  path: "/privacy",
+  path: ROUTE_PRIVACY,
   title: "Privacy & Data Management — Ichnos Protocol",
   description:
     "Manage your personal data with Ichnos Protocol: download your records or delete your account. GDPR-aligned controls for our visitors and customers.",
   keywords: "privacy, data management, GDPR, account deletion",
 });
+
+// The lowest current SGD list price across the tiers, read through the
+// selector so a founding flip or a repricing reaches the description without
+// an edit here. `.founding` and `.standard` are never read directly.
+function lowestCurrentSgd(pricing) {
+  return Math.min(
+    ...Object.keys(pricing).map((tierId) =>
+      getCurrentPrice(tierId, "SGD", pricing),
+    ),
+  );
+}
+
+// Exported, rather than kept private behind the constant below, so the
+// closed-tier branch can be tested against a local fixture without mutating
+// PRICING or resetting modules. The title's "|" separator and sentence case
+// are the spec section 7.1 fenced form, deliberately unlike the em-dash
+// titles of the sibling entries.
+export function buildReadinessAssessmentMeta(pricing = PRICING) {
+  return buildMeta({
+    path: ROUTE_READINESS_ASSESSMENT,
+    title: "Battery passport data readiness assessment | Ichnos Protocol",
+    description: `${ASSESSMENT_SEO_SUMMARY} From SGD ${formatPrice(lowestCurrentSgd(pricing))}.`,
+    keywords:
+      "battery passport readiness assessment, data gap analysis, EU 2023/1542, supplier data, remediation plan, ASEAN battery, Singapore",
+  });
+}
+
+export const READINESS_ASSESSMENT_META = buildReadinessAssessmentMeta();
 
 // Convenience: full list — used by sitemap generation and validation tests.
 export const ALL_META = [
@@ -120,6 +165,7 @@ export const ALL_META = [
   SERVICES_META,
   TEAM_META,
   PASSPORT_META,
+  READINESS_ASSESSMENT_META,
   CONTACT_META,
   CONSORTIUM_META,
   CONSORTIUM_TIERS_META,
