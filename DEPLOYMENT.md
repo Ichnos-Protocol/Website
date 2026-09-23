@@ -106,19 +106,19 @@ For detailed Vercel settings including environment variable tables, production b
 
 ### Production Deployments (Default Path)
 
-All production deployments are driven exclusively by GitHub Actions workflows. Do **not** use `vercel --prod` for routine releases.
+Production deployments come from Vercel's native Git integration building the `release` branch. GitHub Actions and the branch rulesets gate what reaches `release`; no workflow deploys to production. Do **not** use `vercel --prod` for routine releases.
 
 1. Create a `feature/<name>` branch from `main` and open a PR targeting `main`.
 2. CI, preview deployments, and E2E tests run automatically.
 3. After all required checks pass, merge the PR into `main`.
 4. Open a PR from `main` to `release`. The `Release Policy Check` must pass.
-5. Merge into `release`. The `Promote to Production` workflow auto-triggers on this push and pauses for human approval via the GitHub `production` environment. After approval, the latest validated `main` preview is promoted to production — no rebuild occurs.
+5. Merge into `release`. Vercel builds `release` and deploys it to production for both projects. There is no GitHub Actions run and no approval step: the required PR into `release` is the human gate.
 
 See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) for the full pipeline setup and details. For GitHub repository settings (secrets, environments, branch protections), see [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md). For Vercel project settings, see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md).
 
 ### Emergency CLI Fallback (Bypass Path)
 
-> **Use only when GitHub Actions is unavailable or broken.** These commands bypass CI, E2E, and approval gates — any change deployed this way has not been validated by the standard pipeline.
+> **Use only when GitHub Actions is unavailable or broken.** These commands bypass CI, E2E, and the `release` PR gate — any change deployed this way has not been validated by the standard pipeline.
 
 ```bash
 cd server && vercel --prod
@@ -257,7 +257,6 @@ admin.auth().setCustomUserClaims(uid, { admin: true, superAdmin: true });
 
 Do once before first deploy:
 
-- [ ] GitHub `production` environment exists with at least one required reviewer configured
 - [ ] All required repository secrets are set (see [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) for the full list)
 - [ ] GitHub rulesets/branch protections are configured for `main` (required checks as listed in [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) §3) and `release` (`Release Policy Check` + PR requirement)
 - [ ] Vercel production branch is set to `release` on both `ichnos-client` and `ichnos-protocolserver`
@@ -270,8 +269,7 @@ After each deployment cycle:
 - [ ] **CI checks**: `Client — Lint & Test` and `Server — Lint & Test` are green on the PR
 - [ ] **Preview deployments**: Vercel native preview deployments completed successfully for both client and server; preview URLs are accessible in the Vercel dashboard
 - [ ] **E2E trigger**: `repository_dispatch (vercel.deployment.success)` event fired and `E2E Tests (Playwright)` check is green on the PR
-- [ ] **Production approval**: After merging to `release`, confirm the `Promote to Production` workflow is waiting for approval in GitHub → Actions → Environments → production
-- [ ] **Production deploy**: After approving, confirm both client and server production deployments completed successfully in the workflow summary
+- [ ] **Production deploy**: After merging to `release`, confirm in the Vercel dashboard that each project (`ichnos-client`, `ichnos-protocolserver`) has one production deployment for the `release` commit. No GitHub Actions run is expected.
 - [ ] **App smoke test**: Auth (sign up, log in, log out), Chat (send message, receive AI response), Contact form (submit inquiry, verify it appears in admin dashboard), Admin dashboard (update a request status), Cron jobs (visible in Vercel Dashboard → Cron Jobs tab)
 
 ---

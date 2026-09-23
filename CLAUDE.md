@@ -489,7 +489,7 @@ Two Vercel projects from one repo: `ichnos-client` (Vite static) and `ichnos-pro
 - **Cold starts**: keep server dependencies lean for faster serverless startup.
 - **Local dev uses `npm run dev`** — the Vercel wrapper is only for deployed environments.
 
-CI/CD pipeline details (promotion, staging sync, E2E triggers) are in `AGENTS.md`.
+Production is Vercel's own build of the `release` branch; the gate is the required pull request into `release`. Pipeline details (staging sync, E2E triggers) are in `AGENTS.md`.
 
 ---
 

@@ -162,7 +162,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`
 - Scopes: `client`, `server`, `db`, `chat`, `auth`, `admin`, `linkedin`
 - Branch per feature: `feature/<short-description>` from `main`
-- `staging` is a **long-lived parallel branch** for manual QA, auto-synced from `main` by `sync-staging.yml`. It is not in the promotion chain (`feature/* → main → release` is unchanged). Never open PRs targeting `staging`.
+- `staging` is a **long-lived parallel branch** for manual QA, synced from `main` by a manually dispatched run of `sync-staging.yml`. It is not in the promotion chain (`feature/* → main → release` is unchanged). Never open PRs targeting `staging`.
 
 ## Security essentials
 
@@ -220,13 +220,13 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - **Frontend** (`client/`): Vite static build → `dist/`. SPA rewrites to `index.html`.
 - **Backend** (`server/`): Express app wrapped as a Vercel serverless function via `server/api/index.js` using `@vercel/node`.
 - **Vercel Git integration handles preview deployments** automatically on every branch push and PR — no GitHub Actions workflow is involved in creating previews.
-- **Enforced pipeline order**: CI → Vercel Preview (native) → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) → approval-gated production promotion.
+- **Enforced pipeline order**: CI → Vercel Preview (native) → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) → PR into `release` → Vercel native production build of `release`.
 - `repository_dispatch (vercel.deployment.success)` events from the **server** Vercel project (`ichnos-protocol_server`) trigger `e2e.yml`. The workflow uses project-name filtering (`contains(project.name, 'server')`) and targets stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL`, `E2E_API_BASE_URL`).
-- Production promotion is triggered automatically on push to `release` and requires human approval via the GitHub `production` environment before the latest validated `main` preview is promoted.
+- Production is Vercel's own build of the `release` branch, for both projects (the production branch is `release`). The human gate is the required pull request into `release`, enforced by the ruleset and `release-policy-check.yml` (the head branch must be `main`). No GitHub Actions run takes part in the production deployment.
 - Environment variables set in Vercel project settings, never committed.
 - `server/api/index.js` only re-exports the Express app. All setup stays in `server/src/app.js`.
 - **Staging manual-QA lane**: The `staging` branch produces a Vercel Preview deployment that uses **production Firebase** and **production Neon DB** via branch-scoped env overrides. `SKIP_E2E_SEED=true` prevents automated seed injection. Manual QA actions on `staging` write to the production database — this is explicitly accepted.
-- `sync-staging.yml` force-pushes `main` to `staging` after every server deployment (unconditional, same `repository_dispatch` trigger as `e2e.yml`, runs in parallel). Uses `SYNC_PAT` (not `GITHUB_TOKEN`) to trigger Vercel redeployment.
+- `sync-staging.yml` runs only on manual `workflow_dispatch`. It force-pushes `main` to `staging` with `SYNC_PAT` (not `GITHUB_TOKEN`), then calls the two Vercel staging deploy hooks (`VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`) to build the new `staging` tip.
 
 ## CI/CD best practices
 
@@ -255,18 +255,18 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 ### Preview-first deployment model
 
 - **Vercel's native Git integration** creates preview deployments automatically on every branch push and PR — no GitHub Actions workflow is involved.
-- Production promotion is **approval-gated**: the `Promote to Production` workflow triggers automatically on push to `release` and requires human approval via the GitHub `production` environment.
+- The production gate is the **required pull request into `release`**: the `release` ruleset requires a PR and the `Release Policy Check` status (head must be `main`). Once merged, Vercel builds `release` and deploys it to production for both projects.
 - This allows reviewing every deployment on preview before it reaches users.
-- Production environment should have an approval gate configured in GitHub → Settings → Environments.
 - **Fork PR trust boundary**: Vercel's Git integration does not expose environment variables to builds from forks by default, preventing secret exfiltration via attacker-controlled code.
 - See `DEPLOYMENT_GITHUB_ACTIONS.md` for setup instructions.
-- The `staging` branch is an auto-synced parallel manual-QA lane that sits outside the automated pipeline. It uses production credentials for real-user QA. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
+- The `staging` branch is a manually synced parallel manual-QA lane that sits outside the automated pipeline. It uses production credentials for real-user QA. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
 
 ### Neon preview branches for E2E
 
-- Vercel's native Neon integration automatically creates a Neon preview branch for each Vercel preview deployment — no GitHub Actions step provisions or deletes branches.
+- Vercel's native Neon integration automatically creates a Neon preview branch for each Vercel preview deployment. No GitHub Actions step provisions branches.
+- `e2e.yml` deletes them: its final `Delete Neon preview branch` step runs `node e2e/scripts/cleanupNeonBranch.js` under `if: always()`, which calls the Neon API with the `NEON_API_KEY` and `NEON_PROJECT_ID` repository secrets. The step is best-effort and skips when those secrets are absent.
 - E2E test data is seeded automatically by the server on preview startup. When `VERCEL_ENV === 'preview'` and E2E account env vars are present (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`), the server runs idempotent seed queries using its own `DATABASE_URL` (injected by the Neon-Vercel integration).
-- GitHub Actions does not interact with the database at all — no Neon API calls, no direct DB connections, no seed tokens.
+- Apart from that branch cleanup, GitHub Actions does not touch the database: no direct DB connections, no seed tokens. Seeding stays server-side.
 - E2E account env vars (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`, etc.) must be set as Vercel server environment variables scoped to **Preview** only.
 - Seeding can be suppressed by setting `SKIP_E2E_SEED=true` as a Vercel server Preview env var; `/api/health` then reports `seed.mode=skipped`.
 - `/api/health` exposes `seed.mode` (enum: `seeded | skipped | in_progress | failed`) as the canonical readiness signal for CI orchestration. The backward-compatible fields (`seed.seeded`, `seed.error`, `seed.attempts`) are retained alongside it.
@@ -278,7 +278,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - E2E tests are triggered by `repository_dispatch (vercel.deployment.success)` from the **server** Vercel project (`ichnos-protocol_server`) via `e2e.yml`, not as a dependent job inside another workflow.
 - The workflow uses **project-name filtering** (`contains(project.name, 'server')`) as the event guard — not hostname pattern matching.
 - Tests target stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL`, `E2E_API_BASE_URL`), not per-deployment hash URLs and not secrets.
-- Detection does not use `VERCEL_PROJECT_ID_CLIENT` or hostname matching.
+- Detection does not use Vercel project ID secrets or hostname matching.
 - Both `repository_dispatch` and `workflow_dispatch` modes resolve targets from the committed `e2e/.env.e2e` file — no manual URL input is accepted.
 - Production-host denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) are canonical in the `e2e.yml` workflow `env` block. Updates require maintainer-reviewed PRs on the workflow file. Docs are descriptive only and must not introduce alternate policy sources.
 - The denylist gate is fail-closed: empty/missing constants or unparseable URLs abort the run. Hostname matching is exact-match after lowercase normalization and port removal.
