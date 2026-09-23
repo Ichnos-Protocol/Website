@@ -6,14 +6,17 @@ import {
   SERVICES_PAGE_CONTENT,
   SERVICE_PILLARS,
   getServicesByPillar,
+  SERVICES_CTA,
 } from "../../constants/services";
 import { useScrollToSection } from "../../hooks/useScrollToSection";
 import PageTransition from "../templates/PageTransition";
 import NavbarSkeleton from "../molecules/NavbarSkeleton";
 import ContentCardSkeleton from "../molecules/ContentCardSkeleton";
 import SeoHead from "../molecules/SeoHead";
+import BookingButton from "../molecules/BookingButton";
 import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
 import ServicesGroup from "../organisms/ServicesGroup";
+import CtaBand from "../organisms/CtaBand";
 import ContactSection from "../organisms/ContactSection";
 
 const servicesSkeleton = (
@@ -49,6 +52,17 @@ export default function ServicesPage() {
               services={getServicesByPillar(pillar.id)}
             />
           ))}
+          {/* No headline: the band follows the last pillar and nothing should
+              compete with the action. */}
+          <CtaBand
+            testId="services-cta"
+            action={
+              <BookingButton
+                label={SERVICES_CTA.label}
+                testId="services-cta-booking"
+              />
+            }
+          />
           <ContactSection />
         </Container>
       </PageTransition>

@@ -8,7 +8,8 @@ import {
   ROUTE_LEGACY_DATA,
   ROUTE_READINESS_ASSESSMENT,
 } from '../../constants/routes';
-import { SERVICES_PAGE_CONTENT } from '../../constants/services';
+import { SERVICES_CTA, SERVICES_PAGE_CONTENT } from '../../constants/services';
+import { BOOKING_URL } from '../../constants/companyInfo';
 import {
   PRICING,
   formatPrice,
@@ -241,6 +242,34 @@ describe('ServicesPage', () => {
     expect(
       circularity.compareDocumentPosition(contact) &
         Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('renders the services booking band with the SERVICES_CTA label', () => {
+    expect(screen.getByTestId('services-cta')).toBeInTheDocument();
+    expect(screen.getByTestId('services-cta-booking')).toHaveTextContent(
+      SERVICES_CTA.label,
+    );
+  });
+
+  it('points the services booking band at BOOKING_URL unchanged', () => {
+    const href = screen
+      .getByTestId('services-cta-booking')
+      .getAttribute('href');
+    expect(href).toBe(BOOKING_URL);
+    expect(href).not.toContain('?');
+  });
+
+  it('renders the booking band after the pillars and before ContactSection', () => {
+    const circularity = document.getElementById('circularity');
+    const band = screen.getByTestId('services-cta');
+    const contact = screen.getByTestId('contact-section');
+    expect(
+      circularity.compareDocumentPosition(band) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      band.compareDocumentPosition(contact) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
