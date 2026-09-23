@@ -587,7 +587,7 @@ This project uses **Traycer AI** for planning and **Claude CLI** for execution.
 - Prettier formatting applied.
 - All tests pass.
 - No `.env` files or secrets staged.
-- No files exceed 120 lines.
+- No **source** file exceeds 200 lines (test files are exempt — see CLAUDE.md §5.1).
 
 ---
 

@@ -65,10 +65,10 @@ vi.mock("../../config/firebase", () => ({
   auth: { currentUser: null },
 }));
 
-vi.mock("./CalendlyModal", () => ({
-  default: function MockCalendlyModal({ isOpen }) {
+vi.mock("./BookingModal", () => ({
+  default: function MockBookingModal({ isOpen }) {
     if (!isOpen) return null;
-    return <div data-testid="calendly-modal" />;
+    return <div data-testid="booking-modal" />;
   },
 }));
 
@@ -292,6 +292,38 @@ describe("ContactForm", () => {
     await waitFor(() => {
       expect(screen.getByText(/inquiry submitted/i)).toBeInTheDocument();
     });
+  });
+
+  it("opens BookingModal when Book a Meeting is clicked from the success state", async () => {
+    const user = userEvent.setup();
+    mockUnwrap.mockResolvedValue({ data: {} });
+
+    const { default: ContactForm } = await import("./ContactForm");
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <ContactForm />
+        </MemoryRouter>
+      </Provider>,
+    );
+
+    const textarea = screen.getByLabelText("Question 1");
+    await user.type(textarea, "My question");
+    await user.click(
+      screen.getByRole("checkbox", { name: /agree to be contacted/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Submit Inquiry" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/inquiry submitted/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("booking-modal")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Book a Meeting" }));
+
+    expect(screen.getByTestId("booking-modal")).toBeInTheDocument();
   });
 
   it("shows error alert on submission failure", async () => {

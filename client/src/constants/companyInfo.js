@@ -13,8 +13,13 @@ export const CONTACT_INFO = {
   email: "francesco@ichnos-protocol.com",
   linkedInCompany: "https://www.linkedin.com/company/ichnos-protocol/",
   linkedInFounder: "https://www.linkedin.com/in/maltonif/",
-  calendly: "https://calendly.com/maltonif",
 };
+
+// Booking link. A source constant, not an env var: it is a public URL with no
+// secret, and a build-time variable gave us an empty-value branch to maintain
+// for nothing. Single source for every booking CTA — the modal, the footer
+// social row, the contact section. Never append query parameters to it.
+export const BOOKING_URL = "https://calendar.app.google/5AE4mhXGnPj2GutF7";
 
 export const CONTACT_SECTION_CONTENT = {
   heading: "Get in touch",

@@ -1,3 +1,5 @@
+import { ROUTE_PASSPORT, ROUTE_READINESS_ASSESSMENT } from "./routes";
+
 export const SERVICES_PAGE_CONTENT = {
   title: "Services and Solutions",
   subtitle:
@@ -57,7 +59,7 @@ export const SERVICES_LIST = [
     description:
       'Joining the network means registering your company, getting your network ID, and setting up the secure "mailbox" your customers\' systems talk to. We handle the whole path — registration through an official onboarding provider, identity and credentials, and the connector choice that fits your size (managed service or self-hosted). No dataspace team required.',
     pillar: "catena-x",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     microline: [
       {
         text: "onboarding via an Onboarding Service Provider (OSP)",
@@ -77,7 +79,7 @@ export const SERVICES_LIST = [
     description:
       "Every batch and every cell you ship gets a digital twin — a structured data record your customer can look up, if you allow it. We model your products in the formats the network understands, register the twins, and connect the pipeline to what you already run: ERP, MES, or spreadsheets. We meet your data where it is.",
     pillar: "catena-x",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     microline: [
       {
         text: "Industry Core KIT",
@@ -94,7 +96,7 @@ export const SERVICES_LIST = [
     description:
       "From 18 February 2027, batteries sold in the EU carry a digital passport — and if you make materials, electrodes or cells, part of that passport is your data. We map your production data to the passport fields, validate it against the official formats, and set up the flow to your customer's passport: correct, on time, and only what you choose to share.",
     pillar: "catena-x",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     microline: [
       {
         text: "EcoPass KIT",
@@ -111,7 +113,7 @@ export const SERVICES_LIST = [
     description:
       "The same connection that feeds the passport can carry your day-to-day business data: demand forecasts and capacity requests from your customers, delivery and stock information from you — structured and automatic, instead of email chains and Excel versions. Being easy to plan with is a competitive advantage; we set it up.",
     pillar: "catena-x",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     microline: [
       {
         text: "Demand & Capacity Management (DCM) KIT",
@@ -130,7 +132,7 @@ export const SERVICES_LIST = [
     description:
       "EU customers increasingly ask for a carbon footprint per product, not per company. We help you calculate product carbon footprints from your real energy and material data and exchange them in the format the network verifies.",
     pillar: "catena-x",
-    passportLink: "/passport",
+    passportLink: ROUTE_PASSPORT,
     microline: [
       {
         text: "PCF KIT",
@@ -150,6 +152,8 @@ export const SERVICES_LIST = [
       "Translating European battery regulation into ASEAN supply-chain reality and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
     pillar: "compliance",
     deliveryMethod: false,
+    readinessLink: ROUTE_READINESS_ASSESSMENT,
+    readinessLabel: "Data readiness assessment →",
   },
   // ── Circularity ──
   {

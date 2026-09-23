@@ -3,7 +3,12 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { Link } from 'react-router-dom';
 
-import { COMPANY_INFO, CONTACT_INFO } from '../../constants/companyInfo';
+import {
+  COMPANY_INFO,
+  CONTACT_INFO,
+  BOOKING_URL,
+} from '../../constants/companyInfo';
+import { ROUTE_CONTACT } from '../../constants/routes';
 import SocialLinks from '../molecules/SocialLinks';
 import FooterNavColumns from '../molecules/FooterNavColumns';
 import FooterRecognitions from '../molecules/FooterRecognitions';
@@ -28,8 +33,8 @@ const SOCIAL_LINKS = [
     label: 'LinkedIn Founder',
   },
   {
-    url: CONTACT_INFO.calendly,
-    icon: 'calendar-event',
+    url: BOOKING_URL,
+    icon: 'google',
     label: 'Book a Meeting',
   },
 ];
@@ -58,7 +63,7 @@ export default function Footer() {
               {CONTACT_INFO.email}
             </a>
             <p className="footer-text small mb-0">UEN: {COMPANY_INFO.uen}</p>
-            <Link to="/contact" className="footer-link d-block">
+            <Link to={ROUTE_CONTACT} className="footer-link d-block">
               Submit an Inquiry
             </Link>
             <address className="footer-text footer-address">

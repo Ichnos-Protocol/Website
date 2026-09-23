@@ -3,6 +3,7 @@ import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 import LandingPage from "./components/pages/LandingPage";
 import ServicesPage from "./components/pages/ServicesPage";
 import PassportPage from "./components/pages/PassportPage";
+import ReadinessAssessmentPage from "./components/pages/ReadinessAssessmentPage";
 import TeamPage from "./components/pages/TeamPage";
 import ContactPage from "./components/pages/ContactPage";
 import ConsortiumPage from "./components/pages/ConsortiumPage";
@@ -16,6 +17,21 @@ import AdminRoute from "./routes/AdminRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ApiSanityWarning from "./components/atoms/ApiSanityWarning";
 import { useApiSanityCheck } from "./hooks/useApiSanityCheck";
+import {
+  ROUTE_ADMIN,
+  ROUTE_CONSORTIUM,
+  ROUTE_CONSORTIUM_TIERS,
+  ROUTE_CONTACT,
+  ROUTE_LEGACY_CATENA_X,
+  ROUTE_LEGACY_CATENA_X_READINESS,
+  ROUTE_LEGACY_DATA,
+  ROUTE_LEGACY_DATA_READINESS,
+  ROUTE_PASSPORT,
+  ROUTE_PRIVACY,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from "./constants/routes";
 
 export default function App() {
   const { warning } = useApiSanityCheck();
@@ -25,7 +41,7 @@ export default function App() {
       <ApiSanityWarning warning={warning} />
       <Routes>
         <Route
-          path="/admin"
+          path={ROUTE_ADMIN}
           element={
             <AdminRoute>
               <AdminPage />
@@ -41,20 +57,20 @@ export default function App() {
             }
           >
             <Route path="/" element={<LandingPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/team" element={<TeamPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/consortium" element={<ConsortiumPage />} />
+            <Route path={ROUTE_SERVICES} element={<ServicesPage />} />
+            <Route path={ROUTE_TEAM} element={<TeamPage />} />
+            <Route path={ROUTE_CONTACT} element={<ContactPage />} />
+            <Route path={ROUTE_CONSORTIUM} element={<ConsortiumPage />} />
             <Route
-              path="/consortium/tiers"
+              path={ROUTE_CONSORTIUM_TIERS}
               element={
-                <ProtectedRoute redirectTo="/consortium">
+                <ProtectedRoute redirectTo={ROUTE_CONSORTIUM}>
                   <ConsortiumTiersPage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/privacy"
+              path={ROUTE_PRIVACY}
               element={
                 <ProtectedRoute>
                   <PrivacyPage />
@@ -62,14 +78,23 @@ export default function App() {
               }
             />
             {/* Legacy SEO routes consolidated onto /passport (mirrored by the
-                301 redirects in vercel.json). */}
+                301 redirects in vercel.json). The two readiness children
+                mirror the 301s added for them in the same file. */}
             <Route
-              path="/data"
-              element={<Navigate replace to="/passport" />}
+              path={ROUTE_LEGACY_DATA}
+              element={<Navigate replace to={ROUTE_PASSPORT} />}
             />
             <Route
-              path="/catena-x"
-              element={<Navigate replace to="/passport" />}
+              path={ROUTE_LEGACY_CATENA_X}
+              element={<Navigate replace to={ROUTE_PASSPORT} />}
+            />
+            <Route
+              path={ROUTE_LEGACY_DATA_READINESS}
+              element={<Navigate replace to={ROUTE_READINESS_ASSESSMENT} />}
+            />
+            <Route
+              path={ROUTE_LEGACY_CATENA_X_READINESS}
+              element={<Navigate replace to={ROUTE_READINESS_ASSESSMENT} />}
             />
             <Route path="*" element={null} />
           </Route>
@@ -82,7 +107,11 @@ export default function App() {
               </PublicLayout>
             }
           >
-            <Route path="/passport" element={<PassportPage />} />
+            <Route path={ROUTE_PASSPORT} element={<PassportPage />} />
+            <Route
+              path={ROUTE_READINESS_ASSESSMENT}
+              element={<ReadinessAssessmentPage />}
+            />
           </Route>
         </Route>
       </Routes>

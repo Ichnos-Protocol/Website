@@ -12,6 +12,15 @@
 // Consortium routes to /consortium and is route-only like Battery Passport —
 // no `sectionId`/`activeSectionId`, so it never participates in the homepage
 // scrollspy.
+
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_PASSPORT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from './routes';
+
 export const NAV_ITEMS = [
   {
     label: 'Company',
@@ -20,16 +29,17 @@ export const NAV_ITEMS = [
       // "Why Ichnos" → homepage company section anchor (scrolls to #company)
       { label: 'Why Ichnos', sectionId: 'company' },
       // "Team" → /team route
-      { label: 'Team', path: '/team' },
+      { label: 'Team', path: ROUTE_TEAM },
     ],
   },
-  { label: 'Services', path: '/services', sectionId: 'services', activeSectionId: 'services' },
-  { label: 'Battery Passport', path: '/passport' },
+  { label: 'Services', path: ROUTE_SERVICES, sectionId: 'services', activeSectionId: 'services' },
+  { label: 'Battery Passport', path: ROUTE_PASSPORT },
   // Live demo of the passport app itself — a separate deployment (not part of
-  // this site), so it's a real external link, not a client-side route.
+  // this site), so it's a real external link, not a client-side route. It
+  // carries `href`, not `path`, so it is deliberately not a ROUTE_* constant.
   { label: 'Live Demo', href: 'https://passport.ichnos-protocol.com/demo', external: true },
-  { label: 'Consortium', path: '/consortium' },
-  { label: 'Contact', path: '/contact', sectionId: 'contact', activeSectionId: 'contact' },
+  { label: 'Consortium', path: ROUTE_CONSORTIUM },
+  { label: 'Contact', path: ROUTE_CONTACT, sectionId: 'contact', activeSectionId: 'contact' },
 ];
 
 // Homepage section ids spied on by the scrollspy, in document order: Why Ichnos

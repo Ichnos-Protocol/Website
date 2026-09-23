@@ -8,6 +8,8 @@ import {
   PASSPORT_CUSTOMERS,
   PASSPORT_BUILD_STACK,
 } from '../../constants/passportContent';
+import { ROUTE_READINESS_ASSESSMENT } from '../../constants/routes';
+import { BOOKING_URL } from '../../constants/companyInfo';
 import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 
 vi.mock('../organisms/ContactSection', () => ({
@@ -29,6 +31,7 @@ const ORDERED_SECTION_TESTIDS = [
   'passport-role',
   'passport-customers',
   'passport-offer',
+  'passport-readiness-cta',
   'passport-roadmap',
   'contact-section',
 ];
@@ -89,7 +92,7 @@ describe('PassportPage', () => {
     expect(heading).toHaveTextContent(PASSPORT_HERO.title);
   });
 
-  it('renders the ten sections in locked order with ContactSection last', () => {
+  it('renders every section in locked order with ContactSection last', () => {
     const ordered = [
       screen.getByRole('heading', { level: 1 }),
       ...ORDERED_SECTION_TESTIDS.map((testId) => screen.getByTestId(testId)),
@@ -125,6 +128,28 @@ describe('PassportPage', () => {
   it('renders the offer eyebrow with the Catena-X credential', () => {
     const eyebrow = screen.getByTestId('passport-offer-eyebrow');
     expect(eyebrow).toHaveTextContent(CATENA_X_TITLE_BASE);
+  });
+
+  it('links the readiness band to the assessment route, same tab', () => {
+    const link = screen.getByTestId('passport-readiness-cta-link');
+    expect(link.tagName).toBe('A');
+    expect(link).toHaveAttribute('href', ROUTE_READINESS_ASSESSMENT);
+    expect(link).toHaveAttribute('role', 'link');
+    expect(link).not.toHaveAttribute('target');
+  });
+
+  it('renders the readiness band directly after the offer', () => {
+    const offer = screen.getByTestId('passport-offer');
+    const band = screen.getByTestId('passport-readiness-cta');
+    expect(offer.nextElementSibling).toBe(band);
+    expect(offer.compareDocumentPosition(band) & FOLLOWING).toBeTruthy();
+  });
+
+  it('never links to the booking URL', () => {
+    const hrefs = [...document.querySelectorAll('[href]')].map((el) =>
+      el.getAttribute('href'),
+    );
+    expect(hrefs).not.toContain(BOOKING_URL);
   });
 
   it('renders the locked key copy', () => {

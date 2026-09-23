@@ -1,6 +1,7 @@
 import { axe } from 'vitest-axe';
 import { renderWithProviders, screen, cleanup } from '../../test-utils';
 import ServicesSnapshot from './ServicesSnapshot';
+import { ROUTE_SERVICES } from '../../constants/routes';
 import { SERVICES_LIST } from '../../constants/services';
 
 describe('ServicesSnapshot', () => {
@@ -39,7 +40,7 @@ describe('ServicesSnapshot', () => {
     renderWithProviders(<ServicesSnapshot />);
     expect(
       screen.getByRole('link', { name: /see full services/i }),
-    ).toHaveAttribute('href', '/services');
+    ).toHaveAttribute('href', ROUTE_SERVICES);
   });
 
   it('has no accessibility violations', async () => {

@@ -20,7 +20,11 @@ const CLIENT_ROOT = resolve(
 // NOT listed: §6 deletes that directory, and a skip entry for a directory
 // that must not exist would quietly mask its reappearance.
 const SKIP_DIRS = new Set(["node_modules", "dist"]);
-const SKIP_FILES = /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js)$/;
+// corpusScan.js sits beside vocabulary.js for the same reason vocabulary.js
+// itself is skipped: scanner infrastructure must not scan its own regex and
+// comment sources.
+const SKIP_FILES =
+  /(\.test\.(js|jsx)|vocabulary\.js|vocabulary\.test\.js|corpusScan\.js)$/;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -107,6 +111,17 @@ export const FORBIDDEN = [
   // reason, per the pivot-3 practice.
   /\b18\s+February\s+2025\b/i,
   /\b18\s+August\s+2025\b/i,
+  // Booking vendor migration (T2, the preceding commit): every reference
+  // under client/src already moved to BOOKING_URL in companyInfo.js, so
+  // both patterns pass the moment they land. They prevent a regression
+  // rather than report one. `react-calendly` is redundant against the bare
+  // pattern above and is kept deliberately, so a reintroduced dependency
+  // fails with a message that names the package instead of a generic
+  // vendor hit. Neither carries an `i` flag: the `[Cc]` class is the case
+  // scoping §8 tier-2 specifies, and widening it is a recorded decision,
+  // not a fix.
+  /[Cc]alendly/,
+  /react-calendly/,
 ];
 
 // Groups not yet joined (§1). Move an entry out only when membership is

@@ -1,3 +1,13 @@
+/*
+ * Value pin for constants/routes.js.
+ *
+ * The route literals below are deliberate. routes.test.js skips this file by
+ * name and asserts that each pinned literal is still present, because these
+ * mounts are the only non-circular check that the constants hold the paths
+ * the site actually publishes. Converting them to imported constants would
+ * make the route guard assert a value against itself.
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithProviders, screen, waitFor } from './test-utils';
 
@@ -34,6 +44,13 @@ vi.mock('./components/pages/ConsortiumPage', () => ({
 vi.mock('./components/pages/ConsortiumTiersPage', () => ({
   default: () => <div>Consortium Tiers Page</div>,
 }));
+// ReadinessAssessmentPage is deliberately NOT mocked. Rendering the real
+// presentational page is intentional: it is what lets this file assert the
+// breadcrumb parent's href and the Catena-X theme wrapper (spec section 8
+// items 3 and 25), which mocking would leave unasserted here. The page's own
+// composition is covered by colocated component tests in
+// ReadinessAssessmentPage.test.jsx; App.test.jsx stays the integration check
+// for route, theme wrapper and breadcrumb parent.
 vi.mock('./routes/ProtectedRoute', () => ({
   default: ({ children, redirectTo }) => (
     <div data-testid="protected-route" data-redirect-to={redirectTo ?? ''}>
@@ -169,6 +186,43 @@ describe('App route theme wrappers', () => {
     expect(container.querySelector('.theme-advisory')).toBeNull();
   });
 
+  it('renders the readiness assessment inside the Catena-X chrome', async () => {
+    const { container } = renderWithProviders(<App />, {
+      route: '/passport/readiness-assessment',
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('readiness-assessment-page'),
+      ).toBeInTheDocument();
+    });
+
+    const assessmentWrapper = container.querySelector('.theme-catenax');
+    expect(assessmentWrapper).toBeInTheDocument();
+    expect(
+      assessmentWrapper.querySelector('[data-testid="public-layout"]'),
+    ).toBeInTheDocument();
+    expect(
+      assessmentWrapper.querySelector('[data-testid="navbar"]'),
+    ).toBeInTheDocument();
+    expect(
+      assessmentWrapper.querySelector('[data-testid="footer"]'),
+    ).toBeInTheDocument();
+    expect(
+      assessmentWrapper.querySelector(
+        '[data-testid="readiness-assessment-page"]',
+      ),
+    ).toBeInTheDocument();
+    expect(container.querySelector('.theme-advisory')).toBeNull();
+
+    // The breadcrumb's parent crumb points at the passport page, which the
+    // /passport mount above proves renders a page rather than a Navigate.
+    expect(screen.getByTestId('assessment-breadcrumb-parent')).toHaveAttribute(
+      'href',
+      '/passport',
+    );
+  });
+
   it('renders the consortium page inside the advisory chrome', async () => {
     const { container } = renderWithProviders(<App />, { route: '/consortium' });
 
@@ -180,6 +234,38 @@ describe('App route theme wrappers', () => {
     expect(
       advisoryWrapper.querySelector('[data-testid="public-layout"]'),
     ).toHaveTextContent('Consortium Page');
+  });
+
+  it('renders the services page inside the advisory chrome', async () => {
+    renderWithProviders(<App />, { route: '/services' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Services Page')).toBeInTheDocument();
+    });
+  });
+
+  it('renders the team page inside the advisory chrome', async () => {
+    renderWithProviders(<App />, { route: '/team' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Team Page')).toBeInTheDocument();
+    });
+  });
+
+  it('renders the contact page inside the advisory chrome', async () => {
+    renderWithProviders(<App />, { route: '/contact' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Contact Page')).toBeInTheDocument();
+    });
+  });
+
+  it('renders the privacy page inside the advisory chrome', async () => {
+    renderWithProviders(<App />, { route: '/privacy' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Privacy Page')).toBeInTheDocument();
+    });
   });
 
   it('protects /consortium/tiers with a redirect to /consortium', async () => {
@@ -218,6 +304,26 @@ describe('App legacy route redirects', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Passport Page')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects /data/readiness-assessment to the assessment page', async () => {
+    renderWithProviders(<App />, { route: '/data/readiness-assessment' });
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('readiness-assessment-page'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('redirects /catena-x/readiness-assessment to the assessment page', async () => {
+    renderWithProviders(<App />, { route: '/catena-x/readiness-assessment' });
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('readiness-assessment-page'),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 
+import { ROUTE_PRIVACY } from '../../constants/routes';
+
 const PROFILE_FIELDS = [
   { key: 'name', label: 'Name' },
   { key: 'surname', label: 'Surname' },
@@ -20,7 +22,7 @@ export default function ContactFormProfile({ profile }) {
           <strong>{label}:</strong> {profile[key]}
         </p>
       ))}
-      <Link to="/privacy" className="small">
+      <Link to={ROUTE_PRIVACY} className="small">
         Edit profile
       </Link>
     </div>

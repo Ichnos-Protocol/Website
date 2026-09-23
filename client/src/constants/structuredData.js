@@ -6,12 +6,26 @@
 // Reference: https://schema.org/
 
 import { SEO_BASE_URL, SEO_SITE_NAME } from "./seoMeta";
+// Service nodes moved to serviceSchemas.js (spec section 7.2.1 split).
+import {
+  READINESS_ASSESSMENT_SERVICE_SCHEMA,
+  SERVICE_SCHEMAS,
+} from "./serviceSchemas";
 import { COMPANY_INFO } from "./companyInfo";
 import {
   CATENA_X_EXPERT_GROUP_NOTE,
   CATENA_X_MEMBERSHIP_NOTE,
   getCatenaXFullTitle,
 } from "./catenaXStatus";
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_LANDING,
+  ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from "./routes";
 
 const LOGO_URL = `${SEO_BASE_URL}/brand/ichnos_mark_dualtone.svg`;
 
@@ -107,64 +121,6 @@ export const COFOUNDER_PERSON_SCHEMA = {
   ],
 };
 
-function service(name, description) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    name,
-    description,
-    provider: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
-    areaServed: ["EU", "ASEAN"],
-  };
-}
-
-// Mirrors the pillar-grouped SERVICES_LIST in services.js (§4.2 / §4.6),
-// one-for-one in order: 10 cards, split 3 (Engineering) / 5 (Catena-X) /
-// 1 (Compliance) / 1 (Circularity). Each entry's name is the card title and
-// description is the card description.
-export const SERVICE_SCHEMAS = [
-  service(
-    "Battery Systems & Safety Engineering",
-    "System architecture, requirement and test management, and full FMEA discipline — S-FMEA, D-FMEA, P-FMEA — across cell, module, and pack levels. Test planning, traceability, and design-review support for battery development programs that need rigorous engineering process from concept to SOP.",
-  ),
-  service(
-    "Battery Mechanical Development",
-    "Pack and module mechanical design, cell housing, thermal hardware integration, and design-for-manufacture. Drawing on a doctorate in Production Engineering of E-Mobility Components and patents on battery modules and aluminium cell housings.",
-  ),
-  service(
-    "Technical Lead — Battery Systems",
-    "Embedded senior battery expertise for early-stage teams and in-house programs that need experienced direction without a full-time hire — combined with sprint cadence, requirement traceability, milestone management, and cross-functional coordination. PSM I (Professional Scrum Master™ I) certified, backed by thirteen years of cross-functional project engineering across Ducati, Technogym, and FEV — from gasoline engines and motorcycle design through electrification and vehicle battery systems.",
-  ),
-  service(
-    "Get connected to Catena-X",
-    'Joining the network means registering your company, getting your network ID, and setting up the secure "mailbox" your customers\' systems talk to. We handle the whole path — registration through an official onboarding provider, identity and credentials, and the connector choice that fits your size (managed service or self-hosted). No dataspace team required.',
-  ),
-  service(
-    "Your products as digital twins",
-    "Every batch and every cell you ship gets a digital twin — a structured data record your customer can look up, if you allow it. We model your products in the formats the network understands, register the twins, and connect the pipeline to what you already run: ERP, MES, or spreadsheets. We meet your data where it is.",
-  ),
-  service(
-    "Flow into the EU Battery Passport",
-    "From 18 February 2027, batteries sold in the EU carry a digital passport — and if you make materials, electrodes or cells, part of that passport is your data. We map your production data to the passport fields, validate it against the official formats, and set up the flow to your customer's passport: correct, on time, and only what you choose to share.",
-  ),
-  service(
-    "Production planning & data exchange",
-    "The same connection that feeds the passport can carry your day-to-day business data: demand forecasts and capacity requests from your customers, delivery and stock information from you — structured and automatic, instead of email chains and Excel versions. Being easy to plan with is a competitive advantage; we set it up.",
-  ),
-  service(
-    "Carbon footprint, per product",
-    "EU customers increasingly ask for a carbon footprint per product, not per company. We help you calculate product carbon footprints from your real energy and material data and exchange them in the format the network verifies.",
-  ),
-  service(
-    "EU–ASEAN Compliance Bridge",
-    "Translating European battery regulation into ASEAN supply-chain reality and vice versa. Coverage includes EU 2023/1542, Malaysian MS 2818, regional certification frameworks, and supplier alignment for OEMs operating across both regions. Practitioner-grade understanding of where regulatory text meets the factory floor.",
-  ),
-  service(
-    "Battery Remanufacturing, Recycling & Circular Economy",
-    "Second-life pathways, design for remanufacturing, design for recycling, and design for cost. PhD-level expertise in circular-economy battery systems.",
-  ),
-];
-
 function breadcrumb(items) {
   return {
     "@context": "https://schema.org",
@@ -184,16 +140,16 @@ export const PAGE_STRUCTURED_DATA = {
   services: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
-      { name: "Home", path: "/" },
-      { name: "Services", path: "/services" },
+      { name: "Home", path: ROUTE_LANDING },
+      { name: "Services", path: ROUTE_SERVICES },
     ]),
     ...SERVICE_SCHEMAS,
   ],
   team: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
-      { name: "Home", path: "/" },
-      { name: "Team", path: "/team" },
+      { name: "Home", path: ROUTE_LANDING },
+      { name: "Team", path: ROUTE_TEAM },
     ]),
     FOUNDER_PERSON_SCHEMA,
     COFOUNDER_PERSON_SCHEMA,
@@ -201,24 +157,40 @@ export const PAGE_STRUCTURED_DATA = {
   passport: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
-      { name: "Home", path: "/" },
-      { name: "Battery Passport", path: "/passport" },
+      { name: "Home", path: ROUTE_LANDING },
+      { name: "Battery Passport", path: ROUTE_PASSPORT },
     ]),
   ],
   contact: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
-      { name: "Home", path: "/" },
-      { name: "Contact", path: "/contact" },
+      { name: "Home", path: ROUTE_LANDING },
+      { name: "Contact", path: ROUTE_CONTACT },
     ]),
   ],
   consortium: [
     ORGANIZATION_SCHEMA,
     breadcrumb([
-      { name: "Home", path: "/" },
-      { name: "Consortium", path: "/consortium" },
+      { name: "Home", path: ROUTE_LANDING },
+      { name: "Consortium", path: ROUTE_CONSORTIUM },
     ]),
   ],
   consortiumTiers: [ORGANIZATION_SCHEMA],
   privacy: [ORGANIZATION_SCHEMA],
+  // Crumb names are the visible labels in molecules/Breadcrumb.jsx, sentence
+  // case, and deliberately differ from the passport bundle's "Battery
+  // Passport": structured breadcrumbs mirror what the visitor sees. Two
+  // crumbs, as spec section 2.4 draws them, with no redirect parent invented.
+  readinessAssessment: [
+    ORGANIZATION_SCHEMA,
+    READINESS_ASSESSMENT_SERVICE_SCHEMA,
+    breadcrumb([
+      { name: "Battery passport", path: ROUTE_PASSPORT },
+      { name: "Data readiness assessment", path: ROUTE_READINESS_ASSESSMENT },
+    ]),
+  ],
 };
+
+// Re-exported so existing consumers of SERVICE_SCHEMAS keep this module as
+// their import surface after the split.
+export { SERVICE_SCHEMAS };

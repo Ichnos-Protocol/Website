@@ -3,6 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders, screen, fireEvent } from '../../test-utils';
 import Navbar from './Navbar';
 import { NAV_ITEMS } from '../../constants/navigation';
+import {
+  ROUTE_CONSORTIUM,
+  ROUTE_CONTACT,
+  ROUTE_PASSPORT,
+  ROUTE_SERVICES,
+  ROUTE_TEAM,
+} from '../../constants/routes';
 
 // NAV_ITEMS mix dropdowns and flat links — Company is a dropdown
 // (Why Ichnos / Team), the rest are flat (Services, Battery Passport,
@@ -204,7 +211,7 @@ describe('Navbar', () => {
 
   it('marks the active nav entry with the active class when route matches (flat items)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-      route: '/services',
+      route: ROUTE_SERVICES,
       preloadedState: loggedOutState,
     });
 
@@ -218,7 +225,7 @@ describe('Navbar', () => {
 
   it('marks the Company dropdown toggle active on /team (Team is a dropdown child)', () => {
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-      route: '/team',
+      route: ROUTE_TEAM,
       preloadedState: loggedOutState,
     });
     expect(screen.getByRole('button', { name: 'Company' })).toHaveClass('active');
@@ -280,7 +287,7 @@ describe('Navbar', () => {
     // Regression guard for the invisible-tree bug (2026-08-12): the navbar is
     // a light surface on every route, so the white mark must never appear here.
     renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-      route: '/passport',
+      route: ROUTE_PASSPORT,
       preloadedState: loggedOutState,
     });
     const brandLink = screen.getByRole('link', { name: /ichnos/i });
@@ -323,21 +330,21 @@ describe('Navbar', () => {
     });
 
     fireEvent.click(screen.getByRole('link', { name: 'Battery Passport' }));
-    expect(mockNavigate).toHaveBeenCalledWith('/passport');
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PASSPORT);
   });
 
   it('on /services route, clicking each flat nav link navigates to its path', () => {
     const expected = {
-      Services: '/services',
-      'Battery Passport': '/passport',
-      Consortium: '/consortium',
-      Contact: '/contact',
+      Services: ROUTE_SERVICES,
+      'Battery Passport': ROUTE_PASSPORT,
+      Consortium: ROUTE_CONSORTIUM,
+      Contact: ROUTE_CONTACT,
     };
 
     Object.entries(expected).forEach(([label, path]) => {
       mockNavigate.mockClear();
       const { unmount } = renderWithProviders(<Navbar onMenuToggle={vi.fn()} />, {
-        route: '/services',
+        route: ROUTE_SERVICES,
         preloadedState: loggedOutState,
       });
 

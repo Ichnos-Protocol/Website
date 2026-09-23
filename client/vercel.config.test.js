@@ -4,6 +4,12 @@ import { resolve } from 'path';
 
 import { describe, it, expect } from 'vitest';
 
+import {
+  ROUTE_LEGACY_CATENA_X_READINESS,
+  ROUTE_LEGACY_DATA_READINESS,
+  ROUTE_READINESS_ASSESSMENT,
+} from './src/constants/routes.js';
+
 const configPath = resolve(process.cwd(), 'vercel.json');
 const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 
@@ -23,6 +29,24 @@ describe('vercel.json routing', () => {
     );
     expect(redirect).toBeDefined();
     expect(redirect.destination).toBe('/passport');
+    expect(redirect.statusCode).toBe(301);
+  });
+
+  it('redirects the legacy /data readiness child with a 301 status', () => {
+    const redirect = config.redirects?.find(
+      (entry) => entry.source === ROUTE_LEGACY_DATA_READINESS,
+    );
+    expect(redirect).toBeDefined();
+    expect(redirect.destination).toBe(ROUTE_READINESS_ASSESSMENT);
+    expect(redirect.statusCode).toBe(301);
+  });
+
+  it('redirects the legacy /catena-x readiness child with a 301 status', () => {
+    const redirect = config.redirects?.find(
+      (entry) => entry.source === ROUTE_LEGACY_CATENA_X_READINESS,
+    );
+    expect(redirect).toBeDefined();
+    expect(redirect.destination).toBe(ROUTE_READINESS_ASSESSMENT);
     expect(redirect.statusCode).toBe(301);
   });
 

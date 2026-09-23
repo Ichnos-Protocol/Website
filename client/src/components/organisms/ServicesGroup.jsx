@@ -6,10 +6,13 @@ import Card from "react-bootstrap/Card";
 import ServiceMicroline from "../molecules/ServiceMicroline";
 
 function ServiceCard({
+  id,
   icon,
   title,
   description,
   passportLink,
+  readinessLink,
+  readinessLabel,
   comingSoon,
   lead,
   microline,
@@ -39,6 +42,17 @@ function ServiceCard({
           {passportLink && !comingSoon && (
             <Link to={passportLink} className="fw-semibold text-decoration-none">
               Learn more →
+            </Link>
+          )}
+          {/* Generic optional second link: renders whenever both fields are
+              set. Same-tab internal navigation, never a booking CTA. */}
+          {readinessLink && readinessLabel && !comingSoon && (
+            <Link
+              to={readinessLink}
+              className="d-block mt-2 text-decoration-none"
+              data-testid={`${id}-readiness-link`}
+            >
+              {readinessLabel}
             </Link>
           )}
           <ServiceMicroline segments={microline} />
