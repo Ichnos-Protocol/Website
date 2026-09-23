@@ -54,6 +54,7 @@ test.describe('Consortium Journey', { tag: ['@consortium'] }, () => {
 
     await consortium.fillRegistration({
       position: 'anchor',
+      region: 'ASEAN',
       chainRole: 'module_pack',
       productLine: 'E2E battery module line',
       dataExtract: 'Not yet, but we could prepare one',

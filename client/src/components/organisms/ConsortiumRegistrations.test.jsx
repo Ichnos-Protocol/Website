@@ -33,6 +33,7 @@ const ROWS = [
     consortiumChainRole: 'Cell manufacturer',
     consortiumTier: 'Tier 1',
     consortiumSource: 'website',
+    consortiumRegion: 'asean',
     consortiumRegisteredAt: '2026-03-04T10:00:00.000Z',
     consortiumStatus: 'registered',
     consortiumAdminNotes: '',
@@ -209,6 +210,32 @@ describe('ConsortiumRegistrations', () => {
       adminNotes: 'Called them',
     });
     expect(await screen.findByText('Registrant updated.')).toBeInTheDocument();
+  });
+
+  it('shows the region in the detail card', async () => {
+    const user = userEvent.setup();
+    render(<ConsortiumRegistrations />);
+
+    await user.click(screen.getAllByRole('button', { name: 'Details' })[0]);
+
+    const label = screen.getByText('Region');
+    expect(label.tagName).toBe('DT');
+    expect(label.nextElementSibling).toHaveTextContent('asean');
+  });
+
+  it('shows the em-dash fallback for a legacy row with no region', async () => {
+    const user = userEvent.setup();
+    mocks.queryState = {
+      data: { data: [ROWS[0], { ...ROWS[1], consortiumRegion: null }] },
+      isLoading: false,
+      error: undefined,
+    };
+    render(<ConsortiumRegistrations />);
+
+    await user.click(screen.getAllByRole('button', { name: 'Details' })[1]);
+
+    const label = screen.getByText('Region');
+    expect(label.nextElementSibling).toHaveTextContent('—');
   });
 
   it('copies every loaded e-mail address to the clipboard', async () => {

@@ -33,6 +33,7 @@ const answers = {
   dataExtract: "not_yet",
   dataNeeds: "Cell-level carbon footprint",
   preferredStart: "asap",
+  region: "asean",
   source: "landing_page",
   consentTimestamp: "2026-02-16T12:00:00Z",
   consentVersion: "v1",
@@ -73,6 +74,7 @@ describeIf("consortium registration (integration)", () => {
         consortium_data_extract        VARCHAR(20),
         consortium_data_needs          TEXT,
         consortium_preferred_start     VARCHAR(20),
+        consortium_region              VARCHAR(10),
         consortium_source              VARCHAR(40),
         consortium_consent_timestamp   TIMESTAMP,
         consortium_consent_version     VARCHAR(20),
@@ -190,6 +192,7 @@ describeIf("consortium registration (integration)", () => {
     expect(profile.consortium_chain_role).toBe("cathode_material");
     expect(profile.consortium_data_extract).toBe("not_yet");
     expect(profile.consortium_preferred_start).toBe("asap");
+    expect(profile.consortium_region).toBe("asean");
     expect(profile.consortium_tier).toBe("pilot");
     expect(profile.consortium_status).toBe("registered");
 

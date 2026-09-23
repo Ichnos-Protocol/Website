@@ -59,6 +59,7 @@ describe("ContactRequestForm submission", () => {
     expect(body.consortiumInterest).toBe(true);
     expect(body.consortium).toMatchObject({
       position: "anchor",
+      region: "asean",
       chainRole: "module_pack",
       productLine: "48V pack line",
       dataExtract: "not_yet",

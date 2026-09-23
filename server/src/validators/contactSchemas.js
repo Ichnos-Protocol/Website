@@ -6,6 +6,7 @@
  * amended by 007, which are the authoritative source; these arrays only
  * restate them. CONSORTIUM_PREFERRED_START omits the retired nov_2026, which
  * the database tolerates until migration 010 (P14) removes it.
+ * CONSORTIUM_REGIONS restates the CHECK of migration 008.
  */
 import { z } from "zod/v4";
 
@@ -16,6 +17,8 @@ export const CONSORTIUM_POSITIONS = Object.freeze([
   "institute",
   "other",
 ]);
+
+export const CONSORTIUM_REGIONS = Object.freeze(["asean", "eu", "other"]);
 
 export const CONSORTIUM_CHAIN_ROLES = Object.freeze([
   "mining_refining",
@@ -72,6 +75,7 @@ const optionalSource = blankToUndefined(
 
 export const consortiumSchema = z.object({
   position: z.enum(CONSORTIUM_POSITIONS),
+  region: z.enum(CONSORTIUM_REGIONS),
   chainRole: z.enum(CONSORTIUM_CHAIN_ROLES),
   productLine: z
     .string()

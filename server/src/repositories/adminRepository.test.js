@@ -296,6 +296,7 @@ describe("adminRepository", () => {
       // One occurrence per arm keeps the two SELECT lists union-compatible.
       expect(sql.match(/consortium_interest/g)).toHaveLength(2);
       expect(sql.match(/consortium_admin_notes/g)).toHaveLength(2);
+      expect(sql.match(/consortium_region/g)).toHaveLength(2);
     });
   });
 
@@ -348,6 +349,7 @@ describe("adminRepository", () => {
       expect(sql).toContain(
         'p.consortium_admin_notes AS "consortiumAdminNotes"',
       );
+      expect(sql).toContain('p.consortium_region AS "consortiumRegion"');
       expect(sql).not.toContain("kind");
       expect(sql).not.toContain("$1");
     });

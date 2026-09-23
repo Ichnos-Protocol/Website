@@ -52,6 +52,7 @@ const { submitContactRequest, getMyRequests, addQuestion } = await import(
 
 const consortiumAnswers = {
   position: "supplier",
+  region: "asean",
   chainRole: "cathode_material",
   productLine: "NMC cathode powders",
   dataExtract: "not_yet",
@@ -166,6 +167,11 @@ describe("contactService", () => {
         mockClient,
       );
       expect(result.id).toBe(7);
+      expect(mockUpdateConsortiumProfile).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ region: "asean" }),
+        mockClient,
+      );
       expect(result.consortium).toEqual(profile);
       expect(result.questions).toEqual([]);
       expect(mockCreateQuestion).not.toHaveBeenCalled();

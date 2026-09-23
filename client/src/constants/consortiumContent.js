@@ -11,12 +11,15 @@
  * 006_20260823_add_consortium_columns.sql as amended by
  * 007_20260923_consortium_preferred_start_expand.sql, minus the retired
  * preferred-start value nov_2026, which the database still tolerates until
- * migration 010 (P14) removes it. Those migrations are the authoritative
+ * migration 010 (P14) removes it. The region options restate the CHECK of
+ * 008_20260923_consortium_region.sql. Those migrations are the authoritative
  * source; a change there must be mirrored here in the same commit.
  */
 
 export const CONSORTIUM_POSITION_LABEL =
   "What is your position in the consortium?";
+
+export const CONSORTIUM_REGION_LABEL = "Where is your company based?";
 
 export const CONSORTIUM_CHAIN_ROLE_LABEL =
   "Which part of the value chain do you cover?";
@@ -57,6 +60,12 @@ export const CONSORTIUM_POSITION_OPTIONS = Object.freeze([
   { value: "equipment_supplier", label: "Equipment supplier" },
   { value: "institute", label: "Research institute or university" },
   { value: "other", label: "Other" },
+]);
+
+export const CONSORTIUM_REGION_OPTIONS = Object.freeze([
+  { value: "asean", label: "ASEAN" },
+  { value: "eu", label: "European Union" },
+  { value: "other", label: "Elsewhere" },
 ]);
 
 export const CONSORTIUM_CHAIN_ROLE_OPTIONS = Object.freeze([

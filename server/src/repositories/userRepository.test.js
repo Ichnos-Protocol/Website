@@ -31,6 +31,7 @@ const consortiumAnswers = {
   source: "landing_page",
   consentTimestamp: "2026-02-16T12:00:00Z",
   consentVersion: "v1",
+  region: "eu",
 };
 
 describe("userRepository", () => {
@@ -183,6 +184,34 @@ describe("userRepository", () => {
       );
       expect(sql).toContain("consortium_source = COALESCE(consortium_source,");
       expect(sql).toContain("consortium_status = COALESCE(consortium_status,");
+    });
+
+    it("passes the parameters in placeholder order, region last", async () => {
+      mockQuery.mockResolvedValue({ rows: [{}] });
+
+      await updateConsortiumProfile("uid-1", consortiumAnswers);
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(params).toHaveLength(13);
+      expect(params).toEqual([
+        "uid-1",
+        "supplier",
+        "cathode_material",
+        "NMC cathode powders",
+        null,
+        "not_yet",
+        null,
+        "asap",
+        "2026-02-16T12:00:00Z",
+        "v1",
+        "landing_page",
+        "registered",
+        "eu",
+      ]);
+      expect(sql).toContain("consortium_region = $13");
+      // Appending region must not renumber the existing placeholders.
+      expect(sql).toContain("consortium_source = COALESCE(consortium_source, $11)");
+      expect(sql).toContain("consortium_status = COALESCE(consortium_status, $12)");
     });
 
     it("never clears consortium_interest", async () => {
@@ -409,6 +438,7 @@ describe("userRepository", () => {
         "consortium_data_extract",
         "consortium_preferred_start",
         "consortium_status",
+        "consortium_region",
       ]) {
         expect(sql).not.toContain(column);
       }

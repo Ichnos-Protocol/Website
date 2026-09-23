@@ -18,6 +18,7 @@ const DETAIL_FIELDS = [
   { label: 'Data extract', key: 'consortiumDataExtract' },
   { label: 'Data needs', key: 'consortiumDataNeeds' },
   { label: 'Preferred start', key: 'consortiumPreferredStart' },
+  { label: 'Region', key: 'consortiumRegion' },
 ];
 
 export default function ConsortiumRegistrantDetail({

@@ -5,6 +5,7 @@
 const INTEREST_LABEL =
   'I am interested in joining the battery passport consortium.';
 const POSITION_LABEL = 'What is your position in the consortium?';
+const REGION_LABEL = 'Where is your company based?';
 const CHAIN_ROLE_LABEL = 'Which part of the value chain do you cover?';
 const PRODUCT_LINE_LABEL =
   'Which product line or use case would you bring in?';
@@ -81,8 +82,15 @@ export class ConsortiumPage {
   }
 
   // Radios render as inline Form.Check, so the accessible name is the option
-  // label ("Yes", "Not yet, but we could prepare one", "No",
-  // "Not applicable" / "As soon as the group is formed", "Later").
+  // label ("ASEAN", "European Union", "Elsewhere" / "Yes",
+  // "Not yet, but we could prepare one", "No", "Not applicable" /
+  // "As soon as the group is formed", "Later").
+  regionRadio(label) {
+    return this.page
+      .getByRole('group', { name: REGION_LABEL })
+      .getByRole('radio', { name: label });
+  }
+
   dataExtractRadio(label) {
     return this.page.getByRole('radio', { name: label });
   }
@@ -103,12 +111,14 @@ export class ConsortiumPage {
 
   async fillRegistration({
     position,
+    region,
     chainRole,
     productLine,
     dataExtract,
     preferredStart,
   }) {
     await this.positionSelect.selectOption(position);
+    await this.regionRadio(region).check();
     await this.chainRoleSelect.selectOption(chainRole);
     await this.productLineInput.fill(productLine);
     await this.dataExtractRadio(dataExtract).check();

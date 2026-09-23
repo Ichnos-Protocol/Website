@@ -95,7 +95,7 @@ const CONSORTIUM_COLUMNS = `consortium_interest, consortium_position, consortium
               consortium_data_needs, consortium_preferred_start, consortium_source,
               consortium_consent_timestamp, consortium_consent_version,
               consortium_registered_at, consortium_tier, consortium_tier_selected_at,
-              consortium_status`;
+              consortium_status, consortium_region`;
 
 // The base list backs GET /api/consortium/me and must never leak internal
 // commentary. This list is admin-only and used solely by updateConsortiumAdmin,
@@ -117,7 +117,8 @@ const UPDATE_CONSORTIUM_SQL = `UPDATE user_profiles
            consortium_consent_version = $10,
            consortium_registered_at = COALESCE(consortium_registered_at, NOW()),
            consortium_source = COALESCE(consortium_source, $11),
-           consortium_status = COALESCE(consortium_status, $12)
+           consortium_status = COALESCE(consortium_status, $12),
+           consortium_region = $13
        WHERE user_id = $1
        RETURNING ${CONSORTIUM_COLUMNS}`;
 
@@ -135,6 +136,7 @@ function buildConsortiumParams(userId, data) {
     data.consentVersion,
     data.source ?? null,
     DEFAULT_CONSORTIUM_STATUS,
+    data.region,
   ];
 }
 
