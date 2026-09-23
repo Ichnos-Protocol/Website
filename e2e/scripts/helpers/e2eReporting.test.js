@@ -154,3 +154,39 @@ describe("printSummary", () => {
     expect(errorLine).toBeUndefined();
   });
 });
+
+describe("printSummary with GitHub variables", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function allOutput() {
+    return console.log.mock.calls.map((c) => c[0]).join("\n");
+  }
+
+  it("prints a GitHub Actions Variables section when variable results are supplied", () => {
+    printSummary([], [], [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }]);
+
+    expect(allOutput()).toContain("GitHub Actions Variables");
+  });
+
+  it("omits the GitHub Actions Variables section when none are supplied", () => {
+    printSummary([], []);
+
+    expect(allOutput()).not.toContain("GitHub Actions Variables");
+  });
+
+  it("renders the clear value for a result that carries value instead of masked", () => {
+    printSummary([], [], [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }]);
+
+    const resultLine = console.log.mock.calls.find(
+      (c) => typeof c[0] === "string" && c[0].includes("E2E_BASE_URL")
+    );
+    expect(resultLine[0]).toContain("https://x.test");
+    expect(resultLine[0]).not.toContain("undefined");
+  });
+});

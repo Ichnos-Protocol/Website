@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildCredentialMaps } from "./e2eCredentials.js";
+import { buildCredentialMaps, findMissingGitHubNames } from "./e2eCredentials.js";
 
 describe("buildCredentialMaps", () => {
   it("returns empty maps when no credentials are set", () => {
@@ -130,5 +130,85 @@ describe("buildCredentialMaps", () => {
     expect(github.E2E_ADMIN_PASSWORD).toBeUndefined();
     expect(vercel.E2E_ADMIN_UID).toBeUndefined();
     expect(firebaseCreds[0].password).toBeUndefined();
+  });
+});
+
+const VARIABLE_NAMES = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_AUTH_DOMAIN",
+  "FIREBASE_STORAGE_BUCKET",
+  "E2E_ADMIN_EMAIL", "E2E_ADMIN_UID",
+  "E2E_USER_EMAIL", "E2E_USER_UID",
+  "E2E_INCOMPLETE_USER_EMAIL", "E2E_INCOMPLETE_USER_UID",
+  "E2E_SUPER_ADMIN_EMAIL", "E2E_SUPER_ADMIN_UID",
+  "E2E_MANAGE_ADMIN_TARGET_EMAIL", "E2E_MANAGE_ADMIN_TARGET_UID",
+  "E2E_BASE_URL",
+  "E2E_API_BASE_URL",
+];
+
+const SECRET_NAMES = [
+  "FIREBASE_API_KEY",
+  "E2E_ADMIN_PASSWORD",
+  "E2E_USER_PASSWORD",
+  "E2E_INCOMPLETE_USER_PASSWORD",
+  "E2E_SUPER_ADMIN_PASSWORD",
+  "E2E_MANAGE_ADMIN_TARGET_PASSWORD",
+  "E2E_SIGNUP_PASSWORD",
+];
+
+const FULL_ENV = Object.fromEntries(
+  [...VARIABLE_NAMES, ...SECRET_NAMES].map((name) => [name, `value-of-${name}`]),
+);
+
+describe("buildCredentialMaps GitHub partition", () => {
+  it("routes every variable name to githubVariables and none to github", () => {
+    const { github, githubVariables } = buildCredentialMaps(FULL_ENV);
+
+    expect(Object.keys(githubVariables).sort()).toEqual([...VARIABLE_NAMES].sort());
+    for (const name of VARIABLE_NAMES) {
+      expect(github).not.toHaveProperty(name);
+    }
+  });
+
+  it("routes every secret name to github and none to githubVariables", () => {
+    const { github, githubVariables } = buildCredentialMaps(FULL_ENV);
+
+    expect(Object.keys(github).sort()).toEqual([...SECRET_NAMES].sort());
+    for (const name of SECRET_NAMES) {
+      expect(githubVariables).not.toHaveProperty(name);
+    }
+  });
+
+  it("never routes a password or the Firebase API key to githubVariables", () => {
+    const { githubVariables } = buildCredentialMaps(FULL_ENV);
+    const names = Object.keys(githubVariables);
+
+    expect(names.filter((n) => n.endsWith("_PASSWORD"))).toEqual([]);
+    expect(names).not.toContain("FIREBASE_API_KEY");
+  });
+
+  it("carries the env values into githubVariables", () => {
+    const { githubVariables } = buildCredentialMaps(FULL_ENV);
+
+    expect(githubVariables.E2E_BASE_URL).toBe("value-of-E2E_BASE_URL");
+    expect(githubVariables.E2E_ADMIN_UID).toBe("value-of-E2E_ADMIN_UID");
+  });
+});
+
+describe("findMissingGitHubNames", () => {
+  it("returns an empty list for a complete env", () => {
+    expect(findMissingGitHubNames(FULL_ENV)).toEqual([]);
+  });
+
+  it("returns the names of missing or empty values only", () => {
+    const env = { ...FULL_ENV, E2E_USER_UID: "" };
+    delete env.E2E_SIGNUP_PASSWORD;
+
+    const missing = findMissingGitHubNames(env);
+
+    expect(missing).toEqual(["E2E_USER_UID", "E2E_SIGNUP_PASSWORD"]);
+    for (const value of Object.values(env)) {
+      expect(missing).not.toContain(value);
+    }
   });
 });
