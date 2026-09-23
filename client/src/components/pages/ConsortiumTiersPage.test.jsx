@@ -56,9 +56,6 @@ vi.mock("../../features/consortium/consortiumApi", () => ({
   ],
 }));
 vi.mock("../../config/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("../../hooks/useReducedMotion", () => ({
-  useReducedMotion: () => true,
-}));
 
 function renderPage() {
   return renderWithProviders(<ConsortiumTiersPage />, {

@@ -25,10 +25,6 @@ const PRICE_FIGURES = Object.values(PRICING).flatMap((tier) =>
 
 const SECTION_IDS = ['engineering', 'catena-x', 'compliance', 'circularity'];
 
-vi.mock('../../hooks/useReducedMotion', () => ({
-  useReducedMotion: vi.fn(() => true),
-}));
-
 vi.mock('../../hooks/useScrollToSection', () => ({
   useScrollToSection: vi.fn(),
 }));

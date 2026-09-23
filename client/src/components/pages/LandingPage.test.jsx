@@ -4,10 +4,6 @@ import LandingPage from './LandingPage';
 import { LANDING_META } from '../../constants/seoMeta';
 import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
 
-vi.mock('../../hooks/useReducedMotion', () => ({
-  useReducedMotion: vi.fn(() => true),
-}));
-
 vi.mock('../../hooks/useScrollToSection', () => ({
   useScrollToSection: vi.fn(),
 }));

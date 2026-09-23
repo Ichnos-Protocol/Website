@@ -15,7 +15,6 @@ import {
   useGetTiersQuery,
   useSetTierMutation,
 } from "../../features/consortium/consortiumApi";
-import PageTransition from "../templates/PageTransition";
 import SeoHead from "../molecules/SeoHead";
 import ConsortiumTiersError from "../molecules/ConsortiumTiersError";
 import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
@@ -107,10 +106,8 @@ export default function ConsortiumTiersPage() {
         schemas={PAGE_STRUCTURED_DATA.consortiumTiers}
       />
 
-      <PageTransition>
-        <AdvisoryPageHero title={PAGE_TITLE} subtitle={PAGE_SUBTITLE} />
-        <Container className="py-5">{content}</Container>
-      </PageTransition>
+      <AdvisoryPageHero title={PAGE_TITLE} subtitle={PAGE_SUBTITLE} />
+      <Container className="py-5">{content}</Container>
     </div>
   );
 }

@@ -14,10 +14,6 @@ import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
 const ADVISOR_LABEL_SELECTOR = 'img[src*="Qualified-Advisor"]';
 const CATENA_X_LINK_SELECTOR = 'a[href="https://catena-x.net"]';
 
-vi.mock('../../hooks/useReducedMotion', () => ({
-  useReducedMotion: vi.fn(() => true),
-}));
-
 vi.mock('../organisms/CareerTimeline', () => ({
   default: () => <div data-testid="career-timeline">CareerTimeline</div>,
 }));
