@@ -29,6 +29,6 @@ export const MONTH_YEAR_PATTERN = new RegExp(
 
 export const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}/;
 
-// Consumed by the consortium sweeps now, and by the readiness page in P2.
+// Consumed by the consortium page sweeps and the readiness page sweep.
 export const RELATIVE_TIME_PATTERN =
   /\b(this|next|last)\s+(year|quarter|month|week)\b/i;

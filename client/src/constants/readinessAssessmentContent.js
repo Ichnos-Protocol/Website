@@ -138,7 +138,7 @@ export const ASSESSMENT_DELIVERABLES = {
   heading: "Scope of the assessment",
   items: [
   { id: "data-point-register", title: "Data point register", body: "Every data point the passport requires for your product category, mapped to the system, department or supplier that holds it today. The ones nobody holds are marked as such." },
-  { id: "gap-analysis", title: "Gap analysis with severity", body: "Each missing or unusable data point rated by what it blocks: passport issuance, a customer's footprint calculation, a due diligence answer, or nothing yet. Not every gap is worth closing this year, and the report says which ones are not." },
+  { id: "gap-analysis", title: "Gap analysis with severity", body: "Each missing or unusable data point rated by what it blocks: passport issuance, a customer's footprint calculation, a due diligence answer, or nothing yet. The report says which gaps to close first and which can wait." },
   { id: "supplier-data-map", title: "Supplier data map", body: "For each gap that originates outside your company, which tier it sits in, which of your suppliers holds it, and what to ask them for. Written as a request you can forward." },
   { id: "remediation-plan", title: "Sequenced remediation plan", body: "What to fix in-house, what to ask suppliers for, what needs a system change, and what can wait, ordered against your own product launches. Effort and owner per item, with no vendor lock-in assumed." },
   ],

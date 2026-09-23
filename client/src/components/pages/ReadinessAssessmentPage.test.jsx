@@ -29,6 +29,7 @@ import {
   YEAR_PATTERN,
   MONTH_YEAR_PATTERN,
   ISO_DATE_PATTERN,
+  RELATIVE_TIME_PATTERN,
 } from "../../constants/dateGuards";
 
 /*
@@ -393,14 +394,17 @@ describe("ReadinessAssessmentPage regulatory dates", () => {
   // owner amendment 2026-09-23, so the exclusion and its companion test went
   // with it. The sweep is now stronger than it has ever been: after the one
   // legitimate date is stripped, nothing date-shaped may render anywhere on
-  // the page, including in sections added later.
-  it("renders no year, month-year or ISO date anywhere else", () => {
+  // the page, including in sections added later. Relative calendar phrases
+  // are swept too: a phrase such as "this year" goes stale on a calendar the
+  // guard cannot see, and the date patterns never matched it.
+  it("renders no year, month-year, ISO date or relative calendar phrase anywhere else", () => {
     renderWithProviders(<ReadinessAssessmentPage />);
     const text = stripPassportDate(pageText());
 
     expect(text).not.toMatch(YEAR_PATTERN);
     expect(text).not.toMatch(MONTH_YEAR_PATTERN);
     expect(text).not.toMatch(ISO_DATE_PATTERN);
+    expect(text).not.toMatch(RELATIVE_TIME_PATTERN);
   });
 });
 
