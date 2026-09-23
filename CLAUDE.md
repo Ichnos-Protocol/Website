@@ -20,13 +20,14 @@ The site includes public-facing pages (landing, services, team, contact, battery
 | `/team`              | Public       | Team members and roles                                     |
 | `/contact`           | Public       | Contact page — inline chat, contact links, inquiry modal   |
 | `/passport`          | Public       | Battery Passport page (`CatenaXThemeLayout`)               |
+| `/passport/readiness-assessment` | Public | Battery passport data readiness assessment. Canonical; `/data/readiness-assessment` and `/catena-x/readiness-assessment` 301 here |
 | `/consortium`        | Public       | Consortium landing                                         |
 | `/consortium/tiers`  | Protected    | Tier detail, `ProtectedRoute redirectTo="/consortium"`     |
 | `/privacy`           | Protected    | Privacy / GDPR self-service                                |
 | `/admin`             | Admin        | Admin dashboard (`AdminRoute`)                             |
 | `/data`, `/catena-x` | → `/passport` | Legacy SEO paths. 301 in `client/vercel.json`, `Navigate replace` in `App.jsx` |
 
-**Read `client/src/App.jsx` as the authority on routing, not this table.** Every public page except `/passport` sits under `AdvisoryThemeLayout`; `/passport` sits under `CatenaXThemeLayout`. Unmatched paths currently hit `path="*" element={null}`, which renders the site chrome with a blank body at HTTP 200 rather than a 404. That is a known defect, not a design choice.
+**Route paths are constants.** `client/src/constants/routes.js` exports fourteen `ROUTE_*` values and is the only place in `client/src` where a route literal may appear; `routes.test.js` enforces that by sweeping the corpus. `App.test.jsx` is excluded from the sweep on purpose: its literal mounts are what pin the constants to real values. **Read `client/src/App.jsx` as the authority on routing, not this table.** Every public page except `/passport` sits under `AdvisoryThemeLayout`; `/passport` sits under `CatenaXThemeLayout`. Unmatched paths currently hit `path="*" element={null}`, which renders the site chrome with a blank body at HTTP 200 rather than a 404. That is a known defect, not a design choice.
 
 ### Core Integrations
 
@@ -461,13 +462,13 @@ Then verify:
 - [ ] No **source** file exceeds 200 lines (§5.1; test files are exempt).
 - [ ] New code follows the layer responsibilities defined in Section 4.
 
-**Known-good baseline, verified 2026-09-22:** `client` 85 test files / 759 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
+**Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 103 test files / 954 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
 
-**Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-22 with line endings normalized: **169 of 233 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
+**Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-23 with line endings normalized: **202 of 271 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
 
 Consequences, so nobody rediscovers this the hard way:
 
-- `npm run format` exists in `server` and would rewrite 42 files. `format` and `format:check` now exist in `client` too and would rewrite 169. **Do not run either to tidy up.** A several-hundred-file reformat landing mid-epic makes every review diff unreadable and collides with every in-flight branch.
+- `npm run format` exists in `server` and would rewrite 42 files. `format` and `format:check` now exist in `client` too and would rewrite 202. **Do not run either to tidy up.** A several-hundred-file reformat landing mid-epic makes every review diff unreadable and collides with every in-flight branch.
 - `format:check` is deliberately **not** in the checklist above, because it fails today on files nobody touched.
 - Adopting Prettier is a real decision with a one-commit cost: pick a config (start from `endOfLine: "auto"` given `.gitattributes` sets `* text=auto` on a Windows checkout, plus a quote ruling), run it once across both packages in a commit that changes nothing else, then add `format:check` to this checklist. Schedule it **between** epics, never inside one.
 - Until then, **match the file you are editing.** Do not convert a file's quote style while changing something else.
