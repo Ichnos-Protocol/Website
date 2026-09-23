@@ -75,15 +75,15 @@ export function interpolate(template, pricing = PRICING) {
 // Section 4.1. No price in the hero (section 4.2.1 rule 5). `ctaLabel` is a
 // label only; the booking href comes from `companyInfo.js` at the call site.
 export const ASSESSMENT_HERO = {
-  headline: "Three weeks to know exactly where your battery data falls short.",
-  subhead: "A fixed-scope assessment that maps every data point the EU battery passport will demand against what your systems actually hold today, and tells you what to do about the gap.",
-  meta: "Fixed scope. Three weeks. Remote, with one optional site visit.",
+  headline: "Assess your readiness for the EU battery passport",
+  subhead: "What data your customers will require from you, how it maps to the appropriate data models for your products and processes, where your systems fall short today, and what to do about it.",
+  meta: "Results in three weeks from kickoff. Remote, with one optional site visit.",
   ctaLabel: "Book a 30-minute scoping call",
 };
 
 // Section 7.1: the summary the meta description and the Service JSON-LD
 // share word for word. Both import it, so the two surfaces cannot drift.
-export const ASSESSMENT_SEO_SUMMARY = "A three week, fixed scope assessment mapping EU battery passport data requirements against the data your systems hold today, with a gap analysis and a sequenced remediation plan.";
+export const ASSESSMENT_SEO_SUMMARY = "A three week, fixed scope assessment mapping the EU battery passport data your customers will require against the data your systems hold today, with a gap analysis and a sequenced remediation plan.";
 
 // Sections 4.2 and 4.2.1, in the normative source order A then B. Neither
 // panel is styled as recommended. Each panel shows one currency only (section
@@ -108,13 +108,28 @@ export const ASSESSMENT_PANELS = [
   },
 ];
 
-// Section 4.2.2. The fenced copy states no date, so it carries no token: it
-// speaks to the passport obligation in prose and stays true without one. It
-// must never gain a due diligence or carbon-footprint deadline.
+// Section 4.2.2, rewritten by owner amendment 2026-09-23. The fenced copy
+// states no date, so it carries no token: it speaks to the passport
+// obligation in prose and stays true without one. It must never gain a due
+// diligence or carbon-footprint deadline.
+//
+// The v1.0 copy was time-relative ("the fourth quarter", "the new year",
+// "the last quarter"), so it went false on a calendar it could not see. The
+// closing line is now evergreen: it states a consequence of starting later,
+// not a claim about which quarter it is.
 export const ASSESSMENT_WINDOW = {
-  heading: "What the date actually means for your timeline",
-  body: "Working backwards from the passport obligation: a remediation plan is only useful if there is time to run it. Closing a supplier data gap takes a quarter, because it moves at your supplier's pace, not yours. A system change to carry a new field takes longer. An assessment that finishes in the fourth quarter leaves one clear quarter to act in. One that starts in the new year leaves the gaps you find unclosed on the day the obligation applies.",
-  closing: "This is the last quarter in which finding out is still useful.",
+  heading: "Your data is needed before the deadline, not on it",
+  body: "By the time the EU battery passport is mandatory, every supplier must already have provided the data for the batteries entering the EU market. Data from all suppliers is aggregated into the passport of a finished battery, so suppliers have to be ready well in advance.",
+  closing: "Starting later leaves the gaps you find unclosed on the day the obligation applies.",
+};
+
+// Section 4.2.0, added by owner amendment 2026-09-23. Frames the two panels
+// below as a routing device: without it the reader has to infer that the
+// cards are a self-sort. Names both parties and says the work differs, which
+// is what makes the price difference legible one section later.
+export const ASSESSMENT_AUDIENCE = {
+  heading: "Who this applies to",
+  body: "The passport obligation sits with the economic operator who places the battery on the EU market. The data it needs comes from the suppliers behind it. Both are in scope, and the work is different in each case.",
 };
 
 // Section 4.3. No deliverable states a count of data points: the published
@@ -149,34 +164,36 @@ export const ASSESSMENT_NEXT_STEPS = {
   linkLabel: "See the full service list",
 };
 
-// Section 4.6. Discharges claim rules 3 and 6 in visible copy.
-export const ASSESSMENT_SCOPE_BOUNDARY = [
-  "It is not a certification, an audit or a conformity assessment. No notified body role is implied and none is performed.",
-  "It is not a life cycle assessment. Where footprint data is in scope, we prepare the data exchange so your LCA partner sets up the PCF digital twin.",
-  "It is not a software purchase. The report stands on its own and names what you would need, including options that are not ours.",
-  "It is not a passport. Issuing one is the work that follows, if you decide to do it.",
-];
-
-// Section 4.7, text only. The optional second sentence about association
-// membership is deliberately absent: owner default is omit (section 4.7,
-// section 11 item 4). Restoring it means taking on the re-verification
-// obligation that decision declined, so do not add it back silently.
-export const ASSESSMENT_AUTHOR =
-  "The assessment is run by Francesco Maltoni, Dr.-Ing., Catena-X Qualified Advisor and member of the Digital Product Passport expert group, with more than ten years in battery development at PEM RWTH Aachen and FEV.";
-
-// Section 4.7.1. `factDate` is audit metadata for the section 8 item 19 review
-// and is never rendered. "[VERIFY: owner]" marks an item whose date the
-// repository record does not establish; it is not a placeholder to guess at.
-export const ASSESSMENT_PUBLISHED_WORK = {
-  heading: "Published work",
-  items: [
-    { text: "Conference talk, International Battery Summit 2026, Jakarta: EU battery regulation compliance, digital product passports and upstream cell data infrastructure.", factDate: "2026-08-28" },
-    { text: "Standard request submitted against CX-0160, the Catena-X battery passport standard, on component and upstream supplier integration.", factDate: "[VERIFY: owner]" },
-    { text: "Member of the Digital Product Passport expert group and the PCF Interoperability expert group.", factDate: "2026-08-11" },
-    { text: "Gap analysis of the EU passport data points against the published supplier-side data models.", factDate: "[VERIFY: owner]" },
-    { text: "Component-level aspect models, validated against the Catena-X semantic framework.", factDate: "[VERIFY: owner]" },
+// Section 4.6. Discharges claim rules 3 and 6 in visible copy. Every line is
+// load-bearing: none may be dropped or softened. The heading was added by
+// owner amendment 2026-09-23 so the reader meets the boundary knowing what it
+// is, rather than working it out from four sentences that each begin "It is
+// not".
+export const ASSESSMENT_SCOPE_BOUNDARY = {
+  heading: "Disclaimer",
+  lines: [
+    "It is not a certification, an audit or a conformity assessment. No notified body role is implied and none is performed.",
+    "It is not a life cycle assessment. Where footprint data is in scope, we prepare the data exchange so your LCA partner sets up the PCF digital twin.",
+    "It is not a software purchase. The report stands on its own and names what you would need, including options that are not ours.",
+    "It is not a passport. Issuing one is the work that follows, if you decide to do it.",
   ],
 };
+
+// Sections 4.7 and 4.7.1 are gone, owner decision 2026-09-23.
+//
+// The author paragraph was removed because every fact in it is carried by at
+// least two other surfaces, and three of the four by the global footer, which
+// renders on this page: Qualified Advisor, the Digital Product Passport
+// expert group and the PEM RWTH Aachen / FEV background all reach the reader
+// through FooterRecognitions regardless.
+//
+// The published-work list was removed on the same call. That one did NOT
+// duplicate anything: the International Battery Summit talk, the CX-0160
+// standard request, the PCF Interoperability expert group, the gap analysis
+// and the component-level aspect models existed nowhere else in client/src
+// and now exist nowhere on the site. Recorded because nothing in the
+// toolchain will flag their absence, and putting any of them back is a fresh
+// decision rather than a restoration.
 
 // Section 4.8. Every answer must be in the initial DOM, so the consumer uses
 // native details/summary and not a JavaScript accordion. The cost answer holds
@@ -189,10 +206,22 @@ export const ASSESSMENT_FAQ = [
   { id: "outside-eu", question: "We are not in the EU. Does this apply to us?", answer: "The obligation sits with whoever places the battery on the EU market. If that is your customer, the data still has to come from you, and the request will arrive with a deadline attached. If you are the one placing it, the obligation is directly yours." },
 ];
 
-// Section 4.9. Labels only: the booking href and the fallback target are wired
-// at the call site.
+// Section 4.9, reshaped by owner amendment 2026-09-23. Labels only: the
+// booking href and the fallback target are wired at the call site.
+//
+// Two bands now, at the page's two highest-intent moments. The mid band
+// follows the disclaimer, where the reader has the full picture and the
+// boundaries have been stated; it keeps the headline and the quieter written
+// fallback. The final band follows the FAQ, where the last objection has just
+// been answered; it is a button alone, with no headline and no second link,
+// so nothing competes with it.
+//
+// The v1.0 headline ("Thirty minutes is enough to tell you whether this is
+// worth doing.") is deleted: it hedged, and invited the reader to conclude it
+// might not be.
 export const ASSESSMENT_CTA_BAND = {
-  headline: "Thirty minutes is enough to tell you whether this is worth doing.",
-  ctaLabel: "Book a scoping call",
+  midHeadline: "Find out what the passport will require of you.",
+  midCtaLabel: "Book a 30-minute scoping call",
   fallbackLabel: "Or send the question in writing",
+  finalCtaLabel: "Book an introductory call",
 };

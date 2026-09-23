@@ -32,6 +32,16 @@ describe('CtaBand', () => {
     ).toBeInTheDocument();
   });
 
+  // The readiness page's closing band is a button alone. An empty `h2` would
+  // still occupy heading space and land in the accessibility tree as a
+  // nameless heading, so the element must be absent, not blank.
+  it('omits the heading element entirely when no headline is given', () => {
+    renderBand({ headline: undefined });
+
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(screen.getByTestId('cta-band-action')).toBeInTheDocument();
+  });
+
   it('renders the passed action node', () => {
     renderBand();
     expect(screen.getByTestId('cta-band-action')).toContainElement(

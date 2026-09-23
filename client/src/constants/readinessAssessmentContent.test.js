@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import * as content from "./readinessAssessmentContent";
 import {
-  ASSESSMENT_AUTHOR,
+  ASSESSMENT_AUDIENCE,
   ASSESSMENT_CTA_BAND,
   ASSESSMENT_DELIVERABLES,
   ASSESSMENT_FAQ,
@@ -11,7 +11,6 @@ import {
   ASSESSMENT_NEXT_STEPS,
   ASSESSMENT_PANELS,
   ASSESSMENT_PROCESS,
-  ASSESSMENT_PUBLISHED_WORK,
   ASSESSMENT_SCOPE_BOUNDARY,
   ASSESSMENT_SEO_SUMMARY,
   ASSESSMENT_WINDOW,
@@ -50,13 +49,12 @@ const EXPORT_NAMES = [
   "ASSESSMENT_SEO_SUMMARY",
   "ASSESSMENT_PANELS",
   "ASSESSMENT_WINDOW",
+  "ASSESSMENT_AUDIENCE",
   "ASSESSMENT_DELIVERABLES",
   "ASSESSMENT_PROCESS",
   "ASSESSMENT_INPUTS",
   "ASSESSMENT_NEXT_STEPS",
   "ASSESSMENT_SCOPE_BOUNDARY",
-  "ASSESSMENT_AUTHOR",
-  "ASSESSMENT_PUBLISHED_WORK",
   "ASSESSMENT_FAQ",
   "ASSESSMENT_CTA_BAND",
 ];
@@ -74,14 +72,12 @@ const COPY_EXPORTS = [
   ASSESSMENT_SEO_SUMMARY,
   ASSESSMENT_PANELS,
   ASSESSMENT_WINDOW,
+  ASSESSMENT_AUDIENCE,
   ASSESSMENT_DELIVERABLES,
   ASSESSMENT_PROCESS,
   ASSESSMENT_INPUTS,
   ASSESSMENT_NEXT_STEPS,
   ASSESSMENT_SCOPE_BOUNDARY,
-  ASSESSMENT_AUTHOR,
-  ASSESSMENT_PUBLISHED_WORK.heading,
-  ASSESSMENT_PUBLISHED_WORK.items.map((item) => item.text),
   ASSESSMENT_FAQ,
   ASSESSMENT_CTA_BAND,
 ];
@@ -97,7 +93,6 @@ const CLOSED_PRICING = Object.fromEntries(
 );
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const VERIFY_MARKER = "[VERIFY: owner]";
 
 const costAnswer = ASSESSMENT_FAQ.find((entry) => entry.id === "cost").answer;
 
@@ -358,13 +353,19 @@ describe("copy discipline", () => {
 
   // Section 4.2.1.1 rule 1. Phrase regexes rather than bare words, so
   // section 4.3's legitimate "product launches" does not false-positive.
+  // `introductory` is matched as a phrase, not a bare word. The closing CTA
+  // reads "Book an introductory call" (section 4.9, owner amendment
+  // 2026-09-23), which is a description of the meeting and not a claim about
+  // the price. The rule this guards is section 4.2.1.1 rule 1, which is about
+  // pricing qualifiers, so the phrases are what it should have matched all
+  // along.
   it("carries no first-client qualifier", () => {
     const terms = [
       /launch price/i,
       /launch offer/i,
       /limited offer/i,
       /limited places/i,
-      /introductory/i,
+      /introductory (?:price|offer|rate)/i,
       /cohort/i,
       /early bird/i,
       /\bfounding\b/i,
@@ -382,7 +383,7 @@ describe("copy discipline", () => {
   });
 
   // A blanket 4-digit sweep would fail on fenced copy that legitimately says
-  // "International Battery Summit 2026", "CX-0160" and "MS 2818". The
+  // "MS 2818" and "CX-0160" in section 4.8. The
   // invariant that matters is narrower: no figure from `PRICING` is typed
   // into copy, in either its raw or its grouped form.
   it("types no price figure into copy", () => {
@@ -470,10 +471,11 @@ describe("collection shapes", () => {
 
   it("holds four input lines and four scope-boundary lines", () => {
     expect(ASSESSMENT_INPUTS).toHaveLength(4);
-    expect(ASSESSMENT_SCOPE_BOUNDARY).toHaveLength(4);
+    expect(ASSESSMENT_SCOPE_BOUNDARY.lines).toHaveLength(4);
+    expect(isNonEmptyString(ASSESSMENT_SCOPE_BOUNDARY.heading)).toBe(true);
     const offenders = [
       ...ASSESSMENT_INPUTS,
-      ...ASSESSMENT_SCOPE_BOUNDARY,
+      ...ASSESSMENT_SCOPE_BOUNDARY.lines,
     ].filter((line) => !isNonEmptyString(line));
     expect(offenders).toEqual([]);
   });
@@ -489,28 +491,29 @@ describe("collection shapes", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("holds five published-work items, each with text and an audit date", () => {
-    const items = ASSESSMENT_PUBLISHED_WORK.items;
-    expect(items).toHaveLength(5);
-    const offenders = items
-      .filter(
-        (item) =>
-          !isNonEmptyString(item.text) ||
-          !(ISO_DATE.test(item.factDate) || item.factDate === VERIFY_MARKER),
-      )
-      .map((item) => item.text);
-    expect(offenders).toEqual([]);
-  });
-
   it("carries the hero, next-steps and CTA labels without hrefs", () => {
     expect(isNonEmptyString(ASSESSMENT_HERO.ctaLabel)).toBe(true);
     expect(isNonEmptyString(ASSESSMENT_NEXT_STEPS.linkLabel)).toBe(true);
+    expect(isNonEmptyString(ASSESSMENT_CTA_BAND.midCtaLabel)).toBe(true);
+    expect(isNonEmptyString(ASSESSMENT_CTA_BAND.finalCtaLabel)).toBe(true);
     expect(isNonEmptyString(ASSESSMENT_CTA_BAND.fallbackLabel)).toBe(true);
     expect(COPY).not.toMatch(/https?:\/\//);
   });
 
-  it("states the author in one string", () => {
-    expect(isNonEmptyString(ASSESSMENT_AUTHOR)).toBe(true);
+  // Section 4.9, owner amendment 2026-09-23: the mid band keeps a headline,
+  // the final band is a button alone. A headline on the final band would put
+  // the deleted "Thirty minutes is enough" hedge back by another name.
+  it("carries a mid-band headline and no final-band headline", () => {
+    expect(isNonEmptyString(ASSESSMENT_CTA_BAND.midHeadline)).toBe(true);
+    expect(ASSESSMENT_CTA_BAND.headline).toBeUndefined();
+    expect(ASSESSMENT_CTA_BAND.finalHeadline).toBeUndefined();
+  });
+
+  it("carries the audience heading and body", () => {
+    const offenders = ["heading", "body"].filter(
+      (key) => !isNonEmptyString(ASSESSMENT_AUDIENCE[key]),
+    );
+    expect(offenders).toEqual([]);
   });
 
   it("carries the window heading, body and closing line", () => {

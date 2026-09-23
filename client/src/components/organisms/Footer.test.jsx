@@ -23,6 +23,7 @@ import {
   ROUTE_CONSORTIUM,
   ROUTE_CONTACT,
   ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
   ROUTE_SERVICES,
   ROUTE_TEAM,
 } from '../../constants/routes';
@@ -244,15 +245,26 @@ describe('Footer', () => {
       });
     });
 
-    it('Products column has Battery Passport → /passport and Consortium → /consortium', () => {
+    it('Products column lists the assessment first, then Battery Passport and Consortium', () => {
       const productsCol = screen.getByTestId('footer-col-products');
+      expect(
+        within(productsCol).getByRole('link', { name: 'Readiness Assessment' }),
+      ).toHaveAttribute('href', ROUTE_READINESS_ASSESSMENT);
       expect(
         within(productsCol).getByRole('link', { name: 'Battery Passport' }),
       ).toHaveAttribute('href', ROUTE_PASSPORT);
       expect(
         within(productsCol).getByRole('link', { name: 'Consortium' }),
       ).toHaveAttribute('href', ROUTE_CONSORTIUM);
-      expect(within(productsCol).getAllByRole('link')).toHaveLength(2);
+
+      // Order is the point of the owner's ruling, not just membership.
+      const links = within(productsCol).getAllByRole('link');
+      expect(links).toHaveLength(3);
+      expect(links.map((link) => link.textContent)).toEqual([
+        'Readiness Assessment',
+        'Battery Passport',
+        'Consortium',
+      ]);
       // Old separate Data + Catena-X links are consolidated; the standalone
       // Catena-X entry should NOT exist in the footer either.
       expect(

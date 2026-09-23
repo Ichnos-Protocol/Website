@@ -9,13 +9,24 @@ import { ASSESSMENT_SCOPE_BOUNDARY } from '../../constants/readinessAssessmentCo
  */
 
 describe('ScopeBoundary', () => {
+  it('renders the heading from the constant', () => {
+    renderWithProviders(<ScopeBoundary />);
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: ASSESSMENT_SCOPE_BOUNDARY.heading,
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('renders every boundary line in the source order of the constant', () => {
     renderWithProviders(<ScopeBoundary />);
     const items = screen.getAllByRole('listitem');
 
-    expect(items).toHaveLength(ASSESSMENT_SCOPE_BOUNDARY.length);
+    expect(items).toHaveLength(ASSESSMENT_SCOPE_BOUNDARY.lines.length);
     expect(items.map((item) => item.textContent)).toEqual(
-      ASSESSMENT_SCOPE_BOUNDARY,
+      ASSESSMENT_SCOPE_BOUNDARY.lines,
     );
   });
 
@@ -24,7 +35,7 @@ describe('ScopeBoundary', () => {
     const list = screen.getByRole('list');
 
     expect(within(list).getAllByRole('listitem')).toHaveLength(
-      ASSESSMENT_SCOPE_BOUNDARY.length,
+      ASSESSMENT_SCOPE_BOUNDARY.lines.length,
     );
   });
 

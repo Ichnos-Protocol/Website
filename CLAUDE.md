@@ -462,7 +462,7 @@ Then verify:
 - [ ] No **source** file exceeds 200 lines (§5.1; test files are exempt).
 - [ ] New code follows the layer responsibilities defined in Section 4.
 
-**Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 103 test files / 954 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
+**Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 102 test files / 959 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
 
 **Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-23 with line endings normalized: **202 of 271 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
 

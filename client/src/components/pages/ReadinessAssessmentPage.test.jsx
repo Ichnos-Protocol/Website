@@ -49,8 +49,16 @@ const LABEL_ASSETS = [
 // Section 4.2.1.1 rule 1: the price is the price. Nothing may frame it as a
 // first-client, introductory or time-boxed number, and no struck-through
 // figure may appear beside it.
+//
+// `introductory` is matched as a pricing phrase, not as a bare word. The
+// closing CTA reads "Book an introductory call" (section 4.9, owner amendment
+// 2026-09-23), which describes the meeting and says nothing about the price.
+// The rule this guards is about pricing qualifiers, so the phrases are what
+// it should have matched all along.
 const QUALIFIER_PHRASES = [
-  "introductory",
+  "introductory price",
+  "introductory offer",
+  "introductory rate",
   "early bird",
   "launch price",
   "launch offer",
@@ -63,17 +71,17 @@ const QUALIFIER_PHRASES = [
 // The section testids in the normative order of the specification, so the
 // order test below reads the same way the page does.
 const SECTION_ORDER = [
-  "audience-panels",
   "assessment-window",
+  "assessment-audience",
+  "audience-panels",
   "deliverables-grid",
   "process-steps",
   "assessment-inputs",
-  "assessment-next-steps",
   "scope-boundary",
-  "assessment-author",
-  "published-work",
+  "readiness-cta-mid",
+  "assessment-next-steps",
   "assessment-faq",
-  "cta-band",
+  "readiness-cta-final",
 ];
 
 describe("ReadinessAssessmentPage", () => {
@@ -86,14 +94,38 @@ describe("ReadinessAssessmentPage", () => {
     });
   });
 
-  it("places the hero before the audience panels", () => {
+  it("places the hero before the first section", () => {
     renderWithProviders(<ReadinessAssessmentPage />);
     const hero = screen.getByTestId("readiness-hero");
+    const first = screen.getByTestId(SECTION_ORDER[0]);
+
+    expect(
+      hero.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  // The framing line is only a routing device if it arrives before the cards
+  // it frames. Asserted on its own rather than left to the order sweep, so a
+  // failure names the relationship that broke.
+  it("places the audience framing immediately before the panels", () => {
+    renderWithProviders(<ReadinessAssessmentPage />);
+    const framing = screen.getByTestId("assessment-audience");
     const panels = screen.getByTestId("audience-panels");
 
     expect(
-      hero.compareDocumentPosition(panels) & Node.DOCUMENT_POSITION_FOLLOWING,
+      framing.compareDocumentPosition(panels) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  // Sections 4.7 and 4.7.1 were deleted by owner amendment 2026-09-23. The
+  // assertion is kept so a later change that reinstates either one is a
+  // visible decision rather than a quiet reappearance.
+  it("renders no author line and no published-work list", () => {
+    renderWithProviders(<ReadinessAssessmentPage />);
+
+    expect(screen.queryByTestId("assessment-author")).toBeNull();
+    expect(screen.queryByTestId("published-work")).toBeNull();
   });
 
   it("renders the sections in the order of the specification", () => {
@@ -142,13 +174,17 @@ describe("ReadinessAssessmentPage", () => {
     expect(container.textContent).not.toMatch(/[\u20AC$\u00A3\u00A5]/);
   });
 
-  // Section 8 item 4: the closing band books through BOOKING_URL by
-  // reference, with nothing appended.
-  it("points the closing band's booking CTA at BOOKING_URL unchanged", () => {
+  // Section 8 item 4: every booking CTA on the page books through
+  // BOOKING_URL by reference, with nothing appended. Table-driven over all
+  // three, because the invariant is "every one of them", not "the one this
+  // file happened to name".
+  it.each([
+    "readiness-hero-booking",
+    "readiness-cta-mid-booking",
+    "readiness-cta-final-booking",
+  ])("points %s at BOOKING_URL unchanged", (testId) => {
     renderWithProviders(<ReadinessAssessmentPage />);
-    const href = screen
-      .getByTestId("readiness-cta-booking")
-      .getAttribute("href");
+    const href = screen.getByTestId(testId).getAttribute("href");
     const url = new URL(BOOKING_URL);
 
     expect(href).toBe(BOOKING_URL);
@@ -159,12 +195,23 @@ describe("ReadinessAssessmentPage", () => {
     );
   });
 
-  it("gives the closing band a plain text fallback to the contact page", () => {
+  it("gives the mid band a plain text fallback to the contact page", () => {
     renderWithProviders(<ReadinessAssessmentPage />);
-    const fallback = screen.getByTestId("cta-band-fallback");
+    const fallback = screen.getByTestId("readiness-cta-mid-fallback");
 
     expect(fallback).toHaveAttribute("href", ROUTE_CONTACT);
     expect(fallback.className).not.toMatch(/\bbtn\b/);
+  });
+
+  // The closing band is a button alone (section 4.9, owner amendment
+  // 2026-09-23). A headline or a second link there would put back exactly
+  // what that amendment removed.
+  it("gives the closing band no headline and no fallback link", () => {
+    renderWithProviders(<ReadinessAssessmentPage />);
+    const band = screen.getByTestId("readiness-cta-final");
+
+    expect(screen.queryByTestId("readiness-cta-final-fallback")).toBeNull();
+    expect(band.querySelector("h2")).toBeNull();
   });
 });
 
@@ -306,7 +353,6 @@ function stripPassportDate(text) {
 }
 
 const PAGE_TEST_ID = "readiness-assessment-page";
-const PUBLISHED_WORK_TEST_ID = "published-work";
 
 // A subtree's text, with every text node separated by a space. `textContent`
 // concatenates sibling nodes with nothing between them, so a year that ends
@@ -330,19 +376,6 @@ function subtreeText(root, excluded = null) {
 
 function pageText() {
   return subtreeText(screen.getByTestId(PAGE_TEST_ID));
-}
-
-// Scope (b): the page with the published-work subtree removed.
-function pageTextOutsidePublishedWork() {
-  return subtreeText(
-    screen.getByTestId(PAGE_TEST_ID),
-    screen.getByTestId(PUBLISHED_WORK_TEST_ID),
-  );
-}
-
-// Scope (c): the published-work subtree alone.
-function publishedWorkText() {
-  return subtreeText(screen.getByTestId(PUBLISHED_WORK_TEST_ID));
 }
 
 describe("ReadinessAssessmentPage regulatory dates", () => {
@@ -371,24 +404,17 @@ describe("ReadinessAssessmentPage regulatory dates", () => {
     );
   });
 
-  it("renders no year, month-year or ISO date outside published work", () => {
+  // One scope, page-wide. v1.10 split this in two because the published-work
+  // list legitimately carried a conference year; that section was deleted by
+  // owner amendment 2026-09-23, so the exclusion and its companion test went
+  // with it. The sweep is now stronger than it has ever been: after the one
+  // legitimate date is stripped, nothing date-shaped may render anywhere on
+  // the page, including in sections added later.
+  it("renders no year, month-year or ISO date anywhere else", () => {
     renderWithProviders(<ReadinessAssessmentPage />);
-    const text = stripPassportDate(pageTextOutsidePublishedWork());
+    const text = stripPassportDate(pageText());
 
     expect(text).not.toMatch(YEAR_PATTERN);
-    expect(text).not.toMatch(MONTH_YEAR_PATTERN);
-    expect(text).not.toMatch(ISO_DATE_PATTERN);
-  });
-
-  it("renders no month-year or ISO date inside published work", () => {
-    renderWithProviders(<ReadinessAssessmentPage />);
-    // Existence first, so a renamed test id fails here instead of silently
-    // emptying scope (c).
-    expect(screen.getByTestId(PUBLISHED_WORK_TEST_ID)).toBeInTheDocument();
-    // No stripping needed: the passport date renders in Panel B, and
-    // getPassportDateLabel() cannot produce an ISO form either way.
-    const text = publishedWorkText();
-
     expect(text).not.toMatch(MONTH_YEAR_PATTERN);
     expect(text).not.toMatch(ISO_DATE_PATTERN);
   });

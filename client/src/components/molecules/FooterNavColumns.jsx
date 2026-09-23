@@ -5,6 +5,7 @@ import {
   ROUTE_CONSORTIUM,
   ROUTE_LANDING,
   ROUTE_PASSPORT,
+  ROUTE_READINESS_ASSESSMENT,
   ROUTE_SERVICES,
   ROUTE_TEAM,
 } from '../../constants/routes';
@@ -52,6 +53,9 @@ const MENUS = [
     heading: 'Products',
     testId: 'footer-col-products',
     links: [
+      // First by owner decision 2026-09-23: the assessment is the offer with
+      // a price behind it, and the footer is one of its five entry points.
+      { label: 'Readiness Assessment', to: ROUTE_READINESS_ASSESSMENT },
       { label: 'Battery Passport', to: ROUTE_PASSPORT },
       { label: 'Consortium', to: ROUTE_CONSORTIUM },
     ],
