@@ -171,7 +171,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Firebase ID tokens verified server-side on every protected request.
 - Never use `dangerouslySetInnerHTML`.
 - CORS restricted to frontend origin only.
-- Rate limiting on public endpoints.
+- Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
 - File uploads: validate type + size (max 10MB, PDF/DOCX/PNG/JPG only).
 - Never commit `.env` files or secrets.
 

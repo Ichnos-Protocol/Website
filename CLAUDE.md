@@ -199,8 +199,9 @@ Helpers are the primary tool for keeping code readable and short:
 | `contact_requests` | `id` SERIAL PK, `user_id` FK, `contact_consent_timestamp`, `contact_consent_version`, `status`, `admin_notes`, timestamps |
 | `questions` | Follow-up questions attached to a request |
 | `question_topics` | Topic classification output |
+| `rate_limit_hits` | Shared rate-limit counters: `key` TEXT PK (limiter prefix + client IP), `hits`, `reset_at` TIMESTAMPTZ |
 
-Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`; `010` is the pending contraction to `('asap','later')`, run by the owner only after P1 is live in production.
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`; `010` is the pending contraction to `('asap','later')`, run by the owner only after P1 is live in production. `009_20260923_rate_limit_hits.sql` creates `rate_limit_hits`, read and written only by `rateLimitRepository.js`.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 
@@ -285,11 +286,10 @@ All endpoints are prefixed with `/api`.
 
 Six routers are mounted in `server/src/app.js`: `/api/auth`, `/api/contact`, `/api/chat`, `/api/admin`, `/api/gdpr`, `/api/consortium`.
 
-**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole.
+**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole (100 requests / 15 minutes), and a second limiter on `/api/auth` caps those endpoints at 20 requests / 15 minutes. Preview deployments raise both caps to 1000.
 
 | Method | Endpoint                          | Auth       | Description                          |
 | ------ | --------------------------------- | ---------- | ------------------------------------ |
-| POST   | `/api/auth/verify-token`          | auth       | Verify token, upsert user            |
 | GET    | `/api/auth/me`                    | auth       | Current user profile (camelCase)     |
 | POST   | `/api/auth/sync-profile`          | auth       | Upsert profile from token `uid` (§7) |
 | PUT    | `/api/auth/profile`               | auth       | Update profile fields                |
@@ -349,7 +349,7 @@ Rules:
 - **SQL injection**: Parameterized queries only. Never concatenate user input into SQL.
 - **XSS**: React escapes by default. Never use `dangerouslySetInnerHTML`.
 - **CORS**: Restrict to the frontend origin only.
-- **Rate limiting**: Apply `express-rate-limit` to public endpoints, especially `/api/chat/message` and `/api/contact`.
+- **Rate limiting**: `express-rate-limit` backed by `PgRateLimitStore` (`server/src/middleware/pgRateLimitStore.js`), which stores counters through `rateLimitRepository.js` in the `rate_limit_hits` table, so every serverless instance shares them. Each limiter has its own store instance and key prefix (`global:`, `auth:`). On a database error the store fails open: it logs the error message (never the key, which holds the client IP) and counts the request as a first hit. `/api/chat/message` also has its own daily quota.
 - **File uploads**: none exist (§6.2). If one is ever added, validate type and size on both client and server, cap at 10MB, and allow only PDF, DOCX, PNG, JPG.
 - **Auth tokens**: Verify Firebase ID tokens server-side on every protected request. Never store tokens in localStorage — use httpOnly cookies or in-memory storage.
 - **Helmet**: Use `helmet` middleware for HTTP security headers.

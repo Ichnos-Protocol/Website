@@ -36,6 +36,19 @@ vi.mock("../src/repositories/knowledgeRepository.js", () => ({
 
 globalThis.fetch = vi.fn();
 
+// Keep limiter traffic off the shared mockQuery queue: both rate limiters
+// hit the repository on every /api/ request. Plain functions, not vi.fn(),
+// so a mock reset cannot strip the implementation.
+vi.mock("../src/repositories/rateLimitRepository.js", () => ({
+  incrementHit: async () => ({
+    hits: 1,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  decrementHit: async () => null,
+  resetKey: async () => true,
+  getHit: async () => null,
+}));
+
 const { seedE2EOnPreview, resetSeedState, seedStatus } = await import(
   "./seedE2EOnPreview.js"
 );

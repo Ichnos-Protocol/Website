@@ -68,6 +68,19 @@ vi.mock("../services/adminService.js", () => ({
 
 globalThis.fetch = vi.fn();
 
+// Keep limiter traffic off the shared mockQuery queue: both rate limiters
+// hit the repository on every /api/ request. Plain functions, not vi.fn(),
+// so a mock reset cannot strip the implementation.
+vi.mock("../repositories/rateLimitRepository.js", () => ({
+  incrementHit: async () => ({
+    hits: 1,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  decrementHit: async () => null,
+  resetKey: async () => true,
+  getHit: async () => null,
+}));
+
 const { default: app } = await import("../app.js");
 
 const adminToken = { uid: "admin-uid", admin: true };

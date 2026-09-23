@@ -27,7 +27,6 @@ vi.mock("../config/firebase.js", () => ({
 
 const {
   syncProfile,
-  verifyToken,
   getUser,
   updateProfile,
   setAdminClaim,
@@ -318,24 +317,6 @@ describe("authService", () => {
       expect(mockCreateUser).not.toHaveBeenCalled();
       expect(mockUpsertProfile).not.toHaveBeenCalled();
       expect(mockUpdateUserActivity).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("verifyToken", () => {
-    it("returns decoded token and custom claims", async () => {
-      const decoded = { uid: "uid-1", email: "john@example.com" };
-      mockVerifyIdToken.mockResolvedValue(decoded);
-
-      const result = await verifyToken("valid-token");
-
-      expect(mockVerifyIdToken).toHaveBeenCalledWith("valid-token");
-      expect(result.decoded).toEqual(decoded);
-    });
-
-    it("propagates Firebase verification errors", async () => {
-      mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
-
-      await expect(verifyToken("bad-token")).rejects.toThrow("Invalid token");
     });
   });
 

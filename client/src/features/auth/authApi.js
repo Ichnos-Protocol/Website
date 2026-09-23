@@ -28,12 +28,6 @@ export const authApi = createApi({
       }),
       invalidatesTags: ['Profile'],
     }),
-    verifyToken: builder.mutation({
-      query: () => ({
-        url: '/api/auth/verify-token',
-        method: 'POST',
-      }),
-    }),
     getMe: builder.query({
       query: () => '/api/auth/me',
       providesTags: ['Profile'],
@@ -51,7 +45,6 @@ export const authApi = createApi({
 
 export const {
   useSyncProfileMutation,
-  useVerifyTokenMutation,
   useGetMeQuery,
   useUpdateProfileMutation,
 } = authApi;

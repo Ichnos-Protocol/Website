@@ -9,6 +9,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import PgRateLimitStore from "./middleware/pgRateLimitStore.js";
 import authRoutes from "./routes/authRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
@@ -40,15 +41,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting for public endpoints.
+// Counters live in Postgres (PgRateLimitStore) so every serverless instance
+// shares them. Each limiter needs its own store instance and prefix.
 // Preview deployments use a higher limit to avoid E2E test failures —
 // preview URLs are protected by Vercel Deployment Protection anyway.
 const isPreview = process.env.VERCEL_ENV === "preview";
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const PREVIEW_RATE_LIMIT_MAX = 1000;
+const AUTH_RATE_LIMIT_MAX = 20;
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isPreview ? 1000 : 100,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: isPreview ? PREVIEW_RATE_LIMIT_MAX : 100,
   message: "Too many requests from this IP, please try again later.",
+  store: new PgRateLimitStore({ prefix: "global:" }),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
 });
 app.use("/api/", limiter);
+
+// Tighter limit for the auth endpoints, counted on top of the global one.
+const authLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: isPreview ? PREVIEW_RATE_LIMIT_MAX : AUTH_RATE_LIMIT_MAX,
+  message: "Too many authentication requests from this IP, please try again later.",
+  store: new PgRateLimitStore({ prefix: "auth:" }),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
 
 // Root status page
 app.get("/", (_req, res) => {
@@ -88,6 +107,7 @@ app.get("/api/health", async (_req, res) => {
 });
 
 // API routes
+app.use("/api/auth", authLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/chat", chatRoutes);
