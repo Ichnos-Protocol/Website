@@ -5,7 +5,7 @@ import { ASSESSMENT_INPUTS } from '../../constants/readinessAssessmentContent';
 
 /*
  * Section 4.5 in its rendered form. Expected values come from
- * ASSESSMENT_INPUTS, never from a restated copy string.
+ * ASSESSMENT_INPUTS.lines, never from a restated copy string.
  */
 
 describe('AssessmentInputs', () => {
@@ -13,8 +13,8 @@ describe('AssessmentInputs', () => {
     renderWithProviders(<AssessmentInputs />);
     const items = screen.getAllByRole('listitem');
 
-    expect(items).toHaveLength(ASSESSMENT_INPUTS.length);
-    expect(items.map((item) => item.textContent)).toEqual(ASSESSMENT_INPUTS);
+    expect(items).toHaveLength(ASSESSMENT_INPUTS.lines.length);
+    expect(items.map((item) => item.textContent)).toEqual(ASSESSMENT_INPUTS.lines);
   });
 
   it('renders the lines as a single list', () => {
@@ -23,7 +23,7 @@ describe('AssessmentInputs', () => {
 
     expect(list).toBeInTheDocument();
     expect(within(list).getAllByRole('listitem')).toHaveLength(
-      ASSESSMENT_INPUTS.length,
+      ASSESSMENT_INPUTS.lines.length,
     );
   });
 
@@ -35,7 +35,7 @@ describe('AssessmentInputs', () => {
     const items = screen.getAllByRole('listitem');
 
     expect(items[items.length - 1]).toHaveTextContent(
-      ASSESSMENT_INPUTS[ASSESSMENT_INPUTS.length - 1],
+      ASSESSMENT_INPUTS.lines[ASSESSMENT_INPUTS.lines.length - 1],
     );
   });
 

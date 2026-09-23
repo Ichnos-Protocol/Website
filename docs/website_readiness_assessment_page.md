@@ -1,6 +1,8 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.12, 2026-09-23 · Status: normative · shipped, reworked on owner review**
+**Version 1.13, 2026-09-23 · Status: normative · shipped, second owner review pass**
+
+*(1.13, second owner review of the rendered page. **(a) §4.2.2 rewritten again.** The v1.12 heading was called jibberish and it was: "Your data is needed before the deadline, not on it" is a slogan, not a claim. The replacement states the obligation plainly, and the closing line now names the consequence that actually bites, which is the customer filling the gaps in ways that may not survive scrutiny. **(b) §4.2.0 heading and body replaced** with the owner's wording. "Who this applies to" was ambiguous about what "this" was. **(c) Four sections gain headings:** §4.3 "Scope of the assessment", §4.4 "Timeline", §4.5 "Prerequisites", §4.8 "FAQ". Four constants reshape from bare arrays to `{ heading, items | steps | lines | entries }`, matching the §4.6 shape from v1.12. **(d) The mid CTA becomes "Book an introductory call"**, so the page does not show the hero's label twice.)*
 
 *(1.12, owner rework after reviewing the deployed staging page. The architecture holds; the copy and the section order did not. **(a) Section order rebuilt** to read as a consultation rather than a brochure: what it is, why now, who it applies to, what you get, how it runs, what we need, what it is not, act, where it leads, objections, act. §4.2.2 now precedes the panels, and a new §4.2.0 frames them. **(b) Fenced-copy amendments** to §4.1 (headline, subhead, meta), §4.2.2 (heading, body, closing) and §4.9 (both bands). **(c) §4.7 and §4.7.1 deleted.** The author facts are carried by the global footer on this very page; the five published-work facts leave the site entirely and are not relocated. **(d) §2.2 amended**: no top-level navbar entry still, but a child under Battery Passport is permitted. **(e) §2.3** grows from three entry points to five. **(f) §8 item 7** loses scope (c); the date sweep is now page-wide, which is stronger. §1, §5, §8 and §11 follow.)*
 
@@ -235,10 +237,10 @@ New constants file `client/src/constants/readinessAssessmentContent.js`. Every s
 |---|---|---|
 | 1 | §4.1 Hero | what it is |
 | 2 | §4.2.2 The window | why now |
-| 3 | §4.2.0 Who this applies to, then §4.2 the two panels | who it is for |
-| 4 | §4.3 What you get | what you get |
-| 5 | §4.4 How it runs | how it runs |
-| 6 | §4.5 What we need from you | what it costs you in effort |
+| 3 | §4.2.0 To whom this assessment applies, then §4.2 the two panels | who it is for |
+| 4 | §4.3 Scope of the assessment | what you get |
+| 5 | §4.4 Timeline | how it runs |
+| 6 | §4.5 Prerequisites | what it costs you in effort |
 | 7 | §4.6 Disclaimer | what it is not |
 | 8 | §4.9 mid CTA band | act |
 | 9 | §4.5.1 What usually follows | where it leads |
@@ -369,12 +371,14 @@ Six rules:
 
 Renders **between the window and the audience panels**, and nowhere else. It exists to make the two panels a routing device rather than decoration: without it the reader meets two cards with no instruction and has to infer that they are meant to self-sort into one. Naming both parties and saying the work differs is also what makes the price difference legible one section later.
 
+**Owner wording, 2026-09-23 (second pass).** "Who this applies to" left "this" ambiguous on a page that has both an assessment and a regulation in view. The heading now names the assessment. The body also does something the first version did not: it says what Ichnos does about it, and states the preference for working along one value chain rather than picking off either end.
+
 ```
-heading: "Who this applies to"
+heading: "To whom this assessment applies"
 
 body: "The passport obligation sits with the economic operator who places the
-battery on the EU market. The data it needs comes from the suppliers behind
-it. Both are in scope, and the work is different in each case."
+battery on the EU market, and the data come from its value chain. Ichnos works
+with both, ideally along the same value chain."
 ```
 
 Normative constraints:
@@ -390,17 +394,21 @@ Renders **immediately after the hero and before §4.2.0**, reordered by owner am
 
 The replacement states the mechanism instead of the mood: data has to travel up the chain and be aggregated before the finished battery carries a passport, so suppliers are needed earlier than the deadline suggests. The closing line states a **consequence of starting later** rather than naming a quarter, so it stays true without maintenance.
 
+**Fenced-copy amendment, 2026-09-23 (second pass).** The v1.12 heading was a slogan rather than a claim, and it made the reader do the work of extracting the point. The heading now states the obligation directly. The body loses its closing clause, because the heading now carries it. The closing line names the consequence that actually bites: the customer is left filling the gaps, and what they fill them with may not hold up.
+
 ```
-heading: "Your data is needed before the deadline, not on it"
+heading: "Suppliers must be data ready well in advance of the mandated
+passport date"
 
 body: "By the time the EU battery passport is mandatory, every supplier must
 already have provided the data for the batteries entering the EU market. Data
-from all suppliers is aggregated into the passport of a finished battery, so
-suppliers have to be ready well in advance."
+from all suppliers is aggregated into the passport of a finished battery."
 
-closing: "Starting later leaves the gaps you find unclosed on the day the
-obligation applies."
+closing: "Starting later leaves your customer with the obligation to fill the
+gaps, in ways which might not pass an audit."
 ```
+
+**Note on "audit".** §4.6 says the assessment "is not a certification, an audit or a conformity assessment". The two uses do not collide: §4.6 is about what Ichnos performs, this line is about third-party scrutiny of the client's data. Keep them distinguishable. This section must never describe Ichnos as auditing anything.
 
 Normative constraints:
 
@@ -409,9 +417,11 @@ Normative constraints:
 - No countdown timer, no animated clock, no "days remaining" component.
 - **This copy no longer goes stale on its own.** Owner item §11.13 stays, because a quarterly read is still cheap insurance, but the specific liability it was written for is gone.
 
-### 4.3 What you get
+### 4.3 Scope of the assessment
 
 Four deliverables, rendered as a grid, 2x2 at desktop, single column at 390px.
+
+**Heading added 2026-09-23: `Scope of the assessment`.** v1.0 fenced no heading here, so the grid arrived with no label and the reader had to infer that four cards were the deliverable list. `ASSESSMENT_DELIVERABLES` reshapes from a bare array to `{ heading, items }`.
 
 ```
 1. "Data point register"
@@ -438,7 +448,9 @@ Four deliverables, rendered as a grid, 2x2 at desktop, single column at 390px.
 
 **Note for the implementer:** no deliverable states a count of data points. The published counts differ by source and are still moving, and a hardcoded number is a claim that goes stale. Do not add one.
 
-### 4.4 How it runs
+### 4.4 Timeline
+
+**Heading added 2026-09-23: `Timeline`.** `ASSESSMENT_PROCESS` reshapes to `{ heading, steps }`.
 
 Three steps. **A new `molecules/ProcessSteps.jsx`**, not the pivot-4 `RegulatoryTimeline`: that organism is date-driven, renders from `regulatoryDates.js`, and carries deferred-state semantics that mean nothing here. Reusing it would couple a sales sequence to the regulatory-date single source. Build the small one.
 
@@ -458,7 +470,7 @@ Week 3: "Report and walkthrough"
 including the supplier requests you can send the following week."
 ```
 
-### 4.5 What we need from you
+### 4.5 Prerequisites
 
 ```
 "One named owner, and roughly three days of their time across the three weeks."
@@ -468,6 +480,8 @@ structured export."
 "Your bill of materials at the level you already maintain it. We do not need
 recipes, formulations or anything you treat as a trade secret."
 ```
+
+**Heading added 2026-09-23: `Prerequisites`.** `ASSESSMENT_INPUTS` reshapes to `{ heading, lines }`.
 
 The last line is load-bearing. IP exposure is the first objection an Asian component supplier raises, and answering it before the call is a large part of what this page is for.
 
@@ -531,6 +545,8 @@ The owner was told this before deciding and chose deletion without relocation. R
 
 ### 4.8 FAQ
 
+**Heading added 2026-09-23: `FAQ`.** `ASSESSMENT_FAQ` reshapes to `{ heading, entries }`.
+
 Native `<details>` / `<summary>`. **MUST NOT** be a JavaScript accordion: every answer must be present in the initial DOM for crawlers and for readers who never click.
 
 ```
@@ -580,11 +596,11 @@ obligation is directly yours."
 
 Two bands now, at the page's two highest-intent moments.
 
-**Mid band**, after the disclaimer (§4.6), where the reader has the full picture and the boundaries have been stated:
+**Mid band**, after the disclaimer (§4.6), where the reader has the full picture and the boundaries have been stated. Its label changed on 2026-09-23: it repeated the hero's "Book a 30-minute scoping call" word for word, so the page asked for the same thing twice in the same words.
 
 ```
 midHeadline:  "Find out what the passport will require of you."
-midCtaLabel:  "Book a 30-minute scoping call"
+midCtaLabel:  "Book an introductory call"
 fallbackLabel: "Or send the question in writing"   → links to /contact
 ```
 

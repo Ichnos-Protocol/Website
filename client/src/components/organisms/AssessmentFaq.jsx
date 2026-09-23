@@ -21,7 +21,10 @@ import {
 export default function AssessmentFaq({ pricing }) {
   return (
     <section className="py-5" data-testid="assessment-faq">
-      {ASSESSMENT_FAQ.map((entry) => (
+      <h2 className="section-heading mb-4" data-testid="assessment-faq-heading">
+        {ASSESSMENT_FAQ.heading}
+      </h2>
+      {ASSESSMENT_FAQ.entries.map((entry) => (
         <details
           key={entry.id}
           className="mb-3"

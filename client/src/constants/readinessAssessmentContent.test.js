@@ -94,7 +94,7 @@ const CLOSED_PRICING = Object.fromEntries(
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const costAnswer = ASSESSMENT_FAQ.find((entry) => entry.id === "cost").answer;
+const costAnswer = ASSESSMENT_FAQ.entries.find((entry) => entry.id === "cost").answer;
 
 const isNonEmptyString = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -456,35 +456,35 @@ describe("collection shapes", () => {
   });
 
   it("holds four deliverables with unique ids", () => {
-    const ids = ASSESSMENT_DELIVERABLES.map((item) => item.id);
+    const ids = ASSESSMENT_DELIVERABLES.items.map((item) => item.id);
     expect(ids).toHaveLength(4);
     expect(new Set(ids).size).toBe(4);
   });
 
   it("holds three process steps with a week label each", () => {
-    expect(ASSESSMENT_PROCESS).toHaveLength(3);
-    const offenders = ASSESSMENT_PROCESS.filter(
+    expect(ASSESSMENT_PROCESS.steps).toHaveLength(3);
+    const offenders = ASSESSMENT_PROCESS.steps.filter(
       (step) => !isNonEmptyString(step.week) || !isNonEmptyString(step.title),
     ).map((step) => step.id);
     expect(offenders).toEqual([]);
   });
 
   it("holds four input lines and four scope-boundary lines", () => {
-    expect(ASSESSMENT_INPUTS).toHaveLength(4);
+    expect(ASSESSMENT_INPUTS.lines).toHaveLength(4);
     expect(ASSESSMENT_SCOPE_BOUNDARY.lines).toHaveLength(4);
     expect(isNonEmptyString(ASSESSMENT_SCOPE_BOUNDARY.heading)).toBe(true);
     const offenders = [
-      ...ASSESSMENT_INPUTS,
+      ...ASSESSMENT_INPUTS.lines,
       ...ASSESSMENT_SCOPE_BOUNDARY.lines,
     ].filter((line) => !isNonEmptyString(line));
     expect(offenders).toEqual([]);
   });
 
   it("holds five FAQ entries with unique ids and a non-empty answer each", () => {
-    const ids = ASSESSMENT_FAQ.map((entry) => entry.id);
+    const ids = ASSESSMENT_FAQ.entries.map((entry) => entry.id);
     expect(ids).toHaveLength(5);
     expect(new Set(ids).size).toBe(5);
-    const offenders = ASSESSMENT_FAQ.filter(
+    const offenders = ASSESSMENT_FAQ.entries.filter(
       (entry) =>
         !isNonEmptyString(entry.question) || !isNonEmptyString(entry.answer),
     ).map((entry) => entry.id);

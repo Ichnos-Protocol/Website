@@ -35,7 +35,7 @@ function withLadder(text, ladder) {
   );
 }
 
-const PRICED_ENTRIES =ASSESSMENT_FAQ.filter(
+const PRICED_ENTRIES =ASSESSMENT_FAQ.entries.filter(
   (entry) => tokensIn(entry.answer).length > 0,
 );
 
@@ -52,18 +52,18 @@ describe('AssessmentFaq', () => {
   it('renders every entry in the source order of the constant', () => {
     renderWithProviders(<AssessmentFaq />);
     const rendered = screen
-      .getAllByTestId(/^assessment-faq-(?!question-|answer-)/)
+      .getAllByTestId(/^assessment-faq-(?!question-|answer-|heading$)/)
       .map((entry) => entry.getAttribute('data-testid'));
 
     expect(rendered).toHaveLength(5);
     expect(rendered).toEqual(
-      ASSESSMENT_FAQ.map((entry) => 'assessment-faq-' + entry.id),
+      ASSESSMENT_FAQ.entries.map((entry) => 'assessment-faq-' + entry.id),
     );
   });
 
   it('renders every question from the constant', () => {
     renderWithProviders(<AssessmentFaq />);
-    ASSESSMENT_FAQ.forEach((entry) => {
+    ASSESSMENT_FAQ.entries.forEach((entry) => {
       expect(
         screen.getByTestId(`assessment-faq-question-${entry.id}`),
       ).toHaveTextContent(entry.question);
@@ -72,7 +72,7 @@ describe('AssessmentFaq', () => {
 
   it('puts every answer in the initial DOM while every entry is closed', () => {
     renderWithProviders(<AssessmentFaq />);
-    ASSESSMENT_FAQ.forEach((entry) => {
+    ASSESSMENT_FAQ.entries.forEach((entry) => {
       expect(screen.getByTestId(`assessment-faq-${entry.id}`).open).toBe(
         false,
       );
@@ -86,7 +86,7 @@ describe('AssessmentFaq', () => {
     const { container } = renderWithProviders(<AssessmentFaq />);
     const details = container.querySelectorAll('details');
 
-    expect(details).toHaveLength(ASSESSMENT_FAQ.length);
+    expect(details).toHaveLength(ASSESSMENT_FAQ.entries.length);
     details.forEach((element) => {
       expect(element.querySelectorAll('summary')).toHaveLength(1);
     });

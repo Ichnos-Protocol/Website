@@ -5,7 +5,7 @@ import { ASSESSMENT_PROCESS } from '../../constants/readinessAssessmentContent';
 
 /*
  * Section 4.4 in its rendered form. Every expected value comes from
- * ASSESSMENT_PROCESS; no week label, title or body is restated here.
+ * ASSESSMENT_PROCESS.steps; no week label, title or body is restated here.
  */
 
 // Markup that would couple this sequence to the regulatory-date axis.
@@ -20,11 +20,11 @@ describe('ProcessSteps', () => {
       .map((step) => step.getAttribute('data-testid'));
 
     expect(rendered).toEqual(
-      ASSESSMENT_PROCESS.map((step) => `process-step-${step.id}`),
+      ASSESSMENT_PROCESS.steps.map((step) => `process-step-${step.id}`),
     );
   });
 
-  ASSESSMENT_PROCESS.forEach((step) => {
+  ASSESSMENT_PROCESS.steps.forEach((step) => {
     it(`renders the ${step.id} step copy from the constants`, () => {
       renderWithProviders(<ProcessSteps />);
       const item = screen.getByTestId(`process-step-${step.id}`);
@@ -43,7 +43,7 @@ describe('ProcessSteps', () => {
 
     expect(list.tagName).toBe('OL');
     expect(within(list).getAllByRole('listitem')).toHaveLength(
-      ASSESSMENT_PROCESS.length,
+      ASSESSMENT_PROCESS.steps.length,
     );
   });
 

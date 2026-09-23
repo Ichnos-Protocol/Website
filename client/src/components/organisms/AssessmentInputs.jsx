@@ -14,8 +14,11 @@ import { ASSESSMENT_INPUTS } from '../../constants/readinessAssessmentContent';
 export default function AssessmentInputs() {
   return (
     <section className="py-5" data-testid="assessment-inputs">
+      <h2 className="section-heading mb-4" data-testid="assessment-inputs-heading">
+        {ASSESSMENT_INPUTS.heading}
+      </h2>
       <ul className="mb-0">
-        {ASSESSMENT_INPUTS.map((line, index) => (
+        {ASSESSMENT_INPUTS.lines.map((line, index) => (
           <li key={line} data-testid={`assessment-input-${index}`}>
             {line}
           </li>
