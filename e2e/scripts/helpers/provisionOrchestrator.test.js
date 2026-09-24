@@ -3,11 +3,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const execFileSync = vi.fn();
 const spawnSync = vi.fn();
 const readEnvFile = vi.fn();
+const checkFirebaseEnv = vi.fn();
+const writeUidsToEnvFile = vi.fn();
+const provisionFirebaseUsers = vi.fn();
+const syncToGitHub = vi.fn();
+const syncVariablesToGitHub = vi.fn();
+const syncToVercel = vi.fn();
 
 vi.mock("child_process", () => ({ execFileSync, spawnSync }));
+vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  checkGhAuth: vi.fn(),
+  checkVercelAuth: vi.fn(),
+  checkVercelProject: vi.fn(),
+  checkFirebaseEnv,
+}));
+const config = vi.fn();
 vi.mock("dotenv", async (importOriginal) => ({
   ...(await importOriginal()),
-  config: vi.fn(),
+  config,
 }));
 vi.mock("fs", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -16,7 +30,11 @@ vi.mock("fs", async (importOriginal) => ({
 vi.mock("./e2eEnvFile.js", async (importOriginal) => ({
   ...(await importOriginal()),
   readEnvFile,
+  writeUidsToEnvFile,
 }));
+vi.mock("./firebaseTestSetup.js", () => ({ provisionFirebaseUsers }));
+vi.mock("./e2eSyncGitHub.js", () => ({ syncToGitHub, syncVariablesToGitHub }));
+vi.mock("./e2eSyncVercel.js", () => ({ syncToVercel }));
 
 const { main } = await import("../provision-e2e-firebase-users.js");
 
@@ -28,6 +46,32 @@ const incompleteEnv = {
   E2E_ADMIN_PASSWORD: SECRET,
   E2E_ADMIN_UID: "uid-admin",
 };
+
+const ROLE_KEYS = [
+  "ADMIN",
+  "USER",
+  "INCOMPLETE_USER",
+  "SUPER_ADMIN",
+  "MANAGE_ADMIN_TARGET",
+];
+
+// Full-mode env that passes every check; UIDs arrive from provisioning.
+function completeEnv() {
+  const env = {
+    FIREBASE_API_KEY: "api-key-value",
+    FIREBASE_PROJECT_ID: "ichnos-e2e",
+    FIREBASE_AUTH_DOMAIN: "ichnos-e2e.firebaseapp.com",
+    FIREBASE_STORAGE_BUCKET: "ichnos-e2e.appspot.com",
+    E2E_BASE_URL: "https://client.example.com",
+    E2E_API_BASE_URL: "https://server.example.com",
+    E2E_SIGNUP_PASSWORD: "signup-secret-value",
+  };
+  for (const key of ROLE_KEYS) {
+    env[`E2E_${key}_EMAIL`] = `e2e-${key.toLowerCase()}@ichnos-test.com`;
+    env[`E2E_${key}_PASSWORD`] = `secret-${key.toLowerCase()}-value`;
+  }
+  return env;
+}
 
 describe("provision orchestrator ordering", () => {
   beforeEach(() => {
@@ -50,5 +94,74 @@ describe("provision orchestrator ordering", () => {
     await expect(main({ syncOnly: true })).rejects.toThrowError(
       expect.objectContaining({ message: expect.not.stringContaining(SECRET) }),
     );
+  });
+
+  it("rejects placeholder passwords by name before any gh or vercel call", async () => {
+    readEnvFile.mockReturnValue({
+      ...incompleteEnv,
+      E2E_ADMIN_PASSWORD: "ab12",
+      E2E_MANAGE_ADMIN_TARGET_EMAIL: "e2e-target@ichnos-test.com",
+      E2E_MANAGE_ADMIN_TARGET_PASSWORD: "manage",
+    });
+
+    const error = await main({ syncOnly: true }).catch((err) => err);
+
+    expect(error.message).toMatch(
+      /E2E_ADMIN_PASSWORD, E2E_MANAGE_ADMIN_TARGET_PASSWORD/,
+    );
+    expect(error.message).not.toContain("ab12");
+    expect(error.message).not.toMatch(/\bmanage\b/);
+    expect(execFileSync).not.toHaveBeenCalled();
+    expect(spawnSync).not.toHaveBeenCalled();
+  });
+
+  it("never loads server/.env in sync-only mode", async () => {
+    await expect(main({ syncOnly: true })).rejects.toThrowError();
+
+    expect(config).not.toHaveBeenCalled();
+  });
+
+  it("loads server/.env before the full-mode Firebase preflight check", async () => {
+    const stop = new Error("stop after Firebase preflight");
+    checkFirebaseEnv.mockImplementationOnce(() => {
+      throw stop;
+    });
+
+    await expect(main({})).rejects.toBe(stop);
+
+    expect(config).toHaveBeenCalledTimes(1);
+    expect(config.mock.calls[0][0].path).toMatch(/server[\\/]\.env$/);
+    expect(config.mock.invocationCallOrder[0]).toBeLessThan(
+      checkFirebaseEnv.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("loads server/.env exactly once in a successful full-mode run", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    provisionFirebaseUsers.mockResolvedValue(
+      Object.fromEntries(ROLE_KEYS.map((k) => [`E2E_${k}_UID`, `uid-${k}`])),
+    );
+    syncToGitHub.mockReturnValue([]);
+    syncVariablesToGitHub.mockReturnValue([]);
+    syncToVercel.mockReturnValue([]);
+
+    await main({});
+
+    expect(config).toHaveBeenCalledTimes(1);
+    expect(config.mock.calls[0][0].path).toMatch(/server[\\/]\.env$/);
+    const loadedAt = config.mock.invocationCallOrder[0];
+    expect(loadedAt).toBeLessThan(checkFirebaseEnv.mock.invocationCallOrder[0]);
+    expect(loadedAt).toBeLessThan(
+      provisionFirebaseUsers.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("never loads server/.env or checks process.env Firebase vars in reset mode", async () => {
+    await expect(
+      main({ resetPasswords: true, firebaseEnvPath: "missing/.env.e2e" }),
+    ).rejects.toThrowError();
+
+    expect(config).not.toHaveBeenCalled();
+    expect(checkFirebaseEnv).not.toHaveBeenCalled();
   });
 });

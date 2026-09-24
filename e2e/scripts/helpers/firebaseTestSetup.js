@@ -4,10 +4,15 @@
  * Exports:
  *   - provisionFirebaseUsers(credentialsArray) — general-purpose provisioning
  *   - setupFirebaseTestUsers() — backward-compatible wrapper (reads process.env)
+ *   - getPasswordResetApp(credentials) — app built from explicit credentials,
+ *     never from process.env (used by --reset-passwords)
+ *   - upsertUser(auth, spec) — create or update one user and set its claims
  *
  * Returns { userUid, adminUid, superAdminUid }.
  */
 import admin from "firebase-admin";
+
+const RESET_APP_NAME = "e2e-password-reset";
 
 const USER_SPECS = [
   {
@@ -57,7 +62,19 @@ function getTestApp() {
   );
 }
 
-async function upsertUser(auth, spec) {
+export function getPasswordResetApp({ projectId, clientEmail, privateKey }) {
+  const existing = admin.apps.find((a) => a.name === RESET_APP_NAME);
+  if (existing) return existing;
+
+  return admin.initializeApp(
+    {
+      credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+    },
+    RESET_APP_NAME,
+  );
+}
+
+export async function upsertUser(auth, spec) {
   const { email, password, displayName, claims } = spec;
   let user;
 

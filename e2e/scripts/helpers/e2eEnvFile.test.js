@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { mergeEnvPasswords, writeUidsToEnvFile } from "./e2eEnvFile.js";
+import {
+  captureExportedPasswords,
+  mergeEnvPasswords,
+  writePasswordsToEnvFile,
+  writeUidsToEnvFile,
+} from "./e2eEnvFile.js";
 
 describe("mergeEnvPasswords", () => {
   const savedEnv = {};
@@ -29,14 +34,14 @@ describe("mergeEnvPasswords", () => {
 
   it("returns file env unchanged when no passwords in process.env", () => {
     const fileEnv = { E2E_ADMIN_EMAIL: "a@test.com", FIREBASE_API_KEY: "key" };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result).toEqual(fileEnv);
   });
 
   it("merges shell-exported password into file env", () => {
     process.env.E2E_ADMIN_PASSWORD = "shell-pass";
     const fileEnv = { E2E_ADMIN_EMAIL: "a@test.com" };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result.E2E_ADMIN_PASSWORD).toBe("shell-pass");
     expect(result.E2E_ADMIN_EMAIL).toBe("a@test.com");
   });
@@ -47,14 +52,14 @@ describe("mergeEnvPasswords", () => {
       E2E_ADMIN_EMAIL: "a@test.com",
       E2E_ADMIN_PASSWORD: "file-pass",
     };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result.E2E_ADMIN_PASSWORD).toBe("shell-pass");
   });
 
   it("does not merge non-password keys from process.env", () => {
     process.env.E2E_ADMIN_PASSWORD = "shell-pass";
     const fileEnv = { E2E_ADMIN_EMAIL: "a@test.com" };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result).not.toHaveProperty("PATH");
     expect(result).not.toHaveProperty("HOME");
   });
@@ -63,7 +68,7 @@ describe("mergeEnvPasswords", () => {
     process.env.E2E_ADMIN_PASSWORD = "admin-pass";
     process.env.E2E_USER_PASSWORD = "user-pass";
     const fileEnv = { E2E_ADMIN_EMAIL: "a@test.com" };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result.E2E_ADMIN_PASSWORD).toBe("admin-pass");
     expect(result.E2E_USER_PASSWORD).toBe("user-pass");
   });
@@ -71,15 +76,134 @@ describe("mergeEnvPasswords", () => {
   it("does not mutate the original file env object", () => {
     process.env.E2E_ADMIN_PASSWORD = "shell-pass";
     const fileEnv = { E2E_ADMIN_EMAIL: "a@test.com" };
-    mergeEnvPasswords(fileEnv);
+    mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(fileEnv).not.toHaveProperty("E2E_ADMIN_PASSWORD");
   });
 
   it("ignores empty-string password in process.env", () => {
     process.env.E2E_ADMIN_PASSWORD = "";
     const fileEnv = { E2E_ADMIN_PASSWORD: "file-pass" };
-    const result = mergeEnvPasswords(fileEnv);
+    const result = mergeEnvPasswords(fileEnv, captureExportedPasswords());
     expect(result.E2E_ADMIN_PASSWORD).toBe("file-pass");
+  });
+
+  it("honours the snapshot and ignores process.env writes made after it", () => {
+    process.env.E2E_ADMIN_PASSWORD = "snapshot-pass";
+    const snapshot = captureExportedPasswords();
+    process.env.E2E_USER_PASSWORD = "late-pass";
+    const fileEnv = { E2E_USER_PASSWORD: "file-user-pass" };
+    const result = mergeEnvPasswords(fileEnv, snapshot);
+    expect(result.E2E_ADMIN_PASSWORD).toBe("snapshot-pass");
+    expect(result.E2E_USER_PASSWORD).toBe("file-user-pass");
+  });
+
+  it("reads nothing from process.env when no snapshot is passed", () => {
+    process.env.E2E_ADMIN_PASSWORD = "shell-pass";
+    const result = mergeEnvPasswords({ E2E_ADMIN_PASSWORD: "file-pass" });
+    expect(result.E2E_ADMIN_PASSWORD).toBe("file-pass");
+  });
+});
+
+describe("writePasswordsToEnvFile", () => {
+  let tmpDir;
+  let tmpFile;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "e2e-env-"));
+    tmpFile = join(tmpDir, ".env.e2e");
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("replaces existing lines, appends missing ones and keeps the rest", () => {
+    const initial = [
+      "# E2E credentials",
+      "E2E_ADMIN_EMAIL=a@test.com",
+      "E2E_ADMIN_PASSWORD=admin",
+      "E2E_USER_PASSWORD=keep-me-unchanged",
+      "FIREBASE_API_KEY=abc # inline comment",
+      "",
+    ].join("\n");
+    writeFileSync(tmpFile, initial, "utf8");
+
+    writePasswordsToEnvFile(tmpFile, {
+      E2E_ADMIN_PASSWORD: "new-admin-pass",
+      E2E_SIGNUP_PASSWORD: "new-signup-pass",
+    });
+
+    expect(readFileSync(tmpFile, "utf8")).toBe(
+      [
+        "# E2E credentials",
+        "E2E_ADMIN_EMAIL=a@test.com",
+        "E2E_ADMIN_PASSWORD=new-admin-pass",
+        "E2E_USER_PASSWORD=keep-me-unchanged",
+        "FIREBASE_API_KEY=abc # inline comment",
+        "E2E_SIGNUP_PASSWORD=new-signup-pass",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps an inline comment and its spacing on a replaced password line", () => {
+    const initial = [
+      "E2E_ADMIN_PASSWORD=old-admin   # rotated by --reset-passwords",
+      'E2E_USER_PASSWORD="old #user"\t# quoted value',
+      "",
+    ].join("\n");
+    writeFileSync(tmpFile, initial, "utf8");
+
+    writePasswordsToEnvFile(tmpFile, {
+      E2E_ADMIN_PASSWORD: "new-admin-pass",
+      E2E_USER_PASSWORD: "new-user-pass",
+    });
+
+    expect(readFileSync(tmpFile, "utf8")).toBe(
+      [
+        "E2E_ADMIN_PASSWORD=new-admin-pass   # rotated by --reset-passwords",
+        "E2E_USER_PASSWORD=new-user-pass\t# quoted value",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps a comment that immediately follows an unquoted or quoted value", () => {
+    const initial = [
+      "E2E_ADMIN_PASSWORD=old-admin#rotated",
+      'E2E_USER_PASSWORD="old #user"#quoted',
+      "E2E_SUPER_ADMIN_PASSWORD='old#super'#single",
+      'E2E_SIGNUP_PASSWORD="has #hash inside"',
+      "FIREBASE_API_KEY=abc#untouched",
+      "",
+    ].join("\n");
+    writeFileSync(tmpFile, initial, "utf8");
+
+    writePasswordsToEnvFile(tmpFile, {
+      E2E_ADMIN_PASSWORD: "new-admin-pass",
+      E2E_USER_PASSWORD: "new-user-pass",
+      E2E_SUPER_ADMIN_PASSWORD: "new-super-pass",
+      E2E_SIGNUP_PASSWORD: "new-signup-pass",
+    });
+
+    expect(readFileSync(tmpFile, "utf8")).toBe(
+      [
+        "E2E_ADMIN_PASSWORD=new-admin-pass#rotated",
+        "E2E_USER_PASSWORD=new-user-pass#quoted",
+        "E2E_SUPER_ADMIN_PASSWORD=new-super-pass#single",
+        "E2E_SIGNUP_PASSWORD=new-signup-pass",
+        "FIREBASE_API_KEY=abc#untouched",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("ends the file with exactly one newline when it had none", () => {
+    writeFileSync(tmpFile, "E2E_ADMIN_PASSWORD=old", "utf8");
+    writePasswordsToEnvFile(tmpFile, { E2E_ADMIN_PASSWORD: "new-value" });
+    expect(readFileSync(tmpFile, "utf8")).toBe(
+      "E2E_ADMIN_PASSWORD=new-value\n",
+    );
   });
 });
 

@@ -8,7 +8,10 @@ const GITHUB_VARIABLE_EXTRAS = [
 
 const GITHUB_SECRET_EXTRAS = ["FIREBASE_API_KEY", "E2E_SIGNUP_PASSWORD"];
 
-const ROLES = [
+// Firebase Auth rejects passwords shorter than this.
+export const FIREBASE_MIN_PASSWORD_LENGTH = 6;
+
+export const ROLES = [
   { key: "ADMIN", name: "E2E Admin", claims: { admin: true } },
   { key: "USER", name: "E2E Test User", claims: {} },
   { key: "INCOMPLETE_USER", name: "E2E Incomplete User", claims: {} },
@@ -33,6 +36,11 @@ function githubSecretNames() {
     ...ROLES.map((r) => `E2E_${r.key}_PASSWORD`),
     ...GITHUB_SECRET_EXTRAS,
   ];
+}
+
+/** The five role passwords, then E2E_SIGNUP_PASSWORD. */
+export function passwordNames() {
+  return githubSecretNames().filter((name) => name.endsWith("_PASSWORD"));
 }
 
 function buildGitHubVariables(env) {
@@ -81,4 +89,38 @@ export function findMissingGitHubNames(values) {
   return [...githubVariableNames(), ...githubSecretNames()].filter(
     (name) => !values[name],
   );
+}
+
+function roleWordsFor(passwordName) {
+  const role = passwordName.slice("E2E_".length, -"_PASSWORD".length);
+  return role.toLowerCase().split("_");
+}
+
+function emailTokens(email) {
+  if (!email) return [];
+  return email
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+}
+
+function isOwnWordPlaceholder(value, words) {
+  return words.includes(value.trim().toLowerCase());
+}
+
+/**
+ * Names of the password variables whose value is a placeholder: shorter than
+ * Firebase accepts, or equal to a word from the variable's own role name or
+ * its own account email. Missing values are left to findMissingGitHubNames.
+ * Returns names only, never a value or the matched word.
+ */
+export function findPlaceholderPasswordNames(values) {
+  return passwordNames().filter((name) => {
+    const value = values[name];
+    if (!value) return false;
+    if (value.length < FIREBASE_MIN_PASSWORD_LENGTH) return true;
+    const emailName = name.replace(/_PASSWORD$/, "_EMAIL");
+    const words = [...roleWordsFor(name), ...emailTokens(values[emailName])];
+    return isOwnWordPlaceholder(value, words);
+  });
 }
