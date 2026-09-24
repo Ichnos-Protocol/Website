@@ -14,7 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "extract:web": "node scripts/extractWebKnowledge.js",
     "setup:test": "node scripts/setupTestEnvironment.js",
-    "migrate": "node scripts/runMigrations.js"
+    "migrate": "node --env-file-if-exists=.env scripts/runMigrations.js"
   },
   "dependencies": {
     "@vercel/functions": "^2.0.0",

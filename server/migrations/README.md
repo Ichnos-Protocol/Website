@@ -2,10 +2,10 @@
 
 ## Migration Strategy
 
-This project uses a manual SQL migration approach. Each migration is a
-timestamped `.sql` file executed against the Neon Tech PostgreSQL database in
-sequential order. A `schema_migrations` table (created by the first migration)
-tracks which files have already been applied.
+Migrations are plain numbered `.sql` files in `server/migrations/`, applied to
+the Neon Tech PostgreSQL database by the migration runner
+`server/scripts/runMigrations.js`. The `schema_migrations` table, created by
+migration 000, records the filename of every applied migration.
 
 ## Naming Convention
 
@@ -17,37 +17,63 @@ NNN_YYYYMMDD_description.sql
 - **YYYYMMDD** — date the migration was authored
 - **description** — short snake_case summary of the change
 
-## Execution Instructions
+## Applying Migrations
 
-1. Connect to the Neon PostgreSQL instance:
+The single supported command, run from `server/`:
 
-   ```bash
-   psql "postgresql://user:password@host/dbname?sslmode=require"
-   ```
+```bash
+npm run migrate
+```
 
-2. Run each migration file **in numerical order**:
+It expands to:
 
-   ```bash
-   psql "$DATABASE_URL" -f server/migrations/000_20260215_create_helpers.sql
-   psql "$DATABASE_URL" -f server/migrations/001_20260215_create_users.sql
-   psql "$DATABASE_URL" -f server/migrations/002_20260215_create_user_profiles.sql
-   psql "$DATABASE_URL" -f server/migrations/003_20260215_create_contact_requests.sql
-   psql "$DATABASE_URL" -f server/migrations/004_20260215_create_questions.sql
-   psql "$DATABASE_URL" -f server/migrations/005_20260215_create_question_topics.sql
-   ```
+```bash
+node --env-file-if-exists=.env scripts/runMigrations.js
+```
 
-3. After **each** migration, record it in the tracking table:
+This command requires Node 22.9 or newer, because `--env-file-if-exists` does
+not exist in earlier releases. The project owner runs Node 22.17 locally.
 
-   ```sql
-   INSERT INTO schema_migrations (filename)
-   VALUES ('000_20260215_create_helpers.sql');
-   ```
+Environment resolution, in order:
 
-4. Verify the migration was recorded:
+1. A `DATABASE_URL` that is already exported in the shell is honored and wins
+   over the value in the file.
+2. Otherwise `server/.env` is loaded when it exists.
+3. No `.env` file is required when `DATABASE_URL` is already exported.
+4. Never commit `.env` files.
 
-   ```sql
-   SELECT * FROM schema_migrations ORDER BY id;
-   ```
+## What the Runner Does
+
+`runMigrations.js`:
+
+1. Reads every `.sql` filename in `server/migrations/` and sorts them by the
+   zero-padded `NNN` prefix.
+2. Reads the already-applied filenames from `schema_migrations`. When the table
+   does not exist yet (before migration 000 creates it), it starts from an
+   empty set.
+3. Skips every file already recorded, logging `[migration] skipping: <file>`.
+4. Wraps each unrecorded file in `BEGIN` / `COMMIT`, logging
+   `[migration] applying: <file>`.
+5. After the file's SQL succeeds, records the filename in `schema_migrations`
+   through a parameterized insert with `ON CONFLICT DO NOTHING`, inside the
+   same transaction.
+6. On failure, prints `[migration] failed: <message>` and stops with exit code
+   1. PostgreSQL rolls back the failing file's transaction; files applied
+   before it stay applied and recorded.
+
+## Operator Verification
+
+After the runner finishes, inspect the tracking table:
+
+```sql
+SELECT * FROM schema_migrations ORDER BY id;
+```
+
+Then inspect the object or constraint the migration created (for example with
+`\d table_name` in `psql`) to confirm it has the expected shape.
+
+Never insert tracking rows into `schema_migrations` by hand. The runner is the
+only writer of that table.
 
 ## Idempotency
 
@@ -57,16 +83,21 @@ safely re-run without causing errors or duplicate objects.
 
 ## Rollback Strategy
 
-There is no automated rollback mechanism in V1. To reverse a migration, write
-the corresponding `DROP` statements manually and execute them against the
-database. Always back up your data before running destructive rollback SQL.
+There is no automated rollback mechanism. Any destructive or manual reversal
+must go through a reviewed SQL migration or an approved runbook, preceded by a
+backup and a review of the affected data, and must have explicit owner
+confirmation before it runs.
+
+Never delete rows from `schema_migrations` to "re-run" a migration. Write a new
+migration instead.
 
 ## Testing Migrations
 
 Before applying migrations to production:
 
 1. Spin up a local PostgreSQL instance or create a temporary Neon branch.
-2. Run every migration file in order.
+2. Run `npm run migrate` from `server/` with `DATABASE_URL` exported to that
+   scratch target.
 3. Verify the schema with `\dt` (list tables) and `\d table_name` (describe).
 4. Run the application test suite against the migrated database.
 
@@ -105,27 +136,19 @@ settings for deployed environments. **Never commit `.env` files.**
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Developer
-    participant Migrations as Migration Files
+    participant Op as Operator (server/)
+    participant Run as runMigrations.js
+    participant Files as server/migrations/*.sql
     participant DB as PostgreSQL (Neon)
-    participant Tracking as schema_migrations
-
-    Dev->>Migrations: Execute 000_create_helpers.sql
-    Migrations->>DB: CREATE TABLE schema_migrations
-    Migrations->>DB: CREATE FUNCTION update_updated_at()
-    Dev->>Tracking: INSERT filename, applied_at
-
-    Dev->>Migrations: Execute 001_create_users.sql
-    Migrations->>DB: CREATE TABLE users
-    Migrations->>DB: CREATE INDEX, TRIGGER
-    Dev->>Tracking: INSERT filename, applied_at
-
-    Dev->>Migrations: Execute 002-005 (remaining tables)
-    Migrations->>DB: CREATE TABLES with FK constraints
-    Migrations->>DB: CREATE INDEXES, TRIGGERS
-    Dev->>Tracking: INSERT filenames, applied_at
-
-    Note over DB,Tracking: All migrations tracked and idempotent
+    Op->>Run: npm run migrate
+    Run->>Files: read and sort filenames
+    Run->>DB: SELECT filename FROM schema_migrations
+    Run->>Run: skip recorded files
+    Run->>DB: BEGIN
+    Run->>DB: execute unrecorded migration SQL
+    Run->>DB: INSERT filename ON CONFLICT DO NOTHING
+    Run->>DB: COMMIT
+    Run-->>Op: applied / skipped log per file
 ```
 
 ## Orphan-Row Cleanup Runbook

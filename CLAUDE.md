@@ -204,9 +204,9 @@ Helpers are the primary tool for keeping code readable and short:
 | `question_topics` | Topic classification output |
 | `rate_limit_hits` | Shared rate-limit counters: `key` TEXT PK (limiter prefix + client IP), `hits`, `reset_at` TIMESTAMPTZ |
 
-Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`. `009_20260923_rate_limit_hits.sql` creates `rate_limit_hits`, read and written only by `rateLimitRepository.js`, and `011_20260924_rate_limit_hits_reset_at_index.sql` adds the index on its `reset_at` column. Production `schema_migrations` records 000–009 and 011.
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`. `009_20260923_rate_limit_hits.sql` creates `rate_limit_hits`, read and written only by `rateLimitRepository.js`, and `011_20260924_rate_limit_hits_reset_at_index.sql` adds the index on its `reset_at` column. Production `schema_migrations` records every file 000–011, with no gap.
 
-`010_20260923_consortium_preferred_start_contract.sql` is the contraction: it backfills `nov_2026` to `asap` and narrows the `consortium_preferred_start` CHECK to `('asap','later')`. Running it against production is a separate, owner-confirmed action. The production command is `node --env-file=.env scripts/runMigrations.js`, run from `server/`. `npm run migrate` does not load `.env`, so it is not the production instruction.
+`010_20260923_consortium_preferred_start_contract.sql` is the contraction: it backfills `nov_2026` to `asap` and narrows the `consortium_preferred_start` CHECK to `('asap','later')`. It was applied to production and recorded on 2026-09-24. `chk_user_profiles_consortium_preferred_start` now permits only `('asap','later')`. The backfill changed zero rows, because all seven production profiles had `consortium_preferred_start IS NULL`. Rollback boundary: do not restore code that writes `nov_2026` without first re-expanding the CHECK in a new migration.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 
@@ -215,7 +215,7 @@ Consortium fields were added to existing tables by `006_20260823_add_consortium_
 Rules:
 
 - Always use parameterized queries. **Never** interpolate user input into SQL strings.
-- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `server/scripts/runMigrations.js` (`node --env-file=.env scripts/runMigrations.js` from `server/`; `npm run migrate` runs the same script but loads no `.env`, so it needs `DATABASE_URL` already in the environment). There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
+- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `npm run migrate` from `server/`, the supported command. It runs `server/scripts/runMigrations.js`, loads `server/.env` when the file exists and still honors a `DATABASE_URL` that is already exported. There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
 
 ### 6.2 Firestore — Chatbot Knowledge Base
 
@@ -470,7 +470,7 @@ Then verify:
 - [ ] All tests pass.
 - [ ] `npm run test:coverage` passes in both packages (from P12 on). CI runs it as the test step of both `Client — Lint & Test` and `Server — Lint & Test`, so a coverage drop below threshold fails the required check.
 - [ ] No `.env` files or secrets are staged.
-- [ ] `npm run lint` passes, which enforces the 200-line cap (§5.1); its exceptions live in `client/eslint.config.js` and `server/eslint.config.js`.
+- [ ] `npm run lint` passes. ESLint `max-lines` enforces the 200-line application-module cap (§5.1), so a module over it fails lint; the authoritative exceptions live in `client/eslint.config.js` and `server/eslint.config.js`.
 - [ ] New code follows the layer responsibilities defined in Section 4.
 
 **Known-good baseline:** lint, tests and `npm run test:coverage` green in `client` and `server`; `format:check` green in `client` and `server`, and in `e2e` when you touched it; `e2e` `npm run test:unit` green when you touched `e2e/`; client build green. Never start a phase from a red tree.
