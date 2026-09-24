@@ -320,7 +320,10 @@ describe("route constants (import integrity)", () => {
 // Completes item 24: the sitemap half. sitemap.xml sits in client/public,
 // outside the client/src walk above, so its literals are read here and
 // compared against loc strings built from the route constants.
-const SITEMAP = readFileSync(resolve(CLIENT_ROOT, "public/sitemap.xml"), "utf8");
+const SITEMAP = readFileSync(
+  resolve(CLIENT_ROOT, "public/sitemap.xml"),
+  "utf8",
+);
 
 function sitemapLoc(path) {
   return `<loc>${SEO_BASE_URL}${path}</loc>`;

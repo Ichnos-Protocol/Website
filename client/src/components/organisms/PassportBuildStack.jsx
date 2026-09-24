@@ -7,7 +7,11 @@ export default function PassportBuildStack() {
   const { heading, body, standardsList } = PASSPORT_BUILD_STACK;
 
   return (
-    <section id="build-stack" className="py-5" data-testid="passport-build-stack">
+    <section
+      id="build-stack"
+      className="py-5"
+      data-testid="passport-build-stack"
+    >
       <h2 className="section-heading mb-3">{heading}</h2>
       <p className="mb-4">{body}</p>
       <Row>

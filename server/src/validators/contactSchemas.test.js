@@ -31,7 +31,10 @@ describe("contactSubmitSchema", () => {
   });
 
   it("rejects empty questions array", () => {
-    const result = contactSubmitSchema.safeParse({ ...validPayload, questions: [] });
+    const result = contactSubmitSchema.safeParse({
+      ...validPayload,
+      questions: [],
+    });
     expect(result.success).toBe(false);
   });
 
@@ -130,8 +133,12 @@ describe("contactSubmitSchema — consortium", () => {
   });
 
   it("accepts a registration without the optional fields", () => {
-    const { customerRequest: _c, dataNeeds: _d, source: _s, ...rest } =
-      validConsortium;
+    const {
+      customerRequest: _c,
+      dataNeeds: _d,
+      source: _s,
+      ...rest
+    } = validConsortium;
     const result = contactSubmitSchema.safeParse({
       ...validPayload,
       consortium: rest,
@@ -257,7 +264,9 @@ describe("contactSubmitSchema — consortium", () => {
   });
 
   it("rejects a customerRequest of 2001 characters", () => {
-    expect(parseWith({ customerRequest: "a".repeat(2001) }).success).toBe(false);
+    expect(parseWith({ customerRequest: "a".repeat(2001) }).success).toBe(
+      false,
+    );
   });
 
   it("rejects a dataNeeds of 2001 characters", () => {
@@ -318,7 +327,9 @@ describe("updateRequestSchema", () => {
 
 describe("addQuestionSchema", () => {
   it("accepts a valid question string", () => {
-    const result = addQuestionSchema.safeParse({ question: "What is your pricing?" });
+    const result = addQuestionSchema.safeParse({
+      question: "What is your pricing?",
+    });
     expect(result.success).toBe(true);
   });
 

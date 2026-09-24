@@ -1,9 +1,9 @@
-export const CONSORTIUM_PREVIEW_LABEL = 'Consortium registration';
+export const CONSORTIUM_PREVIEW_LABEL = "Consortium registration";
 
-export const CONSORTIUM_REQUEST_KIND = 'consortium';
+export const CONSORTIUM_REQUEST_KIND = "consortium";
 
 export function getInquiryPreview(request) {
-  if (!request) return '';
+  if (!request) return "";
   const text =
     request.questions?.[0]?.question ||
     request.questions?.[0]?.text ||
@@ -11,5 +11,5 @@ export function getInquiryPreview(request) {
     request.question_preview;
   if (text) return text;
   if (request.kind === CONSORTIUM_REQUEST_KIND) return CONSORTIUM_PREVIEW_LABEL;
-  return '';
+  return "";
 }

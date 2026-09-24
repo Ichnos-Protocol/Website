@@ -205,11 +205,14 @@ describe("vocabulary CORPORATE_ADVISOR_CLAIM_PATTERNS (advisor-claim probes)", (
 
   // Checked against all of FORBIDDEN, the stronger set: it contains the new
   // patterns and every older one.
-  it.each(PERMITTED)("leaves founder-attributed copy alone: %j", (permitted) => {
-    expect(
-      FORBIDDEN.some((pattern) => findMatches(pattern, permitted).length > 0),
-    ).toBe(false);
-  });
+  it.each(PERMITTED)(
+    "leaves founder-attributed copy alone: %j",
+    (permitted) => {
+      expect(
+        FORBIDDEN.some((pattern) => findMatches(pattern, permitted).length > 0),
+      ).toBe(false);
+    },
+  );
 });
 
 describe("vocabulary corpus (required expressions)", () => {

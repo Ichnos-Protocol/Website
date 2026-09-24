@@ -1,49 +1,49 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, cleanup } from '../../test-utils';
-import ServicesSnapshot from './ServicesSnapshot';
-import { ROUTE_SERVICES } from '../../constants/routes';
-import { SERVICES_LIST } from '../../constants/services';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, cleanup } from "../../test-utils";
+import ServicesSnapshot from "./ServicesSnapshot";
+import { ROUTE_SERVICES } from "../../constants/routes";
+import { SERVICES_LIST } from "../../constants/services";
 
-describe('ServicesSnapshot', () => {
-  it('renders one card for each of the 10 services', () => {
+describe("ServicesSnapshot", () => {
+  it("renders one card for each of the 10 services", () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
-    const cardTitles = container.querySelectorAll('.service-card-title');
+    const cardTitles = container.querySelectorAll(".service-card-title");
     expect(cardTitles).toHaveLength(SERVICES_LIST.length);
     expect(cardTitles).toHaveLength(10);
   });
 
-  it('renders the pillar labels as headings, with the Catena-X subtitle beneath', () => {
+  it("renders the pillar labels as headings, with the Catena-X subtitle beneath", () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
-    ['Engineering', 'Compliance', 'Circularity'].forEach((label) => {
-      expect(
-        screen.getByRole('heading', { name: label }),
-      ).toBeInTheDocument();
+    ["Engineering", "Compliance", "Circularity"].forEach((label) => {
+      expect(screen.getByRole("heading", { name: label })).toBeInTheDocument();
     });
     expect(
-      screen.getByRole('heading', { name: 'Catena-X services' }),
+      screen.getByRole("heading", { name: "Catena-X services" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Connect once. Answer every customer data request.'),
-    ).toHaveClass('pillar-subtitle');
-    expect(container.querySelector('.services-group-kicker')).toBeNull();
+      screen.getByText("Connect once. Answer every customer data request."),
+    ).toHaveClass("pillar-subtitle");
+    expect(container.querySelector(".services-group-kicker")).toBeNull();
   });
 
-  it('renders a single services section with no nested services-group sections', () => {
+  it("renders a single services section with no nested services-group sections", () => {
     const { container } = renderWithProviders(<ServicesSnapshot />);
-    const sections = container.querySelectorAll('section');
+    const sections = container.querySelectorAll("section");
     expect(sections).toHaveLength(1);
-    expect(sections[0]).toHaveAttribute('id', 'services');
-    expect(container.querySelectorAll('section.services-group')).toHaveLength(0);
+    expect(sections[0]).toHaveAttribute("id", "services");
+    expect(container.querySelectorAll("section.services-group")).toHaveLength(
+      0,
+    );
   });
 
   it('links "See full services →" to /services', () => {
     renderWithProviders(<ServicesSnapshot />);
     expect(
-      screen.getByRole('link', { name: /see full services/i }),
-    ).toHaveAttribute('href', ROUTE_SERVICES);
+      screen.getByRole("link", { name: /see full services/i }),
+    ).toHaveAttribute("href", ROUTE_SERVICES);
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<ServicesSnapshot />);
     const results = await axe(container);

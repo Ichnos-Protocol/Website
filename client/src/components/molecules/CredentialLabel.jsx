@@ -1,14 +1,14 @@
-import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
+import { CX_LABEL_ASSETS } from "../../constants/catenaXStatus";
 
 function renderLabelText(label) {
   return <span className="credential-strip__label">{label}</span>;
 }
 
-const LABEL_SIZE_MODIFIERS = { member: '--member' };
+const LABEL_SIZE_MODIFIERS = { member: "--member" };
 
 const VARIANT_BASE_CLASSES = {
-  strip: 'credential-strip__label-img',
-  profile: 'founder-credential-label',
+  strip: "credential-strip__label-img",
+  profile: "founder-credential-label",
 };
 
 // Pure: the variant selects the base class. Only the strip base carries a
@@ -17,7 +17,7 @@ const VARIANT_BASE_CLASSES = {
 // filename. Unknown values get the bare base class.
 function composeImgClass(cxLabel, variant) {
   const base = VARIANT_BASE_CLASSES[variant] ?? VARIANT_BASE_CLASSES.strip;
-  const suffix = variant === 'strip' ? LABEL_SIZE_MODIFIERS[cxLabel] : null;
+  const suffix = variant === "strip" ? LABEL_SIZE_MODIFIERS[cxLabel] : null;
   return suffix ? `${base} ${base}${suffix}` : base;
 }
 
@@ -51,7 +51,7 @@ export default function CredentialLabel({
   label,
   cxLabel,
   href,
-  variant = 'strip',
+  variant = "strip",
 }) {
   const content =
     resolveLabelAsset(label, cxLabel, variant) ?? renderLabelText(label);

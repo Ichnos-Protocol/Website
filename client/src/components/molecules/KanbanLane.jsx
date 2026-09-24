@@ -1,17 +1,17 @@
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Card from 'react-bootstrap/Card';
-import Button from 'react-bootstrap/Button';
-import Spinner from 'react-bootstrap/Spinner';
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Card from "react-bootstrap/Card";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
 
-import InquiryStatusBadge from '../atoms/InquiryStatusBadge';
-import { getInquiryPreview } from '../../helpers/inquiryPreview';
+import InquiryStatusBadge from "../atoms/InquiryStatusBadge";
+import { getInquiryPreview } from "../../helpers/inquiryPreview";
 
-const STATUSES = ['new', 'contacted', 'in_progress', 'resolved'];
+const STATUSES = ["new", "contacted", "in_progress", "resolved"];
 
 function truncate(text, max = 100) {
-  if (!text) return '';
-  return text.length > max ? text.slice(0, max) + '...' : text;
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max) + "..." : text;
 }
 
 export default function KanbanLane({
@@ -32,7 +32,9 @@ export default function KanbanLane({
         >
           <span className="fw-bold">{user.name}</span>
           <span className="text-muted ms-2">{user.email}</span>
-          {user.company && <span className="text-muted ms-2">({user.company})</span>}
+          {user.company && (
+            <span className="text-muted ms-2">({user.company})</span>
+          )}
           <span className="ms-2">Inquiries: {user.totalRequests}</span>
           {user.lastActivity && (
             <span className="text-muted ms-2">Last: {user.lastActivity}</span>
@@ -43,9 +45,9 @@ export default function KanbanLane({
             variant="outline-secondary"
             size="sm"
             onClick={() => onToggle(user.userId)}
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? "Collapse" : "Expand"}
           >
-            {isExpanded ? '\u25B2' : '\u25BC'}
+            {isExpanded ? "\u25B2" : "\u25BC"}
           </Button>
         </Col>
       </Row>
@@ -54,7 +56,7 @@ export default function KanbanLane({
         <Row className="mt-2">
           {STATUSES.map((status) => (
             <Col key={status} md={3}>
-              <h6 className="text-capitalize">{status.replace('_', ' ')}</h6>
+              <h6 className="text-capitalize">{status.replace("_", " ")}</h6>
               {isLoading ? (
                 <Spinner animation="border" size="sm" />
               ) : (

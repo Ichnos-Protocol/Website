@@ -1,8 +1,8 @@
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Card from 'react-bootstrap/Card';
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Card from "react-bootstrap/Card";
 
-import { ASSESSMENT_DELIVERABLES } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_DELIVERABLES } from "../../constants/readinessAssessmentContent";
 
 // Section 4.3. The four deliverables render in ASSESSMENT_DELIVERABLES source
 // order; never sort, filter or slice them. There is no section heading here
@@ -20,7 +20,10 @@ import { ASSESSMENT_DELIVERABLES } from '../../constants/readinessAssessmentCont
 export default function DeliverablesGrid() {
   return (
     <section className="py-5" data-testid="deliverables-grid">
-      <h2 className="section-heading mb-4" data-testid="deliverables-grid-heading">
+      <h2
+        className="section-heading mb-4"
+        data-testid="deliverables-grid-heading"
+      >
         {ASSESSMENT_DELIVERABLES.heading}
       </h2>
       <Row>

@@ -26,10 +26,10 @@ describe("printFailedDetails", () => {
     ]);
 
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("GitHub sync failed for 1 variable(s)")
+      expect.stringContaining("GitHub sync failed for 1 variable(s)"),
     );
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("E2E_USER_EMAIL: 403 Forbidden")
+      expect.stringContaining("E2E_USER_EMAIL: 403 Forbidden"),
     );
   });
 
@@ -40,17 +40,21 @@ describe("printFailedDetails", () => {
     ]);
 
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("Vercel sync failed for 2 variable(s)")
+      expect.stringContaining("Vercel sync failed for 2 variable(s)"),
     );
   });
 
   it("sanitizes multiline errors to first line only", () => {
     printFailedDetails("GitHub", [
-      { name: "MULTI_VAR", status: "failed", error: "Line one\nLine two\nLine three" },
+      {
+        name: "MULTI_VAR",
+        status: "failed",
+        error: "Line one\nLine two\nLine three",
+      },
     ]);
 
     const varCall = console.error.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("MULTI_VAR:")
+      (c) => typeof c[0] === "string" && c[0].includes("MULTI_VAR:"),
     );
     expect(varCall[0]).toContain("Line one");
     expect(varCall[0]).not.toContain("Line two");
@@ -64,19 +68,17 @@ describe("printFailedDetails", () => {
     ]);
 
     const varCall = console.error.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("LONG_VAR:")
+      (c) => typeof c[0] === "string" && c[0].includes("LONG_VAR:"),
     );
     const detail = varCall[0].split("LONG_VAR: ")[1];
     expect(detail.length).toBeLessThanOrEqual(200);
   });
 
   it("handles missing error field with 'unknown error'", () => {
-    printFailedDetails("GitHub", [
-      { name: "NO_ERR_VAR", status: "failed" },
-    ]);
+    printFailedDetails("GitHub", [{ name: "NO_ERR_VAR", status: "failed" }]);
 
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("NO_ERR_VAR: unknown error")
+      expect.stringContaining("NO_ERR_VAR: unknown error"),
     );
   });
 
@@ -86,7 +88,7 @@ describe("printFailedDetails", () => {
     ]);
 
     const varCall = console.error.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("TRIM_VAR:")
+      (c) => typeof c[0] === "string" && c[0].includes("TRIM_VAR:"),
     );
     expect(varCall[0]).toContain("Actual error");
     expect(varCall[0]).not.toContain("More");
@@ -105,7 +107,7 @@ describe("printSummary", () => {
   it("prints section headers for both GitHub and Vercel", () => {
     printSummary(
       [{ name: "E2E_ADMIN_EMAIL", status: "ok", masked: "a***@t.com" }],
-      [{ name: "E2E_ADMIN_UID", status: "ok", masked: "uid-***" }]
+      [{ name: "E2E_ADMIN_UID", status: "ok", masked: "uid-***" }],
     );
 
     const allOutput = console.log.mock.calls.map((c) => c[0]).join("\n");
@@ -117,11 +119,11 @@ describe("printSummary", () => {
   it("renders each result with name, status, and masked value", () => {
     printSummary(
       [{ name: "E2E_ADMIN_EMAIL", status: "ok", masked: "a***@t.com" }],
-      []
+      [],
     );
 
     const resultLine = console.log.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("E2E_ADMIN_EMAIL")
+      (c) => typeof c[0] === "string" && c[0].includes("E2E_ADMIN_EMAIL"),
     );
     expect(resultLine).toBeDefined();
     expect(resultLine[0]).toContain("ok");
@@ -131,11 +133,18 @@ describe("printSummary", () => {
   it("renders inline error for failed results", () => {
     printSummary(
       [],
-      [{ name: "E2E_USER_UID", status: "failed", masked: "", error: "API error\ndetails" }]
+      [
+        {
+          name: "E2E_USER_UID",
+          status: "failed",
+          masked: "",
+          error: "API error\ndetails",
+        },
+      ],
     );
 
     const errorLine = console.log.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("error:")
+      (c) => typeof c[0] === "string" && c[0].includes("error:"),
     );
     expect(errorLine).toBeDefined();
     expect(errorLine[0]).toContain("API error");
@@ -143,13 +152,10 @@ describe("printSummary", () => {
   });
 
   it("does not render error line for successful results", () => {
-    printSummary(
-      [{ name: "OK_VAR", status: "ok", masked: "***" }],
-      []
-    );
+    printSummary([{ name: "OK_VAR", status: "ok", masked: "***" }], []);
 
     const errorLine = console.log.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("error:")
+      (c) => typeof c[0] === "string" && c[0].includes("error:"),
     );
     expect(errorLine).toBeUndefined();
   });
@@ -169,7 +175,11 @@ describe("printSummary with GitHub variables", () => {
   }
 
   it("prints a GitHub Actions Variables section when variable results are supplied", () => {
-    printSummary([], [], [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }]);
+    printSummary(
+      [],
+      [],
+      [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }],
+    );
 
     expect(allOutput()).toContain("GitHub Actions Variables");
   });
@@ -181,10 +191,14 @@ describe("printSummary with GitHub variables", () => {
   });
 
   it("renders the clear value for a result that carries value instead of masked", () => {
-    printSummary([], [], [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }]);
+    printSummary(
+      [],
+      [],
+      [{ name: "E2E_BASE_URL", status: "success", value: "https://x.test" }],
+    );
 
     const resultLine = console.log.mock.calls.find(
-      (c) => typeof c[0] === "string" && c[0].includes("E2E_BASE_URL")
+      (c) => typeof c[0] === "string" && c[0].includes("E2E_BASE_URL"),
     );
     expect(resultLine[0]).toContain("https://x.test");
     expect(resultLine[0]).not.toContain("undefined");

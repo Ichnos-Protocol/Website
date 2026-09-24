@@ -31,7 +31,15 @@ export async function upsertProfile(userId, profileData, db = pool) {
          surname = COALESCE($3, user_profiles.surname),
          email = $4, phone = $5, company = $6, linkedin = $7
        RETURNING *`,
-      [userId, name ?? null, surname ?? null, email, phone || null, company || null, linkedin || null],
+      [
+        userId,
+        name ?? null,
+        surname ?? null,
+        email,
+        phone || null,
+        company || null,
+        linkedin || null,
+      ],
     );
     return rows[0];
   } catch (error) {
@@ -148,7 +156,10 @@ export async function updateConsortiumProfile(userId, data, db = pool) {
     );
     return rows[0] || null;
   } catch (error) {
-    console.error("userRepository.updateConsortiumProfile failed:", error.message);
+    console.error(
+      "userRepository.updateConsortiumProfile failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -229,7 +240,10 @@ export async function updateConsortiumAdmin(userId, updates, db = pool) {
     ]);
     return rows[0] || null;
   } catch (error) {
-    console.error("userRepository.updateConsortiumAdmin failed:", error.message);
+    console.error(
+      "userRepository.updateConsortiumAdmin failed:",
+      error.message,
+    );
     throw error;
   }
 }

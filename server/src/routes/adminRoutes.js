@@ -22,7 +22,12 @@ const router = Router();
 router.get("/users", auth, admin, adminController.getUsers);
 router.get("/requests/:userId", auth, admin, adminController.getRequestsByUser);
 router.get("/chat-leads", auth, admin, adminController.getChatLeads);
-router.get("/chat-leads/:userId", auth, admin, adminController.getChatLeadDetail);
+router.get(
+  "/chat-leads/:userId",
+  auth,
+  admin,
+  adminController.getChatLeadDetail,
+);
 
 router.put(
   "/request/:id",
@@ -38,7 +43,12 @@ router.post("/analyze-topics", auth, admin, adminController.analyzeTopics);
 router.get("/topics", auth, admin, adminController.getTopics);
 router.get("/export", auth, admin, adminController.exportCSV);
 
-router.get("/consortium", auth, admin, adminController.getConsortiumRegistrants);
+router.get(
+  "/consortium",
+  auth,
+  admin,
+  adminController.getConsortiumRegistrants,
+);
 // Declared before `/consortium/:userId` so "export" is never read as a user id.
 router.get(
   "/consortium/export",
@@ -65,7 +75,15 @@ router.post(
 
 router.post("/retention-sweep", cronOrAdmin, adminController.runRetentionSweep);
 router.get("/retention-sweep", cronOrAdmin, adminController.runRetentionSweep);
-router.post("/notifications/digest", cronOrAdmin, adminController.sendDailyDigest);
-router.get("/notifications/digest", cronOrAdmin, adminController.sendDailyDigest);
+router.post(
+  "/notifications/digest",
+  cronOrAdmin,
+  adminController.sendDailyDigest,
+);
+router.get(
+  "/notifications/digest",
+  cronOrAdmin,
+  adminController.sendDailyDigest,
+);
 
 export default router;

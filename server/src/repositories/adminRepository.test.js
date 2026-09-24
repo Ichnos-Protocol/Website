@@ -27,7 +27,12 @@ describe("adminRepository", () => {
   describe("getUsersWithRequests", () => {
     it("returns users with request counts", async () => {
       const rows = [
-        { userId: "uid-1", name: "Alice", totalRequests: 3, lastActivity: "2026-01-01" },
+        {
+          userId: "uid-1",
+          name: "Alice",
+          totalRequests: 3,
+          lastActivity: "2026-01-01",
+        },
       ];
       mockQuery.mockResolvedValue({ rows });
 
@@ -99,9 +104,9 @@ describe("adminRepository", () => {
       mockQuery.mockRejectedValue(new Error("timeout"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(
-        getRequestsWithQuestionsByUserId("uid-1"),
-      ).rejects.toThrow("timeout");
+      await expect(getRequestsWithQuestionsByUserId("uid-1")).rejects.toThrow(
+        "timeout",
+      );
       expect(spy).toHaveBeenCalledWith(
         "adminRepository.getRequestsWithQuestionsByUserId failed:",
         "timeout",
@@ -113,16 +118,19 @@ describe("adminRepository", () => {
   describe("getChatOnlyUsers", () => {
     it("returns users without contact requests", async () => {
       const rows = [
-        { userId: "uid-2", name: "Bob", totalMessages: 5, lastActivity: "2026-02-01" },
+        {
+          userId: "uid-2",
+          name: "Bob",
+          totalMessages: 5,
+          lastActivity: "2026-02-01",
+        },
       ];
       mockQuery.mockResolvedValue({ rows });
 
       const result = await getChatOnlyUsers();
 
       expect(result).toEqual(rows);
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining("NOT IN"),
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining("NOT IN"));
     });
 
     // Paired with the getRecentChatOnlyLeads case below: both exclusions must
@@ -173,7 +181,9 @@ describe("adminRepository", () => {
       mockQuery.mockRejectedValue(new Error("syntax error"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(getChatMessagesByUserId("uid-1")).rejects.toThrow("syntax error");
+      await expect(getChatMessagesByUserId("uid-1")).rejects.toThrow(
+        "syntax error",
+      );
       expect(spy).toHaveBeenCalledWith(
         "adminRepository.getChatMessagesByUserId failed:",
         "syntax error",
@@ -389,7 +399,9 @@ describe("adminRepository", () => {
       mockQuery.mockRejectedValue(new Error("column missing"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(getConsortiumRegistrants()).rejects.toThrow("column missing");
+      await expect(getConsortiumRegistrants()).rejects.toThrow(
+        "column missing",
+      );
       expect(spy).toHaveBeenCalledWith(
         "adminRepository.getConsortiumRegistrants failed:",
         "column missing",

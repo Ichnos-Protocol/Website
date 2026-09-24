@@ -1,14 +1,22 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import Button from 'react-bootstrap/Button';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Spinner from 'react-bootstrap/Spinner';
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Button from "react-bootstrap/Button";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Spinner from "react-bootstrap/Spinner";
 
-import { setUsers, toggleLane, selectUser } from '../../features/admin/adminSlice';
+import {
+  setUsers,
+  toggleLane,
+  selectUser,
+} from "../../features/admin/adminSlice";
 // Note: useGetRequestsQuery is used inside the LaneLoader sub-component defined below.
-import { useGetUsersQuery, useGetRequestsQuery, adminApi } from '../../features/admin/adminApi';
-import KanbanLane from '../molecules/KanbanLane';
+import {
+  useGetUsersQuery,
+  useGetRequestsQuery,
+  adminApi,
+} from "../../features/admin/adminApi";
+import KanbanLane from "../molecules/KanbanLane";
 
 function LaneLoader({ user, isExpanded, onToggle, onSelectUser }) {
   const { data: requests, isLoading } = useGetRequestsQuery(user.userId, {
@@ -39,7 +47,7 @@ export default function AdminKanban() {
   }, [data, dispatch]);
 
   function handleRefresh() {
-    dispatch(adminApi.util.invalidateTags(['AdminUsers', 'AdminRequests']));
+    dispatch(adminApi.util.invalidateTags(["AdminUsers", "AdminRequests"]));
   }
 
   if (isLoading) {

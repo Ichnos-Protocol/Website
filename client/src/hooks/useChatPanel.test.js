@@ -5,7 +5,10 @@ import { configureStore } from "@reduxjs/toolkit";
 import { createElement } from "react";
 
 import chatReducer, { toggleModal } from "../features/chat/chatSlice";
-import authReducer, { setUser, setAuthSuccess } from "../features/auth/authSlice";
+import authReducer, {
+  setUser,
+  setAuthSuccess,
+} from "../features/auth/authSlice";
 import { openModal as openContactModal } from "../features/contact/contactSlice";
 
 const mockSendStreamMessage = vi.fn();
@@ -85,7 +88,9 @@ function resolvedHistory(data = []) {
 
 function deferred() {
   let resolve;
-  const promise = new Promise((r) => { resolve = r; });
+  const promise = new Promise((r) => {
+    resolve = r;
+  });
   return { promise, resolve };
 }
 
@@ -107,10 +112,15 @@ describe("useChatPanel", () => {
         messagesAtSend = store.getState().chat.messages;
         return Promise.resolve("completed");
       });
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: true });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: true,
+      });
       await waitFor(() => expect(mockTriggerHistory).toHaveBeenCalledTimes(1));
 
-      await act(async () => { result.current.handleSend("q"); });
+      await act(async () => {
+        result.current.handleSend("q");
+      });
 
       await waitFor(() => expect(mockTriggerHistory).toHaveBeenCalledTimes(2));
       expect(mockSendStreamMessage).toHaveBeenCalledWith("q");
@@ -120,12 +130,20 @@ describe("useChatPanel", () => {
 
     it("keeps messages local and passes non-persisting callbacks when persistState is false", async () => {
       const store = createStore();
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: false });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: false,
+      });
 
-      await act(async () => { result.current.handleSend("q"); });
+      await act(async () => {
+        result.current.handleSend("q");
+      });
 
       expect(store.getState().chat.messages).toEqual([]);
-      expect(result.current.messages[0]).toMatchObject({ role: "user", content: "q" });
+      expect(result.current.messages[0]).toMatchObject({
+        role: "user",
+        content: "q",
+      });
       expect(mockSendStreamMessage).toHaveBeenCalledWith("q", {
         persistMessages: false,
         onAiMessage: expect.any(Function),
@@ -139,9 +157,14 @@ describe("useChatPanel", () => {
   describe("unauthenticated send", () => {
     it("opens the login modal without streaming", async () => {
       const store = createStore(UNAUTH);
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: false });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: false,
+      });
 
-      act(() => { result.current.handleSend("q"); });
+      act(() => {
+        result.current.handleSend("q");
+      });
 
       expect(store.getState().auth.modalMode).toBe("login");
       expect(mockSendStreamMessage).not.toHaveBeenCalled();
@@ -149,24 +172,36 @@ describe("useChatPanel", () => {
 
     it("replays the buffered message once after sign-in when persistState is true", async () => {
       const store = createStore(UNAUTH);
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: true });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: true,
+      });
 
-      act(() => { result.current.handleSend("hi"); });
+      act(() => {
+        result.current.handleSend("hi");
+      });
       await act(async () => {
         store.dispatch(setUser({ uid: "u1" }));
         store.dispatch(setAuthSuccess(true));
       });
 
-      await waitFor(() => expect(mockSendStreamMessage).toHaveBeenCalledTimes(1));
+      await waitFor(() =>
+        expect(mockSendStreamMessage).toHaveBeenCalledTimes(1),
+      );
       expect(mockSendStreamMessage).toHaveBeenCalledWith("hi");
       expect(store.getState().auth.authSuccess).toBe(false);
     });
 
     it("does not buffer the message when persistState is false", async () => {
       const store = createStore(UNAUTH);
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: false });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: false,
+      });
 
-      act(() => { result.current.handleSend("hi"); });
+      act(() => {
+        result.current.handleSend("hi");
+      });
       await act(async () => {
         store.dispatch(setUser({ uid: "u1" }));
         store.dispatch(setAuthSuccess(true));
@@ -178,22 +213,39 @@ describe("useChatPanel", () => {
 
   describe("handleKeyDown", () => {
     it("sends on Enter without Shift", async () => {
-      const { result } = renderPanelHook(createStore(), { mode: "inline", persistState: false });
-      act(() => { result.current.setInput("hello"); });
+      const { result } = renderPanelHook(createStore(), {
+        mode: "inline",
+        persistState: false,
+      });
+      act(() => {
+        result.current.setInput("hello");
+      });
       const event = { key: "Enter", shiftKey: false, preventDefault: vi.fn() };
 
-      await act(async () => { result.current.handleKeyDown(event); });
+      await act(async () => {
+        result.current.handleKeyDown(event);
+      });
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(mockSendStreamMessage).toHaveBeenCalledWith("hello", expect.any(Object));
+      expect(mockSendStreamMessage).toHaveBeenCalledWith(
+        "hello",
+        expect.any(Object),
+      );
     });
 
     it("ignores Shift+Enter", () => {
-      const { result } = renderPanelHook(createStore(), { mode: "inline", persistState: false });
-      act(() => { result.current.setInput("hello"); });
+      const { result } = renderPanelHook(createStore(), {
+        mode: "inline",
+        persistState: false,
+      });
+      act(() => {
+        result.current.setInput("hello");
+      });
       const event = { key: "Enter", shiftKey: true, preventDefault: vi.fn() };
 
-      act(() => { result.current.handleKeyDown(event); });
+      act(() => {
+        result.current.handleKeyDown(event);
+      });
 
       expect(event.preventDefault).not.toHaveBeenCalled();
       expect(mockSendStreamMessage).not.toHaveBeenCalled();
@@ -203,9 +255,14 @@ describe("useChatPanel", () => {
   describe("handleContactRedirect", () => {
     it("closes the chat modal and opens the contact modal in modal mode", () => {
       const store = createStore();
-      const { result } = renderPanelHook(store, { mode: "modal", persistState: false });
+      const { result } = renderPanelHook(store, {
+        mode: "modal",
+        persistState: false,
+      });
 
-      act(() => { result.current.handleContactRedirect(); });
+      act(() => {
+        result.current.handleContactRedirect();
+      });
 
       expect(store.getState().chat.isOpen).toBe(false);
       expect(openContactModal).toHaveBeenCalledTimes(1);
@@ -213,9 +270,14 @@ describe("useChatPanel", () => {
 
     it("leaves the chat modal state alone in inline mode", () => {
       const store = createStore();
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: false });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: false,
+      });
 
-      act(() => { result.current.handleContactRedirect(); });
+      act(() => {
+        result.current.handleContactRedirect();
+      });
 
       expect(store.getState().chat.isOpen).toBe(true);
       expect(openContactModal).toHaveBeenCalledTimes(1);
@@ -235,14 +297,26 @@ describe("useChatPanel", () => {
       mockTriggerHistory.mockReturnValueOnce({ unwrap: () => history.promise });
       mockSendStreamMessage.mockReturnValueOnce(send.promise);
       const store = createStore();
-      const { result } = renderPanelHook(store, { mode: "inline", persistState: true });
+      const { result } = renderPanelHook(store, {
+        mode: "inline",
+        persistState: true,
+      });
 
-      await act(async () => { result.current.handleSend("q"); });
-      await act(async () => { history.resolve({ data: [{ role: "ai", content: "stale" }] }); });
+      await act(async () => {
+        result.current.handleSend("q");
+      });
+      await act(async () => {
+        history.resolve({ data: [{ role: "ai", content: "stale" }] });
+      });
 
       expect(store.getState().chat.messages).toHaveLength(1);
-      expect(store.getState().chat.messages[0]).toMatchObject({ role: "user", content: "q" });
-      await act(async () => { send.resolve("failed"); });
+      expect(store.getState().chat.messages[0]).toMatchObject({
+        role: "user",
+        content: "q",
+      });
+      await act(async () => {
+        send.resolve("failed");
+      });
     });
 
     it("ignores an older history response that resolves after a newer generation", async () => {
@@ -255,14 +329,24 @@ describe("useChatPanel", () => {
       renderPanelHook(store, { mode: "modal", persistState: true });
       await waitFor(() => expect(mockTriggerHistory).toHaveBeenCalledTimes(1));
 
-      await act(async () => { store.dispatch(toggleModal()); });
-      await act(async () => { store.dispatch(toggleModal()); });
+      await act(async () => {
+        store.dispatch(toggleModal());
+      });
+      await act(async () => {
+        store.dispatch(toggleModal());
+      });
       await waitFor(() => expect(mockTriggerHistory).toHaveBeenCalledTimes(2));
 
-      await act(async () => { second.resolve({ data: [{ role: "ai", content: "fresh" }] }); });
-      await act(async () => { first.resolve({ data: [{ role: "ai", content: "stale" }] }); });
+      await act(async () => {
+        second.resolve({ data: [{ role: "ai", content: "fresh" }] });
+      });
+      await act(async () => {
+        first.resolve({ data: [{ role: "ai", content: "stale" }] });
+      });
 
-      expect(store.getState().chat.messages).toEqual([{ role: "ai", content: "fresh" }]);
+      expect(store.getState().chat.messages).toEqual([
+        { role: "ai", content: "fresh" },
+      ]);
     });
   });
 
@@ -275,7 +359,9 @@ describe("useChatPanel", () => {
 
       expect(mockCancelStream).not.toHaveBeenCalled();
 
-      act(() => { store.dispatch(toggleModal()); });
+      act(() => {
+        store.dispatch(toggleModal());
+      });
 
       expect(mockCancelStream).toHaveBeenCalledTimes(1);
     });

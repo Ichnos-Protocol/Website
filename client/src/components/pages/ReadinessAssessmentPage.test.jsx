@@ -443,9 +443,10 @@ describe("ReadinessAssessmentPage head", () => {
       current.name,
     ]);
     expect(parent.item).toBe(`${SEO_BASE_URL}${ROUTE_PASSPORT}`);
-    expect(
-      screen.getByTestId("assessment-breadcrumb-parent"),
-    ).toHaveAttribute("href", ROUTE_PASSPORT);
+    expect(screen.getByTestId("assessment-breadcrumb-parent")).toHaveAttribute(
+      "href",
+      ROUTE_PASSPORT,
+    );
     expect(current.item).toBe(`${SEO_BASE_URL}${ROUTE_READINESS_ASSESSMENT}`);
   });
 });

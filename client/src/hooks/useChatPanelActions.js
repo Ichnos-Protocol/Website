@@ -1,4 +1,8 @@
-import { addMessage, toggleModal, clearError } from "../features/chat/chatSlice";
+import {
+  addMessage,
+  toggleModal,
+  clearError,
+} from "../features/chat/chatSlice";
 import { openModal as openContactModal } from "../features/contact/contactSlice";
 import { openAuthModal } from "../features/auth/authSlice";
 import {

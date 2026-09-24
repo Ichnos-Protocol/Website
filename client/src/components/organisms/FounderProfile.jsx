@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Badge from 'react-bootstrap/Badge';
+import { useState } from "react";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Badge from "react-bootstrap/Badge";
 
-import Icon from '../atoms/Icon';
-import CareerTimeline from './CareerTimeline';
-import RecognitionBlock from './RecognitionBlock';
-import CredentialLabel from '../molecules/CredentialLabel';
-import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
-import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
+import Icon from "../atoms/Icon";
+import CareerTimeline from "./CareerTimeline";
+import RecognitionBlock from "./RecognitionBlock";
+import CredentialLabel from "../molecules/CredentialLabel";
+import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
+import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
 
 function renderBioParagraph(text) {
   if (!text.includes(CATENA_X_TITLE_BASE)) return text;

@@ -37,7 +37,9 @@ export function syncToGitHub(credentials, repoRoot) {
       shell: true,
     });
 
-    results.push(buildResult(secretName, result, { masked: maskValue(secretValue) }));
+    results.push(
+      buildResult(secretName, result, { masked: maskValue(secretValue) }),
+    );
   }
 
   return results;

@@ -12,8 +12,10 @@ import {
 } from "../config/consortiumTiers.js";
 
 const DATASPACE_LICENCE_LINE = "Dataspace licence, passed through at cost.";
-const MANAGED_OPERATIONS_TEMPLATE = "Managed operations: {range} per tenant and year.";
-const PASSPORT_MAINTENANCE_TEMPLATE = "Passport data maintenance: {range} per year.";
+const MANAGED_OPERATIONS_TEMPLATE =
+  "Managed operations: {range} per tenant and year.";
+const PASSPORT_MAINTENANCE_TEMPLATE =
+  "Passport data maintenance: {range} per year.";
 
 // Same regex idiom as readinessAssessmentContent.formatPrice. Intl is avoided
 // on purpose: toLocaleString follows the runtime locale, and under de-DE it

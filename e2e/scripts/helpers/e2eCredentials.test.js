@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildCredentialMaps, findMissingGitHubNames } from "./e2eCredentials.js";
+import {
+  buildCredentialMaps,
+  findMissingGitHubNames,
+} from "./e2eCredentials.js";
 
 describe("buildCredentialMaps", () => {
   it("returns empty maps when no credentials are set", () => {
@@ -57,9 +60,12 @@ describe("buildCredentialMaps", () => {
       "E2E_SUPER_ADMIN_PASSWORD",
     ]);
     expect(Object.keys(vercel)).toEqual([
-      "E2E_ADMIN_EMAIL", "E2E_ADMIN_UID",
-      "E2E_USER_EMAIL", "E2E_USER_UID",
-      "E2E_SUPER_ADMIN_EMAIL", "E2E_SUPER_ADMIN_UID",
+      "E2E_ADMIN_EMAIL",
+      "E2E_ADMIN_UID",
+      "E2E_USER_EMAIL",
+      "E2E_USER_UID",
+      "E2E_SUPER_ADMIN_EMAIL",
+      "E2E_SUPER_ADMIN_UID",
     ]);
     expect(firebaseCreds).toHaveLength(3);
   });
@@ -137,11 +143,16 @@ const VARIABLE_NAMES = [
   "FIREBASE_PROJECT_ID",
   "FIREBASE_AUTH_DOMAIN",
   "FIREBASE_STORAGE_BUCKET",
-  "E2E_ADMIN_EMAIL", "E2E_ADMIN_UID",
-  "E2E_USER_EMAIL", "E2E_USER_UID",
-  "E2E_INCOMPLETE_USER_EMAIL", "E2E_INCOMPLETE_USER_UID",
-  "E2E_SUPER_ADMIN_EMAIL", "E2E_SUPER_ADMIN_UID",
-  "E2E_MANAGE_ADMIN_TARGET_EMAIL", "E2E_MANAGE_ADMIN_TARGET_UID",
+  "E2E_ADMIN_EMAIL",
+  "E2E_ADMIN_UID",
+  "E2E_USER_EMAIL",
+  "E2E_USER_UID",
+  "E2E_INCOMPLETE_USER_EMAIL",
+  "E2E_INCOMPLETE_USER_UID",
+  "E2E_SUPER_ADMIN_EMAIL",
+  "E2E_SUPER_ADMIN_UID",
+  "E2E_MANAGE_ADMIN_TARGET_EMAIL",
+  "E2E_MANAGE_ADMIN_TARGET_UID",
   "E2E_BASE_URL",
   "E2E_API_BASE_URL",
 ];
@@ -157,14 +168,19 @@ const SECRET_NAMES = [
 ];
 
 const FULL_ENV = Object.fromEntries(
-  [...VARIABLE_NAMES, ...SECRET_NAMES].map((name) => [name, `value-of-${name}`]),
+  [...VARIABLE_NAMES, ...SECRET_NAMES].map((name) => [
+    name,
+    `value-of-${name}`,
+  ]),
 );
 
 describe("buildCredentialMaps GitHub partition", () => {
   it("routes every variable name to githubVariables and none to github", () => {
     const { github, githubVariables } = buildCredentialMaps(FULL_ENV);
 
-    expect(Object.keys(githubVariables).sort()).toEqual([...VARIABLE_NAMES].sort());
+    expect(Object.keys(githubVariables).sort()).toEqual(
+      [...VARIABLE_NAMES].sort(),
+    );
     for (const name of VARIABLE_NAMES) {
       expect(github).not.toHaveProperty(name);
     }

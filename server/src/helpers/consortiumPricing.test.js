@@ -38,9 +38,14 @@ describe("consortiumPricing", () => {
     it.each([
       ["EUR", "EUR 39,000 (+ EUR 7,000 per additional supplier tenant)"],
       ["SGD", "SGD 57,000 (+ SGD 10,000 per additional supplier tenant)"],
-    ])("adds the extra-tenant figure to the anchor in %s", (currency, expected) => {
-      expect(formatTierPriceLabel("consortium_anchor", currency)).toBe(expected);
-    });
+    ])(
+      "adds the extra-tenant figure to the anchor in %s",
+      (currency, expected) => {
+        expect(formatTierPriceLabel("consortium_anchor", currency)).toBe(
+          expected,
+        );
+      },
+    );
 
     it.each(CURRENCIES)("prefixes every priced tier with %s", (currency) => {
       for (const tierId of PRICED_TIERS) {

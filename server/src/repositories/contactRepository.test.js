@@ -178,7 +178,10 @@ describe("contactRepository", () => {
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       await expect(
-        createContactRequest("uid-1", { consentTimestamp: "2026-01-01T00:00:00Z", consentVersion: "v1" }),
+        createContactRequest("uid-1", {
+          consentTimestamp: "2026-01-01T00:00:00Z",
+          consentVersion: "v1",
+        }),
       ).rejects.toThrow("FK violation");
       expect(spy).toHaveBeenCalledWith(
         "contactRepository.createContactRequest failed:",
@@ -203,9 +206,9 @@ describe("contactRepository", () => {
       mockQuery.mockRejectedValue(new Error("connection lost"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(
-        updateRequest(1, { status: "resolved" }),
-      ).rejects.toThrow("connection lost");
+      await expect(updateRequest(1, { status: "resolved" })).rejects.toThrow(
+        "connection lost",
+      );
       expect(spy).toHaveBeenCalledWith(
         "contactRepository.updateRequest failed:",
         "connection lost",

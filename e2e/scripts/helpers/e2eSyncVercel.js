@@ -7,7 +7,12 @@ export function syncToVercel(credentials, serverDir) {
   for (const [varName, varValue] of Object.entries(credentials)) {
     if (!varValue) continue;
 
-    const spawnOpts = { input: varValue, encoding: "utf8", cwd: serverDir, shell: true };
+    const spawnOpts = {
+      input: varValue,
+      encoding: "utf8",
+      cwd: serverDir,
+      shell: true,
+    };
 
     let result = spawnSync(
       "vercel",

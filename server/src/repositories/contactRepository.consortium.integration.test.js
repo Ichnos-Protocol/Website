@@ -109,7 +109,9 @@ describeIf("consortium registration (integration)", () => {
     await pool.query("DELETE FROM contact_requests");
     await pool.query("DELETE FROM user_profiles");
     await pool.query("DELETE FROM users");
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["test-uid"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "test-uid",
+    ]);
     await pool.query(
       "INSERT INTO user_profiles (user_id, name, surname, email) VALUES ($1, $2, $3, $4)",
       ["test-uid", "Alice", "Smith", "alice@test.com"],
@@ -124,8 +126,16 @@ describeIf("consortium registration (integration)", () => {
   });
 
   it("allows only one consortium row per user", async () => {
-    const first = await createContactRequest("test-uid", consortiumConsent, pool);
-    const second = await createContactRequest("test-uid", consortiumConsent, pool);
+    const first = await createContactRequest(
+      "test-uid",
+      consortiumConsent,
+      pool,
+    );
+    const second = await createContactRequest(
+      "test-uid",
+      consortiumConsent,
+      pool,
+    );
 
     expect(first.kind).toBe("consortium");
     expect(second).toBeNull();
@@ -172,7 +182,9 @@ describeIf("consortium registration (integration)", () => {
     expect(second.consortium_interest).toBe(true);
     expect(second.consortium_source).toBe("landing_page");
     expect(second.consortium_status).toBe("registered");
-    expect(second.consortium_registered_at).toEqual(first.consortium_registered_at);
+    expect(second.consortium_registered_at).toEqual(
+      first.consortium_registered_at,
+    );
   });
 
   it("scrubs free text and leaves the structured answers intact", async () => {
@@ -204,6 +216,8 @@ describeIf("consortium registration (integration)", () => {
   });
 
   it("is a no-op when scrubbing an unknown user", async () => {
-    await expect(scrubConsortiumText("no-such-uid", pool)).resolves.toBeUndefined();
+    await expect(
+      scrubConsortiumText("no-such-uid", pool),
+    ).resolves.toBeUndefined();
   });
 });

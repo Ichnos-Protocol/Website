@@ -44,7 +44,10 @@ describe("knowledgeRepository", () => {
     it("queries by keywords using array-contains-any", async () => {
       mockGet.mockResolvedValue({
         docs: [
-          { id: "doc-1", data: () => ({ title: "Battery Passport", tags: ["battery"] }) },
+          {
+            id: "doc-1",
+            data: () => ({ title: "Battery Passport", tags: ["battery"] }),
+          },
         ],
       });
 
@@ -53,7 +56,9 @@ describe("knowledgeRepository", () => {
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("doc-1");
       expect(result[0].title).toBe("Battery Passport");
-      expect(mockWhere).toHaveBeenCalledWith("tags", "array-contains-any", ["battery"]);
+      expect(mockWhere).toHaveBeenCalledWith("tags", "array-contains-any", [
+        "battery",
+      ]);
     });
 
     it("adds category filter when provided", async () => {
@@ -61,7 +66,9 @@ describe("knowledgeRepository", () => {
 
       await queryKnowledgeBase(["test"], "services");
 
-      expect(mockWhere).toHaveBeenCalledWith("tags", "array-contains-any", ["test"]);
+      expect(mockWhere).toHaveBeenCalledWith("tags", "array-contains-any", [
+        "test",
+      ]);
       expect(mockWhere).toHaveBeenCalledWith("category", "==", "services");
     });
 
@@ -164,7 +171,9 @@ describe("knowledgeRepository", () => {
       mockGet.mockRejectedValue(new Error("Firestore unavailable"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(queryKnowledgeBase(["test"], null)).rejects.toThrow("Firestore unavailable");
+      await expect(queryKnowledgeBase(["test"], null)).rejects.toThrow(
+        "Firestore unavailable",
+      );
       expect(spy).toHaveBeenCalledWith(
         "knowledgeRepository.queryKnowledgeBase failed:",
         "Firestore unavailable",
@@ -178,7 +187,9 @@ describe("knowledgeRepository", () => {
       });
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(getDocumentById("doc-1")).rejects.toThrow("permission denied");
+      await expect(getDocumentById("doc-1")).rejects.toThrow(
+        "permission denied",
+      );
       expect(spy).toHaveBeenCalledWith(
         "knowledgeRepository.getDocumentById failed:",
         "permission denied",
@@ -190,7 +201,9 @@ describe("knowledgeRepository", () => {
       mockAdd.mockRejectedValue(new Error("quota exceeded"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(createDocument({ title: "Test" })).rejects.toThrow("quota exceeded");
+      await expect(createDocument({ title: "Test" })).rejects.toThrow(
+        "quota exceeded",
+      );
       expect(spy).toHaveBeenCalledWith(
         "knowledgeRepository.createDocument failed:",
         "quota exceeded",

@@ -50,7 +50,10 @@ async function seedKnowledgeBase(app) {
   let created = 0;
 
   for (const doc of SEED_DOCUMENTS) {
-    const snap = await collection.where("title", "==", doc.title).limit(1).get();
+    const snap = await collection
+      .where("title", "==", doc.title)
+      .limit(1)
+      .get();
     if (!snap.empty) continue;
     batch.set(collection.doc(), {
       ...doc,
@@ -62,7 +65,9 @@ async function seedKnowledgeBase(app) {
   }
 
   if (created > 0) await batch.commit();
-  console.log(`[firestore] knowledge base: ${created} created, ${SEED_DOCUMENTS.length - created} skipped`);
+  console.log(
+    `[firestore] knowledge base: ${created} created, ${SEED_DOCUMENTS.length - created} skipped`,
+  );
 }
 
 function printSummary(uids) {

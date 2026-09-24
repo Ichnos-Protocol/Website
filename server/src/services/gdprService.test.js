@@ -19,8 +19,7 @@ vi.mock("../repositories/userRepository.js", () => ({
 
 vi.mock("../repositories/questionRepository.js", () => ({
   getQuestionsByUserId: (...args) => mockGetQuestionsByUserId(...args),
-  getTopicsByQuestionId: (...args) =>
-    mockGetTopicsByQuestionId(...args),
+  getTopicsByQuestionId: (...args) => mockGetTopicsByQuestionId(...args),
   scrubQuestionTexts: (...args) => mockScrubQuestionTexts(...args),
 }));
 
@@ -36,9 +35,8 @@ vi.mock("../config/firebase.js", () => ({
   },
 }));
 
-const { scrubPII, exportUserData, deleteUserAccount } = await import(
-  "./gdprService.js"
-);
+const { scrubPII, exportUserData, deleteUserAccount } =
+  await import("./gdprService.js");
 
 describe("gdprService", () => {
   beforeEach(() => {
@@ -120,9 +118,7 @@ describe("gdprService", () => {
         linkedin: null,
       });
       mockGetRequestsByUserId.mockResolvedValue([{ id: 1 }]);
-      mockGetQuestionsByUserId.mockResolvedValue([
-        { id: 10, question: "Q1" },
-      ]);
+      mockGetQuestionsByUserId.mockResolvedValue([{ id: 10, question: "Q1" }]);
       mockGetTopicsByQuestionId.mockResolvedValue([
         { id: 100, topic: "battery" },
       ]);
@@ -141,10 +137,7 @@ describe("gdprService", () => {
     it("flattens topics from multiple questions", async () => {
       mockGetUserById.mockResolvedValue({ firebase_uid: "uid-1" });
       mockGetRequestsByUserId.mockResolvedValue([]);
-      mockGetQuestionsByUserId.mockResolvedValue([
-        { id: 1 },
-        { id: 2 },
-      ]);
+      mockGetQuestionsByUserId.mockResolvedValue([{ id: 1 }, { id: 2 }]);
       mockGetTopicsByQuestionId
         .mockResolvedValueOnce([{ id: 10, topic: "a" }])
         .mockResolvedValueOnce([
@@ -237,9 +230,9 @@ describe("gdprService", () => {
       await deleteUserAccount("uid-1");
 
       expect(mockScrubConsortiumText).toHaveBeenCalledWith("uid-1");
-      expect(
-        mockScrubConsortiumText.mock.invocationCallOrder[0],
-      ).toBeLessThan(mockDeleteUserData.mock.invocationCallOrder[0]);
+      expect(mockScrubConsortiumText.mock.invocationCallOrder[0]).toBeLessThan(
+        mockDeleteUserData.mock.invocationCallOrder[0],
+      );
     });
 
     it("completes for a user who never registered for the consortium", async () => {

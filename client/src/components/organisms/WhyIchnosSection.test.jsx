@@ -1,23 +1,23 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, cleanup } from '../../test-utils';
-import WhyIchnosSection from './WhyIchnosSection';
-import { WHY_ICHNOS } from '../../constants/landingContent';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, cleanup } from "../../test-utils";
+import WhyIchnosSection from "./WhyIchnosSection";
+import { WHY_ICHNOS } from "../../constants/landingContent";
 import {
   CATENA_X_TITLE_BASE,
   CATENA_X_QUALIFIER_CLASS,
-} from '../../constants/catenaXStatus';
+} from "../../constants/catenaXStatus";
 
-describe('WhyIchnosSection', () => {
-  it('renders the heading from WHY_ICHNOS.heading', () => {
+describe("WhyIchnosSection", () => {
+  it("renders the heading from WHY_ICHNOS.heading", () => {
     renderWithProviders(<WhyIchnosSection />);
     expect(
-      screen.getByRole('heading', { level: 2, name: WHY_ICHNOS.heading }),
+      screen.getByRole("heading", { level: 2, name: WHY_ICHNOS.heading }),
     ).toBeInTheDocument();
   });
 
-  it('renders one paragraph per WHY_ICHNOS.paragraphs entry, in order', () => {
+  it("renders one paragraph per WHY_ICHNOS.paragraphs entry, in order", () => {
     const { container } = renderWithProviders(<WhyIchnosSection />);
-    const paragraphs = container.querySelectorAll('p.lead');
+    const paragraphs = container.querySelectorAll("p.lead");
     expect(paragraphs).toHaveLength(WHY_ICHNOS.paragraphs.length);
     WHY_ICHNOS.paragraphs.forEach((paragraph, index) => {
       // Match on the paragraph's leading text, which precedes the inlined
@@ -27,7 +27,7 @@ describe('WhyIchnosSection', () => {
     });
   });
 
-  it('renders the Catena-X credential without the pending qualifier span', () => {
+  it("renders the Catena-X credential without the pending qualifier span", () => {
     const { container } = renderWithProviders(<WhyIchnosSection />);
     expect(container.textContent).toContain(CATENA_X_TITLE_BASE);
     expect(
@@ -35,21 +35,21 @@ describe('WhyIchnosSection', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('attributes the qualification to Francesco in the second paragraph', () => {
+  it("attributes the qualification to Francesco in the second paragraph", () => {
     // september-fixes P7: the holder is named, never the practice.
     const { container } = renderWithProviders(<WhyIchnosSection />);
-    const paragraphs = container.querySelectorAll('p.lead');
+    const paragraphs = container.querySelectorAll("p.lead");
     expect(paragraphs[1].textContent).toContain(
-      'Francesco is a ' + CATENA_X_TITLE_BASE,
+      "Francesco is a " + CATENA_X_TITLE_BASE,
     );
   });
 
   it('renders a section with id="company"', () => {
     const { container } = renderWithProviders(<WhyIchnosSection />);
-    expect(container.querySelector('section#company')).toBeInTheDocument();
+    expect(container.querySelector("section#company")).toBeInTheDocument();
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<WhyIchnosSection />);
     const results = await axe(container);

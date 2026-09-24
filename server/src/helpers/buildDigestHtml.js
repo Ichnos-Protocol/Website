@@ -34,7 +34,11 @@ function buildRegistrationRow(r) {
  * cannot inject markup into the email body. Headings, counts and the `None`
  * fallbacks are static markup and stay unescaped.
  */
-export function buildDigestHtml(inquiries, chatLeads, consortiumRegistrations = []) {
+export function buildDigestHtml(
+  inquiries,
+  chatLeads,
+  consortiumRegistrations = [],
+) {
   return (
     renderSection("New Inquiries", inquiries.map(buildInquiryRow)) +
     renderSection("Chat-Only Leads", chatLeads.map(buildLeadRow)) +

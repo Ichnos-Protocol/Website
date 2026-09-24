@@ -32,7 +32,14 @@ const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 // Positioning line single-sourced from companyInfo.js (2026-08-12).
 const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol: ${COMPANY_INFO.tagline} ${getCatenaXFounderLine()}.`;
 
-function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
+function buildMeta({
+  path,
+  title,
+  description,
+  keywords,
+  ogImage,
+  ogImageAlt,
+}) {
   const url = `${BASE_URL}${path}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
   const imageAlt = ogImageAlt || DEFAULT_OG_IMAGE_ALT;

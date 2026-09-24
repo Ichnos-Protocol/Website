@@ -1,52 +1,52 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
 
-import adminReducer from '../../features/admin/adminSlice';
-import authReducer from '../../features/auth/authSlice';
+import adminReducer from "../../features/admin/adminSlice";
+import authReducer from "../../features/auth/authSlice";
 
 let mockIsSuperAdmin = false;
 
-vi.mock('../../config/firebase', () => ({
+vi.mock("../../config/firebase", () => ({
   auth: { currentUser: null },
 }));
 
-vi.mock('firebase/auth', () => ({
+vi.mock("firebase/auth", () => ({
   signOut: vi.fn(),
   onAuthStateChanged: vi.fn(),
 }));
 
-vi.mock('../../hooks/useSuperAdminCheck', () => ({
+vi.mock("../../hooks/useSuperAdminCheck", () => ({
   useSuperAdminCheck: () => mockIsSuperAdmin,
 }));
 
-vi.mock('../organisms/AdminKanban', () => ({
+vi.mock("../organisms/AdminKanban", () => ({
   default: function MockAdminKanban() {
     return <div data-testid="admin-kanban" />;
   },
 }));
 
-vi.mock('../organisms/ChatOnlyLeads', () => ({
+vi.mock("../organisms/ChatOnlyLeads", () => ({
   default: function MockChatOnlyLeads() {
     return <div data-testid="chat-only-leads" />;
   },
 }));
 
-vi.mock('../organisms/UserTimeline', () => ({
+vi.mock("../organisms/UserTimeline", () => ({
   default: function MockUserTimeline({ userId }) {
     return <div data-testid="user-timeline" data-userid={userId} />;
   },
 }));
 
-vi.mock('../organisms/TopicAnalytics', () => ({
+vi.mock("../organisms/TopicAnalytics", () => ({
   default: function MockTopicAnalytics() {
     return <div data-testid="topic-analytics" />;
   },
 }));
 
-vi.mock('../organisms/ConsortiumRegistrations', () => ({
+vi.mock("../organisms/ConsortiumRegistrations", () => ({
   default: function MockConsortiumRegistrations() {
     return <div data-testid="consortium-registrations" />;
   },
@@ -65,7 +65,7 @@ function createStore(overrides = {}) {
         ...overrides.admin,
       },
       auth: {
-        user: { uid: 'u1' },
+        user: { uid: "u1" },
         isAuthenticated: true,
         isAdmin: true,
         loading: false,
@@ -76,98 +76,98 @@ function createStore(overrides = {}) {
   });
 }
 
-describe('AdminPage', () => {
+describe("AdminPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsSuperAdmin = false;
   });
 
-  it('renders Tabs with Requests and Analytics', async () => {
-    const { default: AdminPage } = await import('./AdminPage');
+  it("renders Tabs with Requests and Analytics", async () => {
+    const { default: AdminPage } = await import("./AdminPage");
     render(
       <Provider store={createStore()}>
         <AdminPage />
       </Provider>,
     );
-    expect(screen.getByText('Requests')).toBeInTheDocument();
-    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText("Requests")).toBeInTheDocument();
+    expect(screen.getByText("Analytics")).toBeInTheDocument();
   });
 
-  it('renders AdminLayout wrapper', async () => {
-    const { default: AdminPage } = await import('./AdminPage');
+  it("renders AdminLayout wrapper", async () => {
+    const { default: AdminPage } = await import("./AdminPage");
     render(
       <Provider store={createStore()}>
         <AdminPage />
       </Provider>,
     );
-    expect(screen.getByText('Ichnos Admin')).toBeInTheDocument();
+    expect(screen.getByText("Ichnos Admin")).toBeInTheDocument();
   });
 
-  it('renders AdminKanban in Requests tab', async () => {
-    const { default: AdminPage } = await import('./AdminPage');
+  it("renders AdminKanban in Requests tab", async () => {
+    const { default: AdminPage } = await import("./AdminPage");
     render(
       <Provider store={createStore()}>
         <AdminPage />
       </Provider>,
     );
-    expect(screen.getByTestId('admin-kanban')).toBeInTheDocument();
+    expect(screen.getByTestId("admin-kanban")).toBeInTheDocument();
   });
 
-  it('renders UserTimeline with selectedUser', async () => {
-    const { default: AdminPage } = await import('./AdminPage');
+  it("renders UserTimeline with selectedUser", async () => {
+    const { default: AdminPage } = await import("./AdminPage");
     render(
-      <Provider store={createStore({ admin: { selectedUser: 'uid-1' } })}>
+      <Provider store={createStore({ admin: { selectedUser: "uid-1" } })}>
         <AdminPage />
       </Provider>,
     );
-    const timeline = screen.getByTestId('user-timeline');
-    expect(timeline).toHaveAttribute('data-userid', 'uid-1');
+    const timeline = screen.getByTestId("user-timeline");
+    expect(timeline).toHaveAttribute("data-userid", "uid-1");
   });
 
-  it('renders the Consortium tab title', async () => {
-    const { default: AdminPage } = await import('./AdminPage');
+  it("renders the Consortium tab title", async () => {
+    const { default: AdminPage } = await import("./AdminPage");
     render(
       <Provider store={createStore()}>
         <AdminPage />
       </Provider>,
     );
-    expect(screen.getByText('Consortium')).toBeInTheDocument();
+    expect(screen.getByText("Consortium")).toBeInTheDocument();
   });
 
-  it('shows ConsortiumRegistrations when the Consortium tab is selected', async () => {
+  it("shows ConsortiumRegistrations when the Consortium tab is selected", async () => {
     const user = userEvent.setup();
-    const { default: AdminPage } = await import('./AdminPage');
+    const { default: AdminPage } = await import("./AdminPage");
     render(
       <Provider store={createStore()}>
         <AdminPage />
       </Provider>,
     );
 
-    await user.click(screen.getByRole('tab', { name: 'Consortium' }));
-    expect(screen.getByTestId('consortium-registrations')).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Consortium" }));
+    expect(screen.getByTestId("consortium-registrations")).toBeInTheDocument();
   });
 
-  describe('Settings tab visibility', () => {
-    it('does not render Settings tab for non-super-admin', async () => {
+  describe("Settings tab visibility", () => {
+    it("does not render Settings tab for non-super-admin", async () => {
       mockIsSuperAdmin = false;
-      const { default: AdminPage } = await import('./AdminPage');
+      const { default: AdminPage } = await import("./AdminPage");
       render(
         <Provider store={createStore()}>
           <AdminPage />
         </Provider>,
       );
-      expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+      expect(screen.queryByText("Settings")).not.toBeInTheDocument();
     });
 
-    it('renders Settings tab for super-admin', async () => {
+    it("renders Settings tab for super-admin", async () => {
       mockIsSuperAdmin = true;
-      const { default: AdminPage } = await import('./AdminPage');
+      const { default: AdminPage } = await import("./AdminPage");
       render(
         <Provider store={createStore()}>
           <AdminPage />
         </Provider>,
       );
-      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText("Settings")).toBeInTheDocument();
     });
   });
 });

@@ -59,7 +59,10 @@ export async function deleteExpiredHits(limit = SWEEP_BATCH_SIZE) {
     const { rowCount } = await pool.query(DELETE_EXPIRED_SQL, [limit]);
     return rowCount;
   } catch (error) {
-    console.error("rateLimitRepository.deleteExpiredHits failed:", error.message);
+    console.error(
+      "rateLimitRepository.deleteExpiredHits failed:",
+      error.message,
+    );
     throw error;
   }
 }

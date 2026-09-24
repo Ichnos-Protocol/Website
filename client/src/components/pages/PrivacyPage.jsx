@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import Container from 'react-bootstrap/Container';
-import Alert from 'react-bootstrap/Alert';
-import Spinner from 'react-bootstrap/Spinner';
-import { signOut } from 'firebase/auth';
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import Container from "react-bootstrap/Container";
+import Alert from "react-bootstrap/Alert";
+import Spinner from "react-bootstrap/Spinner";
+import { signOut } from "firebase/auth";
 
-import { auth } from '../../config/firebase';
-import { logout } from '../../features/auth/authSlice';
+import { auth } from "../../config/firebase";
+import { logout } from "../../features/auth/authSlice";
 import {
   useLazyDownloadDataQuery,
   useDeleteAccountMutation,
-} from '../../features/gdpr/gdprApi';
-import { PRIVACY_META } from '../../constants/seoMeta';
-import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
-import Button from '../atoms/Button';
-import SeoHead from '../molecules/SeoHead';
-import DeleteAccountModal from '../organisms/DeleteAccountModal';
+} from "../../features/gdpr/gdprApi";
+import { PRIVACY_META } from "../../constants/seoMeta";
+import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
+import Button from "../atoms/Button";
+import SeoHead from "../molecules/SeoHead";
+import DeleteAccountModal from "../organisms/DeleteAccountModal";
 
 function triggerFileDownload(data) {
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = 'my-data.json';
+  link.download = "my-data.json";
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -38,8 +38,7 @@ export default function PrivacyPage() {
 
   const [triggerDownload, { isFetching: isDownloading }] =
     useLazyDownloadDataQuery();
-  const [deleteAccount, { isLoading: isDeleting }] =
-    useDeleteAccountMutation();
+  const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation();
 
   async function handleDownload() {
     const result = await triggerDownload();
@@ -53,18 +52,20 @@ export default function PrivacyPage() {
     try {
       await deleteAccount().unwrap();
     } catch {
-      setDeleteError('Something went wrong. Please try again later.');
+      setDeleteError("Something went wrong. Please try again later.");
       return;
     }
 
     try {
       await signOut(auth);
     } catch {
-      setDeleteError('Account deleted, but sign-out failed. You will be redirected.');
+      setDeleteError(
+        "Account deleted, but sign-out failed. You will be redirected.",
+      );
     }
 
     dispatch(logout());
-    navigate('/');
+    navigate("/");
   }
 
   return (
@@ -80,7 +81,11 @@ export default function PrivacyPage() {
 
       <Container>
         {deleteError && (
-          <Alert variant="danger" dismissible onClose={() => setDeleteError(null)}>
+          <Alert
+            variant="danger"
+            dismissible
+            onClose={() => setDeleteError(null)}
+          >
             {deleteError}
           </Alert>
         )}
@@ -88,43 +93,38 @@ export default function PrivacyPage() {
         <section className="mb-5">
           <h2 className="h4 mb-3">Privacy Policy</h2>
           <p>
-            Ichnos Protocol collects only the personal data necessary to
-            provide our services: your name, email address, and any
-            documents you voluntarily upload. We do not sell or share your
-            data with third parties for marketing purposes. Data is stored
-            securely and retained only as long as needed to fulfill the
-            purposes for which it was collected. You may request access,
-            correction, or deletion of your data at any time using the
-            controls below.
+            Ichnos Protocol collects only the personal data necessary to provide
+            our services: your name, email address, and any documents you
+            voluntarily upload. We do not sell or share your data with third
+            parties for marketing purposes. Data is stored securely and retained
+            only as long as needed to fulfill the purposes for which it was
+            collected. You may request access, correction, or deletion of your
+            data at any time using the controls below.
           </p>
           <p>
-            If you arrive at our consortium page from a campaign link, the
-            short campaign label carried in that link is kept in your
-            browser for the current session only, and it is sent to us
-            solely if you submit a consortium registration, where it is
-            stored alongside that registration. No cookie is set and no
-            analytics or tracking service is involved; the label is
-            discarded when you close the browser tab.
+            If you arrive at our consortium page from a campaign link, the short
+            campaign label carried in that link is kept in your browser for the
+            current session only, and it is sent to us solely if you submit a
+            consortium registration, where it is stored alongside that
+            registration. No cookie is set and no analytics or tracking service
+            is involved; the label is discarded when you close the browser tab.
           </p>
         </section>
 
         <section className="mb-5">
           <h2 className="h4 mb-3">Cookie Policy</h2>
           <p>
-            We use strictly necessary cookies to maintain your
-            authentication session and ensure the website functions
-            correctly. We do not use tracking or advertising cookies.
-            Third-party widgets (e.g., LinkedIn feed) may set their own
-            cookies — please refer to the respective provider&apos;s cookie
-            policy for details.
+            We use strictly necessary cookies to maintain your authentication
+            session and ensure the website functions correctly. We do not use
+            tracking or advertising cookies. Third-party widgets (e.g., LinkedIn
+            feed) may set their own cookies — please refer to the respective
+            provider&apos;s cookie policy for details.
           </p>
         </section>
 
         <section className="text-center mb-5">
           <h2 className="h4 mb-3">Download Your Data</h2>
-          <p>
-            Export all personal data we hold about you as a JSON file.
-          </p>
+          <p>Export all personal data we hold about you as a JSON file.</p>
           {downloadSuccess && (
             <Alert variant="success">Your data has been downloaded.</Alert>
           )}
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
             {isDownloading ? (
               <Spinner animation="border" size="sm" />
             ) : (
-              'Download My Data'
+              "Download My Data"
             )}
           </Button>
         </section>

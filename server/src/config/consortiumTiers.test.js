@@ -53,9 +53,9 @@ describe("consortiumTiers config", () => {
     it("carries positive-integer EUR and SGD figures for every priced tier", () => {
       for (const tierId of PRICED_TIERS) {
         for (const currency of CURRENCIES) {
-          expect(isPositiveInteger(CONSORTIUM_TIER_PRICES[tierId][currency])).toBe(
-            true,
-          );
+          expect(
+            isPositiveInteger(CONSORTIUM_TIER_PRICES[tierId][currency]),
+          ).toBe(true);
         }
       }
     });

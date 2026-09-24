@@ -58,7 +58,9 @@ export function buildContextString(documents) {
  * @returns {string} Combined content ready to be sent as the user role message
  */
 export function buildUserContent(context, message) {
-  return context ? `${context}\n\nQuestion: ${message}` : `Question: ${message}`;
+  return context
+    ? `${context}\n\nQuestion: ${message}`
+    : `Question: ${message}`;
 }
 
 /**
@@ -69,7 +71,12 @@ export function buildUserContent(context, message) {
  * @param {number} temperature - Sampling temperature (0–2)
  * @returns {{model: string, messages: {role: string, content: string}[], temperature: number}} xAI API request body
  */
-export function buildXaiPayload(messages, model, temperature, { stream = false } = {}) {
+export function buildXaiPayload(
+  messages,
+  model,
+  temperature,
+  { stream = false } = {},
+) {
   const payload = { model, messages, temperature };
   if (stream) payload.stream = true;
   return payload;
@@ -87,7 +94,7 @@ export function buildXaiHeaders() {
   if (!apiKey) {
     throw buildError(
       "XAI_API_KEY environment variable is not set. Please configure your xAI API key.",
-      503
+      503,
     );
   }
 

@@ -1,5 +1,5 @@
-import Button from '../atoms/Button';
-import { BOOKING_URL } from '../../constants/companyInfo';
+import Button from "../atoms/Button";
+import { BOOKING_URL } from "../../constants/companyInfo";
 
 // The href is BOOKING_URL by reference. No concatenation and no query
 // parameters: the booking page owns its own state, and anything appended here
@@ -9,7 +9,7 @@ import { BOOKING_URL } from '../../constants/companyInfo';
 // Button as role="button". This one navigates to another site, so "link" is
 // what a screen reader should announce.
 export default function BookingButton({
-  label = 'Book a scoping call',
+  label = "Book a scoping call",
   testId,
   variant,
 }) {

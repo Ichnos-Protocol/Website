@@ -1,10 +1,10 @@
-import { Button as BsButton } from 'react-bootstrap';
+import { Button as BsButton } from "react-bootstrap";
 
 export default function Button({
   children,
   onClick,
-  variant = 'primary',
-  className = '',
+  variant = "primary",
+  className = "",
   ...rest
 }) {
   return (

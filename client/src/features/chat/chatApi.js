@@ -1,33 +1,30 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import { API_BASE_URL } from '../../constants/api';
+import { API_BASE_URL } from "../../constants/api";
 
 export const chatApi = createApi({
-  reducerPath: 'chatApi',
+  reducerPath: "chatApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: async (headers) => {
-      const { auth } = await import('../../config/firebase');
+      const { auth } = await import("../../config/firebase");
       const user = auth.currentUser;
 
       if (user) {
         const token = await user.getIdToken();
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
       return headers;
     },
   }),
-  tagTypes: ['ChatHistory'],
+  tagTypes: ["ChatHistory"],
   endpoints: (builder) => ({
     getHistory: builder.query({
-      query: () => '/api/chat/history',
-      providesTags: ['ChatHistory'],
+      query: () => "/api/chat/history",
+      providesTags: ["ChatHistory"],
     }),
   }),
 });
 
-export const {
-  useGetHistoryQuery,
-  useLazyGetHistoryQuery,
-} = chatApi;
+export const { useGetHistoryQuery, useLazyGetHistoryQuery } = chatApi;

@@ -93,7 +93,9 @@ const CLOSED_PRICING = Object.fromEntries(
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const costAnswer = ASSESSMENT_FAQ.entries.find((entry) => entry.id === "cost").answer;
+const costAnswer = ASSESSMENT_FAQ.entries.find(
+  (entry) => entry.id === "cost",
+).answer;
 
 const isNonEmptyString = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -410,8 +412,12 @@ describe("copy discipline", () => {
   // are barred. Restating the literal is deliberate here, unlike ordinary
   // copy, because the exact wording is what the claim rule fixes.
   it("states the hosting claim in its permitted phrasing only", () => {
-    expect(ASSESSMENT_NEXT_STEPS.body).toContain("EU-hosted, operated by Ichnos");
-    expect(ASSESSMENT_NEXT_STEPS.body).not.toContain("EU servers operated by us");
+    expect(ASSESSMENT_NEXT_STEPS.body).toContain(
+      "EU-hosted, operated by Ichnos",
+    );
+    expect(ASSESSMENT_NEXT_STEPS.body).not.toContain(
+      "EU servers operated by us",
+    );
   });
 });
 
@@ -461,9 +467,11 @@ describe("collection shapes", () => {
 
   it("holds three process steps with a week label each", () => {
     expect(ASSESSMENT_PROCESS.steps).toHaveLength(3);
-    const offenders = ASSESSMENT_PROCESS.steps.filter(
-      (step) => !isNonEmptyString(step.week) || !isNonEmptyString(step.title),
-    ).map((step) => step.id);
+    const offenders = ASSESSMENT_PROCESS.steps
+      .filter(
+        (step) => !isNonEmptyString(step.week) || !isNonEmptyString(step.title),
+      )
+      .map((step) => step.id);
     expect(offenders).toEqual([]);
   });
 
@@ -482,10 +490,12 @@ describe("collection shapes", () => {
     const ids = ASSESSMENT_FAQ.entries.map((entry) => entry.id);
     expect(ids).toHaveLength(5);
     expect(new Set(ids).size).toBe(5);
-    const offenders = ASSESSMENT_FAQ.entries.filter(
-      (entry) =>
-        !isNonEmptyString(entry.question) || !isNonEmptyString(entry.answer),
-    ).map((entry) => entry.id);
+    const offenders = ASSESSMENT_FAQ.entries
+      .filter(
+        (entry) =>
+          !isNonEmptyString(entry.question) || !isNonEmptyString(entry.answer),
+      )
+      .map((entry) => entry.id);
     expect(offenders).toEqual([]);
   });
 

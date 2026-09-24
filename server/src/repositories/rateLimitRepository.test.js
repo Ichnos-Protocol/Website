@@ -38,7 +38,9 @@ describe("rateLimitRepository", () => {
 
   describe("incrementHit", () => {
     it("upserts with an expiry reset in one parameterized statement", async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [{ hits: 3, reset_at: RESET_AT }] });
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ hits: 3, reset_at: RESET_AT }],
+      });
 
       const result = await incrementHit(KEY, 900000);
 
@@ -46,14 +48,18 @@ describe("rateLimitRepository", () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain("INSERT INTO rate_limit_hits");
       expect(sql).toContain("ON CONFLICT (key) DO UPDATE");
-      expect(sql.match(/rate_limit_hits\.reset_at <= NOW\(\)/g)).toHaveLength(2);
+      expect(sql.match(/rate_limit_hits\.reset_at <= NOW\(\)/g)).toHaveLength(
+        2,
+      );
       expect(sql).toContain("RETURNING hits, reset_at");
       expect(params).toEqual([KEY, 900000]);
       expect(result).toEqual({ hits: 3, resetAt: RESET_AT });
     });
 
     it("coerces a string hit count to a number", async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [{ hits: "2", reset_at: RESET_AT }] });
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ hits: "2", reset_at: RESET_AT }],
+      });
 
       const result = await incrementHit(KEY, 1000);
 
@@ -73,7 +79,9 @@ describe("rateLimitRepository", () => {
 
   describe("decrementHit", () => {
     it("bounds the count at zero and returns the mapped row", async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [{ hits: 0, reset_at: RESET_AT }] });
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ hits: 0, reset_at: RESET_AT }],
+      });
 
       const result = await decrementHit(KEY);
 
@@ -132,7 +140,9 @@ describe("rateLimitRepository", () => {
 
   describe("getHit", () => {
     it("returns the mapped live row", async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [{ hits: 5, reset_at: RESET_AT }] });
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ hits: 5, reset_at: RESET_AT }],
+      });
 
       const result = await getHit(KEY);
 
@@ -209,7 +219,9 @@ describe("rateLimitRepository", () => {
       mockQuery.mockResolvedValueOnce({ rowCount: 7 });
 
       await expect(maybeSweepExpired()).resolves.toBe(7);
-      expect(mockQuery.mock.calls[0][0]).toContain("DELETE FROM rate_limit_hits");
+      expect(mockQuery.mock.calls[0][0]).toContain(
+        "DELETE FROM rate_limit_hits",
+      );
     });
 
     it("swallows a sweep failure and resolves to zero", async () => {
@@ -230,8 +242,12 @@ describe("rateLimitRepository", () => {
       const result = await incrementHit(KEY, 900000);
 
       expect(mockQuery).toHaveBeenCalledTimes(2);
-      expect(mockQuery.mock.calls[0][0]).toContain("INSERT INTO rate_limit_hits");
-      expect(mockQuery.mock.calls[1][0]).toContain("DELETE FROM rate_limit_hits");
+      expect(mockQuery.mock.calls[0][0]).toContain(
+        "INSERT INTO rate_limit_hits",
+      );
+      expect(mockQuery.mock.calls[1][0]).toContain(
+        "DELETE FROM rate_limit_hits",
+      );
       expect(mockQuery.mock.calls[1][1]).not.toContain(KEY);
       expect(result).toEqual({ hits: 4, resetAt: RESET_AT });
     });

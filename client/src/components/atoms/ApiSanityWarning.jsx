@@ -1,4 +1,4 @@
-import Alert from 'react-bootstrap/Alert';
+import Alert from "react-bootstrap/Alert";
 
 export default function ApiSanityWarning({ warning }) {
   if (!warning) return null;

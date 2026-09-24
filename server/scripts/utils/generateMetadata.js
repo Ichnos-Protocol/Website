@@ -6,4 +6,7 @@
  *
  * @module utils/generateMetadata
  */
-export { generateMetadata, VALID_CATEGORIES } from "../helpers/metadataGenerator.js";
+export {
+  generateMetadata,
+  VALID_CATEGORIES,
+} from "../helpers/metadataGenerator.js";

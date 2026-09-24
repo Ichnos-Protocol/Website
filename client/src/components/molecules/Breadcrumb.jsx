@@ -1,12 +1,12 @@
-import BsBreadcrumb from 'react-bootstrap/Breadcrumb';
-import { Link } from 'react-router-dom';
+import BsBreadcrumb from "react-bootstrap/Breadcrumb";
+import { Link } from "react-router-dom";
 
-import { ROUTE_PASSPORT } from '../../constants/routes';
+import { ROUTE_PASSPORT } from "../../constants/routes";
 
 // react-bootstrap's Breadcrumb is aliased because this component takes the
 // same name, on the `Button as BsButton` precedent in atoms/Button.jsx.
-const PARENT_LABEL = 'Battery passport';
-const CURRENT_LABEL = 'Data readiness assessment';
+const PARENT_LABEL = "Battery passport";
+const CURRENT_LABEL = "Data readiness assessment";
 
 // linkAs={Link} keeps the parent crumb a client-side navigation instead of a
 // full page load, and routes the destination through ROUTE_PASSPORT rather
@@ -20,7 +20,7 @@ export default function Breadcrumb() {
         linkAs={Link}
         linkProps={{
           to: ROUTE_PASSPORT,
-          'data-testid': 'assessment-breadcrumb-parent',
+          "data-testid": "assessment-breadcrumb-parent",
         }}
       >
         {PARENT_LABEL}

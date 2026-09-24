@@ -218,7 +218,13 @@ describe("syncVariablesToGitHub", () => {
 
   it("skips empty/falsy values and collects results for the rest", () => {
     const results = syncVariablesToGitHub(
-      { A: "val-a", EMPTY: "", NULL_VAL: null, UNDEF_VAL: undefined, C: "val-c" },
+      {
+        A: "val-a",
+        EMPTY: "",
+        NULL_VAL: null,
+        UNDEF_VAL: undefined,
+        C: "val-c",
+      },
       "/fake/repo",
     );
 

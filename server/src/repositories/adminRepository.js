@@ -47,7 +47,10 @@ export async function getUsersWithRequests() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getUsersWithRequests failed:", error.message);
+    console.error(
+      "adminRepository.getUsersWithRequests failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -122,7 +125,10 @@ export async function getUncategorizedQuestions() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getUncategorizedQuestions failed:", error.message);
+    console.error(
+      "adminRepository.getUncategorizedQuestions failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -265,7 +271,10 @@ export async function getRecentChatOnlyLeads() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getRecentChatOnlyLeads failed:", error.message);
+    console.error(
+      "adminRepository.getRecentChatOnlyLeads failed:",
+      error.message,
+    );
     throw error;
   }
 }

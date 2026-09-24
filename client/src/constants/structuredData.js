@@ -48,7 +48,8 @@ export const ORGANIZATION_SCHEMA = {
   description: `${COMPANY_INFO.tagline} Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${CATENA_X_MEMBERSHIP_NOTE}, and ${CATENA_X_EXPERT_GROUP_NOTE}. ${getCatenaXFounderLine()}.`,
   address: {
     "@type": "PostalAddress",
-    streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",
+    streetAddress:
+      "160 Robinson Road, #14-04 Singapore Business Federation Centre",
     addressLocality: "Singapore",
     postalCode: "068914",
     addressCountry: "SG",
@@ -58,9 +59,7 @@ export const ORGANIZATION_SCHEMA = {
     "https://www.linkedin.com/company/ichnos-protocol/",
     "https://www.linkedin.com/in/maltonif/",
   ],
-  founder: [
-    { "@type": "Person", name: "Francesco Maltoni" },
-  ],
+  founder: [{ "@type": "Person", name: "Francesco Maltoni" }],
   areaServed: ["EU", "ID", "MY", "SG"],
   knowsAbout: [
     "Battery Passport",

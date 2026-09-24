@@ -56,7 +56,12 @@ describe("userRepository", () => {
 
   describe("upsertProfile", () => {
     it("inserts or updates profile and returns the row", async () => {
-      const profile = { user_id: "uid-1", name: "John", surname: "Doe", email: "j@d.com" };
+      const profile = {
+        user_id: "uid-1",
+        name: "John",
+        surname: "Doe",
+        email: "j@d.com",
+      };
       mockQuery.mockResolvedValue({ rows: [profile] });
 
       const result = await upsertProfile("uid-1", {
@@ -84,10 +89,15 @@ describe("userRepository", () => {
         linkedin: "https://linkedin.com/in/jane",
       });
 
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        ["uid-1", "Jane", "Doe", "jane@d.com", "+123", "Acme", "https://linkedin.com/in/jane"],
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+        "uid-1",
+        "Jane",
+        "Doe",
+        "jane@d.com",
+        "+123",
+        "Acme",
+        "https://linkedin.com/in/jane",
+      ]);
     });
   });
 
@@ -160,7 +170,10 @@ describe("userRepository", () => {
 
   describe("updateConsortiumProfile", () => {
     it("issues a single UPDATE and returns the row", async () => {
-      const row = { consortium_interest: true, consortium_position: "supplier" };
+      const row = {
+        consortium_interest: true,
+        consortium_position: "supplier",
+      };
       mockQuery.mockResolvedValue({ rows: [row] });
 
       const result = await updateConsortiumProfile("uid-1", consortiumAnswers);
@@ -210,8 +223,12 @@ describe("userRepository", () => {
       ]);
       expect(sql).toContain("consortium_region = $13");
       // Appending region must not renumber the existing placeholders.
-      expect(sql).toContain("consortium_source = COALESCE(consortium_source, $11)");
-      expect(sql).toContain("consortium_status = COALESCE(consortium_status, $12)");
+      expect(sql).toContain(
+        "consortium_source = COALESCE(consortium_source, $11)",
+      );
+      expect(sql).toContain(
+        "consortium_status = COALESCE(consortium_status, $12)",
+      );
     });
 
     it("never clears consortium_interest", async () => {
@@ -230,7 +247,14 @@ describe("userRepository", () => {
       await updateConsortiumProfile("uid-1", consortiumAnswers);
 
       const [sql] = mockQuery.mock.calls[0];
-      for (const column of ["name", "surname", "email", "phone", "company", "linkedin"]) {
+      for (const column of [
+        "name",
+        "surname",
+        "email",
+        "phone",
+        "company",
+        "linkedin",
+      ]) {
         expect(sql).not.toContain(`${column} =`);
       }
     });
@@ -331,7 +355,14 @@ describe("userRepository", () => {
       await setConsortiumTier("uid-1", "pilot");
 
       const [sql] = mockQuery.mock.calls[0];
-      for (const column of ["name", "surname", "email", "phone", "company", "linkedin"]) {
+      for (const column of [
+        "name",
+        "surname",
+        "email",
+        "phone",
+        "company",
+        "linkedin",
+      ]) {
         expect(sql).not.toContain(`${column} =`);
       }
     });
@@ -349,7 +380,9 @@ describe("userRepository", () => {
       const row = { consortium_status: "contacted" };
       mockQuery.mockResolvedValue({ rows: [row] });
 
-      const result = await updateConsortiumAdmin("uid-1", { status: "contacted" });
+      const result = await updateConsortiumAdmin("uid-1", {
+        status: "contacted",
+      });
 
       expect(result).toEqual(row);
       expect(mockQuery).toHaveBeenCalledTimes(1);
@@ -376,7 +409,9 @@ describe("userRepository", () => {
 
       const [sql, params] = mockQuery.mock.calls[0];
       expect(params).toEqual(["uid-1", "in_consortium", "signed"]);
-      expect(sql).toContain("consortium_status = COALESCE($2, consortium_status)");
+      expect(sql).toContain(
+        "consortium_status = COALESCE($2, consortium_status)",
+      );
       expect(sql).toContain(
         "consortium_admin_notes = COALESCE($3, consortium_admin_notes)",
       );
@@ -405,7 +440,9 @@ describe("userRepository", () => {
     it("returns null when no registrant row matches", async () => {
       mockQuery.mockResolvedValue({ rows: [] });
 
-      const result = await updateConsortiumAdmin("nobody", { status: "contacted" });
+      const result = await updateConsortiumAdmin("nobody", {
+        status: "contacted",
+      });
       expect(result).toBeNull();
     });
   });

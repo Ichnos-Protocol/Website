@@ -49,9 +49,8 @@ vi.mock("../src/repositories/rateLimitRepository.js", () => ({
   getHit: async () => null,
 }));
 
-const { seedE2EOnPreview, resetSeedState, seedStatus } = await import(
-  "./seedE2EOnPreview.js"
-);
+const { seedE2EOnPreview, resetSeedState, seedStatus } =
+  await import("./seedE2EOnPreview.js");
 const { default: app } = await import("../src/app.js");
 
 describe("seedE2EOnPreview", () => {

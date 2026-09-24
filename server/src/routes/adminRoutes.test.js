@@ -129,9 +129,7 @@ describe("admin routes", () => {
       mockVerifyIdToken.mockResolvedValue(adminToken);
       mockGetUsers.mockResolvedValue([{ userId: "uid-1" }]);
 
-      const res = await request(app)
-        .get("/api/admin/users")
-        .set(authHeader());
+      const res = await request(app).get("/api/admin/users").set(authHeader());
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Users retrieved");
@@ -146,9 +144,7 @@ describe("admin routes", () => {
     it("returns 403 for non-admin user", async () => {
       mockVerifyIdToken.mockResolvedValue(userToken);
 
-      const res = await request(app)
-        .get("/api/admin/users")
-        .set(authHeader());
+      const res = await request(app).get("/api/admin/users").set(authHeader());
 
       expect(res.status).toBe(403);
     });
@@ -288,9 +284,7 @@ describe("admin routes", () => {
       mockVerifyIdToken.mockResolvedValue(adminToken);
       mockGetTopics.mockResolvedValue([{ topic: "battery", count: 10 }]);
 
-      const res = await request(app)
-        .get("/api/admin/topics")
-        .set(authHeader());
+      const res = await request(app).get("/api/admin/topics").set(authHeader());
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Topics retrieved");
@@ -303,9 +297,7 @@ describe("admin routes", () => {
       mockVerifyIdToken.mockResolvedValue(adminToken);
       mockExportToCSV.mockResolvedValue("name,email\nAlice,a@b.com");
 
-      const res = await request(app)
-        .get("/api/admin/export")
-        .set(authHeader());
+      const res = await request(app).get("/api/admin/export").set(authHeader());
 
       expect(res.status).toBe(200);
       expect(res.headers["content-type"]).toContain("text/csv");
@@ -315,9 +307,7 @@ describe("admin routes", () => {
     it("returns 403 for non-admin", async () => {
       mockVerifyIdToken.mockResolvedValue(userToken);
 
-      const res = await request(app)
-        .get("/api/admin/export")
-        .set(authHeader());
+      const res = await request(app).get("/api/admin/export").set(authHeader());
 
       expect(res.status).toBe(403);
     });
@@ -389,7 +379,6 @@ describe("admin routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Retention sweep complete");
-
     });
 
     it("returns 401 without auth token and without cron secret", async () => {
@@ -407,7 +396,6 @@ describe("admin routes", () => {
         .set("Authorization", "Bearer wrong-secret");
 
       expect(res.status).toBe(401);
-
     });
 
     it("returns 403 for non-admin user", async () => {
@@ -432,7 +420,6 @@ describe("admin routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Retention sweep complete");
-
     });
 
     it("returns 401 with invalid secret and no Firebase token", async () => {
@@ -444,7 +431,6 @@ describe("admin routes", () => {
         .set("Authorization", "Bearer wrong-secret");
 
       expect(res.status).toBe(401);
-
     });
 
     it("returns 200 with valid Firebase admin token", async () => {
@@ -473,7 +459,11 @@ describe("admin routes", () => {
   describe("POST /api/admin/notifications/digest", () => {
     it("returns 200 for admin", async () => {
       mockVerifyIdToken.mockResolvedValue(adminToken);
-      mockSendDailyDigest.mockResolvedValue({ sent: true, inquiries: 3, chatLeads: 1 });
+      mockSendDailyDigest.mockResolvedValue({
+        sent: true,
+        inquiries: 3,
+        chatLeads: 1,
+      });
 
       const res = await request(app)
         .post("/api/admin/notifications/digest")
@@ -486,7 +476,11 @@ describe("admin routes", () => {
 
     it("returns 200 with valid cron secret Bearer token", async () => {
       process.env.CRON_SECRET = "test-cron-secret";
-      mockSendDailyDigest.mockResolvedValue({ sent: true, inquiries: 1, chatLeads: 0 });
+      mockSendDailyDigest.mockResolvedValue({
+        sent: true,
+        inquiries: 1,
+        chatLeads: 0,
+      });
 
       const res = await request(app)
         .post("/api/admin/notifications/digest")
@@ -494,7 +488,6 @@ describe("admin routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Digest sent");
-
     });
 
     it("returns 401 without auth token and without cron secret", async () => {
@@ -512,7 +505,6 @@ describe("admin routes", () => {
         .set("Authorization", "Bearer wrong-secret");
 
       expect(res.status).toBe(401);
-
     });
 
     it("returns 403 for non-admin user", async () => {
@@ -529,7 +521,11 @@ describe("admin routes", () => {
   describe("GET /api/admin/notifications/digest", () => {
     it("returns 200 with valid cron secret Bearer token", async () => {
       process.env.CRON_SECRET = "test-cron-secret";
-      mockSendDailyDigest.mockResolvedValue({ sent: true, inquiries: 2, chatLeads: 1 });
+      mockSendDailyDigest.mockResolvedValue({
+        sent: true,
+        inquiries: 2,
+        chatLeads: 1,
+      });
 
       const res = await request(app)
         .get("/api/admin/notifications/digest")
@@ -537,7 +533,6 @@ describe("admin routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Digest sent");
-
     });
 
     it("returns 401 with invalid secret and no Firebase token", async () => {
@@ -549,12 +544,15 @@ describe("admin routes", () => {
         .set("Authorization", "Bearer wrong-secret");
 
       expect(res.status).toBe(401);
-
     });
 
     it("returns 200 with valid Firebase admin token", async () => {
       mockVerifyIdToken.mockResolvedValue(adminToken);
-      mockSendDailyDigest.mockResolvedValue({ sent: true, inquiries: 0, chatLeads: 0 });
+      mockSendDailyDigest.mockResolvedValue({
+        sent: true,
+        inquiries: 0,
+        chatLeads: 0,
+      });
 
       const res = await request(app)
         .get("/api/admin/notifications/digest")
@@ -596,7 +594,9 @@ describe("admin routes", () => {
       mockGetConsortiumRegistrants.mockResolvedValue([]);
 
       const res = await request(app)
-        .get("/api/admin/consortium?tier=founding&source=landing&status=contacted")
+        .get(
+          "/api/admin/consortium?tier=founding&source=landing&status=contacted",
+        )
         .set(authHeader());
 
       expect(res.status).toBe(200);

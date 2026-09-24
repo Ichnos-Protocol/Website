@@ -39,7 +39,9 @@ describe("provision orchestrator ordering", () => {
   it("reports missing GitHub names in sync-only mode before any gh call", async () => {
     const run = main({ syncOnly: true });
 
-    await expect(run).rejects.toThrowError(/Missing GitHub config value\(s\): .*FIREBASE_API_KEY/);
+    await expect(run).rejects.toThrowError(
+      /Missing GitHub config value\(s\): .*FIREBASE_API_KEY/,
+    );
     expect(execFileSync).not.toHaveBeenCalled();
     expect(spawnSync).not.toHaveBeenCalled();
   });

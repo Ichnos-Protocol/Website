@@ -1,11 +1,11 @@
-import Nav from 'react-bootstrap/Nav';
-import Form from 'react-bootstrap/Form';
-import Alert from 'react-bootstrap/Alert';
-import Spinner from 'react-bootstrap/Spinner';
+import Nav from "react-bootstrap/Nav";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
+import Spinner from "react-bootstrap/Spinner";
 
-import Button from '../atoms/Button';
-import AuthLoginForm from './AuthLoginForm';
-import AuthSignupForm from './AuthSignupForm';
+import Button from "../atoms/Button";
+import AuthLoginForm from "./AuthLoginForm";
+import AuthSignupForm from "./AuthSignupForm";
 
 export default function AuthLoginSignupBody({
   activeTab,
@@ -61,7 +61,7 @@ export default function AuthLoginSignupBody({
               data-testid="auth-submit-spinner"
             />
           )}
-          {isLogin ? 'Login' : 'Sign Up'}
+          {isLogin ? "Login" : "Sign Up"}
         </Button>
       </Form>
 

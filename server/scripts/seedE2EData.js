@@ -127,7 +127,11 @@ try {
 
   if (E2E_SUPER_ADMIN_UID && E2E_SUPER_ADMIN_EMAIL) {
     await upsertUser(
-      pool, E2E_SUPER_ADMIN_UID, "E2E", "SuperAdmin", E2E_SUPER_ADMIN_EMAIL,
+      pool,
+      E2E_SUPER_ADMIN_UID,
+      "E2E",
+      "SuperAdmin",
+      E2E_SUPER_ADMIN_EMAIL,
     );
     await upsertContactRequest(pool, E2E_SUPER_ADMIN_UID);
   }

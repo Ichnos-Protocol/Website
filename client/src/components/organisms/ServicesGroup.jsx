@@ -40,7 +40,10 @@ function ServiceCard({
           </Card.Title>
           <Card.Text className="service-card-text">{description}</Card.Text>
           {passportLink && !comingSoon && (
-            <Link to={passportLink} className="fw-semibold text-decoration-none">
+            <Link
+              to={passportLink}
+              className="fw-semibold text-decoration-none"
+            >
               Learn more →
             </Link>
           )}
@@ -72,7 +75,9 @@ export default function ServicesGroup({
 }) {
   const Wrapper = nested ? "div" : "section";
   const Heading = nested ? "h3" : "h2";
-  const wrapperClass = nested ? "services-group-nested py-4" : "services-group py-5";
+  const wrapperClass = nested
+    ? "services-group-nested py-4"
+    : "services-group py-5";
 
   return (
     <Wrapper id={id} className={wrapperClass}>

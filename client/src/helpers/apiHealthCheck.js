@@ -1,4 +1,4 @@
-import { API_HEALTH_PATH, API_SANITY_TIMEOUT_MS } from '../constants/api';
+import { API_HEALTH_PATH, API_SANITY_TIMEOUT_MS } from "../constants/api";
 
 export async function checkApiHealth() {
   const controller = new AbortController();
@@ -15,25 +15,25 @@ export async function checkApiHealth() {
       return {
         ok: false,
         warning:
-          'API health check returned an error. The server may be experiencing issues.',
+          "API health check returned an error. The server may be experiencing issues.",
       };
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
       return {
         ok: false,
         warning:
-          'API routing is misconfigured — /api/health did not return valid JSON. Check your proxy or deployment configuration.',
+          "API routing is misconfigured — /api/health did not return valid JSON. Check your proxy or deployment configuration.",
       };
     }
 
     const body = await response.json();
-    if (body.status !== 'ok') {
+    if (body.status !== "ok") {
       return {
         ok: false,
         warning:
-          'API routing is misconfigured — /api/health did not return valid JSON. Check your proxy or deployment configuration.',
+          "API routing is misconfigured — /api/health did not return valid JSON. Check your proxy or deployment configuration.",
       };
     }
 
@@ -41,18 +41,18 @@ export async function checkApiHealth() {
   } catch (error) {
     clearTimeout(timeoutId);
 
-    if (error.name === 'AbortError') {
+    if (error.name === "AbortError") {
       return {
         ok: false,
         warning:
-          'API health check timed out. The server may be starting up — try refreshing in a moment.',
+          "API health check timed out. The server may be starting up — try refreshing in a moment.",
       };
     }
 
     return {
       ok: false,
       warning:
-        'Unable to reach the API server. Check that the backend is running and properly configured.',
+        "Unable to reach the API server. Check that the backend is running and properly configured.",
     };
   }
 }

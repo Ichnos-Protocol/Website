@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import Table from 'react-bootstrap/Table';
-import Offcanvas from 'react-bootstrap/Offcanvas';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Spinner from 'react-bootstrap/Spinner';
+import { useState } from "react";
+import Table from "react-bootstrap/Table";
+import Offcanvas from "react-bootstrap/Offcanvas";
+import ListGroup from "react-bootstrap/ListGroup";
+import Spinner from "react-bootstrap/Spinner";
 
 import {
   useGetChatLeadsQuery,
   useGetChatLeadDetailQuery,
-} from '../../features/admin/adminApi';
+} from "../../features/admin/adminApi";
 
 export default function ChatOnlyLeads() {
   const [selectedUserId, setSelectedUserId] = useState(null);

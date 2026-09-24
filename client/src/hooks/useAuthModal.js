@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
-import { auth } from '../config/firebase';
-import { useSyncProfileMutation } from '../features/auth/authApi';
-import { closeAuthModal } from '../features/auth/authSlice';
-import { useAuthFormState } from './useAuthFormState';
-import { useAuthActions } from './useAuthActions';
+import { auth } from "../config/firebase";
+import { useSyncProfileMutation } from "../features/auth/authApi";
+import { closeAuthModal } from "../features/auth/authSlice";
+import { useAuthFormState } from "./useAuthFormState";
+import { useAuthActions } from "./useAuthActions";
 
 export function useAuthModal() {
   const dispatch = useDispatch();
@@ -15,14 +15,13 @@ export function useAuthModal() {
   const form = useAuthFormState();
   const { setActiveTab } = form;
 
-  const isCompletion = modalMode === 'complete-profile';
-  const isLogin = form.activeTab === 'login' && !isCompletion;
+  const isCompletion = modalMode === "complete-profile";
+  const isLogin = form.activeTab === "login" && !isCompletion;
   const show = modalMode !== null;
-  const canonicalEmail =
-    auth.currentUser?.email || currentUser?.email || '';
+  const canonicalEmail = auth.currentUser?.email || currentUser?.email || "";
 
   useEffect(() => {
-    if (modalMode === 'login' || modalMode === 'signup') {
+    if (modalMode === "login" || modalMode === "signup") {
       setActiveTab(modalMode);
     }
   }, [modalMode, setActiveTab]);
@@ -34,7 +33,7 @@ export function useAuthModal() {
 
   const handleTabSwitch = (tab) => {
     if (isCompletion) return;
-    form.setError('');
+    form.setError("");
     form.setActiveTab(tab);
   };
 

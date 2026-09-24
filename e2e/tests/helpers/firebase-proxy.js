@@ -11,8 +11,8 @@
  */
 
 const FIREBASE_API_PATTERNS = [
-  '**/identitytoolkit.googleapis.com/**',
-  '**/securetoken.googleapis.com/**',
+  "**/identitytoolkit.googleapis.com/**",
+  "**/securetoken.googleapis.com/**",
 ];
 
 /**
@@ -28,14 +28,14 @@ export async function setupFirebaseProxy(context) {
       const method = request.method();
 
       // Let OPTIONS preflight through with permissive headers
-      if (method === 'OPTIONS') {
+      if (method === "OPTIONS") {
         await route.fulfill({
           status: 204,
           headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Max-Age': '3600',
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Max-Age": "3600",
           },
         });
         return;
@@ -48,11 +48,11 @@ export async function setupFirebaseProxy(context) {
         const postData = request.postData();
 
         // Remove browser-specific headers that could cause issues
-        delete headers['origin'];
-        delete headers['referer'];
-        delete headers['sec-fetch-dest'];
-        delete headers['sec-fetch-mode'];
-        delete headers['sec-fetch-site'];
+        delete headers["origin"];
+        delete headers["referer"];
+        delete headers["sec-fetch-dest"];
+        delete headers["sec-fetch-mode"];
+        delete headers["sec-fetch-site"];
 
         const fetchOptions = {
           method,
@@ -65,8 +65,9 @@ export async function setupFirebaseProxy(context) {
 
         // Build response headers, adding CORS
         const responseHeaders = {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': response.headers.get('content-type') || 'application/json',
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type":
+            response.headers.get("content-type") || "application/json",
         };
 
         await route.fulfill({
@@ -75,8 +76,10 @@ export async function setupFirebaseProxy(context) {
           body,
         });
       } catch (err) {
-        console.error(`[firebase-proxy] Failed to proxy ${method} ${request.url()}: ${err.message}`);
-        await route.abort('connectionfailed');
+        console.error(
+          `[firebase-proxy] Failed to proxy ${method} ${request.url()}: ${err.message}`,
+        );
+        await route.abort("connectionfailed");
       }
     });
   }

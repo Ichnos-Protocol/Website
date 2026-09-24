@@ -1,39 +1,37 @@
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from "vitest";
 
-import { renderWithProviders } from '../../test-utils';
+import { renderWithProviders } from "../../test-utils";
 
-describe('CatenaXQualifierSpan', () => {
+describe("CatenaXQualifierSpan", () => {
   afterEach(() => {
     vi.resetModules();
-    vi.doUnmock('../../constants/catenaXStatus');
+    vi.doUnmock("../../constants/catenaXStatus");
   });
 
-  it('renders nothing once the qualification is granted', async () => {
-    const { default: CatenaXQualifierSpan } = await import(
-      './CatenaXQualifierSpan'
-    );
+  it("renders nothing once the qualification is granted", async () => {
+    const { default: CatenaXQualifierSpan } =
+      await import("./CatenaXQualifierSpan");
 
     const { container } = renderWithProviders(<CatenaXQualifierSpan />);
 
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders the muted qualifier span while the qualification is pending', async () => {
+  it("renders the muted qualifier span while the qualification is pending", async () => {
     vi.resetModules();
-    vi.doMock('../../constants/catenaXStatus', () => ({
+    vi.doMock("../../constants/catenaXStatus", () => ({
       CATENA_X_QUALIFICATION_GRANTED: false,
-      CATENA_X_QUALIFIER_CLASS: 'catenax-qualifier-pending',
-      getCatenaXQualifierText: () => ' (qualification in progress)',
+      CATENA_X_QUALIFIER_CLASS: "catenax-qualifier-pending",
+      getCatenaXQualifierText: () => " (qualification in progress)",
     }));
 
-    const { default: CatenaXQualifierSpan } = await import(
-      './CatenaXQualifierSpan'
-    );
+    const { default: CatenaXQualifierSpan } =
+      await import("./CatenaXQualifierSpan");
 
     const { container } = renderWithProviders(<CatenaXQualifierSpan />);
 
-    const span = container.querySelector('span.catenax-qualifier-pending');
+    const span = container.querySelector("span.catenax-qualifier-pending");
     expect(span).toBeTruthy();
-    expect(span.textContent).toBe(' (qualification in progress)');
+    expect(span.textContent).toBe(" (qualification in progress)");
   });
 });

@@ -1,8 +1,7 @@
-import Form from 'react-bootstrap/Form';
+import Form from "react-bootstrap/Form";
 
 export default function AuthSignupForm({ fields, onChange }) {
-  const update = (key) => (e) =>
-    onChange({ ...fields, [key]: e.target.value });
+  const update = (key) => (e) => onChange({ ...fields, [key]: e.target.value });
 
   return (
     <>
@@ -11,7 +10,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="text"
           value={fields.name}
-          onChange={update('name')}
+          onChange={update("name")}
           required
           placeholder="First name"
         />
@@ -21,7 +20,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="text"
           value={fields.surname}
-          onChange={update('surname')}
+          onChange={update("surname")}
           required
           placeholder="Last name"
         />
@@ -31,7 +30,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="email"
           value={fields.email}
-          onChange={update('email')}
+          onChange={update("email")}
           required
           placeholder="you@example.com"
         />
@@ -41,7 +40,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="password"
           value={fields.password}
-          onChange={update('password')}
+          onChange={update("password")}
           required
           placeholder="At least 6 characters"
         />
@@ -51,7 +50,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="text"
           value={fields.company}
-          onChange={update('company')}
+          onChange={update("company")}
           placeholder="Company name"
         />
       </Form.Group>
@@ -60,7 +59,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="tel"
           value={fields.phone}
-          onChange={update('phone')}
+          onChange={update("phone")}
           placeholder="+1 234 567 890"
         />
       </Form.Group>
@@ -69,7 +68,7 @@ export default function AuthSignupForm({ fields, onChange }) {
         <Form.Control
           type="url"
           value={fields.linkedin}
-          onChange={update('linkedin')}
+          onChange={update("linkedin")}
           placeholder="https://linkedin.com/in/..."
         />
       </Form.Group>

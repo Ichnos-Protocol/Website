@@ -3,7 +3,13 @@
  * via the Firebase Auth REST API. Only checks credential sets that
  * are fully configured (email + password present).
  */
-import { ADMIN, USER, SUPER_ADMIN, MANAGE_ADMIN_TARGET, isConfigured } from "./credentials.js";
+import {
+  ADMIN,
+  USER,
+  SUPER_ADMIN,
+  MANAGE_ADMIN_TARGET,
+  isConfigured,
+} from "./credentials.js";
 
 const SIGN_IN_URL =
   "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";

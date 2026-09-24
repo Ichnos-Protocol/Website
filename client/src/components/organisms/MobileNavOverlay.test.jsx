@@ -88,7 +88,10 @@ describe("MobileNavOverlay", () => {
 
     FLAT_NAV_ITEMS.forEach((item) => {
       const link = screen.getByRole("link", { name: item.label });
-      expect(link).toHaveAttribute("href", item.external ? item.href : item.path);
+      expect(link).toHaveAttribute(
+        "href",
+        item.external ? item.href : item.path,
+      );
     });
   });
 
@@ -100,9 +103,10 @@ describe("MobileNavOverlay", () => {
     expect(screen.getByText("Company")).toBeInTheDocument();
 
     // Children — "Why Ichnos" (homepage scroll target) and "Team" (route).
-    expect(
-      screen.getByRole("link", { name: "Team" }),
-    ).toHaveAttribute("href", ROUTE_TEAM);
+    expect(screen.getByRole("link", { name: "Team" })).toHaveAttribute(
+      "href",
+      ROUTE_TEAM,
+    );
   });
 
   it("clicking any flat NAV_ITEMS entry calls onClose", () => {
@@ -139,25 +143,21 @@ describe("MobileNavOverlay", () => {
   // so the route is reached through "Overview" rather than through the parent.
   it("on / homepage, clicking Overview navigates to /passport", () => {
     mockNavigate.mockClear();
-    renderWithProviders(
-      <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
-      { route: "/" },
-    );
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
+      route: "/",
+    });
 
     fireEvent.click(screen.getByRole("link", { name: "Overview" }));
     expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PASSPORT);
   });
 
   it("renders the Battery Passport section label and both of its children", () => {
-    renderWithProviders(
-      <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
-      { route: "/" },
-    );
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
+      route: "/",
+    });
 
     expect(screen.getByText("Battery Passport")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", { name: "Battery Passport" }),
-    ).toBeNull();
+    expect(screen.queryByRole("link", { name: "Battery Passport" })).toBeNull();
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute(
       "href",
       ROUTE_PASSPORT,
@@ -189,10 +189,9 @@ describe("MobileNavOverlay", () => {
 
   it("on /services route, Overview still navigates to /passport", () => {
     mockNavigate.mockClear();
-    renderWithProviders(
-      <MobileNavOverlay isOpen={true} onClose={vi.fn()} />,
-      { route: ROUTE_SERVICES },
-    );
+    renderWithProviders(<MobileNavOverlay isOpen={true} onClose={vi.fn()} />, {
+      route: ROUTE_SERVICES,
+    });
 
     fireEvent.click(screen.getByRole("link", { name: "Overview" }));
     expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PASSPORT);
@@ -256,7 +255,10 @@ describe("MobileNavOverlay", () => {
     renderWithProviders(<MobileNavOverlay isOpen={true} onClose={onClose} />);
 
     const link = screen.getByRole("link", { name: "Live Demo" });
-    expect(link).toHaveAttribute("href", "https://passport.ichnos-protocol.com/demo");
+    expect(link).toHaveAttribute(
+      "href",
+      "https://passport.ichnos-protocol.com/demo",
+    );
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
 

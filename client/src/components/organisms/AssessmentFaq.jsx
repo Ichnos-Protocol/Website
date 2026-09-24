@@ -1,7 +1,7 @@
 import {
   ASSESSMENT_FAQ,
   interpolate,
-} from '../../constants/readinessAssessmentContent';
+} from "../../constants/readinessAssessmentContent";
 
 // Section 4.8 questions, one native <details>/<summary> per entry of
 // ASSESSMENT_FAQ, in source order. Native disclosure elements are required:

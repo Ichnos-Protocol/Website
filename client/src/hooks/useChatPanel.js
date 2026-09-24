@@ -65,7 +65,13 @@ function useChatContext(mode, persistState) {
   const stream = useChatStream();
   const [triggerHistory] = useLazyGetHistoryQuery();
   const parts = { panel, reduxChat, auth, mode, persistState };
-  return buildChatContext({ ...parts, dispatch, triggerHistory, stream, local });
+  return buildChatContext({
+    ...parts,
+    dispatch,
+    triggerHistory,
+    stream,
+    local,
+  });
 }
 
 function buildPanelResult(ctx, view, handlers) {

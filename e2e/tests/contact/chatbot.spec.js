@@ -1,16 +1,16 @@
-import { test, expect } from '@playwright/test';
-import { waitForAppReady, waitForAuthedAppReady } from '../helpers/app.js';
-import { loginAsUser } from '../helpers/auth.js';
-import { USER, isConfigured } from '../helpers/credentials.js';
-import { ContactPage } from '../pages/ContactPage.js';
-import { AuthPage } from '../pages/AuthPage.js';
+import { test, expect } from "@playwright/test";
+import { waitForAppReady, waitForAuthedAppReady } from "../helpers/app.js";
+import { loginAsUser } from "../helpers/auth.js";
+import { USER, isConfigured } from "../helpers/credentials.js";
+import { ContactPage } from "../pages/ContactPage.js";
+import { AuthPage } from "../pages/AuthPage.js";
 
-test.describe('Chatbot - Unauthenticated Flow', { tag: ['@contact'] }, () => {
+test.describe("Chatbot - Unauthenticated Flow", { tag: ["@contact"] }, () => {
   test.beforeEach(async ({ page }) => {
-    await waitForAppReady(page, '/contact');
+    await waitForAppReady(page, "/contact");
   });
 
-  test('opens auth modal when unauthenticated user attempts to send a chat message', async ({
+  test("opens auth modal when unauthenticated user attempts to send a chat message", async ({
     page,
   }) => {
     const contact = new ContactPage(page);
@@ -19,23 +19,21 @@ test.describe('Chatbot - Unauthenticated Flow', { tag: ['@contact'] }, () => {
     // ChatPanel is rendered inline on /contact. Sending while unauthenticated
     // triggers the auth modal (no "Start Chat" button gate any more).
     await expect(contact.chatPanel).toBeVisible();
-    await contact.sendChatMessage('test unauthenticated send');
+    await contact.sendChatMessage("test unauthenticated send");
 
     await expect(auth.authModal).toBeVisible();
-    await expect(
-      auth.authModal.getByLabel('Email'),
-    ).toBeVisible();
+    await expect(auth.authModal.getByLabel("Email")).toBeVisible();
   });
 });
 
-test.describe('Chatbot - Authenticated Flow', { tag: ['@contact'] }, () => {
+test.describe("Chatbot - Authenticated Flow", { tag: ["@contact"] }, () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!isConfigured(USER), 'User E2E credentials not configured');
+    test.skip(!isConfigured(USER), "User E2E credentials not configured");
     await loginAsUser(page);
-    await waitForAuthedAppReady(page, '/contact');
+    await waitForAuthedAppReady(page, "/contact");
   });
 
-  test('inline chat panel shows correct daily limit denominator', async ({
+  test("inline chat panel shows correct daily limit denominator", async ({
     page,
   }) => {
     const contact = new ContactPage(page);
@@ -46,67 +44,75 @@ test.describe('Chatbot - Authenticated Flow', { tag: ['@contact'] }, () => {
   });
 });
 
-test.describe('Chatbot - Rate Limit Behavior (Authenticated)', { tag: ['@contact'] }, () => {
-  test.beforeEach(async ({ page }) => {
-    test.skip(!isConfigured(USER), 'User E2E credentials not configured');
-    await loginAsUser(page);
-    await waitForAuthedAppReady(page, '/contact');
-  });
+test.describe(
+  "Chatbot - Rate Limit Behavior (Authenticated)",
+  { tag: ["@contact"] },
+  () => {
+    test.beforeEach(async ({ page }) => {
+      test.skip(!isConfigured(USER), "User E2E credentials not configured");
+      await loginAsUser(page);
+      await waitForAuthedAppReady(page, "/contact");
+    });
 
-  test('displays rate limit warning when daily limit exceeded', async ({
-    page,
-  }) => {
-    const contact = new ContactPage(page);
+    test("displays rate limit warning when daily limit exceeded", async ({
+      page,
+    }) => {
+      const contact = new ContactPage(page);
 
-    await page.route('**/api/chat/message', (route) =>
-      route.fulfill({
-        status: 429,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: null,
-          error: 'Daily message limit reached (3/day)',
-          message: '',
+      await page.route("**/api/chat/message", (route) =>
+        route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: null,
+            error: "Daily message limit reached (3/day)",
+            message: "",
+          }),
         }),
-      }),
-    );
+      );
 
-    await expect(contact.chatPanel).toBeVisible();
-    await contact.sendChatMessage('test rate limit');
+      await expect(contact.chatPanel).toBeVisible();
+      await contact.sendChatMessage("test rate limit");
 
-    await expect(
-      page.getByText(/reached your daily message limit/i),
-    ).toBeVisible({ timeout: 10_000 });
-  });
-});
+      await expect(
+        page.getByText(/reached your daily message limit/i),
+      ).toBeVisible({ timeout: 10_000 });
+    });
+  },
+);
 
-test.describe('Chatbot - AI Unavailable Fallback (Authenticated)', { tag: ['@contact'] }, () => {
-  test.beforeEach(async ({ page }) => {
-    test.skip(!isConfigured(USER), 'User E2E credentials not configured');
-    await loginAsUser(page);
-    await waitForAuthedAppReady(page, '/contact');
-  });
+test.describe(
+  "Chatbot - AI Unavailable Fallback (Authenticated)",
+  { tag: ["@contact"] },
+  () => {
+    test.beforeEach(async ({ page }) => {
+      test.skip(!isConfigured(USER), "User E2E credentials not configured");
+      await loginAsUser(page);
+      await waitForAuthedAppReady(page, "/contact");
+    });
 
-  test('shows fallback CTA when AI is unavailable (503)', async ({
-    page,
-  }) => {
-    const contact = new ContactPage(page);
+    test("shows fallback CTA when AI is unavailable (503)", async ({
+      page,
+    }) => {
+      const contact = new ContactPage(page);
 
-    await page.route('**/api/chat/message', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'text/event-stream',
-        body: 'event: error\ndata: {"code":"STREAM_ERROR","message":"AI temporarily unavailable"}\n\n',
-      }),
-    );
+      await page.route("**/api/chat/message", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "text/event-stream",
+          body: 'event: error\ndata: {"code":"STREAM_ERROR","message":"AI temporarily unavailable"}\n\n',
+        }),
+      );
 
-    await expect(contact.chatPanel).toBeVisible();
-    await contact.sendChatMessage('test ai unavailable');
+      await expect(contact.chatPanel).toBeVisible();
+      await contact.sendChatMessage("test ai unavailable");
 
-    await expect(
-      page.getByText(/temporarily unavailable/i),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(
-      page.getByRole('button', { name: /leave your question/i }),
-    ).toBeVisible();
-  });
-});
+      await expect(page.getByText(/temporarily unavailable/i)).toBeVisible({
+        timeout: 10_000,
+      });
+      await expect(
+        page.getByRole("button", { name: /leave your question/i }),
+      ).toBeVisible();
+    });
+  },
+);

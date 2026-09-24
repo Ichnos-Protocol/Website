@@ -1,4 +1,4 @@
-import { ADVISOR_CARD_NOTE, MEMBER_CARD_NOTE } from './catenaXStatus';
+import { ADVISOR_CARD_NOTE, MEMBER_CARD_NOTE } from "./catenaXStatus";
 
 // Shared credentials/recognitions list, consumed by CredentialStrip
 // (homepage) and the Footer recognitions block. One credential carries an
@@ -10,19 +10,19 @@ import { ADVISOR_CARD_NOTE, MEMBER_CARD_NOTE } from './catenaXStatus';
 // (`teamContent.js`), so no information is lost here.
 export const CREDENTIALS = [
   {
-    id: 'catenax-member',
-    label: 'Catena-X Association member',
+    id: "catenax-member",
+    label: "Catena-X Association member",
     note: MEMBER_CARD_NOTE,
-    cxLabel: 'member',
+    cxLabel: "member",
     // Footer-only display title (Francesco, 2026-08-12): the footer pairs
     // each official label image with a visible text title, and the
     // membership shows its formal grade there. The strip card keeps the
     // shorter `label`, which also stays the alt text of every label image.
-    footerLabel: 'Catena-X Association ordinary member',
+    footerLabel: "Catena-X Association ordinary member",
   },
   {
-    id: 'catenax-qualified-advisor',
-    label: 'Catena-X Qualified Advisor (founder)',
+    id: "catenax-qualified-advisor",
+    label: "Catena-X Qualified Advisor (founder)",
     note: ADVISOR_CARD_NOTE,
     // The qualification is Francesco's (september-fixes P7): no label
     // image and no `href` here. The single linked advisor label lives on
@@ -35,13 +35,13 @@ export const CREDENTIALS = [
   // misreading — participation is in the working group, not in the
   // Catena-X Sustainability Committee itself.
   {
-    id: 'dpp-expert-group',
-    label: 'Digital Product Passport Expert Group',
-    note: 'Member: expert group under the Catena-X Sustainability Committee',
+    id: "dpp-expert-group",
+    label: "Digital Product Passport Expert Group",
+    note: "Member: expert group under the Catena-X Sustainability Committee",
   },
   {
-    id: 'battery-experience',
-    label: '10+ years in battery development',
-    note: 'PEM RWTH Aachen & FEV, from cell production research to vehicle battery systems',
+    id: "battery-experience",
+    label: "10+ years in battery development",
+    note: "PEM RWTH Aachen & FEV, from cell production research to vehicle battery systems",
   },
 ];

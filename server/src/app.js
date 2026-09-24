@@ -63,7 +63,8 @@ app.use("/api/", limiter);
 const authLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   max: isPreview ? PREVIEW_RATE_LIMIT_MAX : AUTH_RATE_LIMIT_MAX,
-  message: "Too many authentication requests from this IP, please try again later.",
+  message:
+    "Too many authentication requests from this IP, please try again later.",
   store: new PgRateLimitStore({ prefix: "auth:" }),
   standardHeaders: "draft-7",
   legacyHeaders: false,
@@ -120,7 +121,11 @@ app.use((_req, res) => {
   res
     .status(404)
     .json(
-      formatResponse(null, "The requested resource does not exist", "Not Found"),
+      formatResponse(
+        null,
+        "The requested resource does not exist",
+        "Not Found",
+      ),
     );
 });
 

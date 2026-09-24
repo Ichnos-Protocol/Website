@@ -310,9 +310,9 @@ describe("authService", () => {
       mockGetUserById.mockResolvedValue(null);
       mockGetUser.mockRejectedValue(new Error("auth/user-not-found"));
 
-      await expect(
-        syncProfile("uid-orphan", profileData),
-      ).rejects.toThrow("auth/user-not-found");
+      await expect(syncProfile("uid-orphan", profileData)).rejects.toThrow(
+        "auth/user-not-found",
+      );
 
       expect(mockCreateUser).not.toHaveBeenCalled();
       expect(mockUpsertProfile).not.toHaveBeenCalled();

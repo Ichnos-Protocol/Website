@@ -1,12 +1,31 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import {
-  setUser, setAdmin, setProfileState, logout, openAuthModal,
-  forceCloseAuthModal, setAuthSuccess, setEnforcedLogout,
-} from '../features/auth/authSlice';
-import { formatFirebaseError, formatSyncError } from '../helpers/firebaseErrors';
-import { isCompletionRequired, clearCompletionShown } from '../helpers/profileCompletion';
-import { buildSignupSyncPayload, buildCompletionSyncPayload } from '../helpers/authSubmit';
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
+import { auth } from "../config/firebase";
+import {
+  setUser,
+  setAdmin,
+  setProfileState,
+  logout,
+  openAuthModal,
+  forceCloseAuthModal,
+  setAuthSuccess,
+  setEnforcedLogout,
+} from "../features/auth/authSlice";
+import {
+  formatFirebaseError,
+  formatSyncError,
+} from "../helpers/firebaseErrors";
+import {
+  isCompletionRequired,
+  clearCompletionShown,
+} from "../helpers/profileCompletion";
+import {
+  buildSignupSyncPayload,
+  buildCompletionSyncPayload,
+} from "../helpers/authSubmit";
 
 export function useAuthActions({
   dispatch,
@@ -30,7 +49,7 @@ export function useAuthActions({
   };
 
   const executeAuthFlow = async (firebaseFn, buildPayload) => {
-    form.setError('');
+    form.setError("");
     form.setLoading(true);
     let fbUser;
     try {
@@ -43,7 +62,7 @@ export function useAuthActions({
     try {
       const profile = await syncAndDispatch(buildPayload(fbUser));
       if (isCompletionRequired(profile)) {
-        dispatch(openAuthModal('complete-profile'));
+        dispatch(openAuthModal("complete-profile"));
       } else {
         completeAuth();
       }
@@ -74,7 +93,7 @@ export function useAuthActions({
 
   const handleCompletion = async (e) => {
     e.preventDefault();
-    form.setError('');
+    form.setError("");
     form.setLoading(true);
     try {
       const payload = buildCompletionSyncPayload(

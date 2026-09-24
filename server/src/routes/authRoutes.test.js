@@ -265,9 +265,7 @@ describe("auth routes", () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app)
-        .get("/api/auth/me")
-        .set(authHeader());
+      const res = await request(app).get("/api/auth/me").set(authHeader());
 
       expect(res.status).toBe(404);
     });

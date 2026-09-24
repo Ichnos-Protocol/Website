@@ -74,10 +74,7 @@ async function checkRobotsTxt(url) {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      ROBOTS_TIMEOUT_MS,
-    );
+    const timeout = setTimeout(() => controller.abort(), ROBOTS_TIMEOUT_MS);
 
     const response = await fetch(robotsUrl, {
       headers: { "User-Agent": USER_AGENT },

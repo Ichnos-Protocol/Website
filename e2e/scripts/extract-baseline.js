@@ -54,7 +54,10 @@ function extractMetrics(report) {
           const lastResult = test.results[test.results.length - 1];
           if (lastResult?.status === "passed" || test.status === "expected") {
             passed++;
-          } else if (lastResult?.status === "skipped" || test.status === "skipped") {
+          } else if (
+            lastResult?.status === "skipped" ||
+            test.status === "skipped"
+          ) {
             skipped++;
           } else {
             failed++;
@@ -83,7 +86,9 @@ function main() {
   const args = parseArgs(process.argv);
 
   if (!args.reportPath) {
-    console.error("Usage: node extract-baseline.js <report.json> [--run-id <id>] [--run-url <url>] [--commit <sha>]");
+    console.error(
+      "Usage: node extract-baseline.js <report.json> [--run-id <id>] [--run-url <url>] [--commit <sha>]",
+    );
     process.exit(1);
   }
 

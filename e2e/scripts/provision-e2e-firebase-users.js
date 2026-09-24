@@ -4,10 +4,20 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import { config } from "dotenv";
 import { runPreflight } from "./helpers/e2ePreflight.js";
-import { readEnvFile, mergeEnvPasswords, writeUidsToEnvFile } from "./helpers/e2eEnvFile.js";
-import { syncToGitHub, syncVariablesToGitHub } from "./helpers/e2eSyncGitHub.js";
+import {
+  readEnvFile,
+  mergeEnvPasswords,
+  writeUidsToEnvFile,
+} from "./helpers/e2eEnvFile.js";
+import {
+  syncToGitHub,
+  syncVariablesToGitHub,
+} from "./helpers/e2eSyncGitHub.js";
 import { syncToVercel } from "./helpers/e2eSyncVercel.js";
-import { buildCredentialMaps, findMissingGitHubNames } from "./helpers/e2eCredentials.js";
+import {
+  buildCredentialMaps,
+  findMissingGitHubNames,
+} from "./helpers/e2eCredentials.js";
 import { printFailedDetails, printSummary } from "./helpers/e2eReporting.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,12 +60,15 @@ function syncGitHubConfig(githubVariables, github) {
   return { ghResults, varResults };
 }
 
-export async function main({ syncOnly = process.argv.includes("--sync-only") } = {}) {
+export async function main({
+  syncOnly = process.argv.includes("--sync-only"),
+} = {}) {
   const mode = syncOnly ? "sync-only" : "full pipeline";
   console.log(`[orchestrator] ${mode}\n`);
 
   const env = loadLocalEnv();
-  const { github, githubVariables, vercel, firebaseCreds } = buildCredentialMaps(env);
+  const { github, githubVariables, vercel, firebaseCreds } =
+    buildCredentialMaps(env);
   // Sync-only already has every UID: report missing names before preflight runs `gh`.
   if (syncOnly) assertGitHubConfigComplete({ ...githubVariables, ...github });
 
@@ -64,9 +77,8 @@ export async function main({ syncOnly = process.argv.includes("--sync-only") } =
 
   if (!syncOnly) {
     console.log("\n=== Firebase Provisioning ===");
-    const { provisionFirebaseUsers } = await import(
-      "./helpers/firebaseTestSetup.js"
-    );
+    const { provisionFirebaseUsers } =
+      await import("./helpers/firebaseTestSetup.js");
     const uidMap = await provisionFirebaseUsers(firebaseCreds);
     writeUidsToEnvFile(envFilePath, uidMap);
     console.log("[env] UIDs written back to .env.e2e");
@@ -91,12 +103,15 @@ export async function main({ syncOnly = process.argv.includes("--sync-only") } =
     process.exit(1);
   }
 
-  console.log("[reminder] Vercel Preview env changes require a new deployment or redeploy.");
+  console.log(
+    "[reminder] Vercel Preview env changes require a new deployment or redeploy.",
+  );
   console.log("[done] E2E credential pipeline complete.");
 }
 
 const invokedDirectly =
-  Boolean(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+  Boolean(process.argv[1]) &&
+  realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (invokedDirectly) {
   main().catch((err) => {

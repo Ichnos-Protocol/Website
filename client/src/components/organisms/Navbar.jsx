@@ -1,17 +1,21 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import { NAV_ITEMS, LANDING_SECTION_IDS } from '../../constants/navigation';
-import { openAuthModal } from '../../features/auth/authSlice';
-import { useActiveSection } from '../../hooks/useActiveSection';
-import Logo from '../atoms/Logo';
-import Icon from '../atoms/Icon';
-import Button from '../atoms/Button';
-import NavDropdown from '../molecules/NavDropdown';
-import UserMenu from './UserMenu';
+import { NAV_ITEMS, LANDING_SECTION_IDS } from "../../constants/navigation";
+import { openAuthModal } from "../../features/auth/authSlice";
+import { useActiveSection } from "../../hooks/useActiveSection";
+import Logo from "../atoms/Logo";
+import Icon from "../atoms/Icon";
+import Button from "../atoms/Button";
+import NavDropdown from "../molecules/NavDropdown";
+import UserMenu from "./UserMenu";
 
 function isDropdownActive(item, { isHome, activeSection, pathname }) {
-  if (isHome && item.activeSectionId && activeSection === item.activeSectionId) {
+  if (
+    isHome &&
+    item.activeSectionId &&
+    activeSection === item.activeSectionId
+  ) {
     return true;
   }
   return item.children.some(
@@ -53,7 +57,7 @@ function renderTopItem(item, ctx) {
   const isActive = isHome
     ? Boolean(item.activeSectionId && activeSection === item.activeSectionId)
     : pathname === item.path || pathname.startsWith(`${item.path}/`);
-  const className = `nav-link px-3 py-2 ${isActive ? 'active nav-link-active' : 'nav-link-default'}`;
+  const className = `nav-link px-3 py-2 ${isActive ? "active nav-link-active" : "nav-link-default"}`;
 
   return (
     <a
@@ -73,20 +77,25 @@ export default function Navbar({ onMenuToggle }) {
   const { pathname } = useLocation();
   const { isAuthenticated } = useSelector((state) => state.auth);
 
-  const isHome = pathname === '/';
-  const activeSection = useActiveSection(LANDING_SECTION_IDS, { enabled: isHome });
+  const isHome = pathname === "/";
+  const activeSection = useActiveSection(LANDING_SECTION_IDS, {
+    enabled: isHome,
+  });
 
   const handleSelect = (event, item) => {
     event.preventDefault();
     if (isHome && item.sectionId) {
-      navigate('/', { state: { scrollTo: item.sectionId } });
+      navigate("/", { state: { scrollTo: item.sectionId } });
       return;
     }
     navigate(item.path);
   };
 
   return (
-    <nav className="navbar-main d-flex justify-content-between align-items-center px-3 px-md-4" data-testid="navbar">
+    <nav
+      className="navbar-main d-flex justify-content-between align-items-center px-3 px-md-4"
+      data-testid="navbar"
+    >
       {/* `text-reset` keeps the wordmark on the theme's text token instead of
           inheriting Bootstrap's link colour.
           Always the dual-tone mark: every route's navbar is a light surface
@@ -101,7 +110,12 @@ export default function Navbar({ onMenuToggle }) {
       {/* Desktop nav */}
       <div className="d-none d-md-flex align-items-center gap-1">
         {NAV_ITEMS.map((item) =>
-          renderTopItem(item, { isHome, activeSection, pathname, onSelect: handleSelect }),
+          renderTopItem(item, {
+            isHome,
+            activeSection,
+            pathname,
+            onSelect: handleSelect,
+          }),
         )}
 
         {isAuthenticated ? (
@@ -110,7 +124,7 @@ export default function Navbar({ onMenuToggle }) {
           <Button
             variant="outline-primary"
             className="ms-2"
-            onClick={() => dispatch(openAuthModal('login'))}
+            onClick={() => dispatch(openAuthModal("login"))}
           >
             Login
           </Button>

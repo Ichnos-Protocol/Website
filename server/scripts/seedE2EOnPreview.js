@@ -21,7 +21,12 @@ const { Pool } = pg;
 
 const REQUIRED_VARS = ["DATABASE_URL", "E2E_ADMIN_EMAIL", "E2E_ADMIN_UID"];
 
-export const seedStatus = { seeded: false, error: null, attempts: 0, mode: "in_progress" };
+export const seedStatus = {
+  seeded: false,
+  error: null,
+  attempts: 0,
+  mode: "in_progress",
+};
 
 /** Singleton promise — created on first call, shared across all callers. */
 let seedPromise = null;
@@ -165,7 +170,13 @@ async function upsertContactRequest(pool, uid) {
 
 async function seedOptionalUser(pool) {
   if (!process.env.E2E_USER_UID || !process.env.E2E_USER_EMAIL) return;
-  await upsertUser(pool, process.env.E2E_USER_UID, "E2E", "User", process.env.E2E_USER_EMAIL);
+  await upsertUser(
+    pool,
+    process.env.E2E_USER_UID,
+    "E2E",
+    "User",
+    process.env.E2E_USER_EMAIL,
+  );
 }
 
 async function seedOptionalIncompleteUser(pool) {
@@ -183,14 +194,25 @@ async function seedOptionalIncompleteUser(pool) {
 }
 
 async function seedAdmin(pool) {
-  await upsertUser(pool, process.env.E2E_ADMIN_UID, "E2E", "Admin", process.env.E2E_ADMIN_EMAIL);
+  await upsertUser(
+    pool,
+    process.env.E2E_ADMIN_UID,
+    "E2E",
+    "Admin",
+    process.env.E2E_ADMIN_EMAIL,
+  );
   await upsertContactRequest(pool, process.env.E2E_ADMIN_UID);
 }
 
 async function seedOptionalSuperAdmin(pool) {
-  if (!process.env.E2E_SUPER_ADMIN_UID || !process.env.E2E_SUPER_ADMIN_EMAIL) return;
+  if (!process.env.E2E_SUPER_ADMIN_UID || !process.env.E2E_SUPER_ADMIN_EMAIL)
+    return;
   await upsertUser(
-    pool, process.env.E2E_SUPER_ADMIN_UID, "E2E", "SuperAdmin", process.env.E2E_SUPER_ADMIN_EMAIL,
+    pool,
+    process.env.E2E_SUPER_ADMIN_UID,
+    "E2E",
+    "SuperAdmin",
+    process.env.E2E_SUPER_ADMIN_EMAIL,
   );
   await upsertContactRequest(pool, process.env.E2E_SUPER_ADMIN_UID);
 }
@@ -229,7 +251,8 @@ export async function seedE2EOnPreview() {
   }
 
   const missing = REQUIRED_VARS.filter(
-    (key) => typeof process.env[key] !== "string" || process.env[key].length === 0,
+    (key) =>
+      typeof process.env[key] !== "string" || process.env[key].length === 0,
   );
   if (missing.length > 0) {
     const msg = `Preview environment missing required seed vars: ${missing.join(", ")}`;
@@ -260,9 +283,13 @@ export async function seedE2EOnPreview() {
       pool = new Pool(poolConfig);
 
       // Phase 1: Test basic connectivity
-      console.log(`[e2e-seed] Attempt ${attempt}/${MAX_RETRIES}: testing connection...`);
+      console.log(
+        `[e2e-seed] Attempt ${attempt}/${MAX_RETRIES}: testing connection...`,
+      );
       await testConnection(pool);
-      console.log("[e2e-seed] Connection established — running seed queries...");
+      console.log(
+        "[e2e-seed] Connection established — running seed queries...",
+      );
 
       // Phase 2: Run seed operations
       await seedOptionalUser(pool);

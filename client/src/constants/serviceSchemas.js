@@ -21,7 +21,11 @@ function service(name, description) {
     "@type": "Service",
     name,
     description,
-    provider: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
+    provider: {
+      "@type": "Organization",
+      name: SEO_SITE_NAME,
+      url: SEO_BASE_URL,
+    },
     areaServed: ["EU", "ASEAN"],
   };
 }
@@ -115,7 +119,11 @@ export function buildReadinessAssessmentServiceSchema(pricing = PRICING) {
     name: "Battery passport data readiness assessment",
     description: ASSESSMENT_SEO_SUMMARY,
     serviceType: "Regulatory data readiness assessment",
-    provider: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
+    provider: {
+      "@type": "Organization",
+      name: SEO_SITE_NAME,
+      url: SEO_BASE_URL,
+    },
     url: `${SEO_BASE_URL}${ROUTE_READINESS_ASSESSMENT}`,
     areaServed: ASEAN_MARKETS,
     offers: OFFER_TIERS.flatMap((tier) =>

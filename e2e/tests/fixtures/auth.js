@@ -35,7 +35,12 @@
 
 import { test as base, expect } from "@playwright/test";
 import { loginAs } from "../helpers/auth.js";
-import { ADMIN, USER, SUPER_ADMIN, isConfigured } from "../helpers/credentials.js";
+import {
+  ADMIN,
+  USER,
+  SUPER_ADMIN,
+  isConfigured,
+} from "../helpers/credentials.js";
 import { setupAutoModalDismiss } from "../helpers/profile-modal.js";
 // Profile-modal handling uses two layers:
 // 1. loginAs() registers addLocatorHandler + one-shot dismiss during login.

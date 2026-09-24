@@ -35,7 +35,10 @@ export async function queryKnowledgeBase(keywords, category) {
     const snapshot = await ref.limit(MAX_RESULTS).get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
-    console.error("knowledgeRepository.queryKnowledgeBase failed:", error.message);
+    console.error(
+      "knowledgeRepository.queryKnowledgeBase failed:",
+      error.message,
+    );
     throw error;
   }
 }

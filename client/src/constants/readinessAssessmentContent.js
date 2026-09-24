@@ -21,9 +21,21 @@ export const REVIEWED_AS_OF = "2026-09-22";
 // equivalent, no "approximately" display (section 4.2.1 rule 1). Each tier
 // carries its own `foundingOpen` flag and flips alone, as a one line change.
 export const PRICING = {
-  component: { founding: { SGD: 4500, EUR: 3000 }, standard: { SGD: 7500, EUR: 5000 }, foundingOpen: true },
-  cell: { founding: { SGD: 7500, EUR: 5000 }, standard: { SGD: 15000, EUR: 10000 }, foundingOpen: true },
-  operator: { founding: { SGD: 15000, EUR: 10000 }, standard: { SGD: 25000, EUR: 16000 }, foundingOpen: true },
+  component: {
+    founding: { SGD: 4500, EUR: 3000 },
+    standard: { SGD: 7500, EUR: 5000 },
+    foundingOpen: true,
+  },
+  cell: {
+    founding: { SGD: 7500, EUR: 5000 },
+    standard: { SGD: 15000, EUR: 10000 },
+    foundingOpen: true,
+  },
+  operator: {
+    founding: { SGD: 15000, EUR: 10000 },
+    standard: { SGD: 25000, EUR: 16000 },
+    foundingOpen: true,
+  },
 };
 
 // Thousands grouping by hand rather than `toLocaleString`: a de-DE runtime
@@ -49,7 +61,9 @@ export function getCurrentPrice(tierId, currency, pricing = PRICING) {
 // One string rather than a twelve-entry array purely for length, and no
 // locale API for the same reason as `formatPrice`.
 const MONTHS =
-  "January February March April May June July August September October November December".split(" ");
+  "January February March April May June July August September October November December".split(
+    " ",
+  );
 
 // The passport date as month and year, read from the single source in
 // `regulatoryDates.js`. No date literal lives in this file.
@@ -76,14 +90,16 @@ export function interpolate(template, pricing = PRICING) {
 // label only; the booking href comes from `companyInfo.js` at the call site.
 export const ASSESSMENT_HERO = {
   headline: "Assess your readiness for the EU battery passport",
-  subhead: "What data your customers will require from you, how it maps to the appropriate data models for your products and processes, where your systems fall short today, and what to do about it.",
+  subhead:
+    "What data your customers will require from you, how it maps to the appropriate data models for your products and processes, where your systems fall short today, and what to do about it.",
   meta: "Results in three weeks from kickoff. Remote, with one optional site visit.",
   ctaLabel: "Book a 30-minute scoping call",
 };
 
 // Section 7.1: the summary the meta description and the Service JSON-LD
 // share word for word. Both import it, so the two surfaces cannot drift.
-export const ASSESSMENT_SEO_SUMMARY = "A three week, fixed scope assessment mapping the EU battery passport data your customers will require against the data your systems hold today, with a gap analysis and a sequenced remediation plan.";
+export const ASSESSMENT_SEO_SUMMARY =
+  "A three week, fixed scope assessment mapping the EU battery passport data your customers will require against the data your systems hold today, with a gap analysis and a sequenced remediation plan.";
 
 // Sections 4.2 and 4.2.1, in the normative source order A then B. Neither
 // panel is styled as recommended. Each panel shows one currency only (section
@@ -104,7 +120,9 @@ export const ASSESSMENT_PANELS = [
     eyebrow: "The obligation is yours",
     title: "You place batteries on the EU market",
     body: "From {passportDate} every industrial, EV and LMT battery placed on the EU market carries a passport, and the economic operator answers for it. Most of the data it needs originates upstream, in companies you do not control. The assessment tells you which of those data points you can actually obtain, and which are structurally missing today.",
-    priceLines: ["From EUR {operator.EUR} for a reference product, the supplier tiers behind it, and the data requests your customers are already sending you."],
+    priceLines: [
+      "From EUR {operator.EUR} for a reference product, the supplier tiers behind it, and the data requests your customers are already sending you.",
+    ],
   },
 ];
 
@@ -118,9 +136,11 @@ export const ASSESSMENT_PANELS = [
 // closing line is now evergreen: it states a consequence of starting later,
 // not a claim about which quarter it is.
 export const ASSESSMENT_WINDOW = {
-  heading: "Suppliers must be data ready well in advance of the mandated passport date",
+  heading:
+    "Suppliers must be data ready well in advance of the mandated passport date",
   body: "By the time the EU battery passport is mandatory, every supplier must already have provided the data for the batteries entering the EU market. Data from all suppliers is aggregated into the passport of a finished battery.",
-  closing: "Starting later leaves your customer with the obligation to fill the gaps, in ways which might not pass an audit.",
+  closing:
+    "Starting later leaves your customer with the obligation to fill the gaps, in ways which might not pass an audit.",
 };
 
 // Section 4.2.0, added by owner amendment 2026-09-23. Frames the two panels
@@ -137,10 +157,26 @@ export const ASSESSMENT_AUDIENCE = {
 export const ASSESSMENT_DELIVERABLES = {
   heading: "Scope of the assessment",
   items: [
-  { id: "data-point-register", title: "Data point register", body: "Every data point the passport requires for your product category, mapped to the system, department or supplier that holds it today. The ones nobody holds are marked as such." },
-  { id: "gap-analysis", title: "Gap analysis with severity", body: "Each missing or unusable data point rated by what it blocks: passport issuance, a customer's footprint calculation, a due diligence answer, or nothing yet. The report says which gaps to close first and which can wait." },
-  { id: "supplier-data-map", title: "Supplier data map", body: "For each gap that originates outside your company, which tier it sits in, which of your suppliers holds it, and what to ask them for. Written as a request you can forward." },
-  { id: "remediation-plan", title: "Sequenced remediation plan", body: "What to fix in-house, what to ask suppliers for, what needs a system change, and what can wait, ordered against your own product launches. Effort and owner per item, with no vendor lock-in assumed." },
+    {
+      id: "data-point-register",
+      title: "Data point register",
+      body: "Every data point the passport requires for your product category, mapped to the system, department or supplier that holds it today. The ones nobody holds are marked as such.",
+    },
+    {
+      id: "gap-analysis",
+      title: "Gap analysis with severity",
+      body: "Each missing or unusable data point rated by what it blocks: passport issuance, a customer's footprint calculation, a due diligence answer, or nothing yet. The report says which gaps to close first and which can wait.",
+    },
+    {
+      id: "supplier-data-map",
+      title: "Supplier data map",
+      body: "For each gap that originates outside your company, which tier it sits in, which of your suppliers holds it, and what to ask them for. Written as a request you can forward.",
+    },
+    {
+      id: "remediation-plan",
+      title: "Sequenced remediation plan",
+      body: "What to fix in-house, what to ask suppliers for, what needs a system change, and what can wait, ordered against your own product launches. Effort and owner per item, with no vendor lock-in assumed.",
+    },
   ],
 };
 
@@ -148,9 +184,24 @@ export const ASSESSMENT_DELIVERABLES = {
 export const ASSESSMENT_PROCESS = {
   heading: "Timeline",
   steps: [
-  { id: "intake", week: "Week 1", title: "Intake and scoping", body: "One workshop with your quality, IT and procurement leads. We take your product structure, your existing data systems, and one real product as the reference case." },
-  { id: "mapping", week: "Week 2", title: "Mapping and gap analysis", body: "We map the reference product against the regulation's data requirements and the published data models the European supply chain is converging on, and interview your systems owners wherever the data is ambiguous." },
-  { id: "report", week: "Week 3", title: "Report and walkthrough", body: "You get the written report and a two-hour walkthrough with your team, including the supplier requests you can send the following week." },
+    {
+      id: "intake",
+      week: "Week 1",
+      title: "Intake and scoping",
+      body: "One workshop with your quality, IT and procurement leads. We take your product structure, your existing data systems, and one real product as the reference case.",
+    },
+    {
+      id: "mapping",
+      week: "Week 2",
+      title: "Mapping and gap analysis",
+      body: "We map the reference product against the regulation's data requirements and the published data models the European supply chain is converging on, and interview your systems owners wherever the data is ambiguous.",
+    },
+    {
+      id: "report",
+      week: "Week 3",
+      title: "Report and walkthrough",
+      body: "You get the written report and a two-hour walkthrough with your team, including the supplier requests you can send the following week.",
+    },
   ],
 };
 
@@ -158,10 +209,10 @@ export const ASSESSMENT_PROCESS = {
 export const ASSESSMENT_INPUTS = {
   heading: "Prerequisites",
   lines: [
-  "One named owner, and roughly three days of their time across the three weeks.",
-  "One reference product, ideally the one with your highest EU exposure.",
-  "Read access to the systems holding your production and quality data, or a structured export.",
-  "Your bill of materials at the level you already maintain it. We do not need recipes, formulations or anything you treat as a trade secret.",
+    "One named owner, and roughly three days of their time across the three weeks.",
+    "One reference product, ideally the one with your highest EU exposure.",
+    "Read access to the systems holding your production and quality data, or a structured export.",
+    "Your bill of materials at the level you already maintain it. We do not need recipes, formulations or anything you treat as a trade secret.",
   ],
 };
 
@@ -210,11 +261,36 @@ export const ASSESSMENT_SCOPE_BOUNDARY = {
 export const ASSESSMENT_FAQ = {
   heading: "FAQ",
   entries: [
-  { id: "platform", question: "Do we need to be in Catena-X for this?", answer: "No. The assessment is about your data, not about a platform. Catena-X data models are used as the reference for how the data has to be shaped, because they are the published ones the European supply chain is converging on. If your route ends up elsewhere, MS 2818 in Malaysia or a customer's own system, the same register and the same gap analysis still apply." },
-  { id: "imds", question: "Our customer says our IMDS entry is enough. Is it?", answer: "It is not. IMDS was built for end-of-life vehicles and REACH. It carries a small fraction of the passport's data points, at the wrong granularity, with no time dimension and no access tiering. The assessment shows you exactly which of your passport data points IMDS does and does not cover." },
-  { id: "recipes", question: "Will you see our recipes?", answer: "No. The assessment works at lot and batch identity level, and on the properties your customers will be asked to report. Where a property would expose a formulation, it is carried behind an identifier. Which data is visible to whom is part of what the report specifies." },
-  { id: "cost", question: "What does it cost, and what moves the number?", answer: "A single component family starts at SGD {component.SGD}. A cell or a pack, with the suppliers behind it, starts at SGD {cell.SGD}. For a company placing batteries on the EU market, where the assessment also covers your issuing path and the data requests coming at you from customers, it starts at EUR {operator.EUR}. The number moves with how many product families, sites and source systems are in scope, and the scoping call fixes it before you commit to anything." },
-  { id: "outside-eu", question: "We are not in the EU. Does this apply to us?", answer: "The obligation sits with whoever places the battery on the EU market. If that is your customer, the data still has to come from you, and the request will arrive with a deadline attached. If you are the one placing it, the obligation is directly yours." },
+    {
+      id: "platform",
+      question: "Do we need to be in Catena-X for this?",
+      answer:
+        "No. The assessment is about your data, not about a platform. Catena-X data models are used as the reference for how the data has to be shaped, because they are the published ones the European supply chain is converging on. If your route ends up elsewhere, MS 2818 in Malaysia or a customer's own system, the same register and the same gap analysis still apply.",
+    },
+    {
+      id: "imds",
+      question: "Our customer says our IMDS entry is enough. Is it?",
+      answer:
+        "It is not. IMDS was built for end-of-life vehicles and REACH. It carries a small fraction of the passport's data points, at the wrong granularity, with no time dimension and no access tiering. The assessment shows you exactly which of your passport data points IMDS does and does not cover.",
+    },
+    {
+      id: "recipes",
+      question: "Will you see our recipes?",
+      answer:
+        "No. The assessment works at lot and batch identity level, and on the properties your customers will be asked to report. Where a property would expose a formulation, it is carried behind an identifier. Which data is visible to whom is part of what the report specifies.",
+    },
+    {
+      id: "cost",
+      question: "What does it cost, and what moves the number?",
+      answer:
+        "A single component family starts at SGD {component.SGD}. A cell or a pack, with the suppliers behind it, starts at SGD {cell.SGD}. For a company placing batteries on the EU market, where the assessment also covers your issuing path and the data requests coming at you from customers, it starts at EUR {operator.EUR}. The number moves with how many product families, sites and source systems are in scope, and the scoping call fixes it before you commit to anything.",
+    },
+    {
+      id: "outside-eu",
+      question: "We are not in the EU. Does this apply to us?",
+      answer:
+        "The obligation sits with whoever places the battery on the EU market. If that is your customer, the data still has to come from you, and the request will arrive with a deadline attached. If you are the one placing it, the obligation is directly yours.",
+    },
   ],
 };
 

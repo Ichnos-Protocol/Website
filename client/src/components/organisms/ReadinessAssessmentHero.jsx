@@ -1,14 +1,14 @@
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import { Link } from 'react-router-dom';
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import { Link } from "react-router-dom";
 
 import {
   ASSESSMENT_CTA_BAND,
   ASSESSMENT_HERO,
-} from '../../constants/readinessAssessmentContent';
-import { ROUTE_CONTACT } from '../../constants/routes';
-import BookingButton from '../molecules/BookingButton';
+} from "../../constants/readinessAssessmentContent";
+import { ROUTE_CONTACT } from "../../constants/routes";
+import BookingButton from "../molecules/BookingButton";
 
 // Section 4.1. Copy only: headline, subhead, meta line, CTA label. Nothing
 // here is interpolated, because the hero constant carries no token: and it
