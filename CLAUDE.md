@@ -228,11 +228,12 @@ Rules:
 
 **Primary and only use: the RAG knowledge base.** One collection, `knowledge_base`, accessed solely through `server/src/repositories/knowledgeRepository.js`.
 
-**There is no file upload anywhere in this application.** No `/api/contact/upload` endpoint, no multer, no `FormData`/multipart path, no file input in any form, no Firebase Storage usage, no `uploads` collection, and no `document_url` column. Earlier revisions of this file described such a feature in §1, §6, §8, §9 and §13; none of it was ever built. If document upload is wanted, it is new work needing its own spec, not a feature to wire up.
+**There is no user-facing file upload in this application.** No `/api/contact/upload` endpoint, no multer route, no `FormData`/multipart path, no file input in any form, no `uploads` collection, and no `document_url` column. Firebase Storage is used, but only by the knowledge-base ingestion tooling, through `server/src/repositories/knowledgeStorageRepository.js`. Earlier revisions of this file described such a feature in §1, §6, §8, §9 and §13; none of it was ever built. If document upload is wanted, it is new work needing its own spec, not a feature to wire up.
 
 Rules:
 
 - Firestore access stays inside `knowledgeRepository.js`, per the repository-layer rule in §4.1.
+- Firebase Storage access stays inside `knowledgeStorageRepository.js`, under the same rule.
 - `server/src/config/firebase.js` owns `firebase-admin` initialization. Nothing else calls it directly.
 
 ---

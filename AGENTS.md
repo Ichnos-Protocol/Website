@@ -12,7 +12,7 @@ Monorepo: `client/` (React frontend) + `server/` (Express backend).
 | Frontend    | React 18+, Vite, Bootstrap 5, Redux Toolkit (RTK Query), React Router v6+ |
 | Backend     | Express.js 5, REST API, ES modules                                        |
 | SQL DB      | PostgreSQL (Neon Tech)                                                    |
-| NoSQL       | Firebase Firestore — chatbot `knowledge_base` only. No Storage, no uploads |
+| NoSQL       | Firebase Firestore — chatbot `knowledge_base` documents. Firebase Storage — knowledge-base ingestion tooling only. No user-facing upload |
 | Auth        | Firebase Authentication                                                   |
 | Chatbot     | X.ai Grok API (RAG)                                                       |
 | LinkedIn    | Profile links only. No feed or embed is built                             |
@@ -101,6 +101,7 @@ cd server && vercel --prod   # deploy backend
 - Controllers: parse request, delegate, respond. No business logic.
 - Services: all business logic. No direct DB access.
 - Repositories: all data access. No business logic.
+- Firebase ownership: `server/src/repositories/knowledgeRepository.js` owns every Firestore `knowledge_base` document read and write; `server/src/repositories/knowledgeStorageRepository.js` owns all Firebase Storage access, which serves knowledge-base ingestion only. There is no user-facing upload.
 
 ## Commercial offer pages
 
@@ -175,7 +176,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Never use `dangerouslySetInnerHTML`.
 - CORS restricted to frontend origin only.
 - Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
-- File uploads: validate type + size (max 10MB, PDF/DOCX/PNG/JPG only).
+- File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only). The ingestion tooling's Storage validation lives in `knowledgeStorageRepository.js`.
 - Never commit `.env` files or secrets.
 
 ## Security best practices
