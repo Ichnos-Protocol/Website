@@ -11,10 +11,9 @@
  * data model, but never beside a conformance adjective (vocabulary.js).
  *
  * The option values restate the CHECK constraints of migration
- * 006_20260823_add_consortium_columns.sql as amended by
- * 007_20260923_consortium_preferred_start_expand.sql, minus the retired
- * preferred-start value nov_2026, which the database still tolerates until
- * migration 010 (P14) removes it. The region options restate the CHECK of
+ * 006_20260823_add_consortium_columns.sql. The preferred-start options
+ * restate the CHECK of 010_20260923_consortium_preferred_start_contract.sql,
+ * which permits asap and later. The region options restate the CHECK of
  * 008_20260923_consortium_region.sql. Those migrations are the authoritative
  * source; a change there must be mirrored here in the same commit.
  */

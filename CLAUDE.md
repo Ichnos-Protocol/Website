@@ -206,7 +206,7 @@ Helpers are the primary tool for keeping code readable and short:
 
 Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`. `009_20260923_rate_limit_hits.sql` creates `rate_limit_hits`, read and written only by `rateLimitRepository.js`, and `011_20260924_rate_limit_hits_reset_at_index.sql` adds the index on its `reset_at` column. Production `schema_migrations` records 000–009 and 011.
 
-`010` is the pending contraction of the `consortium_preferred_start` CHECK to `('asap','later')`. It is **not in the tree**: no `010_*.sql` file exists in `server/migrations/`. It will be authored only at the owner gate, after P1 is live in production, because `npm run migrate` applies every unrecorded file in `server/migrations/` and a committed 010 would run on the next migrate.
+`010_20260923_consortium_preferred_start_contract.sql` is the contraction: it backfills `nov_2026` to `asap` and narrows the `consortium_preferred_start` CHECK to `('asap','later')`. Running it against production is a separate, owner-confirmed action. The production command is `node --env-file=.env scripts/runMigrations.js`, run from `server/`. `npm run migrate` does not load `.env`, so it is not the production instruction.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 
@@ -215,7 +215,7 @@ Consortium fields were added to existing tables by `006_20260823_add_consortium_
 Rules:
 
 - Always use parameterized queries. **Never** interpolate user input into SQL strings.
-- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `npm run migrate` (`server/scripts/runMigrations.js`). There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
+- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `server/scripts/runMigrations.js` (`node --env-file=.env scripts/runMigrations.js` from `server/`; `npm run migrate` runs the same script but loads no `.env`, so it needs `DATABASE_URL` already in the environment). There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
 
 ### 6.2 Firestore — Chatbot Knowledge Base
 

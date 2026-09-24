@@ -2,11 +2,10 @@
  * Zod Schemas for Contact Endpoints
  *
  * Validates contact form submissions and request updates.
- * The consortium enums mirror the CHECK constraints of migration 006 as
- * amended by 007, which are the authoritative source; these arrays only
- * restate them. CONSORTIUM_PREFERRED_START omits the retired nov_2026, which
- * the database tolerates until migration 010 (P14) removes it.
- * CONSORTIUM_REGIONS restates the CHECK of migration 008.
+ * The consortium enums mirror the CHECK constraints of migration 006, which
+ * are the authoritative source; these arrays only restate them.
+ * CONSORTIUM_PREFERRED_START restates the CHECK of migration 010 (asap,
+ * later). CONSORTIUM_REGIONS restates the CHECK of migration 008.
  */
 import { z } from "zod/v4";
 
