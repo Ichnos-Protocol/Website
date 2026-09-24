@@ -69,6 +69,7 @@ npm run format           # Prettier
 
 # Test
 npm test                 # run full test suite
+npm run test:coverage    # full suite with coverage thresholds (what CI runs)
 npm run test -- path/to/file.test.jsx   # single file
 
 # Build
@@ -135,7 +136,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Unit tests: all helpers, services, repositories.
 - Component tests: React Testing Library — test interactions, not internals.
 - API tests: Vitest + Supertest for endpoints.
-- Coverage: `v8` provider, 80% target for helpers and services.
+- Coverage: `@vitest/coverage-v8`, enforced in CI by `npm run test:coverage` in both the client and server jobs. Line thresholds measured 2026-09-24: client global 85, `src/helpers/**` 80; server global 89, `src/helpers/**` 80, `src/services/**` 80. The client has no `src/services/` directory, so it has no services key. Raise thresholds as coverage grows, never lower them.
 - Mocking: `vi.fn()`, `vi.spyOn()`, `vi.mock()`.
 - Always test schema validators directly with edge cases (empty string, whitespace-only, boundary lengths) in addition to route-level tests.
 - Integration tests that require external services must use `describeIf = process.env.TEST_DATABASE_URL ? describe : describe.skip` pattern and must pass (skip) in CI without secrets.

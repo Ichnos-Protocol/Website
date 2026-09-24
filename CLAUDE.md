@@ -367,7 +367,7 @@ Rules:
 - Configuration lives in `vite.config.js` (client) or a dedicated `vitest.config.js` (server) using `defineConfig` from `vitest/config`.
 - Use `vi.fn()`, `vi.spyOn()`, `vi.mock()` for mocking (Vitest's API, compatible with Jest patterns).
 - Environment: `jsdom` for client tests (set via `environment: 'jsdom'` in config), `node` for server tests.
-- Coverage provider: `v8` (built-in). Run with `npm run test -- --coverage`.
+- Coverage provider: `@vitest/coverage-v8`, a devDependency in both packages. Run with `npm run test:coverage`. Config lives in `client/vite.config.js` and `server/vitest.config.js`. Excluded from coverage: test files, `setupTests.js`, `main.jsx` and `test-utils.jsx` (client); test files (server). Reporters are `text-summary` and `lcov`, written to the gitignored `coverage/`. Thresholds and their measured basis are in §15.
 
 ### 14.2 Test Types
 
@@ -460,11 +460,14 @@ Then verify:
 
 - [ ] ESLint passes with zero warnings.
 - [ ] All tests pass.
+- [ ] `npm run test:coverage` passes in both packages (from P12 on). CI runs it as the test step of both `Client — Lint & Test` and `Server — Lint & Test`, so a coverage drop below threshold fails the required check.
 - [ ] No `.env` files or secrets are staged.
 - [ ] No **source** file exceeds 200 lines (§5.1; test files are exempt).
 - [ ] New code follows the layer responsibilities defined in Section 4.
 
 **Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 102 test files / 959 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
+
+**Measured coverage baseline, 2026-09-24** (P12, line coverage)**:** `client` global 87.79%, `src/helpers/**` 92.56%; `server` global 91.61%, `src/helpers/**` 93.78%, `src/services/**` 91.33%. Committed thresholds: client `lines: 85` and `src/helpers/**` 80; server `lines: 89`, `src/helpers/**` 80 and `src/services/**` 80. Each global floor is the measured whole-number floor minus 2. Every glob measured above the §14.3 80% target, so all glob thresholds sit at 80. The client has no `src/services/**` key because `client/src/services/` does not exist: the client's service layer is the RTK Query slices under `src/features/**`, and a glob matching nothing would be an always-green gate. The glob form `src/helpers/**` was verified against Vitest 4.0.18 by setting it to 100 and watching it fail with the real figure. In that version glob-matched files still count toward the global figure. Raise these numbers as coverage grows; never lower them to make a run pass.
 
 **Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-23 with line endings normalized: **202 of 271 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
 
