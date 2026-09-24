@@ -8,7 +8,7 @@
  * always refused.
  */
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, realpathSync } from "fs";
 import { resolve } from "path";
 import { parse } from "dotenv";
 
@@ -45,9 +45,25 @@ function normalizePath(path) {
   return process.platform === "win32" ? resolved.toLowerCase() : resolved;
 }
 
+// The filesystem target, following symlinks and junctions; null when the path
+// does not exist, so a missing file never matches another missing file.
+function canonicalPath(path) {
+  try {
+    return normalizePath(realpathSync.native(path));
+  } catch {
+    return null;
+  }
+}
+
+function isServerEnvPath(credentialPath, refused) {
+  if (normalizePath(credentialPath) === normalizePath(refused)) return true;
+  const target = canonicalPath(credentialPath);
+  return target !== null && target === canonicalPath(refused);
+}
+
 function assertNotServerEnv(credentialPath, repoRoot) {
   const refused = resolve(repoRoot, REFUSED_SERVER_ENV_PATH);
-  if (normalizePath(credentialPath) !== normalizePath(refused)) return;
+  if (!isServerEnvPath(credentialPath, refused)) return;
   throw new Error(
     `Refusing to read Firebase credentials from ${credentialPath}.\n` +
       "Remediation: put the E2E project's admin credentials in server/.env.e2e (or pass another file with --firebase-env).",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -124,6 +124,25 @@ describe("prepareReset", () => {
   it("refuses a --firebase-env path that resolves to server/.env", () => {
     writeFileSync(join(repoRoot, "server", ".env"), credentialFile(PROJECT));
 
+    expect(() => prepare({ firebaseEnvPath: "server/.env" })).toThrowError(
+      /Refusing to read Firebase credentials/,
+    );
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("refuses a --firebase-env alias whose target is server/.env", () => {
+    writeFileSync(join(repoRoot, "server", ".env"), credentialFile(PROJECT));
+    // A junction needs no privilege on Windows; elsewhere it is a symlink.
+    symlinkSync(join(repoRoot, "server"), join(repoRoot, "alias"), "junction");
+
+    expect(() => prepare({ firebaseEnvPath: "alias/.env" })).toThrowError(
+      /Refusing to read Firebase credentials/,
+    );
+    expect(parse).not.toHaveBeenCalled();
+    expectNothingExternal();
+  });
+
+  it("still refuses the literal server/.env path when the file is missing", () => {
     expect(() => prepare({ firebaseEnvPath: "server/.env" })).toThrowError(
       /Refusing to read Firebase credentials/,
     );
