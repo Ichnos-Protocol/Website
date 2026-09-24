@@ -7,7 +7,9 @@
     "test:headed": "playwright test --headed",
     "test:chromium": "playwright test --project=chromium",
     "test:unit": "vitest run --dir scripts/helpers",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "format": "prettier --write \"**/*.js\"",
+    "format:check": "prettier --check \"**/*.js\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
+    "prettier": "^3.8.1",
     "vitest": "^4.0.18"
   }
 }
