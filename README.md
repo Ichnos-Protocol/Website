@@ -106,10 +106,10 @@ Most Battery Passport solutions stop at the minimum required dataset. Ichnos Pro
 The platform uses two data stores, each chosen for the shape of the data it holds, plus Firebase Authentication for identity:
 
 1. **PostgreSQL (Neon Tech)** — structured relational data: users and profiles, contact requests, and the questions/topics catalogue. Schema changes are tracked as migrations under `server/migrations/`.
-2. **Firebase Firestore + Storage** — document uploads, file metadata, and the `knowledge_base` collection that grounds the chatbot's RAG responses.
+2. **Firebase Firestore** — the `knowledge_base` collection that grounds the chatbot's RAG responses.
 3. **Firebase Authentication** — identity and role claims. ID tokens are issued client-side and verified server-side on every protected request.
 
-The split keeps each store to what it does well: Firebase Storage holds the uploaded files, Firestore holds their metadata alongside the knowledge base, and PostgreSQL holds the structured application records — users, profiles, contact requests, questions, and topics.
+The split keeps each store to what it does well: Firestore holds the chatbot knowledge base, and PostgreSQL holds the structured application records — users, profiles, contact requests, questions, and topics.
 
 ---
 
@@ -190,9 +190,8 @@ Internal tool for managing inbound customer inquiries.
 
 | Feature                | Description                                                         |
 | ---------------------- | ------------------------------------------------------------------- |
-| **Request Table**      | Name, email, company, message preview, status, date, document link. |
+| **Request Table**      | Name, email, company, message preview, status, date.                |
 | **Status Management**  | Update status: `new` → `in_progress` → `resolved`.                  |
-| **Document Access**    | View/download uploaded files from Firestore.                        |
 | **Filtering & Search** | Filter by status, date range, or keyword.                           |
 
 ### Chatbot (All Public Pages)
@@ -203,7 +202,6 @@ A persistent AI-powered assistant available on every public page.
 | ------------------- | -------------------------------------------------------------------------- |
 | **Company Q&A**     | Answers questions about Ichnos Protocol, services, pricing, and expertise. |
 | **Contact Flow**    | Collects name, email, company, message — creates a customer request.       |
-| **Document Upload** | Accepts file uploads (PDF, DOCX, PNG, JPG, max 10MB) as part of inquiries. |
 | **RAG-Powered**     | Responses grounded in a curated knowledge base about the company.          |
 
 ---
@@ -251,7 +249,7 @@ The color palette derives from the **Catena-X portal design system** and the Ich
 | Routing         | React Router v6+                                               | Client-side routing                                |
 | Backend         | Express.js                                                     | REST API server                                    |
 | SQL Database    | PostgreSQL (Neon Tech)                                         | Customer requests, structured data                 |
-| NoSQL / Files   | Firebase Firestore + Storage                                   | Document uploads and file metadata                 |
+| NoSQL           | Firebase Firestore                                             | Chatbot knowledge base (RAG) only                  |
 | Auth            | Firebase Authentication                                        | JWT-based user and admin authentication            |
 | Chatbot         | X.ai Grok API (RAG)                                            | AI-powered visitor engagement                      |
 | LinkedIn        | Third-party embed widget                                       | Company feed on landing page                       |
@@ -269,7 +267,7 @@ The color palette derives from the **Catena-X portal design system** and the Ich
 
 - **Node.js** 18+ and **npm** 9+
 - A **Neon Tech** PostgreSQL database
-- A **Firebase** project (Authentication, Firestore, Storage)
+- A **Firebase** project (Authentication, Firestore)
 - An **X.ai** API key for the Grok chatbot
 
 ### Installation

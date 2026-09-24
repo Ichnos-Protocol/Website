@@ -10,7 +10,7 @@ Step-by-step instructions for deploying the Ichnos Protocol website to productio
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | **Vercel account**       | Hosting — two projects: `ichnos-client` (frontend) and `ichnos-protocolserver` (backend)                          |
 | **Neon Tech PostgreSQL** | Relational database for customer requests, users, and structured data                                             |
-| **Firebase project**     | Authentication (Email/Password), Firestore (knowledge base), Storage (file uploads), Admin SDK (server-side auth) |
+| **Firebase project**     | Authentication (Email/Password), Firestore (knowledge base), Admin SDK (server-side auth) |
 | **xAI API key**          | Grok-powered RAG chatbot                                                                                          |
 | **Resend account**       | Transactional email for admin digest notifications                                                                |
 
@@ -68,7 +68,6 @@ See `server/migrations/README.md` for the full migration convention and tracking
    - `FIREBASE_PROJECT_ID`
    - `FIREBASE_PRIVATE_KEY`
    - `FIREBASE_CLIENT_EMAIL`
-   - `FIREBASE_STORAGE_BUCKET`
 4. Set initial super-admin custom claims for the first admin user (after they sign up via the app):
 
 ```javascript

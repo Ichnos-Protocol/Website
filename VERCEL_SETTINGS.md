@@ -59,7 +59,6 @@ Set in **Vercel Dashboard → ichnos-protocolserver → Settings → Environment
 | `FIREBASE_PROJECT_ID`     | Production, Preview | Firebase project ID                                                                   |
 | `FIREBASE_PRIVATE_KEY`    | Production, Preview | Firebase service account private key (with newlines preserved)                        |
 | `FIREBASE_CLIENT_EMAIL`   | Production, Preview | Firebase service account client email                                                 |
-| `FIREBASE_STORAGE_BUCKET` | Production, Preview | Firebase Storage bucket name (optional — derived from `FIREBASE_PROJECT_ID` if unset) |
 | `XAI_API_KEY`             | Production, Preview | X.ai Grok API key for RAG chatbot                                                     |
 | `XAI_API_ENDPOINT`        | Production, Preview | X.ai API endpoint URL (default: `https://api.x.ai/v1/chat/completions`)               |
 | `CORS_ORIGIN`             | Production          | Frontend production URL (e.g., `https://ichnos-protocol.com`)                         |

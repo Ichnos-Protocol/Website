@@ -12,7 +12,7 @@ Monorepo: `client/` (React frontend) + `server/` (Express backend).
 | Frontend    | React 18+, Vite, Bootstrap 5, Redux Toolkit (RTK Query), React Router v6+ |
 | Backend     | Express.js 5, REST API, ES modules                                        |
 | SQL DB      | PostgreSQL (Neon Tech)                                                    |
-| NoSQL       | Firebase Firestore — chatbot `knowledge_base` documents. Firebase Storage — knowledge-base ingestion tooling only. No user-facing upload |
+| NoSQL       | Firebase Firestore — chatbot `knowledge_base` documents only. No Firebase Storage usage and no user-facing upload |
 | Auth        | Firebase Authentication                                                   |
 | Chatbot     | X.ai Grok API (RAG)                                                       |
 | LinkedIn    | Profile links only. No feed or embed is built                             |
@@ -101,7 +101,7 @@ cd server && vercel --prod   # deploy backend
 - Controllers: parse request, delegate, respond. No business logic.
 - Services: all business logic. No direct DB access.
 - Repositories: all data access. No business logic.
-- Firebase ownership: `server/src/repositories/knowledgeRepository.js` owns every Firestore `knowledge_base` document read and write; `server/src/repositories/knowledgeStorageRepository.js` owns all Firebase Storage access, which serves knowledge-base ingestion only. There is no user-facing upload.
+- Firebase ownership: `server/src/repositories/knowledgeRepository.js` owns every Firestore `knowledge_base` document read and write. There is no user-facing upload.
 
 ## Commercial offer pages
 
@@ -113,10 +113,10 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 
 - JavaScript ES2022+. No TypeScript unless requested.
 - Max **application JavaScript module**: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines. The file cap covers modules under `client/src`, `server/src` and `server/api`, plus any file those directories import.
-- Test files are exempt from the line cap; 53 are over 200 after formatting, the largest `ChatModal.test.jsx` at 821. Five application files are grandfathered over it (see CLAUDE.md §5.1). Nothing in the toolchain enforces the cap.
+- Test files are exempt from the line cap; 52 are over 200 after formatting (remeasured after VF-P13a), the largest `ChatModal.test.jsx` at 821. Five application files are grandfathered over it (see CLAUDE.md §5.1). Nothing in the toolchain enforces the cap.
 - Executable application modules (components, hooks, services, helpers, repositories, middleware, routes, controllers) stay capped at 200. Content files, JavaScript files whose length follows the copy or declarative data they hold and not logic, are exempt like test files. Current content-exempt files, `wc -l` HEAD → formatted after P13a-C1/C2: `client/src/constants/readinessAssessmentContent.js` (239 → 315), `client/src/constants/vocabulary.js` (224 → 224), `client/src/constants/services.js` (205 → 205). Stylesheets are outside the cap because it applies to JavaScript modules; `client/src/index.css` (1414 → 1426) is out of scope, not an exemption. Content-exempt is not grandfathered: a new content module needs no waiver, and a mixed logic file never qualifies by path or size. See CLAUDE.md §5.1.
 - Files over 200 after formatting (`wc -l`, HEAD → formatted, measured 2026-09-24 after P13a-C1/C2 with each package's `format` script in a disposable worktree). No application module outside the content-exempt and grandfathered lists is over 200. Grandfathered: `server/src/repositories/adminRepository.js` (353 → 362), `server/src/repositories/userRepository.js` (255 → 269), `server/src/controllers/adminController.js` (252 → 252), `server/src/services/adminService.js` (223 → 223), `server/scripts/seedE2EOnPreview.js` (305 → 332, application code because `server/src/app.js` imports it). Outside cap scope and not grandfathered, because nothing under `server/src` or `server/api` imports them: the standalone CLI scripts `server/scripts/verifyFirestoreIngestion.js` (1026 → 1026), `server/scripts/utils/deduplicateFirestore.js` (496 → 496), `server/scripts/extractMarkdownKnowledge.js` (277 → 277), `server/scripts/extractWebKnowledge.js` (202 → 202). Test-exempt: `e2e/tests/fixtures/auth.js` (213 → 218), `admin-analytics.spec.js` (330 → 370), `admin-kanban.spec.js` (233 → 252).
-- Prettier is configured (root `.prettierrc.json` with `endOfLine: "auto"`, a `.prettierignore` and narrowed `format` / `format:check` scripts in `client`, `server` and `e2e`) but has never been run corpus-wide. Dry run 2026-09-24 after P13a-C1/C2: 202/275 client, 61/127 server, 35/45 e2e files would change. `format:check` fails until P13b and is not a gate. Match the file you are editing; do not reformat as drive-by work. See CLAUDE.md §15.
+- Prettier is configured (root `.prettierrc.json` with `endOfLine: "auto"`, a `.prettierignore` and narrowed `format` / `format:check` scripts in `client`, `server` and `e2e`) but has never been run corpus-wide. Dry run 2026-09-24 after VF-P13a: 202/275 client, 59/125 server, 35/45 e2e files would change (296 total; the historical P13a baseline was 298). `format:check` fails until P13b and is not a gate. Match the file you are editing; do not reformat as drive-by work. See CLAUDE.md §15.
 - Route paths live in `client/src/constants/routes.js` (fourteen `ROUTE_*` constants). No route literal belongs anywhere else in `client/src`; `routes.test.js` sweeps for them. `App.test.jsx` is excluded by design, because its literal mounts pin the constants to real values.
 - Components: `PascalCase`. Hooks: `useCamelCase`. Helpers: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - DB columns: `snake_case`. API endpoints: `kebab-case`.
@@ -176,7 +176,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Never use `dangerouslySetInnerHTML`.
 - CORS restricted to frontend origin only.
 - Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
-- File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only). The ingestion tooling's Storage validation lives in `knowledgeStorageRepository.js`.
+- File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only).
 - Never commit `.env` files or secrets.
 
 ## Security best practices
@@ -207,7 +207,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 
 - Firebase Admin SDK must be initialized exactly once (singleton pattern).
 - Guard initialization with `!admin.apps.length` before calling `admin.initializeApp()`.
-- Never call `admin.auth()`, `admin.storage()`, or `admin.firestore()` before the app is fully initialized.
+- Never call `admin.auth()` or `admin.firestore()` before the app is fully initialized.
 - Reference implementation: `server/src/config/firebase.js`.
 
 ### Auth API contract (post-T3/T4/T5 refactor)

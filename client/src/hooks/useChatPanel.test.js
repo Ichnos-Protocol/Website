@@ -10,13 +10,15 @@ import { openModal as openContactModal } from "../features/contact/contactSlice"
 
 const mockSendStreamMessage = vi.fn();
 const mockTriggerHistory = vi.fn();
+const mockCancelStream = vi.fn();
+let mockIsStreaming = false;
 
 vi.mock("./useChatStream", () => ({
   useChatStream: () => ({
     streamingText: "",
-    isStreaming: false,
+    isStreaming: mockIsStreaming,
     sendStreamMessage: mockSendStreamMessage,
-    cancelStream: vi.fn(),
+    cancelStream: mockCancelStream,
   }),
 }));
 
@@ -92,6 +94,7 @@ const UNAUTH = { auth: { user: null, isAuthenticated: false } };
 describe("useChatPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsStreaming = false;
     mockSendStreamMessage.mockResolvedValue("completed");
     mockTriggerHistory.mockReturnValue(resolvedHistory());
   });
@@ -260,6 +263,21 @@ describe("useChatPanel", () => {
       await act(async () => { first.resolve({ data: [{ role: "ai", content: "stale" }] }); });
 
       expect(store.getState().chat.messages).toEqual([{ role: "ai", content: "fresh" }]);
+    });
+  });
+
+  // Auto-scroll is intentionally not unit-tested here: jsdom has no layout, scrollHeight is always 0, and such a test could only assert that scrollTop was assigned.
+  describe("stream cancellation", () => {
+    it("cancels an active stream once when the chat modal closes", () => {
+      mockIsStreaming = true;
+      const store = createStore();
+      renderPanelHook(store, { mode: "modal", persistState: false });
+
+      expect(mockCancelStream).not.toHaveBeenCalled();
+
+      act(() => { store.dispatch(toggleModal()); });
+
+      expect(mockCancelStream).toHaveBeenCalledTimes(1);
     });
   });
 });

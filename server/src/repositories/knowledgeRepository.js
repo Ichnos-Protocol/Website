@@ -2,7 +2,6 @@
  * Knowledge Repository
  *
  * Data access functions for the Firestore knowledge_base collection.
- * Firebase Storage operations live in knowledgeStorageRepository.js.
  */
 import firebaseAdmin from "../config/firebase.js";
 
