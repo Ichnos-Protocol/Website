@@ -395,11 +395,14 @@ body {
 }
 
 /* Qualified Advisor label on the founder profile (/team), september-fixes
-   P7. Height is the pivot-4 §5.2 strip height for the advisor file, tunable
-   ±15%. Official positive file, unmodified: sized by height only,
+   P7. The file is the official 16:9 delivery, whose canvas carries about
+   54% clear space, so the visible mark is roughly 46% of this height.
+   148px is twice the pivot-4 §5.2 strip height, by owner ruling
+   2026-09-24: at 74px the mark rendered about 34px tall and was
+   unreadable. Official positive file, unmodified: sized by height only,
    aspect-preserved, never cropped. */
 .founder-credential-label {
-  height: 74px;
+  height: 148px;
   width: auto;
   object-fit: contain;
 }
