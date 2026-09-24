@@ -35,12 +35,12 @@ const CHAT_SERVICE_PATH = path.resolve(__dirname, "./chatService.js");
 const API_ENTRY_PATH = path.resolve(__dirname, "../../api/index.js");
 
 function readConstantValue(source, constantName) {
-  const re = new RegExp(
-    `${constantName}\\s*=\\s*([0-9_]+)`,
-  );
+  const re = new RegExp(`${constantName}\\s*=\\s*([0-9_]+)`);
   const match = source.match(re);
   if (!match) {
-    throw new Error(`Could not find constant ${constantName} in chatService.js`);
+    throw new Error(
+      `Could not find constant ${constantName} in chatService.js`,
+    );
   }
   return Number(match[1].replace(/_/g, ""));
 }

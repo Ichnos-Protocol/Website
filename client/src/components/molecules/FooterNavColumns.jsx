@@ -1,5 +1,5 @@
-import Col from 'react-bootstrap/Col';
-import { Link } from 'react-router-dom';
+import Col from "react-bootstrap/Col";
+import { Link } from "react-router-dom";
 
 import {
   ROUTE_CONSORTIUM,
@@ -8,56 +8,56 @@ import {
   ROUTE_READINESS_ASSESSMENT,
   ROUTE_SERVICES,
   ROUTE_TEAM,
-} from '../../constants/routes';
+} from "../../constants/routes";
 
 const MENUS = [
   {
-    heading: 'Company',
-    testId: 'footer-col-company',
+    heading: "Company",
+    testId: "footer-col-company",
     links: [
       {
-        label: 'Why Ichnos',
+        label: "Why Ichnos",
         to: ROUTE_LANDING,
-        state: { scrollTo: 'company' },
+        state: { scrollTo: "company" },
       },
-      { label: 'Team', to: ROUTE_TEAM },
+      { label: "Team", to: ROUTE_TEAM },
     ],
   },
   {
-    heading: 'Services',
-    testId: 'footer-col-services',
+    heading: "Services",
+    testId: "footer-col-services",
     links: [
       {
-        label: 'Engineering',
+        label: "Engineering",
         to: ROUTE_SERVICES,
-        state: { scrollTo: 'engineering' },
+        state: { scrollTo: "engineering" },
       },
       {
-        label: 'Catena-X services',
+        label: "Catena-X services",
         to: ROUTE_SERVICES,
-        state: { scrollTo: 'catena-x' },
+        state: { scrollTo: "catena-x" },
       },
       {
-        label: 'Compliance',
+        label: "Compliance",
         to: ROUTE_SERVICES,
-        state: { scrollTo: 'compliance' },
+        state: { scrollTo: "compliance" },
       },
       {
-        label: 'Circularity',
+        label: "Circularity",
         to: ROUTE_SERVICES,
-        state: { scrollTo: 'circularity' },
+        state: { scrollTo: "circularity" },
       },
     ],
   },
   {
-    heading: 'Products',
-    testId: 'footer-col-products',
+    heading: "Products",
+    testId: "footer-col-products",
     links: [
       // First by owner decision 2026-09-23: the assessment is the offer with
       // a price behind it, and the footer is one of its five entry points.
-      { label: 'Readiness Assessment', to: ROUTE_READINESS_ASSESSMENT },
-      { label: 'Battery Passport', to: ROUTE_PASSPORT },
-      { label: 'Consortium', to: ROUTE_CONSORTIUM },
+      { label: "Readiness Assessment", to: ROUTE_READINESS_ASSESSMENT },
+      { label: "Battery Passport", to: ROUTE_PASSPORT },
+      { label: "Consortium", to: ROUTE_CONSORTIUM },
     ],
   },
 ];

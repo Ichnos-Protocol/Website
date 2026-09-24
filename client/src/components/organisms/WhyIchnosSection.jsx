@@ -1,9 +1,9 @@
-import { Element } from 'react-scroll';
-import Container from 'react-bootstrap/Container';
+import { Element } from "react-scroll";
+import Container from "react-bootstrap/Container";
 
-import { WHY_ICHNOS } from '../../constants/landingContent';
-import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
-import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
+import { WHY_ICHNOS } from "../../constants/landingContent";
+import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
+import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
 
 function renderParagraph(text) {
   if (!text.includes(CATENA_X_TITLE_BASE)) return text;

@@ -12,7 +12,7 @@ Monorepo: `client/` (React frontend) + `server/` (Express backend).
 | Frontend    | React 18+, Vite, Bootstrap 5, Redux Toolkit (RTK Query), React Router v6+ |
 | Backend     | Express.js 5, REST API, ES modules                                        |
 | SQL DB      | PostgreSQL (Neon Tech)                                                    |
-| NoSQL       | Firebase Firestore — chatbot `knowledge_base` only. No Storage, no uploads |
+| NoSQL       | Firebase Firestore — chatbot `knowledge_base` documents only. No Firebase Storage usage and no user-facing upload |
 | Auth        | Firebase Authentication                                                   |
 | Chatbot     | X.ai Grok API (RAG)                                                       |
 | LinkedIn    | Profile links only. No feed or embed is built                             |
@@ -65,10 +65,12 @@ npm run dev              # start dev server (client or server)
 
 # Lint & format
 npm run lint             # ESLint
-npm run format           # Prettier
+npm run format           # Prettier (write)
+npm run format:check     # Prettier check (pre-commit and CI; run in e2e/ too when touched)
 
 # Test
 npm test                 # run full test suite
+npm run test:coverage    # full suite with coverage thresholds (what CI runs)
 npm run test -- path/to/file.test.jsx   # single file
 
 # Build
@@ -100,6 +102,7 @@ cd server && vercel --prod   # deploy backend
 - Controllers: parse request, delegate, respond. No business logic.
 - Services: all business logic. No direct DB access.
 - Repositories: all data access. No business logic.
+- Firebase ownership: `server/src/repositories/knowledgeRepository.js` owns every Firestore `knowledge_base` document read and write. There is no user-facing upload.
 
 ## Commercial offer pages
 
@@ -110,10 +113,10 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 ## Code conventions
 
 - JavaScript ES2022+. No TypeScript unless requested.
-- Max **source** file: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines.
-- Test files are exempt from the line cap; 29 are already over 200. Four source files are grandfathered over it (see CLAUDE.md §5.1). Nothing in the toolchain enforces the cap.
-- Prettier is declared in both packages but has never been run corpus-wide (202/271 client, 42/93 server files differ as of 2026-09-23). Match the file you are editing; do not reformat as drive-by work. See CLAUDE.md §15.
-- Route paths live in `client/src/constants/routes.js` (fourteen `ROUTE_*` constants). No route literal belongs anywhere else in `client/src`; `routes.test.js` sweeps for them. `App.test.jsx` is excluded by design, because its literal mounts pin the constants to real values.
+- Max **application JavaScript module**: 200 lines (raised from 120, owner ruling 2026-09-22). Max function: 20 lines. Max JSX return: 60 lines. The file cap covers modules under `client/src`, `server/src` and `server/api`, plus any file those directories import. ESLint `max-lines` enforces it as an error, so `npm run lint` fails on a module over the cap.
+- The exceptions live only in `client/eslint.config.js` and `server/eslint.config.js`: test files, content-exempt files (JavaScript whose length follows the copy or declarative data it holds, not logic) and grandfathered files. Split a grandfathered file only when you are changing it for another reason. Content-exempt is not grandfathered: a new content module needs no waiver, and a mixed logic file never qualifies by path or size. Stylesheets and standalone CLI scripts that nothing under `server/src` or `server/api` imports are outside the rule's scope. See CLAUDE.md §5.1.
+- Prettier is adopted. Root `.prettierrc.json` (`endOfLine: "auto"`), the per-package `.prettierignore` files and the narrowed `format` / `format:check` scripts in `client`, `server` and `e2e` are authoritative. The corpus was formatted once in P13b, in a commit that changed nothing else. `format:check` is green in all three packages and CI enforces it as the `Check formatting` step, after `Lint`, in both required jobs (`Client — Lint & Test`, `Server — Lint & Test`); `e2e` is checked locally. Run the owning package's `format` on files you change; never hand-fight its output. See CLAUDE.md §15.
+- Route paths live in `client/src/constants/routes.js`. No route literal belongs anywhere else in `client/src`; `routes.test.js` sweeps for them. `App.test.jsx` is excluded by design, because its literal mounts pin the constants to real values.
 - Components: `PascalCase`. Hooks: `useCamelCase`. Helpers: `camelCase`. Constants: `UPPER_SNAKE_CASE`.
 - DB columns: `snake_case`. API endpoints: `kebab-case`.
 - Default exports for React components (atoms, molecules, organisms, pages, templates). Named exports for utilities, hooks, constants, Redux slices, helpers, and infrastructure files (store, providers).
@@ -135,7 +138,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Unit tests: all helpers, services, repositories.
 - Component tests: React Testing Library — test interactions, not internals.
 - API tests: Vitest + Supertest for endpoints.
-- Coverage: `v8` provider, 80% target for helpers and services.
+- Coverage: `@vitest/coverage-v8`, enforced in CI by `npm run test:coverage` in both the client and server jobs. Line thresholds, authoritative in `client/vite.config.js` and `server/vitest.config.js`: client global 85, `src/helpers/**` 80; server global 89, `src/helpers/**` 80, `src/services/**` 80. The client has no `src/services/` directory, so it has no services key. Raise thresholds as coverage grows, never lower them.
 - Mocking: `vi.fn()`, `vi.spyOn()`, `vi.mock()`.
 - Always test schema validators directly with edge cases (empty string, whitespace-only, boundary lengths) in addition to route-level tests.
 - Integration tests that require external services must use `describeIf = process.env.TEST_DATABASE_URL ? describe : describe.skip` pattern and must pass (skip) in CI without secrets.
@@ -149,11 +152,11 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - **Local**: Start client + server locally, run `cd e2e && npx playwright test`.
 - **CI**: E2E is triggered by `repository_dispatch (vercel.deployment.success)` from the **server** Vercel project (`ichnos-protocol_server`) only. Repository Dispatch Events are enabled on the server project; the client project does not emit dispatches.
   - **Filter**: The workflow guards on `contains(github.event.client_payload.project.name || '', 'server')` — a safety check since only the server emits dispatches.
-  - **Target URLs**: Stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL` for client, `E2E_API_BASE_URL` for API) — not per-deployment hash URLs.
-  - **Client readiness**: The workflow polls `E2E_BASE_URL` (loaded from `e2e/.env.e2e`) to verify the client is live before running Playwright.
+  - **Target URLs**: Stable E2E URLs from the repository variables `E2E_BASE_URL` (client) and `E2E_API_BASE_URL` (API), with secrets for the Firebase API key and the passwords — not per-deployment hash URLs.
+  - **Client readiness**: The workflow polls `E2E_BASE_URL` (a repository variable) to verify the client is live before running Playwright.
   - **Seed readiness**: The workflow polls `/api/health` for `seed.mode` — `seeded` and `skipped` are accepted as ready states, `failed` is terminal, `in_progress` triggers retry.
   - **Safety gate**: A fail-closed production-host denylist (exact hostname match, lowercase normalized, port removed) validates all target URLs before tests execute. Denylist constants are canonical in `e2e.yml`.
-- `e2e.yml` also supports **manual/ad-hoc** runs via `workflow_dispatch`. Both trigger modes resolve target URLs from the committed `e2e/.env.e2e` file — there is no manual URL input. The same denylist safety gate applies.
+- `e2e.yml` also supports **manual/ad-hoc** runs via `workflow_dispatch`. Both trigger modes resolve target URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords — there is no manual URL input. The same denylist safety gate applies.
 - Browsers: **Chromium only** for `repository_dispatch` CI runs; **full suite** (Chromium, Firefox, WebKit) for `workflow_dispatch` manual runs; Chromium-only locally.
 
 ## Git conventions
@@ -162,7 +165,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `style`
 - Scopes: `client`, `server`, `db`, `chat`, `auth`, `admin`, `linkedin`
 - Branch per feature: `feature/<short-description>` from `main`
-- `staging` is a **long-lived parallel branch** for manual QA, auto-synced from `main` by `sync-staging.yml`. It is not in the promotion chain (`feature/* → main → release` is unchanged). Never open PRs targeting `staging`.
+- `staging` is a **long-lived parallel branch** for manual QA, synced from `main` by a manually dispatched run of `sync-staging.yml`. It is not in the promotion chain (`feature/* → main → release` is unchanged). Never open PRs targeting `staging`.
 
 ## Security essentials
 
@@ -171,8 +174,8 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Firebase ID tokens verified server-side on every protected request.
 - Never use `dangerouslySetInnerHTML`.
 - CORS restricted to frontend origin only.
-- Rate limiting on public endpoints.
-- File uploads: validate type + size (max 10MB, PDF/DOCX/PNG/JPG only).
+- Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
+- File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only).
 - Never commit `.env` files or secrets.
 
 ## Security best practices
@@ -203,7 +206,7 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 
 - Firebase Admin SDK must be initialized exactly once (singleton pattern).
 - Guard initialization with `!admin.apps.length` before calling `admin.initializeApp()`.
-- Never call `admin.auth()`, `admin.storage()`, or `admin.firestore()` before the app is fully initialized.
+- Never call `admin.auth()` or `admin.firestore()` before the app is fully initialized.
 - Reference implementation: `server/src/config/firebase.js`.
 
 ### Auth API contract (post-T3/T4/T5 refactor)
@@ -220,13 +223,13 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - **Frontend** (`client/`): Vite static build → `dist/`. SPA rewrites to `index.html`.
 - **Backend** (`server/`): Express app wrapped as a Vercel serverless function via `server/api/index.js` using `@vercel/node`.
 - **Vercel Git integration handles preview deployments** automatically on every branch push and PR — no GitHub Actions workflow is involved in creating previews.
-- **Enforced pipeline order**: CI → Vercel Preview (native) → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) → approval-gated production promotion.
-- `repository_dispatch (vercel.deployment.success)` events from the **server** Vercel project (`ichnos-protocol_server`) trigger `e2e.yml`. The workflow uses project-name filtering (`contains(project.name, 'server')`) and targets stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL`, `E2E_API_BASE_URL`).
-- Production promotion is triggered automatically on push to `release` and requires human approval via the GitHub `production` environment before the latest validated `main` preview is promoted.
+- **Enforced pipeline order**: CI → Vercel Preview (native) → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) → PR into `release` → Vercel native production build of `release`.
+- `repository_dispatch (vercel.deployment.success)` events from the **server** Vercel project (`ichnos-protocol_server`) trigger `e2e.yml`. The workflow uses project-name filtering (`contains(project.name, 'server')`) and targets stable E2E URLs from the repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords.
+- Production is Vercel's own build of the `release` branch, for both projects (the production branch is `release`). The human gate is the required pull request into `release`, enforced by the ruleset and `release-policy-check.yml` (the head branch must be `main`). No GitHub Actions run takes part in the production deployment.
 - Environment variables set in Vercel project settings, never committed.
 - `server/api/index.js` only re-exports the Express app. All setup stays in `server/src/app.js`.
 - **Staging manual-QA lane**: The `staging` branch produces a Vercel Preview deployment that uses **production Firebase** and **production Neon DB** via branch-scoped env overrides. `SKIP_E2E_SEED=true` prevents automated seed injection. Manual QA actions on `staging` write to the production database — this is explicitly accepted.
-- `sync-staging.yml` force-pushes `main` to `staging` after every server deployment (unconditional, same `repository_dispatch` trigger as `e2e.yml`, runs in parallel). Uses `SYNC_PAT` (not `GITHUB_TOKEN`) to trigger Vercel redeployment.
+- `sync-staging.yml` runs only on manual `workflow_dispatch`. It force-pushes `main` to `staging` with `SYNC_PAT` (not `GITHUB_TOKEN`), then calls the two Vercel staging deploy hooks (`VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`) to build the new `staging` tip.
 
 ## CI/CD best practices
 
@@ -255,18 +258,18 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 ### Preview-first deployment model
 
 - **Vercel's native Git integration** creates preview deployments automatically on every branch push and PR — no GitHub Actions workflow is involved.
-- Production promotion is **approval-gated**: the `Promote to Production` workflow triggers automatically on push to `release` and requires human approval via the GitHub `production` environment.
+- The production gate is the **required pull request into `release`**: the `release` ruleset requires a PR and the `Release Policy Check` status (head must be `main`). Once merged, Vercel builds `release` and deploys it to production for both projects.
 - This allows reviewing every deployment on preview before it reaches users.
-- Production environment should have an approval gate configured in GitHub → Settings → Environments.
 - **Fork PR trust boundary**: Vercel's Git integration does not expose environment variables to builds from forks by default, preventing secret exfiltration via attacker-controlled code.
 - See `DEPLOYMENT_GITHUB_ACTIONS.md` for setup instructions.
-- The `staging` branch is an auto-synced parallel manual-QA lane that sits outside the automated pipeline. It uses production credentials for real-user QA. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
+- The `staging` branch is a manually synced parallel manual-QA lane that sits outside the automated pipeline. It uses production credentials for real-user QA. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
 
 ### Neon preview branches for E2E
 
-- Vercel's native Neon integration automatically creates a Neon preview branch for each Vercel preview deployment — no GitHub Actions step provisions or deletes branches.
+- Vercel's native Neon integration automatically creates a Neon preview branch for each Vercel preview deployment. No GitHub Actions step provisions branches.
+- `e2e.yml` deletes them: its final `Delete Neon preview branch` step runs `node e2e/scripts/cleanupNeonBranch.js` under `if: always()`, which calls the Neon API with the `NEON_API_KEY` and `NEON_PROJECT_ID` repository secrets. The step is best-effort and skips when those secrets are absent.
 - E2E test data is seeded automatically by the server on preview startup. When `VERCEL_ENV === 'preview'` and E2E account env vars are present (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`), the server runs idempotent seed queries using its own `DATABASE_URL` (injected by the Neon-Vercel integration).
-- GitHub Actions does not interact with the database at all — no Neon API calls, no direct DB connections, no seed tokens.
+- Apart from that branch cleanup, GitHub Actions does not touch the database: no direct DB connections, no seed tokens. Seeding stays server-side.
 - E2E account env vars (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`, etc.) must be set as Vercel server environment variables scoped to **Preview** only.
 - Seeding can be suppressed by setting `SKIP_E2E_SEED=true` as a Vercel server Preview env var; `/api/health` then reports `seed.mode=skipped`.
 - `/api/health` exposes `seed.mode` (enum: `seeded | skipped | in_progress | failed`) as the canonical readiness signal for CI orchestration. The backward-compatible fields (`seed.seeded`, `seed.error`, `seed.attempts`) are retained alongside it.
@@ -277,14 +280,14 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 
 - E2E tests are triggered by `repository_dispatch (vercel.deployment.success)` from the **server** Vercel project (`ichnos-protocol_server`) via `e2e.yml`, not as a dependent job inside another workflow.
 - The workflow uses **project-name filtering** (`contains(project.name, 'server')`) as the event guard — not hostname pattern matching.
-- Tests target stable E2E URLs from the committed `e2e/.env.e2e` file (`E2E_BASE_URL`, `E2E_API_BASE_URL`), not per-deployment hash URLs and not secrets.
-- Detection does not use `VERCEL_PROJECT_ID_CLIENT` or hostname matching.
-- Both `repository_dispatch` and `workflow_dispatch` modes resolve targets from the committed `e2e/.env.e2e` file — no manual URL input is accepted.
+- Tests target stable E2E URLs from the repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL` (variables, not secrets), with secrets for the Firebase API key and the passwords — not per-deployment hash URLs.
+- Detection does not use Vercel project ID secrets or hostname matching.
+- Both `repository_dispatch` and `workflow_dispatch` modes resolve targets from the same repository variables and secrets — no manual URL input is accepted.
 - Production-host denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) are canonical in the `e2e.yml` workflow `env` block. Updates require maintainer-reviewed PRs on the workflow file. Docs are descriptive only and must not introduce alternate policy sources.
 - The denylist gate is fail-closed: empty/missing constants or unparseable URLs abort the run. Hostname matching is exact-match after lowercase normalization and port removal.
 - API readiness is `seed.mode`-based: the workflow polls `/api/health` and accepts `seeded` or `skipped` as ready; `failed` triggers immediate failure.
 - E2E tests must target the **client** staging URL only, never the server.
-- `E2E_BASE_URL` and `E2E_API_BASE_URL` (in `e2e/.env.e2e`) point to **ephemeral preview** targets — never to the `staging` branch URL. The `staging` environment is a separate manual-QA lane with its own distinct URL and production credentials.
+- `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) point to **ephemeral preview** targets — never to the `staging` branch URL. The `staging` environment is a separate manual-QA lane with its own distinct URL and production credentials.
 
 ### Secret-conditional steps
 
@@ -333,8 +336,9 @@ services — no manual copy-paste of URLs, credentials, or API responses.
 - One feature at a time. Branch, implement, test, review, merge, deploy.
 - Each Traycer phase scoped to max 3 files.
 - All tests must pass before commit.
-- ESLint zero warnings, Prettier applied before commit.
+- ESLint zero warnings and `npm run format:check` green before commit; CI runs both in the client and server jobs.
 - Run `npm run build` locally before opening a PR to catch Vite build errors early.
+- **Known-good baseline:** lint, tests and `test:coverage` green in `client` and `server`; `format:check` green in `client` and `server`, and in `e2e` when you touched it; `e2e` `test:unit` green when you touched `e2e/`; client build green. Do not start a phase from a red tree.
 - All authorization guards go in middleware, never inline in controllers.
 - All magic strings in API/service code go in named constants.
 

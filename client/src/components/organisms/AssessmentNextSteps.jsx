@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
-import { ASSESSMENT_NEXT_STEPS } from '../../constants/readinessAssessmentContent';
-import { ROUTE_SERVICES } from '../../constants/routes';
+import { ASSESSMENT_NEXT_STEPS } from "../../constants/readinessAssessmentContent";
+import { ROUTE_SERVICES } from "../../constants/routes";
 
 // Section 4.5.1. The heading, body and link label are fenced copy and render
 // from the constant verbatim. The hosting option in the body keeps exactly

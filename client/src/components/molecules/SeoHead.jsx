@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from "react-helmet-async";
 
 /**
  * Presentational <head> emitter. Renders the full canonical SEO block —

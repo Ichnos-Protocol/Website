@@ -1,4 +1,4 @@
-import { ASSESSMENT_WINDOW } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_WINDOW } from "../../constants/readinessAssessmentContent";
 
 // Section 4.2.2, rendered between the audience panels and the deliverables.
 // The copy states the arithmetic in prose rather than counting down to a

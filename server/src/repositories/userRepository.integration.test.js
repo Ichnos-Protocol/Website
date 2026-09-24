@@ -51,23 +51,35 @@ describeIf("userRepository (integration)", () => {
   });
 
   it("creates a user and retrieves it by ID", async () => {
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["int-uid-1"]);
-    const { rows } = await pool.query("SELECT * FROM users WHERE firebase_uid = $1", ["int-uid-1"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "int-uid-1",
+    ]);
+    const { rows } = await pool.query(
+      "SELECT * FROM users WHERE firebase_uid = $1",
+      ["int-uid-1"],
+    );
 
     expect(rows).toHaveLength(1);
     expect(rows[0].firebase_uid).toBe("int-uid-1");
   });
 
   it("cascades user_profiles delete when user is deleted", async () => {
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["int-uid-2"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "int-uid-2",
+    ]);
     await pool.query(
       "INSERT INTO user_profiles (user_id, name, surname, email) VALUES ($1, $2, $3, $4)",
       ["int-uid-2", "Jane", "Doe", "jane@test.com"],
     );
 
-    await pool.query("DELETE FROM users WHERE firebase_uid = $1", ["int-uid-2"]);
+    await pool.query("DELETE FROM users WHERE firebase_uid = $1", [
+      "int-uid-2",
+    ]);
 
-    const { rows } = await pool.query("SELECT * FROM user_profiles WHERE user_id = $1", ["int-uid-2"]);
+    const { rows } = await pool.query(
+      "SELECT * FROM user_profiles WHERE user_id = $1",
+      ["int-uid-2"],
+    );
     expect(rows).toHaveLength(0);
   });
 
@@ -81,7 +93,9 @@ describeIf("userRepository (integration)", () => {
   });
 
   it("upserts profile on conflict", async () => {
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["int-uid-3"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "int-uid-3",
+    ]);
     await pool.query(
       "INSERT INTO user_profiles (user_id, name, surname, email) VALUES ($1, $2, $3, $4)",
       ["int-uid-3", "Old", "Name", "old@test.com"],
@@ -95,13 +109,18 @@ describeIf("userRepository (integration)", () => {
       ["int-uid-3", "New", "Name", "new@test.com"],
     );
 
-    const { rows } = await pool.query("SELECT * FROM user_profiles WHERE user_id = $1", ["int-uid-3"]);
+    const { rows } = await pool.query(
+      "SELECT * FROM user_profiles WHERE user_id = $1",
+      ["int-uid-3"],
+    );
     expect(rows[0].name).toBe("New");
     expect(rows[0].email).toBe("new@test.com");
   });
 
   it("prevents duplicate firebase_uid", async () => {
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["int-uid-4"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "int-uid-4",
+    ]);
 
     await expect(
       pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["int-uid-4"]),

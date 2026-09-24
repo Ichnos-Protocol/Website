@@ -1,9 +1,9 @@
-import Modal from 'react-bootstrap/Modal';
-import Alert from 'react-bootstrap/Alert';
+import Modal from "react-bootstrap/Modal";
+import Alert from "react-bootstrap/Alert";
 
-import ProfileCompletionForm from '../molecules/ProfileCompletionForm';
-import AuthLoginSignupBody from '../molecules/AuthLoginSignupBody';
-import { useAuthModal } from '../../hooks/useAuthModal';
+import ProfileCompletionForm from "../molecules/ProfileCompletionForm";
+import AuthLoginSignupBody from "../molecules/AuthLoginSignupBody";
+import { useAuthModal } from "../../hooks/useAuthModal";
 
 export default function AuthModal() {
   const {
@@ -67,15 +67,10 @@ export default function AuthModal() {
   }
 
   return (
-    <Modal
-      show={show}
-      onHide={handleClose}
-      centered
-      data-testid="auth-modal"
-    >
+    <Modal show={show} onHide={handleClose} centered data-testid="auth-modal">
       <Modal.Header closeButton className="auth-modal-header">
         <Modal.Title className="auth-modal-title">
-          {isLogin ? 'Welcome Back' : 'Create Account'}
+          {isLogin ? "Welcome Back" : "Create Account"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body className="auth-modal-body">

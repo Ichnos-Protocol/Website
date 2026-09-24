@@ -8,7 +8,6 @@ import Row from "react-bootstrap/Row";
 import { ROUTE_CONSORTIUM_TIERS } from "../../constants/routes";
 import { CONSORTIUM_META } from "../../constants/seoMeta";
 import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
-import PageTransition from "../templates/PageTransition";
 import SeoHead from "../molecules/SeoHead";
 import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
 import ContactRequestForm from "../organisms/ContactRequestForm";
@@ -62,34 +61,32 @@ export default function ConsortiumPage() {
         meta={CONSORTIUM_META}
         schemas={PAGE_STRUCTURED_DATA.consortium}
       />
-      <PageTransition>
-        <AdvisoryPageHero
-          eyebrow={HERO_EYEBROW}
-          title={HERO.title}
-          subtitle={HERO.subtitle}
-        />
-        <Container className="py-5">
-          <Row className="g-4 mb-5">
-            {OFFER_CARDS.map((card) => (
-              <Col key={card.title} md={4}>
-                <Card className="h-100">
-                  <Card.Body>
-                    <Card.Title>{card.title}</Card.Title>
-                    <Card.Text>{card.body}</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          <section id="register">
-            <h2 className="mb-4">{REGISTER_TITLE}</h2>
-            <ContactRequestForm
-              mode="consortium"
-              onSuccess={() => navigate(ROUTE_CONSORTIUM_TIERS)}
-            />
-          </section>
-        </Container>
-      </PageTransition>
+      <AdvisoryPageHero
+        eyebrow={HERO_EYEBROW}
+        title={HERO.title}
+        subtitle={HERO.subtitle}
+      />
+      <Container className="py-5">
+        <Row className="g-4 mb-5">
+          {OFFER_CARDS.map((card) => (
+            <Col key={card.title} md={4}>
+              <Card className="h-100">
+                <Card.Body>
+                  <Card.Title>{card.title}</Card.Title>
+                  <Card.Text>{card.body}</Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        <section id="register">
+          <h2 className="mb-4">{REGISTER_TITLE}</h2>
+          <ContactRequestForm
+            mode="consortium"
+            onSuccess={() => navigate(ROUTE_CONSORTIUM_TIERS)}
+          />
+        </section>
+      </Container>
     </div>
   );
 }

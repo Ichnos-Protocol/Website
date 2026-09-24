@@ -20,24 +20,6 @@ export async function syncProfile(req, res, next) {
   }
 }
 
-export async function verifyToken(req, res, next) {
-  try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
-      return res
-        .status(400)
-        .json(formatResponse(null, "Validation failed", "idToken is required"));
-    }
-
-    const result = await authService.verifyToken(idToken);
-
-    res.status(200).json(formatResponse(result, "Token verified"));
-  } catch (error) {
-    next(error);
-  }
-}
-
 export async function getMe(req, res, next) {
   try {
     const { uid } = req.user;

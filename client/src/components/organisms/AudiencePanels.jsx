@@ -1,8 +1,8 @@
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
-import { ASSESSMENT_PANELS } from '../../constants/readinessAssessmentContent';
-import AudiencePanel from '../molecules/AudiencePanel';
+import { ASSESSMENT_PANELS } from "../../constants/readinessAssessmentContent";
+import AudiencePanel from "../molecules/AudiencePanel";
 
 // Sections 4.2 and 4.2.1. Panels render in ASSESSMENT_PANELS source order,
 // A then B; never sort, filter or reorder them. The card itself lives in the

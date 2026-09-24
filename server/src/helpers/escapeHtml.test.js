@@ -24,7 +24,7 @@ describe("escapeHtml", () => {
 
   it("handles all special characters together", () => {
     expect(escapeHtml(`<a href="x&y">it's</a>`)).toBe(
-      "&lt;a href=&quot;x&amp;y&quot;&gt;it&#39;s&lt;/a&gt;"
+      "&lt;a href=&quot;x&amp;y&quot;&gt;it&#39;s&lt;/a&gt;",
     );
   });
 

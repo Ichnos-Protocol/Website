@@ -36,20 +36,22 @@ export async function setupAutoModalDismiss(page, defaults = {}) {
   if (page.__autoModalDismissReady) return;
   page.__autoModalDismissReady = true;
 
-  const name = defaults.name || 'E2E';
-  const surname = defaults.surname || 'TestUser';
+  const name = defaults.name || "E2E";
+  const surname = defaults.surname || "TestUser";
 
-  const modal = page.getByTestId('auth-modal');
-  const completeHeading = modal.getByText('Complete Your Profile');
+  const modal = page.getByTestId("auth-modal");
+  const completeHeading = modal.getByText("Complete Your Profile");
 
   await page.addLocatorHandler(completeHeading, async () => {
-    console.log('[profile-modal] Auto-handler: profile modal blocking action — filling and submitting.');
+    console.log(
+      "[profile-modal] Auto-handler: profile modal blocking action — filling and submitting.",
+    );
 
-    await page.locator('#completion-name').fill(name);
-    await page.locator('#completion-surname').fill(surname);
-    await modal.getByRole('button', { name: 'Continue' }).click();
+    await page.locator("#completion-name").fill(name);
+    await page.locator("#completion-surname").fill(surname);
+    await modal.getByRole("button", { name: "Continue" }).click();
 
-    console.log('[profile-modal] Auto-handler: profile modal submitted.');
+    console.log("[profile-modal] Auto-handler: profile modal submitted.");
   });
 }
 
@@ -64,25 +66,30 @@ export async function setupAutoModalDismiss(page, defaults = {}) {
  * @param {{ name?: string, surname?: string }} [defaults]
  */
 export async function dismissProfileModalIfVisible(page, defaults = {}) {
-  const modal = page.getByTestId('auth-modal');
-  const completeHeading = modal.getByText('Complete Your Profile');
+  const modal = page.getByTestId("auth-modal");
+  const completeHeading = modal.getByText("Complete Your Profile");
 
   try {
-    await completeHeading.waitFor({ state: 'visible', timeout: PROFILE_MODAL_TIMEOUT });
+    await completeHeading.waitFor({
+      state: "visible",
+      timeout: PROFILE_MODAL_TIMEOUT,
+    });
   } catch {
     return;
   }
 
-  console.log('[profile-modal] Profile completion modal detected — filling and submitting.');
+  console.log(
+    "[profile-modal] Profile completion modal detected — filling and submitting.",
+  );
 
-  const name = defaults.name || 'E2E';
-  const surname = defaults.surname || 'TestUser';
+  const name = defaults.name || "E2E";
+  const surname = defaults.surname || "TestUser";
 
-  await page.locator('#completion-name').fill(name);
-  await page.locator('#completion-surname').fill(surname);
-  await modal.getByRole('button', { name: 'Continue' }).click();
+  await page.locator("#completion-name").fill(name);
+  await page.locator("#completion-surname").fill(surname);
+  await modal.getByRole("button", { name: "Continue" }).click();
 
-  await completeHeading.waitFor({ state: 'hidden', timeout: 10_000 });
+  await completeHeading.waitFor({ state: "hidden", timeout: 10_000 });
 
-  console.log('[profile-modal] Profile completion modal dismissed.');
+  console.log("[profile-modal] Profile completion modal dismissed.");
 }

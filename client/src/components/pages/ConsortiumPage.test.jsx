@@ -37,9 +37,6 @@ vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return { ...actual, useNavigate: () => mockNavigate };
 });
-vi.mock("../../hooks/useReducedMotion", () => ({
-  useReducedMotion: () => true,
-}));
 vi.mock("../../features/contact/contactApi", () => contactApiMock());
 vi.mock("../../features/auth/authApi", () => {
   const shared = authApiMock();

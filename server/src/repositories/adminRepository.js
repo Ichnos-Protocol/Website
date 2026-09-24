@@ -22,7 +22,8 @@ const CHAT_ONLY_EXCLUSION_SQL = `u.firebase_uid NOT IN (
 const CONSORTIUM_EXPORT_COLUMNS = `p.consortium_interest, p.consortium_position, p.consortium_chain_role,
               p.consortium_product_line, p.consortium_customer_request,
               p.consortium_data_extract, p.consortium_data_needs,
-              p.consortium_preferred_start, p.consortium_source,
+              p.consortium_preferred_start, p.consortium_region,
+              p.consortium_source,
               p.consortium_consent_timestamp, p.consortium_consent_version,
               p.consortium_registered_at, p.consortium_tier,
               p.consortium_tier_selected_at, p.consortium_status,
@@ -46,7 +47,10 @@ export async function getUsersWithRequests() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getUsersWithRequests failed:", error.message);
+    console.error(
+      "adminRepository.getUsersWithRequests failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -121,7 +125,10 @@ export async function getUncategorizedQuestions() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getUncategorizedQuestions failed:", error.message);
+    console.error(
+      "adminRepository.getUncategorizedQuestions failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -264,7 +271,10 @@ export async function getRecentChatOnlyLeads() {
     );
     return rows;
   } catch (error) {
-    console.error("adminRepository.getRecentChatOnlyLeads failed:", error.message);
+    console.error(
+      "adminRepository.getRecentChatOnlyLeads failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -279,6 +289,7 @@ const CONSORTIUM_REGISTRANTS_SQL = `SELECT u.firebase_uid AS "userId",
               p.consortium_data_extract AS "consortiumDataExtract",
               p.consortium_data_needs AS "consortiumDataNeeds",
               p.consortium_preferred_start AS "consortiumPreferredStart",
+              p.consortium_region AS "consortiumRegion",
               p.consortium_source AS "consortiumSource",
               p.consortium_consent_timestamp AS "consortiumConsentTimestamp",
               p.consortium_consent_version AS "consortiumConsentVersion",

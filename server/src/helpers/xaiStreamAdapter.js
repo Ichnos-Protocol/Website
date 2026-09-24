@@ -14,11 +14,7 @@
  *
  * Does not touch callXaiApi — this is a parallel path for streaming.
  */
-import {
-  buildXaiHeaders,
-  buildXaiPayload,
-  buildError,
-} from "./chatHelpers.js";
+import { buildXaiHeaders, buildXaiPayload, buildError } from "./chatHelpers.js";
 
 const DEFAULT_IDLE_TIMEOUT_MS = 60_000;
 
@@ -33,8 +29,7 @@ export async function* createXaiStream(
   } = {},
 ) {
   const endpoint =
-    process.env.XAI_API_ENDPOINT ||
-    "https://api.x.ai/v1/chat/completions";
+    process.env.XAI_API_ENDPOINT || "https://api.x.ai/v1/chat/completions";
   const controller = new AbortController();
 
   // Reason captures which timer triggered the abort, so the catch block
@@ -116,7 +111,10 @@ export async function* createXaiStream(
         throw buildError("Stream aborted by caller", 499);
       }
       if (abortReason === "idle_timeout") {
-        throw buildError("xAI stream stalled (no data received within idle window)", 503);
+        throw buildError(
+          "xAI stream stalled (no data received within idle window)",
+          503,
+        );
       }
       // total_timeout or unknown
       throw buildError("xAI stream exceeded total time budget", 503);

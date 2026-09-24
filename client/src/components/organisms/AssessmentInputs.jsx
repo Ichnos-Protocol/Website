@@ -1,4 +1,4 @@
-import { ASSESSMENT_INPUTS } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_INPUTS } from "../../constants/readinessAssessmentContent";
 
 // Section 4.5. Four plain strings, rendered in source order as a plain list:
 // no heading (the specification fences none), no icons, no reordering, no
@@ -14,7 +14,10 @@ import { ASSESSMENT_INPUTS } from '../../constants/readinessAssessmentContent';
 export default function AssessmentInputs() {
   return (
     <section className="py-5" data-testid="assessment-inputs">
-      <h2 className="section-heading mb-4" data-testid="assessment-inputs-heading">
+      <h2
+        className="section-heading mb-4"
+        data-testid="assessment-inputs-heading"
+      >
         {ASSESSMENT_INPUTS.heading}
       </h2>
       <ul className="mb-0">

@@ -9,8 +9,7 @@ import * as questionRepository from "../repositories/questionRepository.js";
 import * as userRepository from "../repositories/userRepository.js";
 import { withTransaction } from "../config/database.js";
 
-const CONTACT_CONSENT_VERSION =
-  process.env.CONTACT_CONSENT_VERSION || "v1";
+const CONTACT_CONSENT_VERSION = process.env.CONTACT_CONSENT_VERSION || "v1";
 
 const REQUEST_KIND_INQUIRY = "inquiry";
 const REQUEST_KIND_CONSORTIUM = "consortium";
@@ -122,9 +121,7 @@ export async function getMyRequests(userId) {
 
   return requests.map((req) => ({
     ...req,
-    questions: allQuestions.filter(
-      (q) => q.contact_request_id === req.id,
-    ),
+    questions: allQuestions.filter((q) => q.contact_request_id === req.id),
   }));
 }
 

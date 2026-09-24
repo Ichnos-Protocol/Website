@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect } from "@playwright/test";
 
 const IS_CI = !!process.env.CI;
 
@@ -9,9 +9,13 @@ export const TIMEOUTS = {
   authVerify: IS_CI ? 20_000 : 10_000,
 };
 
-export async function waitForAppReady(page, path = '/', timeout = TIMEOUTS.appReady) {
-  await page.goto(path, { waitUntil: 'domcontentloaded', timeout });
-  await expect(page.locator('#root')).not.toBeEmpty({ timeout });
+export async function waitForAppReady(
+  page,
+  path = "/",
+  timeout = TIMEOUTS.appReady,
+) {
+  await page.goto(path, { waitUntil: "domcontentloaded", timeout });
+  await expect(page.locator("#root")).not.toBeEmpty({ timeout });
 }
 
 /**
@@ -28,9 +32,9 @@ export async function waitForAppReady(page, path = '/', timeout = TIMEOUTS.appRe
  * @param {import('@playwright/test').Page} page
  * @param {string} path - Route to navigate to
  */
-export async function waitForAuthedAppReady(page, path = '/') {
+export async function waitForAuthedAppReady(page, path = "/") {
   await waitForAppReady(page, path);
-  await expect(
-    page.getByTestId('user-menu-toggle').first(),
-  ).toBeVisible({ timeout: TIMEOUTS.authVerify });
+  await expect(page.getByTestId("user-menu-toggle").first()).toBeVisible({
+    timeout: TIMEOUTS.authVerify,
+  });
 }

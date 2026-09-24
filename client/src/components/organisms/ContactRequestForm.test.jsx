@@ -37,7 +37,7 @@ describe("ContactRequestForm registration fields", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reveals and hides the eight fields as the interest box is toggled", async () => {
+  it("reveals and hides the nine fields as the interest box is toggled", async () => {
     const user = userEvent.setup();
     await renderForm();
 
@@ -79,6 +79,7 @@ describe("ContactRequestForm registration fields", () => {
     expect(screen.getByLabelText(CONSORTIUM_PRODUCT_LINE_LABEL)).toHaveValue(
       "Anode coating line",
     );
+    expect(screen.getByRole("radio", { name: "ASEAN" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Later" })).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Update my registration" }),

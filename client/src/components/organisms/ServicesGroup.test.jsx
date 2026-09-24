@@ -96,9 +96,7 @@ describe("ServicesGroup", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
 
     // The plain segment renders as text, not a link.
-    expect(
-      screen.queryByRole("link", { name: "Plain Term (PT)" }),
-    ).toBeNull();
+    expect(screen.queryByRole("link", { name: "Plain Term (PT)" })).toBeNull();
   });
 
   // The kicker/heading-override case was removed with the renderer's temporary
@@ -173,7 +171,10 @@ describe("ServicesGroup", () => {
     expect(link.tagName).toBe("A");
     expect(link).toHaveAttribute("href", ROUTE_READINESS_ASSESSMENT);
     expect(link.className).not.toMatch(/\bbtn\b/);
-    expect(link).toHaveAttribute("data-testid", "card-readiness-readiness-link");
+    expect(link).toHaveAttribute(
+      "data-testid",
+      "card-readiness-readiness-link",
+    );
     expect(container.querySelector("button")).toBeNull();
   });
 
@@ -187,7 +188,11 @@ describe("ServicesGroup", () => {
   it("renders neither CTA for a coming-soon card carrying both link fields", () => {
     renderGroup({
       services: [
-        { ...READINESS_SERVICE, passportLink: ROUTE_PASSPORT, comingSoon: true },
+        {
+          ...READINESS_SERVICE,
+          passportLink: ROUTE_PASSPORT,
+          comingSoon: true,
+        },
       ],
     });
     expect(screen.queryByRole("link", { name: "Learn more →" })).toBeNull();

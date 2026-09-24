@@ -33,8 +33,7 @@ function createTestStore() {
 
 function renderWithStore(store) {
   return renderHook(() => useChatStream(), {
-    wrapper: ({ children }) =>
-      createElement(Provider, { store }, children),
+    wrapper: ({ children }) => createElement(Provider, { store }, children),
   });
 }
 
@@ -78,12 +77,10 @@ describe("useChatStream", () => {
 
   describe("onError callback", () => {
     it("dispatches setError('rate_limit') for RATE_LIMIT code", async () => {
-      mockStreamChatMessage.mockImplementation(
-        (question, token, callbacks) => {
-          callbacks.onError({ code: "RATE_LIMIT" });
-          return Promise.resolve();
-        },
-      );
+      mockStreamChatMessage.mockImplementation((question, token, callbacks) => {
+        callbacks.onError({ code: "RATE_LIMIT" });
+        return Promise.resolve();
+      });
 
       const { result } = renderWithStore(store);
 
@@ -95,12 +92,10 @@ describe("useChatStream", () => {
     });
 
     it("dispatches setError('ai_unavailable') for STREAM_ERROR code", async () => {
-      mockStreamChatMessage.mockImplementation(
-        (question, token, callbacks) => {
-          callbacks.onError({ code: "STREAM_ERROR" });
-          return Promise.resolve();
-        },
-      );
+      mockStreamChatMessage.mockImplementation((question, token, callbacks) => {
+        callbacks.onError({ code: "STREAM_ERROR" });
+        return Promise.resolve();
+      });
 
       const { result } = renderWithStore(store);
 
@@ -112,12 +107,10 @@ describe("useChatStream", () => {
     });
 
     it("dispatches setError('generic') for unknown codes", async () => {
-      mockStreamChatMessage.mockImplementation(
-        (question, token, callbacks) => {
-          callbacks.onError({ code: "UNKNOWN_CODE" });
-          return Promise.resolve();
-        },
-      );
+      mockStreamChatMessage.mockImplementation((question, token, callbacks) => {
+        callbacks.onError({ code: "UNKNOWN_CODE" });
+        return Promise.resolve();
+      });
 
       const { result } = renderWithStore(store);
 

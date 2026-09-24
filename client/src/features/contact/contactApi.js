@@ -1,44 +1,44 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import { API_BASE_URL } from '../../constants/api';
+import { API_BASE_URL } from "../../constants/api";
 
 export const contactApi = createApi({
-  reducerPath: 'contactApi',
+  reducerPath: "contactApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: async (headers) => {
-      const { auth } = await import('../../config/firebase');
+      const { auth } = await import("../../config/firebase");
       const user = auth.currentUser;
 
       if (user) {
         const token = await user.getIdToken();
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
       return headers;
     },
   }),
-  tagTypes: ['ContactRequests'],
+  tagTypes: ["ContactRequests"],
   endpoints: (builder) => ({
     submitContact: builder.mutation({
       query: (body) => ({
-        url: '/api/contact/submit',
-        method: 'POST',
+        url: "/api/contact/submit",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['ContactRequests'],
+      invalidatesTags: ["ContactRequests"],
     }),
     getMyRequests: builder.query({
-      query: () => '/api/contact/my-requests',
-      providesTags: ['ContactRequests'],
+      query: () => "/api/contact/my-requests",
+      providesTags: ["ContactRequests"],
     }),
     addQuestion: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/api/contact/${id}/question`,
-        method: 'POST',
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['ContactRequests'],
+      invalidatesTags: ["ContactRequests"],
     }),
   }),
 });

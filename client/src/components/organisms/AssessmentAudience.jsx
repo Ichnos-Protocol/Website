@@ -1,4 +1,4 @@
-import { ASSESSMENT_AUDIENCE } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_AUDIENCE } from "../../constants/readinessAssessmentContent";
 
 // Section 4.2.0, added by owner amendment 2026-09-23. It frames the two
 // audience panels that follow it, so it renders immediately above them and

@@ -88,7 +88,11 @@ export function useChatStream() {
           },
           onDone: ({ dailyCount }) => {
             outcome = "completed";
-            const aiMsg = { role: "ai", content: streamingTextRef.current, timestamp: new Date().toISOString() };
+            const aiMsg = {
+              role: "ai",
+              content: streamingTextRef.current,
+              timestamp: new Date().toISOString(),
+            };
             if (persistMessages) {
               dispatch(addMessage(aiMsg));
               dispatch(chatApi.util.invalidateTags(["ChatHistory"]));

@@ -50,8 +50,7 @@ function sleep(ms) {
 
 async function callXaiApi(content) {
   const endpoint =
-    process.env.XAI_API_ENDPOINT ||
-    "https://api.x.ai/v1/chat/completions";
+    process.env.XAI_API_ENDPOINT || "https://api.x.ai/v1/chat/completions";
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), XAI_TIMEOUT_MS);

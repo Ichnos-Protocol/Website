@@ -1,8 +1,7 @@
-import Form from 'react-bootstrap/Form';
+import Form from "react-bootstrap/Form";
 
 export default function AuthLoginForm({ fields, onChange }) {
-  const update = (key) => (e) =>
-    onChange({ ...fields, [key]: e.target.value });
+  const update = (key) => (e) => onChange({ ...fields, [key]: e.target.value });
 
   return (
     <>
@@ -11,7 +10,7 @@ export default function AuthLoginForm({ fields, onChange }) {
         <Form.Control
           type="email"
           value={fields.email}
-          onChange={update('email')}
+          onChange={update("email")}
           required
           placeholder="you@example.com"
         />
@@ -21,7 +20,7 @@ export default function AuthLoginForm({ fields, onChange }) {
         <Form.Control
           type="password"
           value={fields.password}
-          onChange={update('password')}
+          onChange={update("password")}
           required
           placeholder="Enter password"
         />

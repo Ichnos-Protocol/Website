@@ -142,7 +142,11 @@ describe("ChatModal", () => {
       unwrap: () =>
         Promise.resolve({
           data: [
-            { role: "user", content: "Test question", timestamp: "2025-01-01T00:00:00Z" },
+            {
+              role: "user",
+              content: "Test question",
+              timestamp: "2025-01-01T00:00:00Z",
+            },
           ],
         }),
     });
@@ -333,7 +337,10 @@ describe("ChatModal", () => {
 
     let resolveSend;
     mockSendStreamMessage.mockImplementation(
-      () => new Promise((r) => { resolveSend = r; }),
+      () =>
+        new Promise((r) => {
+          resolveSend = r;
+        }),
     );
 
     // First call: modal-open hydration (empty). Later calls: stale history.
@@ -347,7 +354,11 @@ describe("ChatModal", () => {
         unwrap: () =>
           Promise.resolve({
             data: [
-              { role: "user", content: "Old msg", timestamp: "2025-01-01T00:00:00Z" },
+              {
+                role: "user",
+                content: "Old msg",
+                timestamp: "2025-01-01T00:00:00Z",
+              },
             ],
           }),
       };
@@ -379,7 +390,9 @@ describe("ChatModal", () => {
     });
 
     // Simulate aborted send returning "aborted" outcome
-    await act(async () => { resolveSend("aborted"); });
+    await act(async () => {
+      resolveSend("aborted");
+    });
 
     // sendStreamMessage resolved with "aborted" — no additional triggerHistory
     await waitFor(() => {
@@ -396,12 +409,19 @@ describe("ChatModal", () => {
 
     let resolveSend;
     mockSendStreamMessage.mockImplementation(
-      () => new Promise((r) => { resolveSend = r; }),
+      () =>
+        new Promise((r) => {
+          resolveSend = r;
+        }),
     );
 
     const freshHistory = [
       { role: "user", content: "Hello", timestamp: "2025-01-01T00:00:00Z" },
-      { role: "ai", content: "Hi from server", timestamp: "2025-01-01T00:00:01Z" },
+      {
+        role: "ai",
+        content: "Hi from server",
+        timestamp: "2025-01-01T00:00:01Z",
+      },
     ];
 
     // First call: modal-open hydration (empty).
@@ -443,7 +463,9 @@ describe("ChatModal", () => {
     // sendPendingRef.current is true, so no stale data can overwrite
     expect(store.getState().chat.messages[0].content).toBe("Hello");
 
-    await act(async () => { resolveSend("completed"); });
+    await act(async () => {
+      resolveSend("completed");
+    });
 
     // Post-send lazy query should be called for authoritative refresh
     await waitFor(() => {
@@ -457,11 +479,18 @@ describe("ChatModal", () => {
 
     let resolveSend;
     mockSendStreamMessage.mockImplementation(
-      () => new Promise((r) => { resolveSend = r; }),
+      () =>
+        new Promise((r) => {
+          resolveSend = r;
+        }),
     );
 
     const staleModalHistory = [
-      { role: "user", content: "Old stale msg", timestamp: "2025-01-01T00:00:00Z" },
+      {
+        role: "user",
+        content: "Old stale msg",
+        timestamp: "2025-01-01T00:00:00Z",
+      },
     ];
     const freshPostSendHistory = [
       { role: "user", content: "Hello", timestamp: "2025-01-02T00:00:00Z" },
@@ -471,7 +500,9 @@ describe("ChatModal", () => {
     // First call (modal-open hydration): resolves slowly
     // Second call (post-send refresh): resolves with fresh data
     let resolveModalOpen;
-    const slowModalPromise = new Promise((r) => { resolveModalOpen = r; });
+    const slowModalPromise = new Promise((r) => {
+      resolveModalOpen = r;
+    });
 
     let callCount = 0;
     mockTriggerHistory.mockImplementation(() => {
@@ -511,7 +542,9 @@ describe("ChatModal", () => {
     });
 
     // Complete the send — triggers post-send refresh (call 2)
-    await act(async () => { resolveSend("completed"); });
+    await act(async () => {
+      resolveSend("completed");
+    });
 
     await waitFor(() => {
       expect(mockTriggerHistory).toHaveBeenCalledTimes(2);
@@ -539,8 +572,16 @@ describe("ChatPanel inline non-persistent (persistState=false)", () => {
     const store = createStore({
       chat: {
         messages: [
-          { role: "user", content: "Modal-only msg", timestamp: "2025-01-01T00:00:00Z" },
-          { role: "ai", content: "Modal-only reply", timestamp: "2025-01-01T00:00:01Z" },
+          {
+            role: "user",
+            content: "Modal-only msg",
+            timestamp: "2025-01-01T00:00:00Z",
+          },
+          {
+            role: "ai",
+            content: "Modal-only reply",
+            timestamp: "2025-01-01T00:00:01Z",
+          },
         ],
       },
     });
@@ -693,9 +734,7 @@ describe("ChatPanel inline non-persistent (persistState=false)", () => {
       </Provider>,
     );
 
-    expect(
-      screen.queryByText(/something went wrong/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
   });
 
   it("does not disable the inline input when Redux chat loading is true", async () => {

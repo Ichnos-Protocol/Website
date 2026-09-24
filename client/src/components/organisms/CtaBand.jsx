@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 // A call-to-action band: an optional headline, one primary action and an
 // optional quieter text link beneath it.
@@ -22,7 +22,7 @@ export default function CtaBand({
   action,
   fallbackTo,
   fallbackLabel,
-  testId = 'cta-band',
+  testId = "cta-band",
 }) {
   return (
     <section className="py-5 text-center" data-testid={testId}>

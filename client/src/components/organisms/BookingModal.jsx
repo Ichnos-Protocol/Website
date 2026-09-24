@@ -1,6 +1,6 @@
-import Modal from 'react-bootstrap/Modal';
+import Modal from "react-bootstrap/Modal";
 
-import BookingButton from '../molecules/BookingButton';
+import BookingButton from "../molecules/BookingButton";
 
 export default function BookingModal({ isOpen, onClose }) {
   return (

@@ -1,18 +1,18 @@
-import { render, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { render, screen } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { configureStore } from "@reduxjs/toolkit";
 
-import authReducer from '../features/auth/authSlice';
-import { ROUTE_CONSORTIUM } from '../constants/routes';
-import ProtectedRoute from './ProtectedRoute';
+import authReducer from "../features/auth/authSlice";
+import { ROUTE_CONSORTIUM } from "../constants/routes";
+import ProtectedRoute from "./ProtectedRoute";
 
 function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
   const store = configureStore({
     reducer: { auth: authReducer },
     preloadedState: {
       auth: {
-        user: isAuthenticated ? { uid: '1' } : null,
+        user: isAuthenticated ? { uid: "1" } : null,
         isAuthenticated,
         isAdmin: false,
         loading,
@@ -23,7 +23,7 @@ function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
 
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/protected']}>
+      <MemoryRouter initialEntries={["/protected"]}>
         <Routes>
           <Route path="/" element={<p>Home</p>} />
           <Route path={ROUTE_CONSORTIUM} element={<p>Consortium</p>} />
@@ -41,32 +41,32 @@ function renderWithAuth(isAuthenticated, loading = false, redirectTo) {
   );
 }
 
-describe('ProtectedRoute', () => {
-  it('renders children when authenticated', () => {
+describe("ProtectedRoute", () => {
+  it("renders children when authenticated", () => {
     renderWithAuth(true);
 
-    expect(screen.getByText('Secret')).toBeInTheDocument();
+    expect(screen.getByText("Secret")).toBeInTheDocument();
   });
 
-  it('redirects to home when not authenticated', () => {
+  it("redirects to home when not authenticated", () => {
     renderWithAuth(false);
 
-    expect(screen.queryByText('Secret')).not.toBeInTheDocument();
-    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.getByText("Home")).toBeInTheDocument();
   });
 
-  it('renders nothing while auth is loading', () => {
+  it("renders nothing while auth is loading", () => {
     renderWithAuth(false, true);
 
-    expect(screen.queryByText('Secret')).not.toBeInTheDocument();
-    expect(screen.queryByText('Home')).not.toBeInTheDocument();
+    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
   });
 
-  it('redirects to the custom destination when not authenticated', () => {
+  it("redirects to the custom destination when not authenticated", () => {
     renderWithAuth(false, false, ROUTE_CONSORTIUM);
 
-    expect(screen.getByText('Consortium')).toBeInTheDocument();
-    expect(screen.queryByText('Secret')).not.toBeInTheDocument();
-    expect(screen.queryByText('Home')).not.toBeInTheDocument();
+    expect(screen.getByText("Consortium")).toBeInTheDocument();
+    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
   });
 });

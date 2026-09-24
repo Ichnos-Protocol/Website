@@ -36,6 +36,19 @@ vi.mock("../repositories/knowledgeRepository.js", () => ({
 
 globalThis.fetch = mockFetch;
 
+// Keep limiter traffic off the shared mockQuery queue: both rate limiters
+// hit the repository on every /api/ request. Plain functions, not vi.fn(),
+// so a mock reset cannot strip the implementation.
+vi.mock("../repositories/rateLimitRepository.js", () => ({
+  incrementHit: async () => ({
+    hits: 1,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  decrementHit: async () => null,
+  resetKey: async () => true,
+  getHit: async () => null,
+}));
+
 const { default: app } = await import("../app.js");
 
 const decodedToken = { uid: "uid-1", email: "user@example.com" };
@@ -144,7 +157,9 @@ describe("chat routes", () => {
         .buffer(true)
         .parse((res, cb) => {
           let data = "";
-          res.on("data", (chunk) => { data += chunk.toString(); });
+          res.on("data", (chunk) => {
+            data += chunk.toString();
+          });
           res.on("end", () => cb(null, data));
         });
 
@@ -244,7 +259,9 @@ describe("chat routes", () => {
         .buffer(true)
         .parse((res, cb) => {
           let data = "";
-          res.on("data", (chunk) => { data += chunk.toString(); });
+          res.on("data", (chunk) => {
+            data += chunk.toString();
+          });
           res.on("end", () => cb(null, data));
         });
 
@@ -253,9 +270,7 @@ describe("chat routes", () => {
 
       expect(errorFrames).toHaveLength(1);
       expect(errorFrames[0].data.code).toBe("STREAM_ERROR");
-      expect(errorFrames[0].data.message).toBe(
-        "AI temporarily unavailable",
-      );
+      expect(errorFrames[0].data.message).toBe("AI temporarily unavailable");
     });
   });
 
@@ -275,9 +290,7 @@ describe("chat routes", () => {
         ],
       });
 
-      const res = await request(app)
-        .get("/api/chat/history")
-        .set(authHeader());
+      const res = await request(app).get("/api/chat/history").set(authHeader());
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -295,9 +308,7 @@ describe("chat routes", () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app)
-        .get("/api/chat/history")
-        .set(authHeader());
+      const res = await request(app).get("/api/chat/history").set(authHeader());
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);

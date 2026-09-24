@@ -1,19 +1,19 @@
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import { Link } from 'react-router-dom';
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import { Link } from "react-router-dom";
 
 import {
   COMPANY_INFO,
   CONTACT_INFO,
   BOOKING_URL,
-} from '../../constants/companyInfo';
-import { ROUTE_CONTACT } from '../../constants/routes';
-import SocialLinks from '../molecules/SocialLinks';
-import FooterNavColumns from '../molecules/FooterNavColumns';
-import FooterRecognitions from '../molecules/FooterRecognitions';
-import FooterTrademark from '../molecules/FooterTrademark';
-import Logo from '../atoms/Logo';
+} from "../../constants/companyInfo";
+import { ROUTE_CONTACT } from "../../constants/routes";
+import SocialLinks from "../molecules/SocialLinks";
+import FooterNavColumns from "../molecules/FooterNavColumns";
+import FooterRecognitions from "../molecules/FooterRecognitions";
+import FooterTrademark from "../molecules/FooterTrademark";
+import Logo from "../atoms/Logo";
 
 // Single source: the positioning line is COMPANY_INFO.tagline, not a local
 // literal. The old plain-text "Catena-X Qualified Advisor" line under it was
@@ -24,23 +24,23 @@ const BRAND_LINE = COMPANY_INFO.tagline;
 const SOCIAL_LINKS = [
   {
     url: CONTACT_INFO.linkedInCompany,
-    icon: 'linkedin',
-    label: 'LinkedIn Company',
+    icon: "linkedin",
+    label: "LinkedIn Company",
   },
   {
     url: CONTACT_INFO.linkedInFounder,
-    icon: 'person-circle',
-    label: 'LinkedIn Founder',
+    icon: "person-circle",
+    label: "LinkedIn Founder",
   },
   {
     url: BOOKING_URL,
-    icon: 'google',
-    label: 'Book a Meeting',
+    icon: "google",
+    label: "Book a Meeting",
   },
 ];
 
 const ATTRIBUTION_TEXT =
-  '© 2026 Ichnos Protocol Pte. Ltd. — All rights reserved.';
+  "© 2026 Ichnos Protocol Pte. Ltd. — All rights reserved.";
 
 export default function Footer() {
   return (

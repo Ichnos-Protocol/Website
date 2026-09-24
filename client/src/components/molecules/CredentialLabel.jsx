@@ -1,19 +1,23 @@
-import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
+import { CX_LABEL_ASSETS } from "../../constants/catenaXStatus";
 
 function renderLabelText(label) {
   return <span className="credential-strip__label">{label}</span>;
 }
 
-const LABEL_SIZE_MODIFIERS = { advisor: '--advisor', member: '--member' };
+const LABEL_SIZE_MODIFIERS = { member: "--member" };
 
-// Pure: both official marks carry a sizing modifier. The 16:9 advisor SVG
-// bakes in ~54% clear space while the member SVG is tight-cropped, so an
-// equal `height` renders them at unequal optical size; the modifiers
-// equalise the visible mark height (source §5.2). Keyed on cxLabel only —
-// never on the asset filename. Unknown values get the bare base class.
-function composeImgClass(cxLabel) {
-  const base = 'credential-strip__label-img';
-  const suffix = LABEL_SIZE_MODIFIERS[cxLabel];
+const VARIANT_BASE_CLASSES = {
+  strip: "credential-strip__label-img",
+  profile: "founder-credential-label",
+};
+
+// Pure: the variant selects the base class. Only the strip base carries a
+// sizing modifier — the tight-cropped member SVG needs clear space added
+// around it (source §5.2). Keyed on cxLabel only, never on the asset
+// filename. Unknown values get the bare base class.
+function composeImgClass(cxLabel, variant) {
+  const base = VARIANT_BASE_CLASSES[variant] ?? VARIANT_BASE_CLASSES.strip;
+  const suffix = variant === "strip" ? LABEL_SIZE_MODIFIERS[cxLabel] : null;
   return suffix ? `${base} ${base}${suffix}` : base;
 }
 
@@ -27,7 +31,7 @@ function composeImgClass(cxLabel) {
   plain text. Linking is driven entirely by the credential's `href`:
   only catena-x.net may carry it, and only one label per page.
 */
-function resolveLabelAsset(label, cxLabel) {
+function resolveLabelAsset(label, cxLabel, variant) {
   const pos = CX_LABEL_ASSETS[cxLabel]?.pos;
   if (!pos) {
     return null;
@@ -38,13 +42,19 @@ function resolveLabelAsset(label, cxLabel) {
       src={pos}
       loading="lazy"
       decoding="async"
-      className={composeImgClass(cxLabel)}
+      className={composeImgClass(cxLabel, variant)}
     />
   );
 }
 
-export default function CredentialLabel({ label, cxLabel, href }) {
-  const content = resolveLabelAsset(label, cxLabel) ?? renderLabelText(label);
+export default function CredentialLabel({
+  label,
+  cxLabel,
+  href,
+  variant = "strip",
+}) {
+  const content =
+    resolveLabelAsset(label, cxLabel, variant) ?? renderLabelText(label);
   if (!href) {
     return content;
   }

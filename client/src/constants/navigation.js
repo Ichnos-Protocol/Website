@@ -34,38 +34,57 @@ import {
   ROUTE_READINESS_ASSESSMENT,
   ROUTE_SERVICES,
   ROUTE_TEAM,
-} from './routes';
+} from "./routes";
 
 export const NAV_ITEMS = [
   {
-    label: 'Company',
-    activeSectionId: 'company',
+    label: "Company",
+    activeSectionId: "company",
     children: [
       // "Why Ichnos" → homepage company section anchor (scrolls to #company)
-      { label: 'Why Ichnos', sectionId: 'company' },
+      { label: "Why Ichnos", sectionId: "company" },
       // "Team" → /team route
-      { label: 'Team', path: ROUTE_TEAM },
+      { label: "Team", path: ROUTE_TEAM },
     ],
   },
-  { label: 'Services', path: ROUTE_SERVICES, sectionId: 'services', activeSectionId: 'services' },
   {
-    label: 'Battery Passport',
+    label: "Services",
+    path: ROUTE_SERVICES,
+    sectionId: "services",
+    activeSectionId: "services",
+  },
+  {
+    label: "Battery Passport",
     children: [
       // "Overview" → /passport, the parent page. This child is what keeps the
       // route reachable once the parent becomes a toggle button.
-      { label: 'Overview', path: ROUTE_PASSPORT },
+      { label: "Overview", path: ROUTE_PASSPORT },
       // "Readiness Assessment" → the fixed-scope engagement under it.
-      { label: 'Readiness Assessment', path: ROUTE_READINESS_ASSESSMENT },
+      { label: "Readiness Assessment", path: ROUTE_READINESS_ASSESSMENT },
     ],
   },
   // Live demo of the passport app itself — a separate deployment (not part of
   // this site), so it's a real external link, not a client-side route. It
   // carries `href`, not `path`, so it is deliberately not a ROUTE_* constant.
-  { label: 'Live Demo', href: 'https://passport.ichnos-protocol.com/demo', external: true },
-  { label: 'Consortium', path: ROUTE_CONSORTIUM },
-  { label: 'Contact', path: ROUTE_CONTACT, sectionId: 'contact', activeSectionId: 'contact' },
+  {
+    label: "Live Demo",
+    href: "https://passport.ichnos-protocol.com/demo",
+    external: true,
+  },
+  { label: "Consortium", path: ROUTE_CONSORTIUM },
+  {
+    label: "Contact",
+    path: ROUTE_CONTACT,
+    sectionId: "contact",
+    activeSectionId: "contact",
+  },
 ];
 
 // Homepage section ids spied on by the scrollspy, in document order: Why Ichnos
 // (#company), Services (#services), Battery Passport teaser (#passport), Contact.
-export const LANDING_SECTION_IDS = ['company', 'services', 'passport', 'contact'];
+export const LANDING_SECTION_IDS = [
+  "company",
+  "services",
+  "passport",
+  "contact",
+];

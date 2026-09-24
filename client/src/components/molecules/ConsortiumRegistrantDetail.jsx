@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import Card from 'react-bootstrap/Card';
-import Form from 'react-bootstrap/Form';
-import Button from 'react-bootstrap/Button';
+import { useState } from "react";
+import Card from "react-bootstrap/Card";
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
 
 import {
   toCell,
   formatRegisteredAt,
   CONSORTIUM_STATUS_OPTIONS,
-} from '../../helpers/consortiumRegistrants';
+} from "../../helpers/consortiumRegistrants";
 
 const DETAIL_FIELDS = [
-  { label: 'E-mail', key: 'email' },
-  { label: 'Phone', key: 'phone' },
-  { label: 'LinkedIn', key: 'linkedin' },
-  { label: 'Product line', key: 'consortiumProductLine' },
-  { label: 'Customer request', key: 'consortiumCustomerRequest' },
-  { label: 'Data extract', key: 'consortiumDataExtract' },
-  { label: 'Data needs', key: 'consortiumDataNeeds' },
-  { label: 'Preferred start', key: 'consortiumPreferredStart' },
+  { label: "E-mail", key: "email" },
+  { label: "Phone", key: "phone" },
+  { label: "LinkedIn", key: "linkedin" },
+  { label: "Product line", key: "consortiumProductLine" },
+  { label: "Customer request", key: "consortiumCustomerRequest" },
+  { label: "Data extract", key: "consortiumDataExtract" },
+  { label: "Data needs", key: "consortiumDataNeeds" },
+  { label: "Preferred start", key: "consortiumPreferredStart" },
+  { label: "Region", key: "consortiumRegion" },
 ];
 
 export default function ConsortiumRegistrantDetail({
@@ -29,7 +30,7 @@ export default function ConsortiumRegistrantDetail({
     registrant?.consortiumStatus || CONSORTIUM_STATUS_OPTIONS[0].value,
   );
   const [adminNotes, setAdminNotes] = useState(
-    registrant?.consortiumAdminNotes ?? '',
+    registrant?.consortiumAdminNotes ?? "",
   );
 
   // The organism keeps this mounted and re-keys it, so no registrant means no
@@ -40,7 +41,9 @@ export default function ConsortiumRegistrantDetail({
     <Card className="mt-3">
       <Card.Body>
         <Card.Title>
-          {toCell([registrant.name, registrant.surname].filter(Boolean).join(' '))}
+          {toCell(
+            [registrant.name, registrant.surname].filter(Boolean).join(" "),
+          )}
         </Card.Title>
         <dl className="row mb-3">
           {DETAIL_FIELDS.map((field) => (

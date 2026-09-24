@@ -5,18 +5,18 @@
  */
 
 const MONTH_ABBREVIATIONS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 /**
@@ -28,8 +28,8 @@ const MONTH_ABBREVIATIONS = [
  * environment-dependent.
  */
 export function formatTimelineDate(iso) {
-  if (!iso) return '';
-  const [year, month, day] = iso.split('-');
+  if (!iso) return "";
+  const [year, month, day] = iso.split("-");
   return `${Number(day)} ${MONTH_ABBREVIATIONS[Number(month) - 1]} ${year}`;
 }
 
@@ -39,7 +39,7 @@ export function formatTimelineDate(iso) {
  * compare and no timezone offset can drift the result by a day.
  */
 function toIsoDay(now) {
-  const iso = typeof now === 'string' ? now : now.toISOString();
+  const iso = typeof now === "string" ? now : now.toISOString();
   return iso.slice(0, 10);
 }
 

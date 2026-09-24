@@ -5,7 +5,7 @@ import chatReducer, {
   setLoading,
   setError,
   setDailyCount,
-} from './chatSlice';
+} from "./chatSlice";
 
 const initialState = {
   messages: [],
@@ -15,28 +15,31 @@ const initialState = {
   dailyCount: 0,
 };
 
-describe('chatSlice', () => {
-  it('returns the initial state', () => {
-    expect(chatReducer(undefined, { type: 'unknown' })).toEqual(initialState);
+describe("chatSlice", () => {
+  it("returns the initial state", () => {
+    expect(chatReducer(undefined, { type: "unknown" })).toEqual(initialState);
   });
 
-  it('appends a message with addMessage', () => {
-    const msg = { role: 'user', content: 'Hello' };
+  it("appends a message with addMessage", () => {
+    const msg = { role: "user", content: "Hello" };
     const state = chatReducer(initialState, addMessage(msg));
 
     expect(state.messages).toHaveLength(1);
     expect(state.messages[0]).toEqual(msg);
   });
 
-  it('replaces messages with setMessages', () => {
-    const existing = { ...initialState, messages: [{ role: 'user', content: 'old' }] };
-    const newMsgs = [{ role: 'assistant', content: 'Hi' }];
+  it("replaces messages with setMessages", () => {
+    const existing = {
+      ...initialState,
+      messages: [{ role: "user", content: "old" }],
+    };
+    const newMsgs = [{ role: "assistant", content: "Hi" }];
     const state = chatReducer(existing, setMessages(newMsgs));
 
     expect(state.messages).toEqual(newMsgs);
   });
 
-  it('toggles isOpen with toggleModal', () => {
+  it("toggles isOpen with toggleModal", () => {
     const state1 = chatReducer(initialState, toggleModal());
 
     expect(state1.isOpen).toBe(true);
@@ -46,19 +49,19 @@ describe('chatSlice', () => {
     expect(state2.isOpen).toBe(false);
   });
 
-  it('sets loading flag', () => {
+  it("sets loading flag", () => {
     const state = chatReducer(initialState, setLoading(true));
 
     expect(state.loading).toBe(true);
   });
 
-  it('sets error message', () => {
-    const state = chatReducer(initialState, setError('Chat error'));
+  it("sets error message", () => {
+    const state = chatReducer(initialState, setError("Chat error"));
 
-    expect(state.error).toBe('Chat error');
+    expect(state.error).toBe("Chat error");
   });
 
-  it('sets daily count', () => {
+  it("sets daily count", () => {
     const state = chatReducer(initialState, setDailyCount(5));
 
     expect(state.dailyCount).toBe(5);

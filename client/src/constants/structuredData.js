@@ -15,6 +15,7 @@ import { COMPANY_INFO } from "./companyInfo";
 import {
   CATENA_X_EXPERT_GROUP_NOTE,
   CATENA_X_MEMBERSHIP_NOTE,
+  getCatenaXFounderLine,
   getCatenaXFullTitle,
 } from "./catenaXStatus";
 import {
@@ -40,12 +41,15 @@ export const ORGANIZATION_SCHEMA = {
   // Per §12-Q1-B, the formal registration wording (CATENA_X_MEMBERSHIP_NOTE) lives
   // on this machine-readable corporate surface; the credential card carries marketing
   // copy instead. The constant is interpolated verbatim — its value is not edited here
-  // (§12.1 exempts it) — and takes no closing period, since it ends with "e.V.".
+  // (§12.1 exempts it) — and is followed by ", and", so its trailing "e.V." needs no
+  // extra punctuation. The Qualified Advisor title is the founder's, so it enters
+  // through getCatenaXFounderLine() rather than as a company claim (september-fixes P7).
   // The opening sentence is the single-sourced positioning line (companyInfo.js).
-  description: `${COMPANY_INFO.tagline} Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${getCatenaXFullTitle()} and ${CATENA_X_EXPERT_GROUP_NOTE}. ${CATENA_X_MEMBERSHIP_NOTE}`,
+  description: `${COMPANY_INFO.tagline} Ichnos Protocol brings ASEAN battery manufacturers into the European data flow so EU importers and customers receive a compliant, traceable battery passport. ${CATENA_X_MEMBERSHIP_NOTE}, and ${CATENA_X_EXPERT_GROUP_NOTE}. ${getCatenaXFounderLine()}.`,
   address: {
     "@type": "PostalAddress",
-    streetAddress: "160 Robinson Road, #14-04 Singapore Business Federation Centre",
+    streetAddress:
+      "160 Robinson Road, #14-04 Singapore Business Federation Centre",
     addressLocality: "Singapore",
     postalCode: "068914",
     addressCountry: "SG",
@@ -55,10 +59,7 @@ export const ORGANIZATION_SCHEMA = {
     "https://www.linkedin.com/company/ichnos-protocol/",
     "https://www.linkedin.com/in/maltonif/",
   ],
-  founder: [
-    { "@type": "Person", name: "Francesco Maltoni" },
-    { "@type": "Person", name: "Ihsan Ahmad" },
-  ],
+  founder: [{ "@type": "Person", name: "Francesco Maltoni" }],
   areaServed: ["EU", "ID", "MY", "SG"],
   knowsAbout: [
     "Battery Passport",
@@ -104,23 +105,6 @@ export const FOUNDER_PERSON_SCHEMA = {
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
 
-export const COFOUNDER_PERSON_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: "Ihsan Ahmad",
-  jobTitle: "Co-Founder",
-  worksFor: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
-  alumniOf: [
-    { "@type": "CollegeOrUniversity", name: "Karlsruhe Institute of Technology" },
-    { "@type": "CollegeOrUniversity", name: "Universität Mannheim" },
-  ],
-  knowsAbout: [
-    "AI Integration",
-    "Quantitative Modelling",
-    "Notified-Body Coordination",
-  ],
-};
-
 function breadcrumb(items) {
   return {
     "@context": "https://schema.org",
@@ -152,7 +136,6 @@ export const PAGE_STRUCTURED_DATA = {
       { name: "Team", path: ROUTE_TEAM },
     ]),
     FOUNDER_PERSON_SCHEMA,
-    COFOUNDER_PERSON_SCHEMA,
   ],
   passport: [
     ORGANIZATION_SCHEMA,

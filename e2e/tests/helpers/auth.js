@@ -1,9 +1,12 @@
-import { expect } from '@playwright/test';
-import { waitForAppReady, TIMEOUTS } from './app.js';
-import { ADMIN, USER, SUPER_ADMIN } from './credentials.js';
-import { AuthPage } from '../pages/AuthPage.js';
-import { setupFirebaseProxy } from './firebase-proxy.js';
-import { setupAutoModalDismiss, dismissProfileModalIfVisible } from './profile-modal.js';
+import { expect } from "@playwright/test";
+import { waitForAppReady, TIMEOUTS } from "./app.js";
+import { ADMIN, USER, SUPER_ADMIN } from "./credentials.js";
+import { AuthPage } from "../pages/AuthPage.js";
+import { setupFirebaseProxy } from "./firebase-proxy.js";
+import {
+  setupAutoModalDismiss,
+  dismissProfileModalIfVisible,
+} from "./profile-modal.js";
 
 export async function loginAs(page, email, password) {
   // Set up Firebase API proxy on the context to bypass CORS issues in CI.
@@ -20,7 +23,7 @@ export async function loginAs(page, email, password) {
   await setupAutoModalDismiss(page);
 
   const auth = new AuthPage(page);
-  await waitForAppReady(page, '/');
+  await waitForAppReady(page, "/");
   await auth.openLoginModal();
   await expect(auth.welcomeBackText).toBeVisible();
   await auth.fillLoginForm(email, password);
@@ -28,18 +31,18 @@ export async function loginAs(page, email, password) {
   // Capture console errors and API responses (with bodies) for diagnostics
   const consoleErrors = [];
   const apiResponses = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
+  page.on("console", (msg) => {
+    if (msg.type() === "error") {
       consoleErrors.push(msg.text());
     }
   });
-  page.on('response', async (res) => {
+  page.on("response", async (res) => {
     const url = res.url();
-    if (url.includes('/api/')) {
-      const body = await res.text().catch(() => '<unreadable>');
+    if (url.includes("/api/")) {
+      const body = await res.text().catch(() => "<unreadable>");
       apiResponses.push({ url, status: res.status(), body });
       // Log sync-profile and me responses immediately for diagnostics
-      if (url.includes('sync-profile') || url.includes('/me')) {
+      if (url.includes("sync-profile") || url.includes("/me")) {
         console.log(`[loginAs] ${res.status()} ${url} → ${body.slice(0, 500)}`);
       }
     }
@@ -58,22 +61,27 @@ export async function loginAs(page, email, password) {
     });
     await dismissProfileModalIfVisible(page);
   } catch (err) {
-    const alertText = await auth.alert.textContent().catch(() => 'no alert visible');
+    const alertText = await auth.alert
+      .textContent()
+      .catch(() => "no alert visible");
 
     console.error(
       `[loginAs] Auth failed for ${email}.\n` +
-        `  Error: ${err.message?.split('\n')[0]}\n` +
+        `  Error: ${err.message?.split("\n")[0]}\n` +
         `  Alert text: "${alertText}"\n` +
         `  Console errors: ${JSON.stringify(consoleErrors)}\n` +
         `  API/Firebase responses: ${JSON.stringify(apiResponses, null, 2)}`,
     );
     const screenshot = await page.screenshot().catch(() => null);
     if (screenshot) {
-      const fs = await import('fs');
-      const path = await import('path');
-      const dir = path.join(process.cwd(), 'test-results');
+      const fs = await import("fs");
+      const path = await import("path");
+      const dir = path.join(process.cwd(), "test-results");
       fs.mkdirSync(dir, { recursive: true });
-      const file = path.join(dir, `loginAs-fail-${email.replace(/[^a-z0-9]/gi, '_')}.png`);
+      const file = path.join(
+        dir,
+        `loginAs-fail-${email.replace(/[^a-z0-9]/gi, "_")}.png`,
+      );
       fs.writeFileSync(file, screenshot);
       console.error(`[loginAs] Screenshot saved: ${file}`);
     }
@@ -113,12 +121,18 @@ export async function loginAsSuperAdmin(page) {
  * @returns {Promise<{email: string, password: string, name: string, surname: string, company: string}>}
  */
 export async function signUpAs(page, overrides = {}) {
+  const defaultPassword = process.env.E2E_SIGNUP_PASSWORD;
+  if (!defaultPassword && !overrides.password) {
+    throw new Error(
+      "E2E_SIGNUP_PASSWORD is not set. Set it in the local e2e/.env.e2e or as the E2E_SIGNUP_PASSWORD repository secret.",
+    );
+  }
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const creds = {
     email: `e2e-consortium-${token}@example.com`,
-    password: 'TestPass123!',
-    name: 'E2E',
-    surname: 'Consortium',
+    password: defaultPassword,
+    name: "E2E",
+    surname: "Consortium",
     company: `E2E Consortium ${token}`,
     ...overrides,
   };
@@ -135,7 +149,7 @@ export async function signUpAs(page, overrides = {}) {
   // open right after the account is created.
   await setupAutoModalDismiss(page);
 
-  await waitForAppReady(page, '/');
+  await waitForAppReady(page, "/");
 
   const auth = new AuthPage(page);
   await auth.openLoginModal();
@@ -156,10 +170,12 @@ export async function signUpAs(page, overrides = {}) {
       timeout: TIMEOUTS.authVerify,
     });
   } catch (err) {
-    const alertText = await auth.alert.textContent().catch(() => 'no alert visible');
+    const alertText = await auth.alert
+      .textContent()
+      .catch(() => "no alert visible");
     console.error(
       `[signUpAs] Signup failed for ${creds.email}.\n` +
-        `  Error: ${err.message?.split('\n')[0]}\n` +
+        `  Error: ${err.message?.split("\n")[0]}\n` +
         `  Alert text: "${alertText}"`,
     );
     throw err;

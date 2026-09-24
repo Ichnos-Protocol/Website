@@ -72,6 +72,8 @@ New order in `LandingPage.jsx`:
 
 ### 5.1 Credential card copy (exact target state of `CREDENTIALS`, §1.3 rules apply)
 
+> **Superseded by september-fixes P7 (2026-09-24)** for the advisor entry and `ADVISOR_CARD_NOTE`: the advisor card is now labelled `Catena-X Qualified Advisor (founder)` with no `cxLabel` and no `href` (the linked advisor label moved to the founder profile on `/team`), and `ADVISOR_CARD_NOTE` is `"Francesco Maltoni holds Qualified Advisor attestation 868. Advising Asian manufacturers from Singapore, on site across ASEAN."`. See `docs/september_fixes_spec.md` P7.
+
 ```js
 // order = display order
 { id: 'catenax-member', label: 'Catena-X Association member',
@@ -87,7 +89,7 @@ New order in `LandingPage.jsx`:
 
 New constants in `catenaXStatus.js` (single source, consumers = credentials.js; item-8 list updated):
 - `MEMBER_CARD_NOTE = "Well connected across the network, especially with European OEMs and their supply chains."`
-- `ADVISOR_CARD_NOTE = "Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN."`
+- `ADVISOR_CARD_NOTE = "Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN."` *(superseded by september-fixes P7; see the note at the top of §5.1)*
 
 Rules honoured: member = corporate connectivity/EU-OEM framing; advisor = Asia/Singapore convenience framing (Francesco's brief); **validity date REMOVED** (renewal-agnostic); "Qualified Advisor" text precedes the attestation ID; the PhD card becomes the experience card (degree stays in Why-Ichnos text and team page — no information lost). Both notes are §1.1/§1.2-clean ("well connected" is a marketing statement about the member's own network activity, not a status/conformance claim; it MUST NOT escalate to "official", "endorsed", "preferred partner").
 

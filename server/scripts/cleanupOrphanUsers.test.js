@@ -9,9 +9,8 @@ const mockPoolConstructor = vi.fn(function () {
 
 vi.mock("pg", () => ({ default: { Pool: mockPoolConstructor } }));
 
-const { findOrphanUsers, deleteOrphanUsers, runAudit, runApply } = await import(
-  "./cleanupOrphanUsers.js"
-);
+const { findOrphanUsers, deleteOrphanUsers, runAudit, runApply } =
+  await import("./cleanupOrphanUsers.js");
 
 // CI-safe pattern: real-DB tests gated on TEST_DATABASE_URL.
 // All tests below use the mocked pool, so this guard is a scaffold for any
@@ -147,7 +146,9 @@ describe("runApply", () => {
     const [selectSql] = mockQuery.mock.calls[0];
     const [deleteSql, deleteParams] = mockQuery.mock.calls[1];
     expect(selectSql).toMatch(/SELECT/);
-    expect(deleteSql).toMatch(/DELETE FROM users WHERE firebase_uid = ANY\(\$1\)/);
+    expect(deleteSql).toMatch(
+      /DELETE FROM users WHERE firebase_uid = ANY\(\$1\)/,
+    );
     expect(deleteParams).toEqual([["uid-1", "uid-2"]]);
     expect(result.deletedCount).toBe(2);
   });

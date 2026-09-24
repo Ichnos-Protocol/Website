@@ -9,52 +9,52 @@ export class ContactPage {
   // the auth modal.
 
   get chatPanel() {
-    return this.page.getByTestId('chat-panel');
+    return this.page.getByTestId("chat-panel");
   }
 
   get messageInput() {
-    return this.page.getByPlaceholder('Type your message…');
+    return this.page.getByPlaceholder("Type your message…");
   }
 
   get sendButton() {
-    return this.page.getByRole('button', { name: 'Send message' });
+    return this.page.getByRole("button", { name: "Send message" });
   }
 
   // ─── Page-level CTAs (open the contact-form / booking modals) ────
 
   get submitInquiryButton() {
-    return this.page.getByRole('button', { name: 'Submit a detailed inquiry' });
+    return this.page.getByRole("button", { name: "Submit a detailed inquiry" });
   }
 
   get bookMeetingButton() {
-    return this.page.getByRole('button', { name: 'Schedule a call' });
+    return this.page.getByRole("button", { name: "Schedule a call" });
   }
 
   // ─── Contact-inquiry modal (opened via "Submit a detailed inquiry") ───
   // Modal-internal labels remain unchanged from the original implementation.
 
   get contactModal() {
-    return this.page.getByTestId('contact-modal');
+    return this.page.getByTestId("contact-modal");
   }
 
   get questionInput() {
-    return this.page.getByLabel('Question 1');
+    return this.page.getByLabel("Question 1");
   }
 
   get privacyCheckbox() {
-    return this.page.getByRole('checkbox');
+    return this.page.getByRole("checkbox");
   }
 
   get addQuestionButton() {
-    return this.page.getByRole('button', { name: 'Add question' });
+    return this.page.getByRole("button", { name: "Add question" });
   }
 
   get addQuestionTitle() {
-    return this.page.getByText('Add a Follow-up Question');
+    return this.page.getByText("Add a Follow-up Question");
   }
 
   get myInquiriesHeading() {
-    return this.page.getByRole('heading', { name: 'My Inquiries' });
+    return this.page.getByRole("heading", { name: "My Inquiries" });
   }
 
   async clickSubmitInquiry() {
@@ -70,7 +70,9 @@ export class ContactPage {
   }
 
   async submitModalInquiry() {
-    await this.contactModal.getByRole('button', { name: 'Submit Inquiry' }).click();
+    await this.contactModal
+      .getByRole("button", { name: "Submit Inquiry" })
+      .click();
   }
 
   async clickAddQuestion() {
@@ -83,6 +85,8 @@ export class ContactPage {
   }
 
   async modalAddQuestion() {
-    await this.contactModal.getByRole('button', { name: 'Add Question' }).click();
+    await this.contactModal
+      .getByRole("button", { name: "Add Question" })
+      .click();
   }
 }

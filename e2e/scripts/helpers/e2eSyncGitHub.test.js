@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "child_process";
-import { syncToGitHub } from "./e2eSyncGitHub.js";
+import { syncToGitHub, syncVariablesToGitHub } from "./e2eSyncGitHub.js";
 
 vi.mock("child_process", () => ({
   spawnSync: vi.fn(() => ({ status: 0, stderr: "" })),
@@ -137,5 +137,110 @@ describe("syncToGitHub", () => {
         error: "Unknown error: process exited with non-zero status",
       }),
     ]);
+  });
+});
+
+describe("syncVariablesToGitHub", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("constructs correct gh variable set args with the value as --body", () => {
+    syncVariablesToGitHub({ VAR_A: "value-a" }, "/fake/repo");
+
+    expect(spawnSync).toHaveBeenCalledWith(
+      "gh",
+      ["variable", "set", "VAR_A", "--body", "value-a"],
+      expect.objectContaining({ cwd: "/fake/repo" }),
+    );
+  });
+
+  it("does not enable shell and does not use stdin input", () => {
+    syncVariablesToGitHub({ VAR_A: "value-a" }, "/fake/repo");
+
+    const options = spawnSync.mock.calls[0][2];
+    expect(options.shell).toBeFalsy();
+    expect(options).not.toHaveProperty("input");
+  });
+
+  it("returns success result with the value in clear", () => {
+    const results = syncVariablesToGitHub({ VAR_A: "value-a" }, "/fake/repo");
+
+    expect(results).toEqual([
+      { name: "VAR_A", status: "success", value: "value-a" },
+    ]);
+  });
+
+  it("returns failed result with stderr when exit is not 0", () => {
+    spawnSync.mockReturnValueOnce({ status: 1, stderr: "permission denied" });
+
+    const results = syncVariablesToGitHub({ VAR_A: "val" }, "/fake/repo");
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        name: "VAR_A",
+        status: "failed",
+        error: "permission denied",
+      }),
+    ]);
+  });
+
+  it("returns error from result.error.message when stderr is empty", () => {
+    spawnSync.mockReturnValueOnce({
+      status: 1,
+      stderr: "",
+      error: new Error("spawn ENOENT"),
+    });
+
+    const results = syncVariablesToGitHub({ VAR_A: "val" }, "/fake/repo");
+
+    expect(results).toEqual([
+      expect.objectContaining({ status: "failed", error: "spawn ENOENT" }),
+    ]);
+  });
+
+  it("returns fallback message when both stderr and error are absent", () => {
+    spawnSync.mockReturnValueOnce({ status: 1, stderr: "" });
+
+    const results = syncVariablesToGitHub({ VAR_A: "val" }, "/fake/repo");
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        status: "failed",
+        error: "Unknown error: process exited with non-zero status",
+      }),
+    ]);
+  });
+
+  it("skips empty/falsy values and collects results for the rest", () => {
+    const results = syncVariablesToGitHub(
+      {
+        A: "val-a",
+        EMPTY: "",
+        NULL_VAL: null,
+        UNDEF_VAL: undefined,
+        C: "val-c",
+      },
+      "/fake/repo",
+    );
+
+    expect(results.map((r) => r.name)).toEqual(["A", "C"]);
+    expect(spawnSync).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws when repoRoot is missing", () => {
+    expect(() => syncVariablesToGitHub({ VAR_A: "val" })).toThrow(
+      /repoRoot is required/,
+    );
+  });
+
+  it("throws when repoRoot is empty string", () => {
+    expect(() => syncVariablesToGitHub({ VAR_A: "val" }, "")).toThrow(
+      /repoRoot is required/,
+    );
   });
 });

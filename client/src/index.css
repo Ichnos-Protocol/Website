@@ -1,9 +1,10 @@
 /* ========== Typography / Spacing / Transitions / Z-index ========== */
 :root {
   /* ========== Typography ========== */
-  --font-sans: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'Libre Franklin', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: "Libre Franklin", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-display:
+    "Libre Franklin", -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-size-base: 16px;
   --font-size-sm: 14px;
   --font-size-lg: 18px;
@@ -44,16 +45,16 @@
 /* ========== Theme: Advisory (default) ========== */
 .theme-advisory,
 body {
-  --color-bg-base: #FAFBFC;
-  --color-bg-alt: #EAF1FE;
-  --color-surface: #FFFFFF;
+  --color-bg-base: #fafbfc;
+  --color-bg-alt: #eaf1fe;
+  --color-surface: #ffffff;
   --color-text-primary: #111111;
   --color-text-secondary: #252525;
-  --color-accent-primary: #0F71CB;
-  --color-accent-cyan: #0F71CB;
-  --color-accent-warm: #FFA600;
-  --color-accent-green: #B3CB2D;
-  --color-border: #DCDCDC;
+  --color-accent-primary: #0f71cb;
+  --color-accent-cyan: #0f71cb;
+  --color-accent-warm: #ffa600;
+  --color-accent-green: #b3cb2d;
+  --color-border: #dcdcdc;
   --color-shadow: rgba(15, 20, 25, 0.06);
 }
 
@@ -62,33 +63,35 @@ body {
    Catena-X light token set, so pages render the same regardless of which
    theme wrapper they mount under. */
 .theme-catenax {
-  --color-bg-base: #FAFBFC;
-  --color-bg-alt: #EAF1FE;
-  --color-surface: #FFFFFF;
-  --color-accent-primary: #0F71CB;
-  --color-accent-cyan: #0F71CB;
-  --color-accent-warm: #FFA600;
-  --color-accent-green: #B3CB2D;
+  --color-bg-base: #fafbfc;
+  --color-bg-alt: #eaf1fe;
+  --color-surface: #ffffff;
+  --color-accent-primary: #0f71cb;
+  --color-accent-cyan: #0f71cb;
+  --color-accent-warm: #ffa600;
+  --color-accent-green: #b3cb2d;
   --color-text-primary: #111111;
   --color-text-secondary: #252525;
-  --color-border: #DCDCDC;
+  --color-border: #dcdcdc;
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
 }
 
 /* ========== Surface: Footer Dark ========== */
 .footer-dark {
-  --color-bg-base: #0F1419;
-  --color-bg-alt: #1A2030;
-  --color-surface: #1A2030;
-  --color-text-primary: #E8ECF1;
-  --color-text-secondary: #9AA5B8;
+  --color-bg-base: #0f1419;
+  --color-bg-alt: #1a2030;
+  --color-surface: #1a2030;
+  --color-text-primary: #e8ecf1;
+  --color-text-secondary: #9aa5b8;
   --color-border: rgba(232, 236, 241, 0.08);
   position: relative;
   padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
   border-top: 1px solid var(--color-surface);
   color: var(--color-text-primary);
-  background: linear-gradient(rgba(15, 20, 25, 0.85), rgba(15, 20, 25, 0.92)), url('/bg-footer.jpg') center/cover no-repeat;
+  background:
+    linear-gradient(rgba(15, 20, 25, 0.85), rgba(15, 20, 25, 0.92)),
+    url("/bg-footer.jpg") center/cover no-repeat;
 }
 
 /* ========== Base Styles ========== */
@@ -298,24 +301,8 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing — font-parity model (v4 §13, supersedes the §5.2
-   bounding-box ratio, which left the wordmark at ~2/3 the member's and the
-   "Qualified Advisor" line illegible). Measured wordmark fractions: member
-   "Catena-X" = 0.478 of its canvas height; cropped advisor "Catena-X" =
-   0.318. Equal wordmarks therefore need advisor height ≈ 1.5× member height
-   (54 ≈ 1.5 × 36 → both wordmarks ≈ 17px). The display file is the
-   viewBox-trimmed derivative (no baked margins), so clear space is supplied
-   here as padding — content-box so it never eats the declared height.
-   Values §7.4-tunable ±15%; the 1.5 ratio is normative. */
-.footer-label-img--advisor {
-  box-sizing: content-box;
-  height: 54px;
-  padding: 18px 8px;
-}
-
 /* Member-label clear space. The member SVG is tight-cropped
-   (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin), unlike the 16:9
-   advisor files which carry their own baked-in clear space. Brand Governance
+   (viewBox 0 0 1497.1 384, ~3.9:1, zero built-in margin). Brand Governance
    defines clear space as the height of the figurative mark; the padding below
    adds space AROUND the mark and never crops it — box-sizing: content-box is
    mandatory, since Bootstrap Reboot's global border-box would otherwise
@@ -396,17 +383,6 @@ body {
   display: block;
 }
 
-/* Advisor-label sizing — font-parity model, same reasoning as
-   .footer-label-img--advisor: advisor height ≈ 1.5× member height equalises
-   the "Catena-X" wordmark height (60 ≈ 1.5 × 40 → both wordmarks ≈ 19px).
-   Cropped display file carries no baked margins, so clear space is supplied
-   here as padding (content-box). Values §7.4-tunable ±15%; ratio normative. */
-.credential-strip__label-img--advisor {
-  box-sizing: content-box;
-  height: 60px;
-  padding: 20px 8px;
-}
-
 /* Member-label clear space — same reasoning as .footer-label-img--member:
    the tight-cropped member SVG needs clear space added around the mark,
    content-box keeps the padding from eating the declared 40px visible
@@ -416,6 +392,16 @@ body {
   box-sizing: content-box;
   height: 40px;
   padding: 30px 12px;
+}
+
+/* Qualified Advisor label on the founder profile (/team), september-fixes
+   P7. Height is the pivot-4 §5.2 strip height for the advisor file, tunable
+   ±15%. Official positive file, unmodified: sized by height only,
+   aspect-preserved, never cropped. */
+.founder-credential-label {
+  height: 74px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* ========== Landing Sections ========== */
@@ -439,7 +425,7 @@ body {
 
 .hero-cta-btn {
   background: var(--color-accent-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   transition: var(--transition-base);
@@ -544,7 +530,11 @@ body {
    entire signal (no ribbon graphic). */
 .service-card--coming-soon {
   border-style: dashed !important;
-  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-border) 60%,
+    transparent
+  ) !important;
 }
 
 .service-card--coming-soon .card-text,
@@ -559,7 +549,11 @@ body {
 .service-card--coming-soon:hover {
   transform: none;
   border-style: dashed !important;
-  border-color: color-mix(in srgb, var(--color-border) 60%, transparent) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-border) 60%,
+    transparent
+  ) !important;
 }
 
 /* ========== Services pillar subtitle ========== */
@@ -846,7 +840,7 @@ h1.page-title {
 }
 
 .regulatory-timeline__item::before {
-  content: '';
+  content: "";
   position: absolute;
   left: -5px;
   top: 0;
@@ -921,7 +915,7 @@ h1.page-title {
 
   /* Left-to-right time arrow: a CSS triangle capping the shared axis line. */
   .regulatory-timeline__axis::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -7px;
     right: -1px;
@@ -945,7 +939,7 @@ h1.page-title {
   /* Deferred entries keep their dashed treatment as a connector stub down
      from the axis, since the dashed left rule is gone in this form. */
   .regulatory-timeline__item--deferred::after {
-    content: '';
+    content: "";
     position: absolute;
     left: 3px;
     top: calc(var(--spacing-lg) * -1);
@@ -994,36 +988,6 @@ h1.page-title {
   font-weight: var(--font-weight-medium);
 }
 
-/* ========== Navbar Skeleton ========== */
-.navbar-skeleton-logo {
-  width: 120px;
-  height: 40px;
-}
-
-.navbar-skeleton-link {
-  width: 60px;
-  height: 20px;
-}
-
-.navbar-skeleton-hamburger {
-  width: 32px;
-  height: 32px;
-}
-
-/* ========== Page Transitions ========== */
-.page-fade-enter {
-  opacity: 0;
-}
-
-.page-fade-enter-active {
-  opacity: 1;
-  transition: opacity var(--transition-base);
-}
-
-.page-fade-skip {
-  opacity: 1;
-}
-
 /* ========== Auth Modal ========== */
 .auth-modal-header {
   background-color: var(--color-surface);
@@ -1051,7 +1015,8 @@ h1.page-title {
 .auth-modal-body .nav-link.active {
   background-color: transparent;
   color: var(--color-accent-primary);
-  border-color: rgba(139, 157, 195, 0.15) rgba(139, 157, 195, 0.15) var(--color-bg-base);
+  border-color: rgba(139, 157, 195, 0.15) rgba(139, 157, 195, 0.15)
+    var(--color-bg-base);
 }
 
 .auth-modal-body .form-label {
@@ -1091,7 +1056,7 @@ h1.page-title {
   height: 32px;
   border-radius: 50%;
   background: var(--color-accent-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-sm);
 }
@@ -1182,7 +1147,7 @@ h1.page-title {
 .chat-panel__bubble--user {
   align-self: flex-end;
   background-color: var(--color-accent-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border-bottom-right-radius: 4px;
 }
 
@@ -1229,7 +1194,7 @@ h1.page-title {
   border-radius: 50%;
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
-  color: #FFFFFF;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1242,14 +1207,14 @@ h1.page-title {
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
   filter: brightness(0.95);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .chat-panel__send-btn:disabled {
   background-color: var(--color-accent-cyan);
   border-color: var(--color-accent-cyan);
   opacity: 0.5;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 @media (max-width: 480px) {
@@ -1292,7 +1257,7 @@ h1.page-title {
 
 .hero-section--advisory .hero-cta-btn {
   background: var(--color-accent-primary);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .hero-section--advisory .hero-cta-btn:hover {
@@ -1305,8 +1270,8 @@ h1.page-title {
    fails, nudge back UP by at most 0.06. */
 .advisory-page-hero {
   background:
-    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.80)),
-    url('/bg-advisory.jpg') center / cover no-repeat;
+    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.8)),
+    url("/bg-advisory.jpg") center / cover no-repeat;
   padding: var(--spacing-3xl) var(--spacing-md);
   text-align: center;
   color: var(--color-text-primary);
@@ -1324,8 +1289,8 @@ h1.page-title {
 .theme-advisory .hero-section,
 .theme-catenax .hero-section {
   background:
-    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.80)),
-    url('/bg-advisory.jpg') center / cover no-repeat;
+    linear-gradient(rgba(245, 247, 250, 0.66), rgba(232, 236, 241, 0.8)),
+    url("/bg-advisory.jpg") center / cover no-repeat;
 }
 
 /* ========== Cookie Consent Banner (replaces inline styles) ========== */

@@ -27,7 +27,7 @@ The site includes public-facing pages (landing, services, team, contact, battery
 | `/admin`             | Admin        | Admin dashboard (`AdminRoute`)                             |
 | `/data`, `/catena-x` | → `/passport` | Legacy SEO paths. 301 in `client/vercel.json`, `Navigate replace` in `App.jsx` |
 
-**Route paths are constants.** `client/src/constants/routes.js` exports fourteen `ROUTE_*` values and is the only place in `client/src` where a route literal may appear; `routes.test.js` enforces that by sweeping the corpus. `App.test.jsx` is excluded from the sweep on purpose: its literal mounts are what pin the constants to real values. **Read `client/src/App.jsx` as the authority on routing, not this table.** Every public page except `/passport` sits under `AdvisoryThemeLayout`; `/passport` sits under `CatenaXThemeLayout`. Unmatched paths currently hit `path="*" element={null}`, which renders the site chrome with a blank body at HTTP 200 rather than a 404. That is a known defect, not a design choice.
+**Route paths are constants.** `client/src/constants/routes.js` exports the `ROUTE_*` values and is the only place in `client/src` where a route literal may appear; `routes.test.js` enforces that by sweeping the corpus. `App.test.jsx` is excluded from the sweep on purpose: its literal mounts are what pin the constants to real values. **Read `client/src/App.jsx` as the authority on routing, not this table.** Every public page except `/passport` sits under `AdvisoryThemeLayout`; `/passport` sits under `CatenaXThemeLayout`. Unmatched paths currently hit `path="*" element={null}`, which renders the site chrome with a blank body at HTTP 200 rather than a 404. That is a known defect, not a design choice.
 
 ### Core Integrations
 
@@ -128,10 +128,13 @@ Follow the Atomic Design methodology strictly:
 ### 5.1 General Rules
 
 - **Language**: JavaScript (ES2022+). No TypeScript unless explicitly requested.
-- **Max file length**: 200 lines for **source modules** (raised from 120 by owner ruling on 2026-09-22, so that cohesive content-constant files such as `readinessAssessmentContent.js` are not split against their grain). If a source file exceeds this, refactor into smaller modules.
-  - **Test files are exempt.** A `.test.js`/`.test.jsx` file grows with the number of cases it covers, and splitting one to hit a line count scatters related assertions across files for no gain. Twenty-nine test files are already over 200 lines, the largest at 782. That is acceptable; splitting a test file is a decision about cohesion, never about length.
-  - Four source files currently exceed the cap and are grandfathered: `server/src/repositories/adminRepository.js` (351), `server/src/repositories/userRepository.js` (253), `server/src/controllers/adminController.js` (252), `server/src/services/adminService.js` (223). `client/src/constants/structuredData.js` left the list when P8 executed the readiness assessment spec §7.2.1 split into `serviceSchemas.js`. Do not refactor them as drive-by work; split one only when you are already changing it for another reason.
-  - Nothing enforces this cap in the toolchain. There is no ESLint `max-lines` rule. It is a review convention.
+- **Max file length**: 200 lines for **application JavaScript modules** (raised from 120 by owner ruling on 2026-09-22). The cap covers components, hooks, services, helpers, repositories, middleware, routes and controllers under `client/src`, `server/src` and `server/api`, plus any file that those directories import, wherever it sits. If such a module exceeds this, refactor into smaller modules.
+  - **ESLint enforces it.** `max-lines` is set to `error` at 200, counting every physical line, so `npm run lint` fails on a module over the cap.
+  - **The exceptions live only in `client/eslint.config.js` and `server/eslint.config.js`.** They hold three kinds of `max-lines: off` override: test files, content-exempt files and grandfathered files. Those configs are the list; this file does not repeat it.
+  - **Test files are exempt.** A test file grows with the number of cases it covers. Splitting one is a decision about cohesion, never about length.
+  - **Grandfathered files** are application modules that were over the cap when it was set. Do not refactor them as drive-by work; split one only when you are already changing it for another reason, then remove it from the override.
+  - **Content-exempt is not grandfathered.** A JavaScript file whose length follows the copy or declarative data it holds (strings, arrays or objects of records, schema literals), and not branching logic, is exempt. A new cohesive content module needs no waiver. A mixed logic file never qualifies, whatever its path and whatever its size: living under `constants/` or being long does not make it content. The test is what drives the length.
+  - **Outside the rule's scope:** stylesheets, which are not JavaScript modules, and standalone CLI scripts under `server/scripts/` that nothing under `server/src` or `server/api` imports. They are not exceptions; the enforcing block's `files` globs never match them.
 - **Max function length**: 20 lines. Extract helper functions.
 - **Max component length**: 60 lines of JSX (return block). Decompose into smaller components if exceeded.
 - **Naming**:
@@ -199,8 +202,11 @@ Helpers are the primary tool for keeping code readable and short:
 | `contact_requests` | `id` SERIAL PK, `user_id` FK, `contact_consent_timestamp`, `contact_consent_version`, `status`, `admin_notes`, timestamps |
 | `questions` | Follow-up questions attached to a request |
 | `question_topics` | Topic classification output |
+| `rate_limit_hits` | Shared rate-limit counters: `key` TEXT PK (limiter prefix + client IP), `hits`, `reset_at` TIMESTAMPTZ |
 
-Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `010` is the pending contraction to `('asap','later')`, run by the owner only after P1 is live in production.
+Consortium fields were added to existing tables by `006_20260823_add_consortium_columns.sql`. `007_20260923_consortium_preferred_start_expand.sql` expands the `consortium_preferred_start` CHECK to `('nov_2026','asap','later')`; `008_20260923_consortium_region.sql` adds the nullable `consortium_region` column with a CHECK of `('asean','eu','other')`. `009_20260923_rate_limit_hits.sql` creates `rate_limit_hits`, read and written only by `rateLimitRepository.js`, and `011_20260924_rate_limit_hits_reset_at_index.sql` adds the index on its `reset_at` column. Production `schema_migrations` records every file 000–011, with no gap.
+
+`010_20260923_consortium_preferred_start_contract.sql` is the contraction: it backfills `nov_2026` to `asap` and narrows the `consortium_preferred_start` CHECK to `('asap','later')`. It was applied to production and recorded on 2026-09-24. `chk_user_profiles_consortium_preferred_start` now permits only `('asap','later')`. The backfill changed zero rows, because all seven production profiles had `consortium_preferred_start IS NULL`. Rollback boundary: do not restore code that writes `nov_2026` without first re-expanding the CHECK in a new migration.
 
 **Identity lives in `users`/`user_profiles`, not on the request.** A contact request carries no name, email, company or message column. It carries the requester's `user_id` and their consent record; contact details are joined from `user_profiles`, and the actual content lives in `questions`. This is why every contact endpoint is auth-protected (§11): there is no anonymous request shape to write.
 
@@ -209,13 +215,13 @@ Consortium fields were added to existing tables by `006_20260823_add_consortium_
 Rules:
 
 - Always use parameterized queries. **Never** interpolate user input into SQL strings.
-- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `npm run migrate` (`server/scripts/runMigrations.js`). There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
+- Schema changes are plain numbered SQL files in `server/migrations/`, applied by `npm run migrate` from `server/`, the supported command. It runs `server/scripts/runMigrations.js`, loads `server/.env` when the file exists and still honors a `DATABASE_URL` that is already exported. There is no `node-pg-migrate` and no Prisma. Follow the existing `NNN_YYYYMMDD_description.sql` naming and keep migrations idempotent (`IF NOT EXISTS`, `DROP TRIGGER IF EXISTS`).
 
 ### 6.2 Firestore — Chatbot Knowledge Base
 
 **Primary and only use: the RAG knowledge base.** One collection, `knowledge_base`, accessed solely through `server/src/repositories/knowledgeRepository.js`.
 
-**There is no file upload anywhere in this application.** No `/api/contact/upload` endpoint, no multer, no `FormData`/multipart path, no file input in any form, no Firebase Storage usage, no `uploads` collection, and no `document_url` column. Earlier revisions of this file described such a feature in §1, §6, §8, §9 and §13; none of it was ever built. If document upload is wanted, it is new work needing its own spec, not a feature to wire up.
+**There is no user-facing file upload in this application.** No `/api/contact/upload` endpoint, no multer route, no `FormData`/multipart path, no file input in any form, no `uploads` collection, and no `document_url` column. Firebase Storage is not used at all: the server initializes no Storage bucket and has no Storage module. Earlier revisions of this file described such a feature in §1, §6, §8, §9 and §13; none of it was ever built. If document upload is wanted, it is new work needing its own spec, not a feature to wire up.
 
 Rules:
 
@@ -285,11 +291,10 @@ All endpoints are prefixed with `/api`.
 
 Six routers are mounted in `server/src/app.js`: `/api/auth`, `/api/contact`, `/api/chat`, `/api/admin`, `/api/gdpr`, `/api/consortium`.
 
-**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole.
+**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole (100 requests / 15 minutes), and a second limiter on `/api/auth` caps those endpoints at 20 requests / 15 minutes. Preview deployments raise both caps to 1000.
 
 | Method | Endpoint                          | Auth       | Description                          |
 | ------ | --------------------------------- | ---------- | ------------------------------------ |
-| POST   | `/api/auth/verify-token`          | auth       | Verify token, upsert user            |
 | GET    | `/api/auth/me`                    | auth       | Current user profile (camelCase)     |
 | POST   | `/api/auth/sync-profile`          | auth       | Upsert profile from token `uid` (§7) |
 | PUT    | `/api/auth/profile`               | auth       | Update profile fields                |
@@ -339,6 +344,7 @@ Rules:
 - When introducing a new env var, update the corresponding `.env.example` in the same commit.
 - Client vars are prefixed with `VITE_` (exposed at build time). Server vars are runtime-only.
 - GitHub Actions secrets, Vercel env vars, and local `.env` files are three separate environments — see `AGENTS.md` and `devOpsLessonsLearned.md` for the full credential mapping.
+- E2E CI configuration comes from GitHub repository **variables** (the non-secret names: Firebase project fields, `E2E_BASE_URL`, `E2E_API_BASE_URL`, role emails and UIDs) plus **secrets** (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords). `e2e/.env.e2e` is local-only and gitignored; `e2e/.env.e2e.example` is its template.
 
 ---
 
@@ -348,11 +354,12 @@ Rules:
 - **SQL injection**: Parameterized queries only. Never concatenate user input into SQL.
 - **XSS**: React escapes by default. Never use `dangerouslySetInnerHTML`.
 - **CORS**: Restrict to the frontend origin only.
-- **Rate limiting**: Apply `express-rate-limit` to public endpoints, especially `/api/chat/message` and `/api/contact`.
+- **Rate limiting**: `express-rate-limit` backed by `PgRateLimitStore` (`server/src/middleware/pgRateLimitStore.js`), which stores counters through `rateLimitRepository.js` in the `rate_limit_hits` table, so every serverless instance shares them. Each limiter has its own store instance and key prefix (`global:`, `auth:`). On a database error the store fails open: it logs the error message (never the key, which holds the client IP) and counts the request as a first hit. `/api/chat/message` also has its own daily quota.
 - **File uploads**: none exist (§6.2). If one is ever added, validate type and size on both client and server, cap at 10MB, and allow only PDF, DOCX, PNG, JPG.
 - **Auth tokens**: Verify Firebase ID tokens server-side on every protected request. Never store tokens in localStorage — use httpOnly cookies or in-memory storage.
 - **Helmet**: Use `helmet` middleware for HTTP security headers.
 - **Dependencies**: Run `npm audit` regularly. No packages with known critical vulnerabilities.
+- **Claims**: the Catena-X Qualified Advisor qualification is Francesco's, not the company's. Corporate surfaces attribute it to the founder, and `CORPORATE_ADVISOR_CLAIM_PATTERNS` in `client/src/constants/vocabulary.js` guards the corporate form.
 
 ---
 
@@ -365,7 +372,7 @@ Rules:
 - Configuration lives in `vite.config.js` (client) or a dedicated `vitest.config.js` (server) using `defineConfig` from `vitest/config`.
 - Use `vi.fn()`, `vi.spyOn()`, `vi.mock()` for mocking (Vitest's API, compatible with Jest patterns).
 - Environment: `jsdom` for client tests (set via `environment: 'jsdom'` in config), `node` for server tests.
-- Coverage provider: `v8` (built-in). Run with `npm run test -- --coverage`.
+- Coverage provider: `@vitest/coverage-v8`, a devDependency in both packages. Run with `npm run test:coverage`. Config lives in `client/vite.config.js` and `server/vitest.config.js`. Excluded from coverage: test files, `setupTests.js`, `main.jsx` and `test-utils.jsx` (client); test files (server). Reporters are `text-summary` and `lcov`, written to the gitignored `coverage/`. Thresholds are in §15.
 
 ### 14.2 Test Types
 
@@ -451,28 +458,29 @@ Examples:
 **There is no pre-commit hook in this repository** (no `.husky/`, no non-sample `.git/hooks/`). Nothing runs automatically. Run this yourself, in `client/` and `server/` separately — there is no root `package.json`:
 
 ```bash
-npm run lint && npm test
+npm run lint && npm run format:check && npm test
 ```
+
+When anything under `e2e/` changed, also run `npm run format:check` in `e2e/`.
 
 Then verify:
 
 - [ ] ESLint passes with zero warnings.
+- [ ] `npm run format:check` passes in `client/` and `server/`, and in `e2e/` when you touched it. CI enforces it as the `Check formatting` step of both `Client — Lint & Test` and `Server — Lint & Test`, so an unformatted file fails the required check.
 - [ ] All tests pass.
+- [ ] `npm run test:coverage` passes in both packages (from P12 on). CI runs it as the test step of both `Client — Lint & Test` and `Server — Lint & Test`, so a coverage drop below threshold fails the required check.
 - [ ] No `.env` files or secrets are staged.
-- [ ] No **source** file exceeds 200 lines (§5.1; test files are exempt).
+- [ ] `npm run lint` passes. ESLint `max-lines` enforces the 200-line application-module cap (§5.1), so a module over it fails lint; the authoritative exceptions live in `client/eslint.config.js` and `server/eslint.config.js`.
 - [ ] New code follows the layer responsibilities defined in Section 4.
 
-**Known-good baseline, verified 2026-09-23** (after the readiness-assessment epic)**:** `client` 102 test files / 959 tests green; `server` 44 files / 636 tests green, with 4 files and 20 tests skipped; both lints clean. If your run differs from this, you changed something. Do not start a phase from a red tree.
+**Known-good baseline:** lint, tests and `npm run test:coverage` green in `client` and `server`; `format:check` green in `client` and `server`, and in `e2e` when you touched it; `e2e` `npm run test:unit` green when you touched `e2e/`; client build green. Never start a phase from a red tree.
 
-**Prettier: declared, never run, do not run it as drive-by work.** Both packages list `prettier` as a devDependency, but there is no `.prettierrc` anywhere and the corpus has never been formatted. Measured 2026-09-23 with line endings normalized: **202 of 271 client source files and 42 of 93 server files** differ from Prettier's output. Quote style is split roughly 141 single / 70 double across client files, with no file internally mixed.
+**Coverage thresholds** (line coverage)**:** client `lines: 85` and `src/helpers/**` 80; server `lines: 89`, `src/helpers/**` 80 and `src/services/**` 80. `client/vite.config.js` and `server/vitest.config.js` are the authority; if they and this paragraph disagree, the configs win. The client has no `src/services/**` key because `client/src/services/` does not exist: the client's service layer is the RTK Query slices under `src/features/**`, and a glob matching nothing would be an always-green gate. The glob form `src/helpers/**` was verified against Vitest 4.0.18 by setting it to 100 and watching it fail with the real figure. In that version glob-matched files still count toward the global figure. Raise these numbers as coverage grows; never lower them to make a run pass.
 
-Consequences, so nobody rediscovers this the hard way:
+**Prettier: adopted and enforced.** The configuration is authoritative: a root `.prettierrc.json` holding only `endOfLine: "auto"`, a `.prettierignore` in each of `client/`, `server/` and `e2e/`, and narrowed `format` / `format:check` scripts in all three packages (Prettier 3.8.1). `client` covers `src/**/*.{js,jsx,css}`, `server` covers `src/**/*.js`, `scripts/**/*.js` and `api/**/*.js`, `e2e` covers `**/*.js`. Markdown, JSON and SQL are out by construction. The corpus was formatted once in T16 (P13b), in the P13b corpus-format commit, which changed nothing else. `format:check` is green in all three packages, and from P14 CI runs it as the `Check formatting` step, after `Lint` and before the tests, in both `Client — Lint & Test` and `Server — Lint & Test`. `e2e` has no CI formatting job; run its `format:check` locally when you touch it.
 
-- `npm run format` exists in `server` and would rewrite 42 files. `format` and `format:check` now exist in `client` too and would rewrite 202. **Do not run either to tidy up.** A several-hundred-file reformat landing mid-epic makes every review diff unreadable and collides with every in-flight branch.
-- **Do not run `npm run format` in `server/` at all until a `.prettierignore` exists.** There is none, Prettier does not read `.gitignore`, and the script is `prettier --write .`: it walks `server/knowledge-base/`, 270 MB in 366 ignored files (PDFs, SQLite databases with journals, a Playwright browser profile). `format:check` errors out on the same tree today, which is why no CI job has ever called it. `docs/september_fixes_spec.md` P13 adds the ignore files and narrows the scripts to source globs.
-- `format:check` is deliberately **not** in the checklist above, because it fails today on files nobody touched.
-- Adopting Prettier is a real decision with a one-commit cost: pick a config (start from `endOfLine: "auto"` given `.gitattributes` sets `* text=auto` on a Windows checkout, plus a quote ruling), add the ignore files first, run it once across all three packages in a commit that changes nothing else, then add `format:check` to this checklist. It is specified as the last phase of `docs/september_fixes_spec.md` (P13) so that every other diff in that epic stays readable. Never run it inside another change.
-- Until then, **match the file you are editing.** Do not convert a file's quote style while changing something else.
+- Run the owning package's `npm run format` on the files you change, then `npm run format:check`. Never hand-fight Prettier output: if the formatter's layout is wrong for a file, change the configuration in its own commit, not the file.
+- `server/.prettierignore` excludes `knowledge-base/` (PDFs, SQLite databases with journals, a Playwright browser profile). Prettier reads only the `.gitignore` in its working directory, and `server/.gitignore` lists only `.vercel`; the root `.gitignore` that ignores the knowledge base is never consulted, so the ignore file must stay.
 
 ---
 
@@ -488,7 +496,7 @@ Two Vercel projects from one repo: `ichnos-client` (Vite static) and `ichnos-pro
 - **Cold starts**: keep server dependencies lean for faster serverless startup.
 - **Local dev uses `npm run dev`** — the Vercel wrapper is only for deployed environments.
 
-CI/CD pipeline details (promotion, staging sync, E2E triggers) are in `AGENTS.md`.
+Production is Vercel's own build of the `release` branch; the gate is the required pull request into `release`. Pipeline details (staging sync, E2E triggers) are in `AGENTS.md`.
 
 ---
 

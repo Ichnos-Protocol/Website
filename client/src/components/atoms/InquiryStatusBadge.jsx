@@ -1,10 +1,10 @@
-import Badge from 'react-bootstrap/Badge';
+import Badge from "react-bootstrap/Badge";
 
 const STATUS_MAP = {
-  new: { bg: 'primary', label: 'New' },
-  contacted: { bg: 'info', label: 'Contacted' },
-  in_progress: { bg: 'warning', label: 'In Progress' },
-  resolved: { bg: 'success', label: 'Resolved' },
+  new: { bg: "primary", label: "New" },
+  contacted: { bg: "info", label: "Contacted" },
+  in_progress: { bg: "warning", label: "In Progress" },
+  resolved: { bg: "success", label: "Resolved" },
 };
 
 export default function InquiryStatusBadge({ status }) {

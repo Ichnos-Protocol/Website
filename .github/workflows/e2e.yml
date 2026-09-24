@@ -24,7 +24,7 @@
 #   Tests run against stable staging domains (not per-deployment hash URLs).
 #
 # Secondary trigger: workflow_dispatch (manual/ad-hoc runs)
-#   Uses the same E2E config from the committed e2e/.env.e2e file.
+#   Uses the same repository variables and secrets as the dispatch trigger.
 #
 # Safety: A production-host denylist gate validates all resolved URLs before
 #   any tests run. The gate is fail-closed — missing constants or unparseable
@@ -99,26 +99,82 @@ jobs:
         (github.event.client_payload.deployment.meta.githubCommitRef || github.event.client_payload.branch || '') != 'staging'
       )
 
+    # E2E configuration: non-secret names come from repository variables,
+    # credentials from repository secrets. The workflow-level
+    # PRODUCTION_HOSTS_* constants still merge in.
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+      FIREBASE_STORAGE_BUCKET: ${{ vars.FIREBASE_STORAGE_BUCKET }}
+      E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+      E2E_API_BASE_URL: ${{ vars.E2E_API_BASE_URL }}
+      E2E_ADMIN_EMAIL: ${{ vars.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_UID: ${{ vars.E2E_ADMIN_UID }}
+      E2E_USER_EMAIL: ${{ vars.E2E_USER_EMAIL }}
+      E2E_USER_UID: ${{ vars.E2E_USER_UID }}
+      E2E_INCOMPLETE_USER_EMAIL: ${{ vars.E2E_INCOMPLETE_USER_EMAIL }}
+      E2E_INCOMPLETE_USER_UID: ${{ vars.E2E_INCOMPLETE_USER_UID }}
+      E2E_SUPER_ADMIN_EMAIL: ${{ vars.E2E_SUPER_ADMIN_EMAIL }}
+      E2E_SUPER_ADMIN_UID: ${{ vars.E2E_SUPER_ADMIN_UID }}
+      E2E_MANAGE_ADMIN_TARGET_EMAIL: ${{ vars.E2E_MANAGE_ADMIN_TARGET_EMAIL }}
+      E2E_MANAGE_ADMIN_TARGET_UID: ${{ vars.E2E_MANAGE_ADMIN_TARGET_UID }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      E2E_SIGNUP_PASSWORD: ${{ secrets.E2E_SIGNUP_PASSWORD }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_INCOMPLETE_USER_PASSWORD: ${{ secrets.E2E_INCOMPLETE_USER_PASSWORD }}
+      E2E_SUPER_ADMIN_PASSWORD: ${{ secrets.E2E_SUPER_ADMIN_PASSWORD }}
+      E2E_MANAGE_ADMIN_TARGET_PASSWORD: ${{ secrets.E2E_MANAGE_ADMIN_TARGET_PASSWORD }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
     steps:
       - name: Dump Vercel payload (debug)
         if: github.event_name == 'repository_dispatch'
-        run: echo '${{ toJSON(github.event.client_payload) }}' | jq '.' || true
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: echo "$PAYLOAD" | jq '.' || true
 
       - name: Resolve commit SHA
         id: deploy
+        # Event values reach the shell only through env, never as script
+        # text. Dispatch SHA and ref are validated before any output write.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PAYLOAD_SHA: ${{ github.event.client_payload.deployment.meta.githubCommitSha || github.event.client_payload.commitSha || '' }}
+          PAYLOAD_REF: ${{ github.event.client_payload.deployment.meta.githubCommitRef || github.event.client_payload.branch || '' }}
+          PAYLOAD_URL: ${{ github.event.client_payload.url }}
+          MANUAL_REF: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            SHA="${{ github.event.client_payload.deployment.meta.githubCommitSha || github.event.client_payload.commitSha || '' }}"
-            REF="${{ github.event.client_payload.deployment.meta.githubCommitRef || github.event.client_payload.branch || '' }}"
-            echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
-            echo "git_branch=$REF" >> "$GITHUB_OUTPUT"
-            echo "Vercel payload URL: ${{ github.event.client_payload.url }}"
-            echo "Commit SHA: $SHA"
-            echo "Branch: $REF"
+          has_newline() {
+            case "$1" in
+              *$'\n'* | *$'\r'*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+          SHA_PATTERN='^[0-9a-f]{40}$'
+          REF_PATTERN='^[A-Za-z0-9._/-]+$'
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            if has_newline "$PAYLOAD_SHA" || ! [[ "$PAYLOAD_SHA" =~ $SHA_PATTERN ]]; then
+              echo "::error::Invalid commit SHA in repository_dispatch payload."
+              exit 1
+            fi
+            if has_newline "$PAYLOAD_REF" || ! [[ "$PAYLOAD_REF" =~ $REF_PATTERN ]]; then
+              echo "::error::Invalid branch ref in repository_dispatch payload."
+              exit 1
+            fi
+            printf 'commit_sha=%s\n' "$PAYLOAD_SHA" >> "$GITHUB_OUTPUT"
+            printf 'git_branch=%s\n' "$PAYLOAD_REF" >> "$GITHUB_OUTPUT"
+            echo "Vercel payload URL: $PAYLOAD_URL"
+            echo "Commit SHA: $PAYLOAD_SHA"
+            echo "Branch: $PAYLOAD_REF"
           else
-            echo "commit_sha=" >> "$GITHUB_OUTPUT"
-            echo "git_branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "Manual run — commit SHA defaults to github.sha, branch=${{ github.ref_name }}"
+            if has_newline "$MANUAL_REF"; then
+              echo "::error::Invalid branch ref in $EVENT_NAME run."
+              exit 1
+            fi
+            printf 'commit_sha=\n' >> "$GITHUB_OUTPUT"
+            printf 'git_branch=%s\n' "$MANUAL_REF" >> "$GITHUB_OUTPUT"
+            echo "Manual run — commit SHA defaults to github.sha, branch=$MANUAL_REF"
           fi
 
       - name: Checkout repository
@@ -126,37 +182,33 @@ jobs:
         with:
           ref: ${{ steps.deploy.outputs.commit_sha || github.sha }}
 
-      - name: Load E2E config from committed file
+      # Fail-closed check of the job-level env block. Prints variable NAMES
+      # only — never values — so no secret can reach the log.
+      - name: Validate E2E configuration
         run: |
-          if [ ! -f "e2e/.env.e2e" ]; then
-            echo "::error::e2e/.env.e2e not found. The committed config file is missing."
-            exit 1
-          fi
-
-          set -a
-          source e2e/.env.e2e
-          set +a
-
-          grep -v '^\s*#' e2e/.env.e2e | grep -v '^\s*$' | while IFS= read -r line; do
-            echo "$line" >> "$GITHUB_ENV"
+          REQUIRED=(
+            FIREBASE_PROJECT_ID FIREBASE_AUTH_DOMAIN FIREBASE_STORAGE_BUCKET
+            E2E_BASE_URL E2E_API_BASE_URL
+            E2E_ADMIN_EMAIL E2E_ADMIN_UID
+            E2E_USER_EMAIL E2E_USER_UID
+            E2E_INCOMPLETE_USER_EMAIL E2E_INCOMPLETE_USER_UID
+            E2E_SUPER_ADMIN_EMAIL E2E_SUPER_ADMIN_UID
+            E2E_MANAGE_ADMIN_TARGET_EMAIL E2E_MANAGE_ADMIN_TARGET_UID
+            FIREBASE_API_KEY E2E_SIGNUP_PASSWORD VERCEL_AUTOMATION_BYPASS_SECRET
+            E2E_ADMIN_PASSWORD E2E_USER_PASSWORD E2E_INCOMPLETE_USER_PASSWORD
+            E2E_SUPER_ADMIN_PASSWORD E2E_MANAGE_ADMIN_TARGET_PASSWORD
+          )
+          MISSING=()
+          for name in "${REQUIRED[@]}"; do
+            if [ -z "${!name}" ]; then
+              MISSING+=("$name")
+            fi
           done
-
-          if [ -z "$E2E_BASE_URL" ]; then
-            echo "::error::E2E_BASE_URL is empty after loading e2e/.env.e2e. Check the file."
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::Missing E2E configuration (set as repository variables or secrets): ${MISSING[*]}"
             exit 1
           fi
-
-          echo "E2E_ADMIN_PASSWORD=${{ secrets.E2E_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "E2E_USER_PASSWORD=${{ secrets.E2E_USER_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "E2E_SUPER_ADMIN_PASSWORD=${{ secrets.E2E_SUPER_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "E2E_MANAGE_ADMIN_TARGET_PASSWORD=${{ secrets.E2E_MANAGE_ADMIN_TARGET_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "E2E_INCOMPLETE_USER_PASSWORD=${{ secrets.E2E_INCOMPLETE_USER_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "VERCEL_AUTOMATION_BYPASS_SECRET=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" >> "$GITHUB_ENV"
-
-          echo "Loaded E2E config from e2e/.env.e2e"
-          echo "  E2E_BASE_URL=$E2E_BASE_URL"
-          echo "  E2E_API_BASE_URL=$E2E_API_BASE_URL"
-          echo "  FIREBASE_API_KEY=$FIREBASE_API_KEY"
+          echo "E2E configuration present: ${#REQUIRED[@]} required names set."
 
       - name: Validate E2E target URLs against production denylist
         run: |
@@ -255,12 +307,15 @@ jobs:
         if: steps.deploy.outputs.commit_sha != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ steps.deploy.outputs.commit_sha }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          gh api "repos/${{ github.repository }}/statuses/${{ steps.deploy.outputs.commit_sha }}" \
+          gh api "repos/$REPO/statuses/$COMMIT_SHA" \
             -f state=pending \
             -f context="E2E Tests (Playwright)" \
             -f description="Running Playwright tests..." \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f target_url="https://github.com/$REPO/actions/runs/$RUN_ID"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -281,8 +336,10 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: e2e
+        env:
+          BROWSER_PROFILE: ${{ inputs.browser_profile || 'chromium' }}
         run: |
-          PROFILE="${{ inputs.browser_profile || 'chromium' }}"
+          PROFILE="$BROWSER_PROFILE"
           if [ "$PROFILE" = "full" ]; then
             npx playwright install --with-deps
           else
@@ -419,19 +476,15 @@ jobs:
           # Baseline reference: e2e/refactoring-analysis.md § Baseline Metrics
           E2E_WORKERS: "2"
           E2E_RUN_ID: ${{ github.run_id }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
-          E2E_SUPER_ADMIN_PASSWORD: ${{ secrets.E2E_SUPER_ADMIN_PASSWORD }}
-          E2E_MANAGE_ADMIN_TARGET_PASSWORD: ${{ secrets.E2E_MANAGE_ADMIN_TARGET_PASSWORD }}
-          E2E_INCOMPLETE_USER_PASSWORD: ${{ secrets.E2E_INCOMPLETE_USER_PASSWORD }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          EVENT_NAME: ${{ github.event_name }}
+          TEST_SUITE: ${{ inputs.test_suite || 'default' }}
         run: |
           GREP_ARGS=()
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
             # Default fast path: exclude destructive tests
             GREP_ARGS=(--grep-invert @destructive)
           else
-            SUITE="${{ inputs.test_suite || 'default' }}"
+            SUITE="$TEST_SUITE"
             case "$SUITE" in
               destructive)
                 GREP_ARGS=(--grep @destructive)
@@ -468,19 +521,23 @@ jobs:
         if: always() && steps.deploy.outputs.commit_sha != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ steps.deploy.outputs.commit_sha }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "$JOB_STATUS" = "success" ]; then
             STATE="success"
             DESC="Playwright tests passed"
           else
             STATE="failure"
             DESC="Playwright tests failed"
           fi
-          gh api "repos/${{ github.repository }}/statuses/${{ steps.deploy.outputs.commit_sha }}" \
+          gh api "repos/$REPO/statuses/$COMMIT_SHA" \
             -f state="$STATE" \
             -f context="E2E Tests (Playwright)" \
             -f description="$DESC" \
-            -f target_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -f target_url="https://github.com/$REPO/actions/runs/$RUN_ID"
 
       - name: Upload Playwright report
         if: always()

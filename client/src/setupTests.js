@@ -1,9 +1,9 @@
-import '@testing-library/jest-dom';
-import * as matchers from 'vitest-axe/matchers';
+import "@testing-library/jest-dom";
+import * as matchers from "vitest-axe/matchers";
 
 expect.extend(matchers);
 
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,

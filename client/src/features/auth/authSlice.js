@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
@@ -13,7 +13,7 @@ const initialState = {
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     setUser(state, action) {
@@ -37,7 +37,7 @@ const authSlice = createSlice({
       state.enforcedLogout = false;
     },
     closeAuthModal(state) {
-      if (state.modalMode !== 'complete-profile') {
+      if (state.modalMode !== "complete-profile") {
         state.modalMode = null;
       }
     },

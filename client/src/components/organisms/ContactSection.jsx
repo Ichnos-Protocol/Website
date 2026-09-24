@@ -1,22 +1,22 @@
-import { Link } from 'react-router-dom';
-import { Element } from 'react-scroll';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
+import { Link } from "react-router-dom";
+import { Element } from "react-scroll";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
 import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
   BOOKING_URL,
-} from '../../constants/companyInfo';
-import { ROUTE_CONTACT } from '../../constants/routes';
-import Icon from '../atoms/Icon';
-import ChatPanel from '../molecules/ChatPanel';
+} from "../../constants/companyInfo";
+import { ROUTE_CONTACT } from "../../constants/routes";
+import Icon from "../atoms/Icon";
+import ChatPanel from "../molecules/ChatPanel";
 
 const ContactLink = ({ href, icon, label, external = false }) => (
   <a
     href={href}
     className="d-flex align-items-center mb-3 text-decoration-none contact-link"
-    {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
+    {...(external && { target: "_blank", rel: "noopener noreferrer" })}
   >
     <Icon name={icon} className="me-2 fs-5" />
     <span>{label}</span>

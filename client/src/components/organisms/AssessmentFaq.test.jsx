@@ -1,13 +1,13 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, cleanup } from '../../test-utils';
-import AssessmentFaq from './AssessmentFaq';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, cleanup } from "../../test-utils";
+import AssessmentFaq from "./AssessmentFaq";
 import {
   ASSESSMENT_FAQ,
   PRICING,
   formatPrice,
   getCurrentPrice,
   interpolate,
-} from '../../constants/readinessAssessmentContent';
+} from "../../constants/readinessAssessmentContent";
 
 /*
  * Section 4.8 in its rendered form, and section 8 item 5: every answer is in
@@ -35,7 +35,7 @@ function withLadder(text, ladder) {
   );
 }
 
-const PRICED_ENTRIES =ASSESSMENT_FAQ.entries.filter(
+const PRICED_ENTRIES = ASSESSMENT_FAQ.entries.filter(
   (entry) => tokensIn(entry.answer).length > 0,
 );
 
@@ -48,20 +48,20 @@ const CLOSED_PRICING = Object.fromEntries(
   ]),
 );
 
-describe('AssessmentFaq', () => {
-  it('renders every entry in the source order of the constant', () => {
+describe("AssessmentFaq", () => {
+  it("renders every entry in the source order of the constant", () => {
     renderWithProviders(<AssessmentFaq />);
     const rendered = screen
       .getAllByTestId(/^assessment-faq-(?!question-|answer-|heading$)/)
-      .map((entry) => entry.getAttribute('data-testid'));
+      .map((entry) => entry.getAttribute("data-testid"));
 
     expect(rendered).toHaveLength(5);
     expect(rendered).toEqual(
-      ASSESSMENT_FAQ.entries.map((entry) => 'assessment-faq-' + entry.id),
+      ASSESSMENT_FAQ.entries.map((entry) => "assessment-faq-" + entry.id),
     );
   });
 
-  it('renders every question from the constant', () => {
+  it("renders every question from the constant", () => {
     renderWithProviders(<AssessmentFaq />);
     ASSESSMENT_FAQ.entries.forEach((entry) => {
       expect(
@@ -70,30 +70,28 @@ describe('AssessmentFaq', () => {
     });
   });
 
-  it('puts every answer in the initial DOM while every entry is closed', () => {
+  it("puts every answer in the initial DOM while every entry is closed", () => {
     renderWithProviders(<AssessmentFaq />);
     ASSESSMENT_FAQ.entries.forEach((entry) => {
-      expect(screen.getByTestId(`assessment-faq-${entry.id}`).open).toBe(
-        false,
-      );
+      expect(screen.getByTestId(`assessment-faq-${entry.id}`).open).toBe(false);
       expect(
         screen.getByTestId(`assessment-faq-answer-${entry.id}`).textContent,
       ).toBe(interpolate(entry.answer));
     });
   });
 
-  it('uses native disclosure elements and no accordion', () => {
+  it("uses native disclosure elements and no accordion", () => {
     const { container } = renderWithProviders(<AssessmentFaq />);
-    const details = container.querySelectorAll('details');
+    const details = container.querySelectorAll("details");
 
     expect(details).toHaveLength(ASSESSMENT_FAQ.entries.length);
     details.forEach((element) => {
-      expect(element.querySelectorAll('summary')).toHaveLength(1);
+      expect(element.querySelectorAll("summary")).toHaveLength(1);
     });
-    expect(container.querySelector('.accordion, [data-bs-toggle]')).toBeNull();
+    expect(container.querySelector(".accordion, [data-bs-toggle]")).toBeNull();
   });
 
-  it('prices the cost answer from the current-price selector', () => {
+  it("prices the cost answer from the current-price selector", () => {
     renderWithProviders(<AssessmentFaq />);
     expect(PRICED_ENTRIES.length).toBeGreaterThan(0);
 
@@ -104,7 +102,7 @@ describe('AssessmentFaq', () => {
           formatPrice(getCurrentPrice(tierId, currency)),
         );
       });
-      expect(answer.textContent).not.toContain('{');
+      expect(answer.textContent).not.toContain("{");
     });
   });
 
@@ -113,27 +111,27 @@ describe('AssessmentFaq', () => {
   // a per-figure "not contained" check cannot tell the branches apart. The
   // whole answer is compared instead, against each ladder resolved token by
   // token.
-  it('renders the standard figures once the founding window is closed', () => {
+  it("renders the standard figures once the founding window is closed", () => {
     renderWithProviders(<AssessmentFaq pricing={CLOSED_PRICING} />);
     PRICED_ENTRIES.forEach((entry) => {
       const { textContent } = screen.getByTestId(
         `assessment-faq-answer-${entry.id}`,
       );
 
-      expect(textContent).toBe(withLadder(entry.answer, 'standard'));
-      expect(textContent).not.toBe(withLadder(entry.answer, 'founding'));
+      expect(textContent).toBe(withLadder(entry.answer, "standard"));
+      expect(textContent).not.toBe(withLadder(entry.answer, "founding"));
     });
     Object.values(PRICING).forEach((tier) => {
       expect(tier.foundingOpen).toBe(true);
     });
   });
 
-  it('renders no currency symbol', () => {
+  it("renders no currency symbol", () => {
     const { container } = renderWithProviders(<AssessmentFaq />);
     expect(container.textContent).not.toMatch(/[€$£¥]/);
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<AssessmentFaq />);
     const results = await axe(container);

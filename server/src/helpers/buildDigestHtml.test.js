@@ -63,8 +63,7 @@ const HOSTILE_LEAD = {
 
 // The third section always renders, so an empty registration list appends this
 // block to every payload that does not supply one.
-const EMPTY_CONSORTIUM_SECTION =
-  `<h2>New consortium registrations (0)</h2><ul><li>None</li></ul>`;
+const EMPTY_CONSORTIUM_SECTION = `<h2>New consortium registrations (0)</h2><ul><li>None</li></ul>`;
 
 // Em dash (U+2014) separator; no whitespace or newline between the sections.
 // Emails, `new` and `7` contain no special characters, so they render as-is.
@@ -170,7 +169,9 @@ describe("buildDigestHtml", () => {
     expect(html).not.toContain('Dyn & "Corp"');
     // The first two sections keep their zero-count `None` markup.
     expect(html).toContain(`<h2>New Inquiries (0)</h2><ul><li>None</li></ul>`);
-    expect(html).toContain(`<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`);
+    expect(html).toContain(
+      `<h2>Chat-Only Leads (0)</h2><ul><li>None</li></ul>`,
+    );
   });
 
   it("falls back to N/A for a registration with null company and source", async () => {

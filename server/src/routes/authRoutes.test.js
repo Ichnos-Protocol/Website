@@ -21,6 +21,19 @@ vi.mock("../config/database.js", () => ({
   withTransaction: (fn) => fn({ query: (...args) => mockQuery(...args) }),
 }));
 
+// Keep limiter traffic off the shared mockQuery queue: both rate limiters
+// hit the repository on every /api/ request. Plain functions, not vi.fn(),
+// so a mock reset cannot strip the implementation.
+vi.mock("../repositories/rateLimitRepository.js", () => ({
+  incrementHit: async () => ({
+    hits: 1,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  decrementHit: async () => null,
+  resetKey: async () => true,
+  getHit: async () => null,
+}));
+
 const { default: app } = await import("../app.js");
 
 const validProfile = {
@@ -188,39 +201,6 @@ describe("auth routes", () => {
     });
   });
 
-  describe("POST /api/auth/verify-token", () => {
-    it("returns 200 with decoded token", async () => {
-      mockVerifyIdToken.mockResolvedValue(decodedToken);
-
-      const res = await request(app)
-        .post("/api/auth/verify-token")
-        .send({ idToken: "valid-token" });
-
-      expect(res.status).toBe(200);
-      expect(res.body.data.decoded.uid).toBe("uid-1");
-      expect(res.body.message).toBe("Token verified");
-    });
-
-    it("returns 400 when idToken is missing", async () => {
-      const res = await request(app)
-        .post("/api/auth/verify-token")
-        .send({});
-
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe("idToken is required");
-    });
-
-    it("returns 500 on invalid token", async () => {
-      mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
-
-      const res = await request(app)
-        .post("/api/auth/verify-token")
-        .send({ idToken: "bad-token" });
-
-      expect(res.status).toBe(500);
-    });
-  });
-
   describe("GET /api/auth/me", () => {
     it("returns 200 with user data, admin flag, and profileState", async () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
@@ -285,9 +265,7 @@ describe("auth routes", () => {
       mockVerifyIdToken.mockResolvedValue(decodedToken);
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app)
-        .get("/api/auth/me")
-        .set(authHeader());
+      const res = await request(app).get("/api/auth/me").set(authHeader());
 
       expect(res.status).toBe(404);
     });

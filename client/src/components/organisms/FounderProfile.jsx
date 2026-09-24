@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Badge from 'react-bootstrap/Badge';
+import { useState } from "react";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Badge from "react-bootstrap/Badge";
 
-import Icon from '../atoms/Icon';
-import CareerTimeline from './CareerTimeline';
-import RecognitionBlock from './RecognitionBlock';
-import CatenaXQualifierSpan from '../atoms/CatenaXQualifierSpan';
-import { CATENA_X_TITLE_BASE } from '../../constants/catenaXStatus';
+import Icon from "../atoms/Icon";
+import CareerTimeline from "./CareerTimeline";
+import RecognitionBlock from "./RecognitionBlock";
+import CredentialLabel from "../molecules/CredentialLabel";
+import CatenaXQualifierSpan from "../atoms/CatenaXQualifierSpan";
+import { CATENA_X_TITLE_BASE } from "../../constants/catenaXStatus";
 
 function renderBioParagraph(text) {
   if (!text.includes(CATENA_X_TITLE_BASE)) return text;
@@ -22,7 +23,24 @@ function renderBioParagraph(text) {
   );
 }
 
-const FounderPhoto = ({ photo, name }) => {
+// The alt follows P7's JSX, `CATENA_X_TITLE_BASE`, rather than the
+// credentials.js label with its " (founder)" suffix: the alt names the
+// official artwork, and this is the page's one linked label.
+const FounderLabel = ({ cxLabel }) => {
+  if (!cxLabel) return null;
+  return (
+    <div className="mt-3">
+      <CredentialLabel
+        label={CATENA_X_TITLE_BASE}
+        cxLabel={cxLabel}
+        href="https://catena-x.net"
+        variant="profile"
+      />
+    </div>
+  );
+};
+
+const FounderPhoto = ({ photo, name, cxLabel }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -39,6 +57,7 @@ const FounderPhoto = ({ photo, name }) => {
           <Icon name="person-circle" className="fs-1" />
         </div>
       )}
+      <FounderLabel cxLabel={cxLabel} />
     </Col>
   );
 };
@@ -81,7 +100,11 @@ export default function FounderProfile({ member }) {
   return (
     <section className="py-5">
       <Row className="align-items-center mb-5">
-        <FounderPhoto photo={member.photo} name={member.name} />
+        <FounderPhoto
+          photo={member.photo}
+          name={member.name}
+          cxLabel={member.cxLabel}
+        />
         <FounderBio
           name={member.name}
           title={member.title}

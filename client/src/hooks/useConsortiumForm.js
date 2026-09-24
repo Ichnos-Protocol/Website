@@ -14,6 +14,7 @@ import {
 
 const EMPTY_VALUES = Object.freeze({
   position: "",
+  region: "",
   chainRole: "",
   productLine: "",
   customerRequest: "",
@@ -27,6 +28,7 @@ const EMPTY_VALUES = Object.freeze({
 // GET /api/consortium/me returns, i.e. the user_profiles row itself.
 const ROW_TO_VALUE = Object.freeze({
   consortium_position: "position",
+  consortium_region: "region",
   consortium_chain_role: "chainRole",
   consortium_product_line: "productLine",
   consortium_customer_request: "customerRequest",

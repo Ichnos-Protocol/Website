@@ -15,9 +15,7 @@ const MIGRATIONS_DIR = join(__dirname, "../migrations");
 
 async function loadAppliedSet(client) {
   try {
-    const res = await client.query(
-      "SELECT filename FROM schema_migrations",
-    );
+    const res = await client.query("SELECT filename FROM schema_migrations");
     return new Set(res.rows.map((r) => r.filename));
   } catch (err) {
     if (err.code === "42P01") return new Set();
@@ -66,7 +64,9 @@ export async function runMigrations(connectionString) {
 
 const isMain =
   process.argv[1] &&
-  fileURLToPath(import.meta.url).endsWith(process.argv[1].replace(/\\/g, "/").split("/").pop());
+  fileURLToPath(import.meta.url).endsWith(
+    process.argv[1].replace(/\\/g, "/").split("/").pop(),
+  );
 
 if (isMain) {
   runMigrations(process.env.DATABASE_URL).catch((err) => {

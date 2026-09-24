@@ -3,17 +3,17 @@
 // (its own package.json, no path into client/src), so these are duplicated by
 // design — a copy here must follow any change made there.
 const INTEREST_LABEL =
-  'I am interested in joining the battery passport consortium.';
-const POSITION_LABEL = 'What is your position in the consortium?';
-const CHAIN_ROLE_LABEL = 'Which part of the value chain do you cover?';
-const PRODUCT_LINE_LABEL =
-  'Which product line or use case would you bring in?';
+  "I am interested in joining the battery passport consortium.";
+const POSITION_LABEL = "What is your position in the consortium?";
+const REGION_LABEL = "Where is your company based?";
+const CHAIN_ROLE_LABEL = "Which part of the value chain do you cover?";
+const PRODUCT_LINE_LABEL = "Which product line or use case would you bring in?";
 const CUSTOMER_REQUEST_LABEL =
-  'Which customer asked you for battery passport data, and what did they ask for?';
+  "Which customer asked you for battery passport data, and what did they ask for?";
 const DATA_NEEDS_LABEL =
-  'Which data do you need from others, and which data must you publish yourself?';
-const SUBMIT_REGISTRATION_LABEL = 'Submit registration';
-const UPDATE_REGISTRATION_LABEL = 'Update my registration';
+  "Which data do you need from others, and which data must you publish yourself?";
+const SUBMIT_REGISTRATION_LABEL = "Submit registration";
+const UPDATE_REGISTRATION_LABEL = "Update my registration";
 
 export class ConsortiumPage {
   constructor(page) {
@@ -25,15 +25,15 @@ export class ConsortiumPage {
   // The #register section and its heading are the stable anchors for
   // /consortium: they carry the form, which the hero copy does not.
   get registerSection() {
-    return this.page.locator('#register');
+    return this.page.locator("#register");
   }
 
   get registerHeading() {
-    return this.registerSection.getByRole('heading', { name: 'Register' });
+    return this.registerSection.getByRole("heading", { name: "Register" });
   }
 
   get interestCheckbox() {
-    return this.page.getByRole('checkbox', { name: INTEREST_LABEL });
+    return this.page.getByRole("checkbox", { name: INTEREST_LABEL });
   }
 
   get positionSelect() {
@@ -57,44 +57,51 @@ export class ConsortiumPage {
   }
 
   get questionInput() {
-    return this.page.getByLabel('Question 1');
+    return this.page.getByLabel("Question 1");
   }
 
   get inquiryConsent() {
-    return this.page.getByRole('checkbox', { name: /agree to be contacted/i });
+    return this.page.getByRole("checkbox", { name: /agree to be contacted/i });
   }
 
   // Regex over a distinctive slice — the full consent sentence is long enough
   // that an exact-name match is brittle against copy edits.
   get consortiumConsent() {
-    return this.page.getByRole('checkbox', {
+    return this.page.getByRole("checkbox", {
       name: /share my company name and use-case summary/i,
     });
   }
 
   get submitRegistrationButton() {
-    return this.page.getByRole('button', { name: SUBMIT_REGISTRATION_LABEL });
+    return this.page.getByRole("button", { name: SUBMIT_REGISTRATION_LABEL });
   }
 
   get updateRegistrationButton() {
-    return this.page.getByRole('button', { name: UPDATE_REGISTRATION_LABEL });
+    return this.page.getByRole("button", { name: UPDATE_REGISTRATION_LABEL });
   }
 
   // Radios render as inline Form.Check, so the accessible name is the option
-  // label ("Yes", "Not yet, but we could prepare one", "No",
-  // "Not applicable" / "As soon as the group is formed", "Later").
+  // label ("ASEAN", "European Union", "Elsewhere" / "Yes",
+  // "Not yet, but we could prepare one", "No", "Not applicable" /
+  // "As soon as the group is formed", "Later").
+  regionRadio(label) {
+    return this.page
+      .getByRole("group", { name: REGION_LABEL })
+      .getByRole("radio", { name: label });
+  }
+
   dataExtractRadio(label) {
-    return this.page.getByRole('radio', { name: label });
+    return this.page.getByRole("radio", { name: label });
   }
 
   preferredStartRadio(label) {
-    return this.page.getByRole('radio', { name: label });
+    return this.page.getByRole("radio", { name: label });
   }
 
   // ─── /consortium/tiers ───
 
   chooseTierButton(title) {
-    return this.page.getByRole('button', { name: `Choose ${title}` });
+    return this.page.getByRole("button", { name: `Choose ${title}` });
   }
 
   get registrationConfirmation() {
@@ -103,12 +110,14 @@ export class ConsortiumPage {
 
   async fillRegistration({
     position,
+    region,
     chainRole,
     productLine,
     dataExtract,
     preferredStart,
   }) {
     await this.positionSelect.selectOption(position);
+    await this.regionRadio(region).check();
     await this.chainRoleSelect.selectOption(chainRole);
     await this.productLineInput.fill(productLine);
     await this.dataExtractRadio(dataExtract).check();

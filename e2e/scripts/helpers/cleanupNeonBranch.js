@@ -49,16 +49,13 @@ export function selectBranchesToDelete(branches, gitBranch) {
  * Throws on non-2xx responses so the caller can surface the error.
  */
 export async function listBranches(fetchFn, { apiKey, projectId }) {
-  const res = await fetchFn(
-    `${NEON_API_BASE}/projects/${projectId}/branches`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-      },
+  const res = await fetchFn(`${NEON_API_BASE}/projects/${projectId}/branches`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
     },
-  );
+  });
   if (!res.ok) {
     const body = await safeReadText(res);
     throw new Error(
@@ -73,10 +70,7 @@ export async function listBranches(fetchFn, { apiKey, projectId }) {
  * DELETE /projects/{projectId}/branches/{branchId}.
  * A 404 is treated as "already gone" (idempotent success).
  */
-export async function deleteBranch(
-  fetchFn,
-  { apiKey, projectId, branchId },
-) {
+export async function deleteBranch(fetchFn, { apiKey, projectId, branchId }) {
   const res = await fetchFn(
     `${NEON_API_BASE}/projects/${projectId}/branches/${branchId}`,
     {

@@ -24,8 +24,6 @@ router.post(
   authController.syncProfile,
 );
 
-router.post("/verify-token", authController.verifyToken);
-
 router.get("/me", auth, authController.getMe);
 
 router.put(

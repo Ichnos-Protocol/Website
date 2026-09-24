@@ -2,7 +2,7 @@ import {
   CATENA_X_QUALIFICATION_GRANTED,
   CATENA_X_QUALIFIER_CLASS,
   getCatenaXQualifierText,
-} from '../../constants/catenaXStatus';
+} from "../../constants/catenaXStatus";
 
 // React node version of the Catena-X qualifier, for any visual surface
 // that should gray the qualifier — wraps it in a span carrying
@@ -13,6 +13,8 @@ import {
 export default function CatenaXQualifierSpan() {
   if (CATENA_X_QUALIFICATION_GRANTED) return null;
   return (
-    <span className={CATENA_X_QUALIFIER_CLASS}>{getCatenaXQualifierText()}</span>
+    <span className={CATENA_X_QUALIFIER_CLASS}>
+      {getCatenaXQualifierText()}
+    </span>
   );
 }

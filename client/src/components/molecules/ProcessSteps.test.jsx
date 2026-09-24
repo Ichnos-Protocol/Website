@@ -1,7 +1,7 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, within, cleanup } from '../../test-utils';
-import ProcessSteps from './ProcessSteps';
-import { ASSESSMENT_PROCESS } from '../../constants/readinessAssessmentContent';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, within, cleanup } from "../../test-utils";
+import ProcessSteps from "./ProcessSteps";
+import { ASSESSMENT_PROCESS } from "../../constants/readinessAssessmentContent";
 
 /*
  * Section 4.4 in its rendered form. Every expected value comes from
@@ -12,12 +12,12 @@ import { ASSESSMENT_PROCESS } from '../../constants/readinessAssessmentContent';
 const TIMELINE_SELECTOR =
   '[class*="regulatory-timeline"], [data-testid^="timeline-"]';
 
-describe('ProcessSteps', () => {
-  it('renders the steps in the source order of the constant', () => {
+describe("ProcessSteps", () => {
+  it("renders the steps in the source order of the constant", () => {
     renderWithProviders(<ProcessSteps />);
     const rendered = screen
       .getAllByTestId(/^process-step-/)
-      .map((step) => step.getAttribute('data-testid'));
+      .map((step) => step.getAttribute("data-testid"));
 
     expect(rendered).toEqual(
       ASSESSMENT_PROCESS.steps.map((step) => `process-step-${step.id}`),
@@ -31,18 +31,18 @@ describe('ProcessSteps', () => {
 
       expect(item).toHaveTextContent(step.week);
       expect(
-        within(item).getByRole('heading', { level: 3, name: step.title }),
+        within(item).getByRole("heading", { level: 3, name: step.title }),
       ).toBeInTheDocument();
       expect(item).toHaveTextContent(step.body);
     });
   });
 
-  it('renders the sequence as an ordered list', () => {
+  it("renders the sequence as an ordered list", () => {
     renderWithProviders(<ProcessSteps />);
-    const list = screen.getByRole('list');
+    const list = screen.getByRole("list");
 
-    expect(list.tagName).toBe('OL');
-    expect(within(list).getAllByRole('listitem')).toHaveLength(
+    expect(list.tagName).toBe("OL");
+    expect(within(list).getAllByRole("listitem")).toHaveLength(
       ASSESSMENT_PROCESS.steps.length,
     );
   });
@@ -50,9 +50,9 @@ describe('ProcessSteps', () => {
   // Section 4.4 asks for a fresh molecule so the sales sequence stays
   // uncoupled from the regulatory-date single source. No timeline markup, no
   // date, and none of the timeline's own state vocabulary may appear here.
-  it('borrows nothing from the regulatory timeline', () => {
+  it("borrows nothing from the regulatory timeline", () => {
     const { container } = renderWithProviders(<ProcessSteps />);
-    const { textContent } = screen.getByTestId('process-steps');
+    const { textContent } = screen.getByTestId("process-steps");
 
     expect(container.querySelector(TIMELINE_SELECTOR)).toBeNull();
     expect(textContent).not.toMatch(/deferred/i);
@@ -61,7 +61,7 @@ describe('ProcessSteps', () => {
     expect(textContent).not.toMatch(/\b\d{4}\b/);
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<ProcessSteps />);
     const results = await axe(container);

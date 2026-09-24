@@ -16,6 +16,7 @@ import { stripNonConsuming } from "./corpusScan";
 import {
   ALLOWED_EXCEPTIONS,
   ASSET_PATH_EXPORTS,
+  CORPORATE_ADVISOR_CLAIM_PATTERNS,
   FILES,
   FORBIDDEN,
   LEGACY_HEXES,
@@ -144,6 +145,10 @@ describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
     "Catena-X membership application pending.",
     "Our Catena-X membership application is pending review.",
     "Ichnos has a pending Catena-X membership application.",
+    // Conformance adjectives beside a numbered standard.
+    "Our passports are CX-0160 compliant.",
+    "The data model is conformant with CX-0160.",
+    "A CX-0160-conformant pipeline.",
   ];
 
   it.each(PROBES)("matches the prohibited claim %j", (probe) => {
@@ -154,14 +159,60 @@ describe("vocabulary FORBIDDEN (prohibited-claim probes)", () => {
   // legitimate copy on live surfaces must still pass.
   const PERMITTED = [
     "Ordinary member — Catena-X Automotive Network e.V.",
-    "Catena-X member & Qualified Advisor",
+    "Catena-X member, founded by a Qualified Advisor",
     "Business Partner Number (BPN)",
     "the relationship is partner-and-channel, not competition",
+    "passport data in the CX-0160 data model",
+    "The battery passport standard is CX-0160.",
   ];
 
   it.each(PERMITTED)("leaves permitted copy alone: %j", (permitted) => {
     expect(isForbidden(permitted)).toBe(false);
   });
+});
+
+// september-fixes P7 (pivot-3 §1.5, owner ruling D3): the Qualified Advisor
+// qualification is Francesco's. Both probe lists are normative spec copy.
+describe("vocabulary CORPORATE_ADVISOR_CLAIM_PATTERNS (advisor-claim probes)", () => {
+  const PROHIBITED = [
+    "Ichnos Protocol is a Catena-X Qualified Advisor, an ordinary member of Catena-X Automotive Network e.V., and a member of the Catena-X Digital Product Passport Expert Group.",
+    "Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor.",
+    "The practice covers battery systems engineering, safety, mechanical development, and remanufacturing and extends into the EU battery-passport ecosystem as a Catena-X Qualified Advisor.",
+    "Ichnos Protocol, a Catena-X Qualified Advisor, works with ASEAN manufacturers.",
+    "As a Catena-X Qualified Advisor, Ichnos Protocol connects suppliers to Catena-X.",
+    "The company is a Catena-X Qualified Advisor.",
+  ];
+
+  const PERMITTED = [
+    "Ichnos Protocol Pte. Ltd. is an ordinary member of the association. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor.",
+    "Francesco is a Catena-X Qualified Advisor, and through that qualification the practice extends into the EU battery-passport ecosystem.",
+    "Founded by a Catena-X Qualified Advisor.",
+    "Catena-X member, founded by a Qualified Advisor",
+    "He is a Catena-X Qualified Advisor, working to bring ASEAN battery manufacturers into the Catena-X data space.",
+    "Francesco Maltoni holds Qualified Advisor attestation 868.",
+    "Catena-X Qualified Advisor (founder)",
+    "Catena-X integration (Catena-X Qualified Advisor)",
+    "Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, Catena-X Qualified Advisor)",
+  ];
+
+  it.each(PROHIBITED)("matches the corporate advisor claim %j", (probe) => {
+    expect(
+      CORPORATE_ADVISOR_CLAIM_PATTERNS.some(
+        (pattern) => findMatches(pattern, probe).length > 0,
+      ),
+    ).toBe(true);
+  });
+
+  // Checked against all of FORBIDDEN, the stronger set: it contains the new
+  // patterns and every older one.
+  it.each(PERMITTED)(
+    "leaves founder-attributed copy alone: %j",
+    (permitted) => {
+      expect(
+        FORBIDDEN.some((pattern) => findMatches(pattern, permitted).length > 0),
+      ).toBe(false);
+    },
+  );
 });
 
 describe("vocabulary corpus (required expressions)", () => {

@@ -4,6 +4,7 @@ import {
   updateRequestSchema,
   addQuestionSchema,
   CONSORTIUM_POSITIONS,
+  CONSORTIUM_REGIONS,
   CONSORTIUM_CHAIN_ROLES,
   CONSORTIUM_DATA_EXTRACT,
   CONSORTIUM_PREFERRED_START,
@@ -30,7 +31,10 @@ describe("contactSubmitSchema", () => {
   });
 
   it("rejects empty questions array", () => {
-    const result = contactSubmitSchema.safeParse({ ...validPayload, questions: [] });
+    const result = contactSubmitSchema.safeParse({
+      ...validPayload,
+      questions: [],
+    });
     expect(result.success).toBe(false);
   });
 
@@ -88,6 +92,7 @@ describe("contactSubmitSchema", () => {
 describe("contactSubmitSchema — consortium", () => {
   const validConsortium = {
     position: "supplier",
+    region: "asean",
     chainRole: "cathode_material",
     productLine: "NMC cathode powders",
     customerRequest: "Automotive OEM asked for a passport-ready datasheet",
@@ -128,8 +133,12 @@ describe("contactSubmitSchema — consortium", () => {
   });
 
   it("accepts a registration without the optional fields", () => {
-    const { customerRequest: _c, dataNeeds: _d, source: _s, ...rest } =
-      validConsortium;
+    const {
+      customerRequest: _c,
+      dataNeeds: _d,
+      source: _s,
+      ...rest
+    } = validConsortium;
     const result = contactSubmitSchema.safeParse({
       ...validPayload,
       consortium: rest,
@@ -195,6 +204,19 @@ describe("contactSubmitSchema — consortium", () => {
     expect(parseWith({ position: "ceo" }).success).toBe(false);
   });
 
+  it("rejects a missing region", () => {
+    const { region: _r, ...rest } = validConsortium;
+    const result = contactSubmitSchema.safeParse({
+      ...validPayload,
+      consortium: rest,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an invalid region", () => {
+    expect(parseWith({ region: "apac" }).success).toBe(false);
+  });
+
   it("rejects an invalid chainRole", () => {
     expect(parseWith({ chainRole: "logistics" }).success).toBe(false);
   });
@@ -210,6 +232,9 @@ describe("contactSubmitSchema — consortium", () => {
   it("accepts every valid enum value", () => {
     for (const position of CONSORTIUM_POSITIONS) {
       expect(parseWith({ position }).success).toBe(true);
+    }
+    for (const region of CONSORTIUM_REGIONS) {
+      expect(parseWith({ region }).success).toBe(true);
     }
     for (const chainRole of CONSORTIUM_CHAIN_ROLES) {
       expect(parseWith({ chainRole }).success).toBe(true);
@@ -239,7 +264,9 @@ describe("contactSubmitSchema — consortium", () => {
   });
 
   it("rejects a customerRequest of 2001 characters", () => {
-    expect(parseWith({ customerRequest: "a".repeat(2001) }).success).toBe(false);
+    expect(parseWith({ customerRequest: "a".repeat(2001) }).success).toBe(
+      false,
+    );
   });
 
   it("rejects a dataNeeds of 2001 characters", () => {
@@ -300,7 +327,9 @@ describe("updateRequestSchema", () => {
 
 describe("addQuestionSchema", () => {
   it("accepts a valid question string", () => {
-    const result = addQuestionSchema.safeParse({ question: "What is your pricing?" });
+    const result = addQuestionSchema.safeParse({
+      question: "What is your pricing?",
+    });
     expect(result.success).toBe(true);
   });
 

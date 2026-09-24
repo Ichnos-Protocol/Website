@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function useSuperAdminCheck() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -7,8 +7,8 @@ export function useSuperAdminCheck() {
     let unsubscribe;
 
     async function subscribe() {
-      const { auth } = await import('../config/firebase');
-      const { onAuthStateChanged } = await import('firebase/auth');
+      const { auth } = await import("../config/firebase");
+      const { onAuthStateChanged } = await import("firebase/auth");
 
       unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (!user) {
