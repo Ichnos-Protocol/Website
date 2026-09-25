@@ -121,12 +121,18 @@ export function assertLinkAgreesWithDiscovery({
  * because `vercel api` otherwise applies the CLI's current team: the scope's
  * own value, or for account-level reads the accountScope from
  * resolveCliAccountScope. A Northstar CLI session cannot reach its personal
- * scope, so asking for it throws before any lookup.
+ * scope, so asking for it throws before any lookup. In token mode the token is
+ * trimmed by the same rule preflight used to pick the mode, and the CLI
+ * transport is unreachable.
  */
+function explicitToken(env) {
+  return String(env.VERCEL_TOKEN ?? "").trim();
+}
+
 function buildTransport({ access, env, run, accountScope }, scope) {
   if (access.mode === "token") {
     const teamId = scope?.kind === "team" ? scope.id : undefined;
-    return createTokenTransport({ token: env.VERCEL_TOKEN, teamId });
+    return createTokenTransport({ token: explicitToken(env), teamId });
   }
   if (scope?.kind === "personal" && accountScope.northstar) {
     throw cliPersonalScopeRefusal(scope.label);
@@ -136,10 +142,25 @@ function buildTransport({ access, env, run, accountScope }, scope) {
 }
 
 /**
+ * An API over buildTransport. In token mode the trimmed token is registered
+ * as a secret, so no error built from a provider answer can echo it.
+ */
+function apiFor(context, scope) {
+  const secrets =
+    context.access.mode === "token" ? [explicitToken(context.env)] : [];
+  return createVercelApi({
+    transport: buildTransport(context, scope),
+    secrets,
+  });
+}
+
+/**
  * Discovers the one scope holding both governed projects, cross-checks any
  * link files against it, and returns an API pinned to that scope. Discovery
  * requires both projects to share one scope. Every step is read-only. `run`
- * replaces the Vercel CLI runner, for tests.
+ * replaces the Vercel CLI runner, for tests. Token mode never calls
+ * resolveCliAccountScope or builds a CLI transport, so it spawns no Vercel
+ * CLI and needs no `vercel login`.
  */
 export async function connectVercelProjects({
   access,
@@ -152,9 +173,8 @@ export async function connectVercelProjects({
     access.mode === "token" ? null : resolveCliAccountScope({ run });
   const context = { access, env, run, accountScope };
   const { scope, projects } = await discoverVercelScope({
-    unscopedApi: createVercelApi({ transport: buildTransport(context, null) }),
-    scopedApiFor: (candidate) =>
-      createVercelApi({ transport: buildTransport(context, candidate) }),
+    unscopedApi: apiFor(context, null),
+    scopedApiFor: (candidate) => apiFor(context, candidate),
     names: EXPECTED_PROJECT_NAMES,
   });
   for (const [role, dir] of [
@@ -169,7 +189,7 @@ export async function connectVercelProjects({
       scope,
     });
   }
-  const api = createVercelApi({ transport: buildTransport(context, scope) });
+  const api = apiFor(context, scope);
   return {
     api,
     projects: { client: projects.client, server: projects.server },

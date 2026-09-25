@@ -29,16 +29,21 @@ export function checkVercelAuth() {
 }
 
 /**
- * How the run reaches the Vercel REST API: the `vercel api` subcommand over
- * the `vercel login` session, else an exported VERCEL_TOKEN. Neither means the
- * run stops here, naming the missing token.
+ * How the run reaches the Vercel REST API. A non-empty exported VERCEL_TOKEN
+ * is an explicit operator decision and always wins: the CLI is not probed.
+ * Only when no token is exported is the `vercel api` subcommand over the
+ * `vercel login` session the default. Neither means the run stops here,
+ * naming the missing token. The token value never appears in the result.
  */
 export function checkVercelApiAccess({
   supports = supportsVercelApi,
   env = process.env,
 } = {}) {
-  if (supports()) return { mode: "cli" };
-  if (env.VERCEL_TOKEN) return { mode: "token" };
+  const token = String(env.VERCEL_TOKEN ?? "").trim();
+  if (token) return { mode: "token", reason: "explicit VERCEL_TOKEN" };
+  if (supports()) {
+    return { mode: "cli", reason: "vercel api supported, no VERCEL_TOKEN" };
+  }
   fail(
     "The installed Vercel CLI has no `vercel api` subcommand and VERCEL_TOKEN is not set.",
     "Update the CLI with `npm i -g vercel@latest`, or export VERCEL_TOKEN (a Vercel access token for the team that owns both projects), then re-run.",

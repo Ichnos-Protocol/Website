@@ -40,12 +40,14 @@
  * checks every password in e2e/.env.e2e and in the shell before any provider
  * call, although it writes the pattern passwords itself.
  *
- * Vercel traffic goes through the Vercel REST API: the `vercel api`
- * subcommand over the `vercel login` session, or, when the installed CLI
- * lacks it, an exported VERCEL_TOKEN. The scope that owns both projects is
- * discovered through that authenticated API; a .vercel/project.json is an
- * optional cross-check, never a prerequisite. The only manual steps are `gh
- * auth login`, `vercel login` and, in that last case, the VERCEL_TOKEN export.
+ * Vercel traffic goes through the Vercel REST API. A non-empty exported
+ * VERCEL_TOKEN is an explicit operator choice and always wins: the run then
+ * spawns no Vercel CLI and needs no `vercel login`. Without a token the
+ * default is the `vercel api` subcommand over the `vercel login` session. The
+ * scope that owns both projects is discovered through that authenticated API;
+ * a .vercel/project.json is an optional cross-check, never a prerequisite.
+ * The only manual steps are `gh auth login` and either `vercel login` or the
+ * VERCEL_TOKEN export.
  */
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";

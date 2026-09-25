@@ -89,17 +89,15 @@ function isPagination(pagination) {
 }
 
 /**
- * The CLI prints an HTTP error as a JSON body and exits zero, so every page
- * is checked before it is trusted: an error body, a missing or non-array
- * `teams`, or a missing, incomplete or malformed pagination stops discovery.
+ * An error envelope (the CLI prints an HTTP error as a JSON body and exits
+ * zero) never reaches here: createVercelApi().request throws on it. Every
+ * page is still checked before it is trusted: a non-object body, a missing
+ * or non-array `teams`, or a missing, incomplete or malformed pagination
+ * stops discovery.
  */
 function validateTeamsPage(body, page) {
   if (!isPlainObject(body)) {
     refuseTeamPage(page, "is not a JSON object");
-  }
-  if (body.error !== undefined) {
-    const code = hasText(body.error?.code) ? body.error.code : "unknown";
-    refuseTeamPage(page, `returned an error (${code})`);
   }
   if (!Array.isArray(body.teams)) refuseTeamPage(page, "has no teams array");
   if (body.pagination === undefined) refuseTeamPage(page, "has no pagination");
@@ -144,19 +142,17 @@ export async function candidateScopes({ api }) {
 
 function classifyBody(body, name) {
   if (hasText(body?.id) && hasText(body?.name)) return { found: body };
-  const code = body?.error?.code;
-  if (code === "not_found") return { absent: true };
-  if (code) {
-    throw new Error(
-      `Vercel lookup of '${name}' failed: ${code}. Nothing was changed.`,
-    );
-  }
   throw new Error(
     `Vercel lookup of '${name}' returned an unrecognised response shape; refusing to guess. Nothing was changed.`,
   );
 }
 
-/** { found } or { absent: true }; any other failure is rethrown. */
+/**
+ * { found } or { absent: true }; any other failure is rethrown. Absence comes
+ * only from isNotFoundError: the adapter turns a zero-exit CLI error envelope
+ * into a thrown error carrying its code, so a `not_found` code is an absence
+ * and every other code fails closed.
+ */
 export async function lookupProject({ api, name }) {
   let body;
   try {

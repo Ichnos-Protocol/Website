@@ -43,26 +43,55 @@ describe("checkVercelAuth", () => {
 });
 
 describe("checkVercelApiAccess", () => {
-  it("uses the CLI when `vercel api` is supported", () => {
-    expect(checkVercelApiAccess({ supports: () => true, env: {} })).toEqual({
-      mode: "cli",
+  const TOKEN_ACCESS = { mode: "token", reason: "explicit VERCEL_TOKEN" };
+  const CLI_ACCESS = {
+    mode: "cli",
+    reason: "vercel api supported, no VERCEL_TOKEN",
+  };
+
+  it("prefers an exported VERCEL_TOKEN without probing the CLI", () => {
+    const supports = vi.fn(() => true);
+
+    const access = checkVercelApiAccess({
+      supports,
+      env: { VERCEL_TOKEN: "tok_secret_value" },
     });
+
+    expect(access).toEqual(TOKEN_ACCESS);
+    expect(supports).not.toHaveBeenCalled();
+    expect(JSON.stringify(access)).not.toContain("tok_secret_value");
   });
 
-  it("falls back to an exported VERCEL_TOKEN", () => {
+  it("uses the token when the CLI lacks `vercel api`", () => {
     expect(
       checkVercelApiAccess({
         supports: () => false,
         env: { VERCEL_TOKEN: "tok" },
       }),
-    ).toEqual({ mode: "token" });
+    ).toEqual(TOKEN_ACCESS);
   });
+
+  it.each([
+    ["absent", {}],
+    ["empty", { VERCEL_TOKEN: "" }],
+    ["whitespace", { VERCEL_TOKEN: "   " }],
+  ])(
+    "uses the CLI when the token is %s and `vercel api` is supported",
+    (_label, env) => {
+      expect(checkVercelApiAccess({ supports: () => true, env })).toEqual(
+        CLI_ACCESS,
+      );
+    },
+  );
 
   it("stops naming VERCEL_TOKEN when neither is available, with no call made", () => {
     execFileSync.mockClear();
 
     expect(() =>
-      checkVercelApiAccess({ supports: () => false, env: {} }),
+      checkVercelApiAccess({
+        supports: () => false,
+        env: { VERCEL_TOKEN: " " },
+      }),
     ).toThrow(/VERCEL_TOKEN is not set[\s\S]*npm i -g vercel@latest/);
     expect(execFileSync).not.toHaveBeenCalled();
   });

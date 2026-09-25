@@ -317,6 +317,256 @@ describe("createVercelApi", () => {
   });
 });
 
+describe("createVercelApi error-envelope guard", () => {
+  // The CLI prints an HTTP error as a JSON body and exits zero.
+  function envelopeApi(body, { status = 0 } = {}) {
+    const text = typeof body === "string" ? body : JSON.stringify(body);
+    return createVercelApi({
+      transport: async () => ({ ok: true, status, text }),
+    });
+  }
+
+  it("throws a structured error for a zero-exit envelope", async () => {
+    const api = envelopeApi({
+      error: { code: "forbidden", message: "Not authorized\nmore" },
+    });
+
+    const error = await api
+      .request("/v9/projects/p?teamId=team_1")
+      .catch((err) => err);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.code).toBe("forbidden");
+    expect(error.status).toBeNull();
+    expect(error.detail).toBe("forbidden: Not authorized");
+    expect(error.path).toBe("/v9/projects/p?teamId=team_1");
+    expect(error.message).toMatch(
+      /^Vercel API GET \/v9\/projects\/p failed \(no status\): forbidden/,
+    );
+  });
+
+  it.each([
+    ["a missing code", { error: { message: "boom" } }, "unknown: boom"],
+    ["a numeric code", { error: { code: 403 } }, "unknown: unknown"],
+    ["a string error", { error: "boom" }, "unknown: boom"],
+    ["a null error", { error: null }, "unknown: unknown"],
+    ["a numeric error", { error: 7 }, "unknown: unknown"],
+    ["an array error", { error: ["boom"] }, "unknown: unknown"],
+  ])("throws with code unknown for %s", async (_label, body, detail) => {
+    const error = await envelopeApi(body)
+      .request("/v2/user")
+      .catch((err) => err);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.code).toBe("unknown");
+    expect(error.status).toBeNull();
+    expect(error.detail).toBe(detail);
+  });
+
+  it("returns an ordinary body, and an array, untouched", async () => {
+    await expect(envelopeApi({ id: "x" }).request("/a")).resolves.toEqual({
+      id: "x",
+    });
+    await expect(envelopeApi([{ error: 1 }]).request("/a")).resolves.toEqual([
+      { error: 1 },
+    ]);
+  });
+
+  it("scrubs registered secrets and request-body values from every field", async () => {
+    const api = envelopeApi({
+      error: {
+        code: "bad_request",
+        message: `invalid ${SECRET} and plain-body-value`,
+      },
+    });
+    api.registerSecret(SECRET);
+
+    const error = await api
+      .request(`/v1/projects/p/${SECRET}`, {
+        method: "PATCH",
+        body: { generate: { secret: SECRET }, other: "plain-body-value" },
+      })
+      .catch((err) => err);
+
+    expect(error.code).toBe("bad_request");
+    const everything = JSON.stringify({
+      ...error,
+      message: error.message,
+    });
+    expect(everything).not.toContain(SECRET);
+    expect(everything).not.toContain("plain-body-value");
+    expect(error.detail).toBe("bad_request: invalid **** and ****");
+  });
+
+  it.each([
+    ["equals a registered API key", SECRET, SECRET],
+    ["contains a registered API key", `bad_${SECRET}_code`, SECRET],
+    ["equals a bypass value", "bypass-value-123", "bypass-value-123"],
+    ["contains a bypass value", "x-bypass-value-123", "bypass-value-123"],
+    ["equals a request-body value", "plain-body-value", "plain-body-value"],
+    ["contains a request-body value", "e_plain-body-value", "plain-body-value"],
+  ])("replaces a code that %s with unknown", async (_label, code, leaked) => {
+    const api = envelopeApi({ error: { code, message: "rejected" } });
+    api.registerSecret(SECRET);
+    api.registerSecret("bypass-value-123");
+
+    const error = await api
+      .request("/v10/projects/p/env", {
+        method: "POST",
+        body: { value: "plain-body-value" },
+      })
+      .catch((err) => err);
+
+    expect(error.code).toBe("unknown");
+    expect(error.detail).toBe("unknown: rejected");
+    expect(isNotFoundError(error)).toBe(false);
+    const everything = JSON.stringify({ ...error, message: error.message });
+    expect(everything).not.toContain(leaked);
+  });
+
+  it("keeps the numeric status of a token-transport 200 envelope", async () => {
+    const error = await envelopeApi(
+      { error: { code: "not_found", message: "Project not found" } },
+      { status: 200 },
+    )
+      .request("/v9/projects/p")
+      .catch((err) => err);
+
+    expect(error.status).toBe(200);
+    expect(error.code).toBe("not_found");
+    expect(isNotFoundError(error)).toBe(true);
+  });
+
+  it("classifies a zero-exit forbidden envelope as a failure, not an absence", async () => {
+    const error = await envelopeApi({
+      error: { code: "forbidden", message: "Project not found (404)" },
+    })
+      .request("/v9/projects/p")
+      .catch((err) => err);
+
+    expect(isNotFoundError(error)).toBe(false);
+  });
+});
+
+describe("createVercelApi non-2xx envelopes", () => {
+  function failureApi(body, status) {
+    const text = JSON.stringify(body);
+    return createVercelApi({
+      transport: async () => ({ ok: false, status, text, errorText: text }),
+    });
+  }
+
+  it("treats a 404 token response with a forbidden code as a failure, not an absence", async () => {
+    const error = await failureApi(
+      { error: { code: "forbidden", message: "Not authorized" } },
+      404,
+    )
+      .request("/v9/projects/p")
+      .catch((err) => err);
+
+    expect(error.code).toBe("forbidden");
+    expect(error.status).toBe(404);
+    expect(error.detail).toBe("forbidden: Not authorized");
+    expect(isNotFoundError(error)).toBe(false);
+  });
+
+  it("keeps a not_found code as an absence with its HTTP status", async () => {
+    const error = await failureApi(
+      { error: { code: "not_found", message: "Project not found" } },
+      404,
+    )
+      .request("/v9/projects/p")
+      .catch((err) => err);
+
+    expect(error.code).toBe("not_found");
+    expect(error.status).toBe(404);
+    expect(isNotFoundError(error)).toBe(true);
+  });
+
+  it.each([
+    ["a non-JSON body", "Bad Gateway"],
+    ["a JSON body without an error field", '{"message":"x"}'],
+    ["a JSON array", '[{"error":1}]'],
+  ])("keeps the transport error for %s", async (_label, text) => {
+    const api = createVercelApi({
+      transport: async () => ({
+        ok: false,
+        status: 502,
+        text,
+        errorText: text,
+      }),
+    });
+
+    const error = await api.request("/v9/projects/p").catch((err) => err);
+
+    expect(error.code).toBeUndefined();
+    expect(error.status).toBe(502);
+    expect(error.detail).toBe(text);
+  });
+});
+
+describe("createVercelApi redaction before truncation", () => {
+  const TOKEN = "vercel-token-value-123";
+
+  function everything(error) {
+    return JSON.stringify({ ...error, message: error.message });
+  }
+
+  it("scrubs a secret that crosses the 200-character cutoff of a transport error", async () => {
+    const errorText = `${"x".repeat(190)}${SECRET} tail`;
+    const api = createVercelApi({
+      transport: async () => ({ ok: false, status: 500, text: "", errorText }),
+      secrets: [SECRET],
+    });
+
+    const error = await api.request("/v2/user").catch((err) => err);
+
+    expect(error.detail).toBe(`${"x".repeat(190)}**** tail`);
+    expect(everything(error)).not.toContain(SECRET.slice(0, 10));
+  });
+
+  it("scrubs a secret that crosses the 200-character cutoff of an envelope message", async () => {
+    const message = `${"y".repeat(180)}${SECRET}`;
+    const api = createVercelApi({
+      transport: async () => ({
+        ok: true,
+        status: 0,
+        text: JSON.stringify({ error: { code: "bad_request", message } }),
+      }),
+      secrets: [SECRET],
+    });
+
+    const error = await api.request("/v2/user").catch((err) => err);
+
+    expect(error.detail).toBe(`bad_request: ${"y".repeat(180)}****`);
+    expect(everything(error)).not.toContain(SECRET.slice(0, 5));
+  });
+
+  it.each([
+    ["code", { code: `bad_${TOKEN}`, message: "rejected" }],
+    ["message", { code: "forbidden", message: `token ${TOKEN} rejected` }],
+  ])(
+    "never echoes the Vercel token through an envelope %s",
+    async (_label, body) => {
+      const text = JSON.stringify({ error: body });
+      const api = createVercelApi({
+        transport: async () => ({
+          ok: false,
+          status: 403,
+          text,
+          errorText: text,
+        }),
+        secrets: [TOKEN],
+      });
+
+      const error = await api.request("/v2/user").catch((err) => err);
+
+      expect(everything(error)).not.toContain(TOKEN);
+      expect(isNotFoundError(error)).toBe(false);
+    },
+  );
+});
+
 describe("isNotFoundError", () => {
   it("is true for a 404 status", () => {
     expect(isNotFoundError({ status: 404, detail: "" })).toBe(true);
@@ -341,6 +591,36 @@ describe("isNotFoundError", () => {
   ])("is false for status %s and detail %s", (status, detail) => {
     expect(isNotFoundError({ status, detail })).toBe(false);
   });
+
+  it("is true for a structured not_found code, whatever the status", () => {
+    expect(isNotFoundError({ code: "not_found", status: null })).toBe(true);
+    expect(isNotFoundError({ code: "not_found", status: 403 })).toBe(true);
+  });
+
+  it("checks the code first, the status second, the detail last", () => {
+    // A code wins over the status and the detail; status 404 needs no code.
+    expect(
+      isNotFoundError({ code: "forbidden", status: null, detail: "404" }),
+    ).toBe(false);
+    expect(isNotFoundError({ status: 404, detail: "forbidden" })).toBe(true);
+    expect(isNotFoundError({ status: null, detail: "not_found" })).toBe(true);
+  });
+
+  it.each([["forbidden"], ["unauthorized"], ["rate_limited"], ["unknown"]])(
+    "fails closed for the structured code %s even with status 404",
+    (code) => {
+      expect(isNotFoundError({ code, status: 404, detail: "404" })).toBe(false);
+    },
+  );
+
+  it.each([["forbidden"], ["unauthorized"], ["rate_limited"], ["unknown"]])(
+    "fails closed for the structured code %s",
+    (code) => {
+      expect(
+        isNotFoundError({ code, status: null, detail: `${code}: not_found` }),
+      ).toBe(false);
+    },
+  );
 
   it("is false for a missing error", () => {
     expect(isNotFoundError(undefined)).toBe(false);

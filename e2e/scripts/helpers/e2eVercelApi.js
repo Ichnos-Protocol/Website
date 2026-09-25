@@ -1,8 +1,10 @@
 /**
  * The only module that talks to Vercel. Two transports share one request
  * shape: the `vercel api` CLI subcommand over the operator's `vercel login`
- * session, and a Bearer-token fallback used only with an explicitly exported
- * VERCEL_TOKEN. Neither reads or copies CLI auth state.
+ * session, the default when no token is exported, and a Bearer-token
+ * transport that an explicitly exported VERCEL_TOKEN selects. The token is an
+ * operator override, not a fallback: when it is set the CLI is never spawned.
+ * Neither transport reads or copies CLI auth state.
  *
  * The CLI runs without a shell, so no value is ever shell-interpolated; a
  * request body, which may hold a secret, travels in an owner-only temporary
@@ -17,9 +19,15 @@
  * CLI's current team to every request that carries no `--scope`, so
  * resolveCliAccountScope finds the `--scope` value that keeps account-level
  * reads off that inherited team. A failed request throws
- * an error carrying its status, redacted detail and path, and
+ * an error carrying its status, redacted detail and path; every detail is
+ * redacted before it is cut to its first line and 200 characters, and
  * isNotFoundError classifies it: only an unambiguous not-found is an
  * absence, never an auth or rate-limit failure.
+ *
+ * The CLI prints an HTTP error as a JSON `{ error }` envelope and exits zero,
+ * so `request` owns that case: any plain-object body with its own `error`
+ * field, on a success or a failure status alike, throws a structured, redacted error carrying `code`, `status`,
+ * `detail` and `path`. No consumer ever receives an error envelope as data.
  */
 import { spawnSync } from "child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "fs";
@@ -274,6 +282,23 @@ function firstLine(text) {
     .slice(0, 200);
 }
 
+/**
+ * Redacts before it cuts: truncating first could split a secret at the
+ * cutoff and leave a fragment the scrubber no longer recognizes.
+ */
+function redactedFirstLine(text, secrets) {
+  return firstLine(redact(text, secrets));
+}
+
+// A failure body that is not JSON is not an envelope, so it never throws here.
+function tryParseJson(text) {
+  try {
+    return text && text.trim() ? JSON.parse(text) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function parseJson(text, label, secrets) {
   if (!text || !text.trim()) return {};
   try {
@@ -300,11 +325,15 @@ const AUTH_OR_QUOTA_MARKERS =
   /\b(401|403|429)\b|forbidden|unauthorized|rate limit/i;
 
 /**
- * True only for an unambiguous not-found: a 404 status, or a detail naming
- * 404 or not_found and none of the auth or quota markers. Anything else,
- * ambiguity included, is false, so a failure is never hidden as an absence.
+ * True only for an unambiguous not-found. A structured code is authoritative:
+ * `not_found` is true and every other code (forbidden, unauthorized, rate
+ * limits, "unknown") is false, whatever the status, failing closed. Only an
+ * error with no structured code, such as a token-transport failure, falls
+ * back to a 404 status, then to its detail: 404 or not_found named and none
+ * of the auth or quota markers. A failure is never hidden as an absence.
  */
 export function isNotFoundError(error) {
+  if (typeof error?.code === "string") return error.code === "not_found";
   if (error?.status === 404) return true;
   const detail = typeof error?.detail === "string" ? error.detail : "";
   return (
@@ -312,16 +341,64 @@ export function isNotFoundError(error) {
   );
 }
 
-function requestError(label, path, response, scrub) {
-  const detail = redact(firstLine(response.errorText) || "no detail", scrub);
-  const status = response.status ?? "no status";
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** The shared failure builder: every text it sets is redacted. */
+function buildRequestError({ label, path, status, detail, code, scrub }) {
+  const safeDetail = redact(detail || "no detail", scrub);
   const error = new Error(
-    redact(`${label} failed (${status}): ${detail}`, scrub),
+    redact(`${label} failed (${status ?? "no status"}): ${safeDetail}`, scrub),
   );
-  error.status = response.status ?? null;
-  error.detail = detail;
+  error.status = status ?? null;
+  error.detail = safeDetail;
   error.path = redact(path, scrub);
+  if (code !== undefined) error.code = code;
   return error;
+}
+
+function requestError(label, path, response, scrub) {
+  return buildRequestError({
+    label,
+    path,
+    status: response.status ?? null,
+    detail: redactedFirstLine(response.errorText, scrub),
+    scrub,
+  });
+}
+
+// A CLI zero exit is not an HTTP status, so it maps to null, never to 404.
+function httpStatus(status) {
+  return Number.isFinite(status) && status >= 100 ? status : null;
+}
+
+function envelopeDetail(envelope, code, scrub) {
+  const text =
+    typeof envelope?.message === "string"
+      ? envelope.message
+      : typeof envelope === "string"
+        ? envelope
+        : code;
+  return redactedFirstLine(`${code}: ${text}`, scrub);
+}
+
+// A provider code that holds a registered or body value is replaced whole.
+function envelopeCode(envelope, scrub) {
+  const code = typeof envelope?.code === "string" ? envelope.code : "unknown";
+  return redact(code, scrub) === code ? code : "unknown";
+}
+
+function envelopeError(label, path, response, body, scrub) {
+  const code = envelopeCode(body.error, scrub);
+  return buildRequestError({
+    label,
+    path,
+    status: httpStatus(response.status),
+    detail: envelopeDetail(body.error, code, scrub),
+    code,
+    scrub,
+  });
 }
 
 export function createVercelApi({ transport, secrets = [] }) {
@@ -334,8 +411,16 @@ export function createVercelApi({ transport, secrets = [] }) {
       const label = `Vercel API ${method} ${path.split("?")[0]}`;
       const response = await transport(path, { method, body });
       const scrub = [...registered, ...bodyStrings(body)];
+      const parsed = response.ok
+        ? parseJson(response.text, label, scrub)
+        : tryParseJson(response.text);
+      // An envelope's structured code is authoritative on any status, so a
+      // non-2xx `forbidden` answered with 404 is never read as an absence.
+      if (isPlainObject(parsed) && Object.hasOwn(parsed, "error")) {
+        throw envelopeError(label, path, response, parsed, scrub);
+      }
       if (!response.ok) throw requestError(label, path, response, scrub);
-      return parseJson(response.text, label, scrub);
+      return parsed;
     },
   };
 }

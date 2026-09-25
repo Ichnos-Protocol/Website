@@ -23,6 +23,12 @@ function assertParsedFirebaseCredentials(credentials) {
   );
 }
 
+// Only mode and reason are printed; the token never is.
+function printTransport({ mode, reason }) {
+  const why = reason ? ` (${reason})` : "";
+  console.log(`[preflight] Vercel transport: ${mode}${why}`);
+}
+
 /**
  * `env` is the run's composed configuration (the file for sync-only; fixed
  * config, pattern passwords and shell exports otherwise). Only sync-only needs
@@ -30,6 +36,9 @@ function assertParsedFirebaseCredentials(credentials) {
  * loadFirebaseCredentials; every mode but sync-only validates it. process.env
  * is never consulted for Firebase. Every check runs before any provider write.
  * Returns the Vercel API access mode so the caller builds the transport once.
+ * The mode also decides whether the CLI session is checked at all: token mode
+ * (an exported VERCEL_TOKEN always wins) spawns no Vercel CLI and needs no
+ * `vercel login`; only CLI mode runs `vercel whoami`.
  * No .vercel link file is read here: the owning Vercel scope is discovered
  * after preflight, through the authenticated API (connectVercelProjects).
  */
@@ -48,8 +57,9 @@ export function runPreflight({
   validateCredentials(env, syncOnly);
 
   checkGhAuth();
-  checkVercelAuth();
   const vercelAccess = checkVercelApiAccess();
+  if (vercelAccess.mode === "cli") checkVercelAuth();
+  printTransport(vercelAccess);
 
   if (!syncOnly) assertParsedFirebaseCredentials(firebaseCredentials ?? {});
 

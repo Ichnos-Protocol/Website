@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import { createVercelApi } from "./e2eVercelApi.js";
 import {
   candidateScopes,
   discoverVercelScope,
@@ -61,6 +62,31 @@ function fakeVercel({ user = USER, teams = [[]], projects = {} }) {
   }
 
   return { requests, unscopedApi, scopedApiFor };
+}
+
+/**
+ * Routes the fake's answers through the real adapter over a zero-exit
+ * transport, the way `vercel api` prints a body, so an error envelope is
+ * judged by createVercelApi().request and never reaches discovery.
+ */
+function throughAdapter(vercel) {
+  const wrap = (api) =>
+    createVercelApi({
+      transport: async (path) => {
+        try {
+          const body = await api.request(path);
+          return { ok: true, status: 0, text: JSON.stringify(body) };
+        } catch (error) {
+          const errorText = error.detail ?? error.message;
+          return { ok: false, status: 1, text: "", errorText };
+        }
+      },
+    });
+  return {
+    ...vercel,
+    unscopedApi: wrap(vercel.unscopedApi),
+    scopedApiFor: (scope) => wrap(vercel.scopedApiFor(scope)),
+  };
 }
 
 function discover(vercel) {
@@ -256,7 +282,7 @@ describe("discoverVercelScope", () => {
     );
   });
 
-  it("treats a not_found body as an absence and keeps looking", async () => {
+  it("treats an adapter not_found envelope as an absence and keeps looking", async () => {
     const vercel = fakeVercel({
       teams: [[TEAM_A, TEAM_B]],
       projects: {
@@ -265,9 +291,78 @@ describe("discoverVercelScope", () => {
       },
     });
 
-    await expect(discover(vercel)).resolves.toMatchObject({
+    await expect(discover(throughAdapter(vercel))).resolves.toMatchObject({
       scope: { id: "team_b" },
     });
+  });
+
+  it("stops on an adapter forbidden envelope", async () => {
+    const vercel = fakeVercel({
+      teams: [[TEAM_A, TEAM_B]],
+      projects: {
+        user_1: { "ichnos-client": { error: { code: "forbidden" } } },
+        team_b: bothIn("team_b"),
+      },
+    });
+
+    const error = await discover(throughAdapter(vercel)).catch((err) => err);
+
+    expect(error.code).toBe("forbidden");
+    expect(error.message).toMatch(/GET \/v9\/projects\/ichnos-client failed/);
+    expect(vercel.requests.some((r) => r.scopeId === "team_a")).toBe(false);
+  });
+
+  it("stops on a non-2xx forbidden envelope answered with HTTP 404", async () => {
+    const vercel = fakeVercel({
+      teams: [[TEAM_A, TEAM_B]],
+      projects: { team_b: bothIn("team_b") },
+    });
+    const forbidden = JSON.stringify({
+      error: { code: "forbidden", message: "Not authorized" },
+    });
+    const discovery = {
+      ...vercel,
+      scopedApiFor: (scope) =>
+        scope.id === "user_1"
+          ? createVercelApi({
+              transport: async (path) => {
+                vercel.requests.push({ scopeId: scope.id, path });
+                return {
+                  ok: false,
+                  status: 404,
+                  text: forbidden,
+                  errorText: forbidden,
+                };
+              },
+            })
+          : vercel.scopedApiFor(scope),
+    };
+
+    const error = await discover(discovery).catch((err) => err);
+
+    expect(error.code).toBe("forbidden");
+    expect(error.status).toBe(404);
+    expect(vercel.requests.some((r) => r.scopeId === "team_a")).toBe(false);
+    expect(vercel.requests.some((r) => r.scopeId === "team_b")).toBe(false);
+  });
+
+  it("refuses a /v2/user envelope centrally before any project lookup", async () => {
+    const vercel = fakeVercel({ projects: { user_1: bothIn("user_1") } });
+    const envelope = {
+      ...vercel,
+      unscopedApi: {
+        async request(path) {
+          vercel.requests.push({ scopeId: null, path, method: "GET" });
+          return { error: { code: "unauthorized", message: "Not authorized" } };
+        },
+      },
+    };
+
+    const error = await discover(throughAdapter(envelope)).catch((e) => e);
+
+    expect(error.code).toBe("unauthorized");
+    expect(error.message).toMatch(/GET \/v2\/user failed/);
+    expect(vercel.requests.some((r) => r.path.startsWith("/v9/"))).toBe(false);
   });
 
   it.each([
@@ -295,7 +390,6 @@ describe("discoverVercelScope", () => {
       }),
       /rate limit/,
     ],
-    ["an error body", { error: { code: "forbidden" } }, /failed: forbidden/],
     ["an unknown shape", { something: "else" }, /unrecognised response shape/],
   ])(
     "stops on %s and preserves its message",
@@ -390,31 +484,33 @@ describe("team list validation", () => {
   }
 
   it.each(ERROR_BODIES)(
-    "refuses a %s-style error body on the first page",
+    "the adapter refuses a %s-style envelope on the first page",
     async (_status, body) => {
       const vercel = withTeamPages(
         fakeVercel({ projects: { user_1: bothIn("user_1") } }),
         [body],
       );
 
-      await expect(discover(vercel)).rejects.toThrowError(
-        `page 1 returned an error (${body.error.code}); refusing to decide`,
-      );
+      const error = await discover(throughAdapter(vercel)).catch((e) => e);
+
+      expect(error.code).toBe(body.error.code);
+      expect(error.message).toMatch(/GET \/v2\/teams failed/);
       expectNoProjectWork(vercel);
     },
   );
 
   it.each(ERROR_BODIES)(
-    "refuses a %s-style error body on a later page",
+    "the adapter refuses a %s-style envelope on a later page",
     async (_status, body) => {
       const vercel = withTeamPages(
         fakeVercel({ projects: { team_a: bothIn("team_a") } }),
         [{ teams: [TEAM_A], pagination: { count: 1, next: 1 } }, body],
       );
 
-      await expect(discover(vercel)).rejects.toThrowError(
-        `page 2 returned an error (${body.error.code})`,
-      );
+      const error = await discover(throughAdapter(vercel)).catch((e) => e);
+
+      expect(error.code).toBe(body.error.code);
+      expect(error.path).toBe("/v2/teams?limit=100&until=1");
       expectNoProjectWork(vercel);
     },
   );

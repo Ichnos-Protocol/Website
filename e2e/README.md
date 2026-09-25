@@ -108,10 +108,11 @@ Before any write, the command finds the Vercel scope that owns both projects. It
 **Manual prerequisites** (the only ones):
 
 - `gh auth login`
-- `vercel login`
 - the Firebase test service account in one of the credential sources above
-- `VERCEL_TOKEN`, only when the installed Vercel CLI lacks `vercel api`
+- Vercel access, by one of two transports:
+  - the default: `vercel login`, and the run reaches the Vercel API through the CLI's `vercel api` subcommand
+  - an exported, non-empty `VERCEL_TOKEN`, which always overrides the CLI. The run then spawns no Vercel CLI and does not need `vercel login`. Use it when the installed CLI lacks `vercel api`, or when the CLI of a Northstar account refuses a personal scope
 
 The run discovers the Vercel scope through the authenticated API, so `vercel link` is not required.
 
-> **Troubleshooting:** the script checks its prerequisites first and stops naming the missing command or token. If it fails, check: (1) you are authenticated: `gh auth login`, `vercel login`; (2) the Firebase admin credentials come from `--firebase-env`, `server/.env.e2e` or the single `secrets/*ichnos-protocol-test*.json`, never `server/.env`; (3) you are running from the repository root; (4) `client/.vercel/project.json` and `server/.vercel/project.json` are optional cross-checks: when one is present, its project name, project ID and organization ID must match the discovered scope, and you can delete a stale file; (5) the script's own message names the missing command or token.
+> **Troubleshooting:** the script checks its prerequisites first and stops naming the missing command or token. If it fails, check: (1) you are authenticated: `gh auth login`, and `vercel login` unless `VERCEL_TOKEN` is exported; (2) the Firebase admin credentials come from `--firebase-env`, `server/.env.e2e` or the single `secrets/*ichnos-protocol-test*.json`, never `server/.env`; (3) you are running from the repository root; (4) `client/.vercel/project.json` and `server/.vercel/project.json` are optional cross-checks: when one is present, its project name, project ID and organization ID must match the discovered scope, and you can delete a stale file; (5) the script's own message names the missing command or token.

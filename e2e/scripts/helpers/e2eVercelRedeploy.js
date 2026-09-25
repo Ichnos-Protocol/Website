@@ -102,7 +102,15 @@ export async function redeployProject({ api, project, url }) {
       method: "POST",
       body: { name: project.projectName, deploymentId },
     });
-    return { ...base, status: "success", deploymentId: created?.id ?? null };
+    if (typeof created?.id !== "string" || !created.id) {
+      return {
+        ...base,
+        status: "failed",
+        reason:
+          "the redeploy response carried no deployment id; nothing is confirmed",
+      };
+    }
+    return { ...base, status: "success", deploymentId: created.id };
   } catch (err) {
     return { ...base, status: "failed", reason: err.message };
   }

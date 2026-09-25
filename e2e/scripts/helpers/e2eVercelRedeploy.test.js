@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
+import { createVercelApi } from "./e2eVercelApi.js";
 import {
   findDeploymentForAlias,
   normalizeHost,
@@ -221,5 +222,84 @@ describe("redeployProject", () => {
 
     expect(result.reason).toMatch(/different deployment/);
     expect(posts(api)).toHaveLength(0);
+  });
+});
+
+describe("redeployProject confirmation", () => {
+  const SERVED = {
+    aliases: [{ alias: "e2e-api.ichnos-protocol.com", deploymentId: "dpl_ok" }],
+    pagination: {},
+  };
+  const ENVELOPE = { error: { code: "forbidden", message: "Not authorized" } };
+
+  // A zero-exit transport, the way `vercel api` prints an error body.
+  function adapterApi({ aliases = SERVED, created = { id: "dpl_new" } }) {
+    const transport = vi.fn(async (path, { method }) => {
+      let body;
+      if (method === "POST") body = created;
+      else if (path.startsWith("/v13/deployments/")) {
+        body = { id: "dpl_ok", ...PREVIEW };
+      } else body = aliases;
+      return { ok: true, status: 0, text: JSON.stringify(body) };
+    });
+    return { api: createVercelApi({ transport }), transport };
+  }
+
+  function run(api) {
+    return redeployProject({ api, project: SERVER, url: URL_VALUE });
+  }
+
+  function postCount(transport) {
+    return transport.mock.calls.filter(([, o]) => o.method === "POST").length;
+  }
+
+  it("fails with no POST when the alias list is an envelope", async () => {
+    const { api, transport } = adapterApi({ aliases: ENVELOPE });
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result.reason).toMatch(/forbidden/);
+    expect(result).not.toHaveProperty("deploymentId");
+    expect(postCount(transport)).toBe(0);
+  });
+
+  it("fails when the redeploy POST answers an envelope", async () => {
+    const { api, transport } = adapterApi({ created: ENVELOPE });
+
+    const result = await run(api);
+
+    expect(postCount(transport)).toBe(1);
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("deploymentId");
+  });
+
+  it.each([
+    ["an empty body", {}],
+    ["an empty id", { id: "" }],
+    ["a numeric id", { id: 1 }],
+  ])("fails when the redeploy returns %s", async (_label, created) => {
+    const { api } = adapterApi({ created });
+
+    const result = await run(api);
+
+    expect(result).toEqual({
+      project: "ichnos-protocol_server",
+      host: "e2e-api.ichnos-protocol.com",
+      status: "failed",
+      reason:
+        "the redeploy response carried no deployment id; nothing is confirmed",
+    });
+  });
+
+  it("reports the new deployment id on a confirmed redeploy", async () => {
+    const { api } = adapterApi({});
+
+    await expect(run(api)).resolves.toEqual({
+      project: "ichnos-protocol_server",
+      host: "e2e-api.ichnos-protocol.com",
+      status: "success",
+      deploymentId: "dpl_new",
+    });
   });
 });

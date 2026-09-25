@@ -5,6 +5,7 @@ import {
   bypassFailures,
   syncProviders,
 } from "./e2eProviderSync.js";
+import { createVercelApi } from "./e2eVercelApi.js";
 import { BYPASS_SCOPE } from "./e2eVercelBypass.js";
 
 const SECRET = "GeneratedBypassValue0123456789ab";
@@ -72,6 +73,9 @@ function fakeVercel({
       return { value: envs[id].find((e) => path.endsWith(e.id))?.value };
     }
     if (method === "GET") return { protectionBypass: { ...bypass[id] } };
+    if (method === "POST" && path.endsWith("/env")) {
+      return { created: { id: `env_${body.key}`, key: body.key } };
+    }
     return {};
   });
   return { request, registerSecret: vi.fn(), bypass };
@@ -520,6 +524,51 @@ describe("syncProviders: convergence", () => {
     const [failure] = bypassFailures(outcome.bypass);
     expect(failure.name).toBe(`${BYPASS_SECRET_NAME} (Vercel)`);
     expect(failure.error).toMatch(/nothing was changed/);
+  });
+});
+
+describe("syncProviders: a zero-exit error envelope", () => {
+  // The real adapter over a zero-exit transport: `answer` may replace the
+  // fake's body for one request, the way `vercel api` prints an HTTP error.
+  function throughAdapter(fake, answer) {
+    return createVercelApi({
+      transport: async (path, options) => {
+        const body =
+          answer(path, options) ?? (await fake.request(path, options));
+        return { ok: true, status: 0, text: JSON.stringify(body) };
+      },
+    });
+  }
+
+  it("does not confirm a bypass PATCH answered by an envelope", async () => {
+    const fake = fakeVercel({
+      bypass: { prj_c: automation(STALE), prj_s: {} },
+    });
+    const api = throughAdapter(fake, (path, { body }) =>
+      path.includes("/prj_c/") && body?.generate
+        ? {
+            error: {
+              code: "forbidden",
+              message: `refused ${body.generate.secret} beside ${STALE}`,
+            },
+          }
+        : undefined,
+    );
+    const setGitHubSecrets = vi.fn();
+
+    const outcome = await run(api, { setGitHubSecrets });
+
+    expect(outcome.stopped).toBe(true);
+    expect(outcome.bypass.confirmedProjects).toEqual([]);
+    expect(setGitHubSecrets).not.toHaveBeenCalled();
+    expect(revokePatches(fake)).toEqual([]);
+    expect(fake.bypass.prj_c).toEqual(automation(STALE));
+    expect(afterBypassCalls(fake)).toEqual([]);
+    const [failure] = bypassFailures(outcome.bypass);
+    expect(failure.error).toMatch(/forbidden/);
+    const text = everything(outcome);
+    expect(text).not.toContain(SECRET);
+    expect(text).not.toContain(STALE);
   });
 });
 

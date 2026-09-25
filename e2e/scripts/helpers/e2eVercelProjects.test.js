@@ -292,7 +292,10 @@ describe("connectVercelProjects", () => {
     });
     expect(typeof result.api.request).toBe("function");
     expect(typeof result.api.registerSecret).toBe("function");
-    await result.api.request("/probe");
+    // The fake CLI answers an unknown path with a zero-exit error envelope.
+    await expect(result.api.request("/probe")).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(cli.requests.at(-1)).toMatchObject({
       path: "/probe",
       teamId: "team_1",
@@ -314,7 +317,10 @@ describe("connectVercelProjects", () => {
     });
 
     expect(result.projects.server.orgId).toBe("user_1");
-    await result.api.request("/probe");
+    // The fake CLI answers an unknown path with a zero-exit error envelope.
+    await expect(result.api.request("/probe")).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(scopeOf(cli.requests.at(-1))).toBe("alice");
     expect(cli.requests.at(-1).teamId).toBeNull();
   });
@@ -330,6 +336,35 @@ describe("connectVercelProjects", () => {
       teamId: "team_1",
     });
     expect(createTokenTransport.mock.calls[0][0].teamId).toBeUndefined();
+  });
+
+  it("never runs the Vercel CLI in token mode", async () => {
+    world.projects.team_1 = governed("team_1");
+    const run = vi.fn();
+
+    const result = await connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: TOKEN },
+      run,
+    });
+
+    expect(result.projects.server.orgId).toBe("team_1");
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("hands the trimmed VERCEL_TOKEN to the token transport", async () => {
+    world.projects.team_1 = governed("team_1");
+
+    await connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: `  ${TOKEN}\n` },
+    });
+
+    const tokens = createTokenTransport.mock.calls.map(([arg]) => arg.token);
+    expect(tokens.length).toBeGreaterThan(0);
+    expect(tokens.every((token) => token === TOKEN)).toBe(true);
   });
 
   it("gives the token transport no teamId for the personal scope", async () => {
@@ -473,6 +508,71 @@ describe("connectVercelProjects with a token for a Northstar account", () => {
   });
 });
 
+describe("connectVercelProjects token redaction", () => {
+  function echoingTransport(status) {
+    return async () => {
+      const text = JSON.stringify({
+        error: { code: `bad_${TOKEN}`, message: `token ${TOKEN} rejected` },
+      });
+      return { ok: false, status, text, errorText: `${text} ${TOKEN}` };
+    };
+  }
+
+  it("never exposes the token through an unscoped API error", async () => {
+    createTokenTransport.mockImplementation(() => echoingTransport(403));
+
+    const error = await connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: ` ${TOKEN} ` },
+    }).catch((err) => err);
+
+    expect(JSON.stringify({ ...error, message: error.message })).not.toContain(
+      TOKEN,
+    );
+  });
+
+  it("never exposes the token through a scoped API error", async () => {
+    createTokenTransport.mockImplementation(({ teamId }) =>
+      teamId ? echoingTransport(403) : fakeTransport("unscoped-or-personal"),
+    );
+
+    const error = await connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: TOKEN },
+    }).catch((err) => err);
+
+    expect(error.code).toBe("unknown");
+    expect(JSON.stringify({ ...error, message: error.message })).not.toContain(
+      TOKEN,
+    );
+  });
+
+  it("never exposes the token through the returned API", async () => {
+    world.projects.team_1 = governed("team_1");
+    createTokenTransport.mockImplementation(({ teamId }) => {
+      const governedTransport = fakeTransport(teamId ?? "unscoped-or-personal");
+      return (path, options) =>
+        path === "/probe"
+          ? echoingTransport(500)(path, options)
+          : governedTransport(path, options);
+    });
+    const result = await connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: TOKEN },
+    });
+
+    const error = await result.api.request("/probe").catch((err) => err);
+
+    expect(error.status).toBe(500);
+    expect(JSON.stringify({ ...error, message: error.message })).not.toContain(
+      TOKEN,
+    );
+  });
+});
+
 describe("connectVercelProjects over the CLI session", () => {
   const OTHER = { id: "team_0", slug: "other" };
   const HOME = { id: "team_9", slug: "alice-home" };
@@ -529,7 +629,10 @@ describe("connectVercelProjects over the CLI session", () => {
     const personal = cli.requests.filter((r) => scopeOf(r) === "alice");
     expect(personal.length).toBeGreaterThan(0);
     expect(personal.every(({ teamId }) => teamId === null)).toBe(true);
-    await result.api.request("/probe");
+    // The fake CLI answers an unknown path with a zero-exit error envelope.
+    await expect(result.api.request("/probe")).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(cli.requests.at(-1)).toMatchObject({ teamId: null });
   });
 
@@ -548,7 +651,10 @@ describe("connectVercelProjects over the CLI session", () => {
     expect(new Set(lookups.map(({ teamId }) => teamId))).toEqual(
       new Set([null, "team_0", "team_1"]),
     );
-    await result.api.request("/probe");
+    // The fake CLI answers an unknown path with a zero-exit error envelope.
+    await expect(result.api.request("/probe")).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(cli.requests.at(-1)).toMatchObject({ teamId: "team_1" });
   });
 

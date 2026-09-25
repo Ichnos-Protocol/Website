@@ -58,10 +58,30 @@ function writeOutcome(operation, raw) {
 }
 
 // The v10 create response wraps the entry in created, as an object or array.
-function createdUpdatedAt(response) {
+function createdEntry(response) {
   const created = response?.created;
-  const first = Array.isArray(created) ? created[0] : created;
-  return first?.updatedAt ?? response?.updatedAt;
+  return Array.isArray(created) ? created[0] : created;
+}
+
+function createdUpdatedAt(response) {
+  return createdEntry(response)?.updatedAt ?? response?.updatedAt;
+}
+
+// A write is reported only when the response names the created entry: a
+// plain object for the requested key with a non-empty id.
+function assertCreatedEntry(response, key) {
+  const entry = createdEntry(response);
+  const valid =
+    entry !== null &&
+    typeof entry === "object" &&
+    !Array.isArray(entry) &&
+    entry.key === key &&
+    typeof entry.id === "string" &&
+    entry.id.length > 0;
+  if (valid) return;
+  throw new Error(
+    `Vercel env create for ${key} returned no created entry; refusing to report a write. Nothing is confirmed.`,
+  );
 }
 
 // Vercel omits gitBranch on an entry that applies to every branch; target and
@@ -138,6 +158,7 @@ async function createPreviewEntry(api, projectId, key, value) {
     method: "POST",
     body: { key, value, type: "encrypted", target: ["preview"] },
   });
+  assertCreatedEntry(response, key);
   return writeOutcome("created", createdUpdatedAt(response));
 }
 

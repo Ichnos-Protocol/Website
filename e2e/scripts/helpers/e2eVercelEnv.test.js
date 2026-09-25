@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
+import { createVercelApi } from "./e2eVercelApi.js";
 import {
   findPreviewEntry,
   isAllBranchesPreview,
@@ -8,6 +9,7 @@ import {
 } from "./e2eVercelEnv.js";
 
 const KEY = "E2E_USER_UID";
+const CREATED = { created: { id: "env_new", key: KEY } };
 
 function entry(overrides) {
   return {
@@ -110,7 +112,7 @@ describe("setPreviewEnv", () => {
   });
 
   it("creates an all-branches Preview entry with no branch scope", async () => {
-    const api = fakeApi(OVERRIDES);
+    const api = fakeApi(OVERRIDES, {}, { POST: CREATED });
 
     const result = await setPreviewEnv({
       api,
@@ -185,15 +187,21 @@ describe("setPreviewEnv outcome metadata", () => {
   }
 
   it("reports a create as created, with no timestamp when none is returned", async () => {
-    const result = await run(fakeApi([]));
+    const result = await run(fakeApi([], {}, { POST: CREATED }));
 
     expect(result).toMatchObject({ status: "success", operation: "created" });
     expect(result).not.toHaveProperty("updatedAt");
   });
 
   it.each([
-    ["an object", { created: { id: "env_new", updatedAt: EPOCH_MS } }],
-    ["an array", { created: [{ id: "env_new", updatedAt: String(EPOCH_MS) }] }],
+    [
+      "an object",
+      { created: { id: "env_new", key: KEY, updatedAt: EPOCH_MS } },
+    ],
+    [
+      "an array",
+      { created: [{ id: "env_new", key: KEY, updatedAt: String(EPOCH_MS) }] },
+    ],
   ])(
     "keeps the create response's updatedAt when created is %s",
     async (_, body) => {
@@ -251,7 +259,9 @@ describe("setPreviewEnv outcome metadata", () => {
     const api = fakeApi(
       [],
       {},
-      { POST: { created: { updatedAt: "9/20/2026" } } },
+      {
+        POST: { created: { id: "env_new", key: KEY, updatedAt: "9/20/2026" } },
+      },
     );
 
     expect(await run(api)).not.toHaveProperty("updatedAt");
@@ -329,6 +339,127 @@ describe("setPreviewEnv outcome metadata", () => {
     expect(result).not.toHaveProperty("value");
     expect(result).not.toHaveProperty("id");
     expect(result).not.toHaveProperty("gitBranch");
+  });
+});
+
+describe("setPreviewEnv create confirmation", () => {
+  const VALUE = "created-uid-value";
+
+  it.each([
+    ["an empty body", {}],
+    ["an empty created entry", { created: {} }],
+    ["an entry for another key", { created: { id: "env_1", key: "OTHER" } }],
+    ["an empty created array", { created: [] }],
+    ["an empty id", { created: { id: "", key: KEY } }],
+    ["a numeric id", { created: { id: 1, key: KEY } }],
+    ["a created array entry", { created: [[{ id: "env_1", key: KEY }]] }],
+  ])("fails closed on %s", async (_label, body) => {
+    const api = fakeApi([], {}, { POST: body });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_c",
+      key: KEY,
+      value: VALUE,
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).toMatch(/returned no created entry/);
+    expect(result.error).toContain(KEY);
+    expect(JSON.stringify(result)).not.toContain(VALUE);
+  });
+
+  it("keeps a secret-named key fully masked on a refused create", async () => {
+    const secret = "AIzaSecretApiKeyValue";
+    const api = fakeApi([], {}, { POST: {} });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_c",
+      key: "VITE_FIREBASE_API_KEY",
+      value: secret,
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.masked).toBe("****");
+    expect(JSON.stringify(result)).not.toContain(secret.slice(-4));
+  });
+});
+
+describe("setPreviewEnv over the adapter's envelope guard", () => {
+  const VALUE = "enveloped-uid-value";
+  const ENVELOPE = { error: { code: "forbidden", message: "Not authorized" } };
+
+  // A zero-exit transport, the way `vercel api` prints an error body.
+  function adapterApi({ list = { envs: [] }, decrypted, post, patch }) {
+    const transport = vi.fn(async (path, { method }) => {
+      let body;
+      if (method === "POST") body = post;
+      else if (method === "PATCH") body = patch;
+      else if (path.split("?")[0].endsWith("/env")) body = list;
+      else body = decrypted;
+      return { ok: true, status: 0, text: JSON.stringify(body) };
+    });
+    return { api: createVercelApi({ transport }), transport };
+  }
+
+  function methods(transport) {
+    return transport.mock.calls.map(([, options]) => options.method);
+  }
+
+  function run(api) {
+    return setPreviewEnv({ api, projectId: "prj_s", key: KEY, value: VALUE });
+  }
+
+  it("fails with no write when the env list is an envelope", async () => {
+    const { api, transport } = adapterApi({ list: ENVELOPE, post: CREATED });
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(/forbidden/);
+    expect(methods(transport)).not.toContain("POST");
+    expect(methods(transport)).not.toContain("PATCH");
+  });
+
+  it("fails when the create answers an envelope", async () => {
+    const { api } = adapterApi({ post: ENVELOPE });
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).not.toContain(VALUE);
+  });
+
+  it("fails when the update answers an envelope", async () => {
+    const { api, transport } = adapterApi({
+      list: { envs: [entry()] },
+      decrypted: { value: "old" },
+      patch: ENVELOPE,
+    });
+
+    const result = await run(api);
+
+    expect(methods(transport)).toContain("PATCH");
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).not.toContain(VALUE);
+  });
+
+  it("still reports a confirmed create through the adapter", async () => {
+    const { api } = adapterApi({
+      post: { created: { id: "env_new", key: KEY, updatedAt: 1758784500000 } },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      status: "success",
+      operation: "created",
+      updatedAt: new Date(1758784500000).toISOString(),
+    });
   });
 });
 

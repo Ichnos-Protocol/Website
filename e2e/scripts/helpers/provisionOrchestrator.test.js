@@ -43,7 +43,10 @@ vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
   ...(await importOriginal()),
   checkGhAuth: vi.fn(),
   checkVercelAuth: vi.fn(),
-  checkVercelApiAccess: vi.fn(() => ({ mode: "cli" })),
+  checkVercelApiAccess: vi.fn(() => ({
+    mode: "cli",
+    reason: "vercel api supported, no VERCEL_TOKEN",
+  })),
 }));
 vi.mock("./e2eVercelProjects.js", async (importOriginal) => ({
   ...(await importOriginal()),
