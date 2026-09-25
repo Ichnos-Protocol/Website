@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const execFileSync = vi.fn();
 const spawnSync = vi.fn();
 const existsSync = vi.fn(() => true);
+// Names of every other fs function called, in order.
+const fsCalls = vi.hoisted(() => []);
 const readEnvFile = vi.fn();
 const readPreservedWebConfig = vi.fn();
 const writeEnvFile = vi.fn();
@@ -61,10 +64,21 @@ vi.mock("dotenv", async (importOriginal) => ({
   ...(await importOriginal()),
   config,
 }));
-vi.mock("fs", async (importOriginal) => ({
-  ...(await importOriginal()),
-  existsSync,
-}));
+// Every fs function is tracked, so a test can prove that no filesystem
+// method ran, whichever one it would have been.
+vi.mock("fs", async (importOriginal) => {
+  const actual = await importOriginal();
+  const tracked = Object.entries(actual)
+    .filter(([name, fn]) => typeof fn === "function" && /^[a-z]/.test(name))
+    .map(([name, fn]) => [
+      name,
+      (...args) => {
+        fsCalls.push(name);
+        return fn(...args);
+      },
+    ]);
+  return { ...actual, ...Object.fromEntries(tracked), existsSync };
+});
 vi.mock("./e2eEnvFile.js", async (importOriginal) => ({
   ...(await importOriginal()),
   readEnvFile,
@@ -87,9 +101,13 @@ vi.mock("./e2eSyncGitHub.js", () => ({
 }));
 vi.mock("./e2eSyncVercel.js", () => ({ syncToVercel }));
 
-const { main, commandLine, parseCliOptions } =
-  await import("../provision-e2e-firebase-users.js");
-const { RECOVERY_NOTE } = await import("./e2ePasswordReset.js");
+const {
+  main,
+  commandLine,
+  isDirectInvocation,
+  parseCliOptions,
+  SYNC_RECOVERY_HINT,
+} = await import("../provision-e2e-firebase-users.js");
 const { envFileNames } = await import("./e2eCredentials.js");
 
 const SECRET = "adminadmin";
@@ -279,7 +297,6 @@ describe("provision orchestrator ordering", () => {
   it.each([
     ["sync-only", { syncOnly: true }],
     ["full pipeline", {}],
-    ["reset-passwords", { resetPasswords: true }],
   ])(
     "refuses a shell-exported password that differs from its pattern in %s mode",
     async (_label, options) => {
@@ -295,27 +312,21 @@ describe("provision orchestrator ordering", () => {
     },
   );
 
-  it.each([
-    ["full pipeline", {}],
-    ["reset-passwords", { resetPasswords: true }],
-  ])(
-    "refuses a stale file password with no shell override before any provider call in %s mode",
-    async (_label, options) => {
-      readEnvFile.mockReturnValue({
-        ...completeEnv(),
-        E2E_USER_PASSWORD: STALE,
-      });
+  it("refuses a stale file password with no shell override before any provider call", async () => {
+    readEnvFile.mockReturnValue({
+      ...completeEnv(),
+      E2E_USER_PASSWORD: STALE,
+    });
 
-      const error = await main(options).catch((err) => err);
+    const error = await main({}).catch((err) => err);
 
-      expect(error.message).toMatch(
-        /not matching.*E2E_USER_PASSWORD \(e2e\/\.env\.e2e\)/,
-      );
-      expect(error.message).not.toContain(STALE);
-      expect(error.message).not.toContain("useruser");
-      expectNothingExternal();
-    },
-  );
+    expect(error.message).toMatch(
+      /not matching.*E2E_USER_PASSWORD \(e2e\/\.env\.e2e\)/,
+    );
+    expect(error.message).not.toContain(STALE);
+    expect(error.message).not.toContain("useruser");
+    expectNothingExternal();
+  });
 
   it("refuses a stale file password even when the shell exports the pattern value", async () => {
     readEnvFile.mockReturnValue({
@@ -411,7 +422,7 @@ describe("provision orchestrator ordering", () => {
     expect(order(writeEnvFile)).toBeLessThan(order(syncVariablesToGitHub));
     expect(syncProviders).not.toHaveBeenCalled();
     const text = output();
-    expect(text).toContain(RECOVERY_NOTE);
+    expect(text).toContain(SYNC_RECOVERY_HINT);
     for (const value of Object.values(PATTERN)) {
       expect(text).not.toContain(value);
     }
@@ -453,20 +464,6 @@ describe("provision orchestrator ordering", () => {
     expect(order(loadFirebaseCredentials)).toBeLessThan(
       order(provisionFirebaseUsers),
     );
-  });
-
-  it("never loads server/.env in reset mode and loads credentials once", async () => {
-    const stop = new Error("stop at credential load");
-    loadFirebaseCredentials.mockImplementationOnce(() => {
-      throw stop;
-    });
-
-    await expect(
-      main({ resetPasswords: true, firebaseEnvPath: "missing/.env.e2e" }),
-    ).rejects.toBe(stop);
-
-    expect(config).not.toHaveBeenCalled();
-    expect(loadFirebaseCredentials).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -522,72 +519,61 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(record.project).toBe("ichnos-protocol-test");
   });
 
-  it.each([["reset-passwords", { resetPasswords: true }]])(
-    "starts without e2e/.env.e2e in %s mode and stops on the missing API key after writing",
-    async (_label, options) => {
-      existsSync.mockReturnValue(false);
-      readPreservedWebConfig.mockReturnValue({});
-      listGitHubSecretMetadata.mockReturnValue({ ...PRIOR_METADATA });
-      mockSuccessfulSync();
+  it("starts without e2e/.env.e2e in a full run and stops on the missing web config after writing", async () => {
+    existsSync.mockReturnValue(false);
+    readPreservedWebConfig.mockReturnValue({});
+    listGitHubSecretMetadata.mockReturnValue({ ...PRIOR_METADATA });
+    mockSuccessfulSync();
+    fetchWebConfig.mockResolvedValue({});
 
-      const error = await main(options).catch((err) => err);
+    const error = await main({}).catch((err) => err);
 
-      expect(readEnvFile).not.toHaveBeenCalled();
-      const upserts = options.resetPasswords
-        ? upsertUser
-        : provisionFirebaseUsers;
-      expect(upserts).toHaveBeenCalled();
-      expect(order(upserts)).toBeLessThan(order(writeEnvFile));
-      expect(writeEnvFile).toHaveBeenCalledTimes(1);
-      expect(writeTestAccountsRecord).toHaveBeenCalledTimes(1);
-      const record = writeTestAccountsRecord.mock.calls[0][1];
-      expect(record.setNow).toEqual([]);
-      expect(record.secretMetadata).toEqual(PRIOR_METADATA);
-      expect(error.message).toMatch(
-        /Missing GitHub config value\(s\): FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET, FIREBASE_API_KEY/,
-      );
-      expect(syncToGitHub).not.toHaveBeenCalled();
-      expect(syncVariablesToGitHub).not.toHaveBeenCalled();
-      expect(syncToVercel).not.toHaveBeenCalled();
-      expect(syncProviders).not.toHaveBeenCalled();
-    },
-  );
+    expect(readEnvFile).not.toHaveBeenCalled();
+    expect(provisionFirebaseUsers).toHaveBeenCalled();
+    expect(order(provisionFirebaseUsers)).toBeLessThan(order(writeEnvFile));
+    expect(writeEnvFile).toHaveBeenCalledTimes(1);
+    expect(writeTestAccountsRecord).toHaveBeenCalledTimes(1);
+    const record = writeTestAccountsRecord.mock.calls[0][1];
+    expect(record.setNow).toEqual([]);
+    expect(record.secretMetadata).toEqual(PRIOR_METADATA);
+    expect(error.message).toMatch(
+      /Missing GitHub config value\(s\): FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET, FIREBASE_API_KEY/,
+    );
+    expect(syncToGitHub).not.toHaveBeenCalled();
+    expect(syncVariablesToGitHub).not.toHaveBeenCalled();
+    expect(syncToVercel).not.toHaveBeenCalled();
+    expect(syncProviders).not.toHaveBeenCalled();
+  });
 
-  it.each([
-    ["full pipeline", {}],
-    ["reset-passwords", { resetPasswords: true }],
-  ])(
-    "dates only the secrets GitHub confirmed after a partial failure in %s mode",
-    async (_label, options) => {
-      readEnvFile.mockReturnValue(completeEnv());
-      listGitHubSecretMetadata.mockReturnValue({ ...PRIOR_METADATA });
-      mockSuccessfulSync();
-      syncToGitHub.mockReturnValue([
-        { name: "E2E_ADMIN_PASSWORD", status: "success" },
-        { name: "E2E_USER_PASSWORD", status: "failed", error: "gh: HTTP 502" },
-        { name: "FIREBASE_API_KEY", status: "failed", error: "gh: HTTP 502" },
-      ]);
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      vi.spyOn(process, "exit").mockImplementation((code) => {
-        throw new Error(`exit ${code}`);
-      });
+  it("dates only the secrets GitHub confirmed after a partial failure", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    listGitHubSecretMetadata.mockReturnValue({ ...PRIOR_METADATA });
+    mockSuccessfulSync();
+    syncToGitHub.mockReturnValue([
+      { name: "E2E_ADMIN_PASSWORD", status: "success" },
+      { name: "E2E_USER_PASSWORD", status: "failed", error: "gh: HTTP 502" },
+      { name: "FIREBASE_API_KEY", status: "failed", error: "gh: HTTP 502" },
+    ]);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(process, "exit").mockImplementation((code) => {
+      throw new Error(`exit ${code}`);
+    });
 
-      const error = await main(options).catch((err) => err);
+    const error = await main({}).catch((err) => err);
 
-      expect(error.message).toBe("exit 1");
-      const calls = writeTestAccountsRecord.mock.calls;
-      expect(calls).toHaveLength(2);
-      expect(calls[0][1].setNow).toEqual([]);
-      expect(order(writeTestAccountsRecord)).toBeLessThan(order(syncToGitHub));
-      const refreshed = calls[1][1];
-      expect(refreshed.setNow).toEqual(["E2E_ADMIN_PASSWORD"]);
-      expect(refreshed.secretMetadata).toEqual(PRIOR_METADATA);
-      expect(
-        writeTestAccountsRecord.mock.invocationCallOrder[1],
-      ).toBeGreaterThan(order(syncToGitHub));
-      expect(syncProviders).not.toHaveBeenCalled();
-    },
-  );
+    expect(error.message).toBe("exit 1");
+    const calls = writeTestAccountsRecord.mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[0][1].setNow).toEqual([]);
+    expect(order(writeTestAccountsRecord)).toBeLessThan(order(syncToGitHub));
+    const refreshed = calls[1][1];
+    expect(refreshed.setNow).toEqual(["E2E_ADMIN_PASSWORD"]);
+    expect(refreshed.secretMetadata).toEqual(PRIOR_METADATA);
+    expect(writeTestAccountsRecord.mock.invocationCallOrder[1]).toBeGreaterThan(
+      order(syncToGitHub),
+    );
+    expect(syncProviders).not.toHaveBeenCalled();
+  });
 
   it("refreshes the record with every confirmed secret before completing", async () => {
     readEnvFile.mockReturnValue(completeEnv());
@@ -667,23 +653,17 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(syncToGitHub).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    ["full pipeline", {}],
-    ["reset-passwords", { resetPasswords: true }],
-  ])(
-    "refuses an existing file naming another project before any Firebase call in %s mode",
-    async (_label, options) => {
-      readEnvFile.mockReturnValue({
-        ...completeEnv(),
-        FIREBASE_PROJECT_ID: "other-project",
-      });
+  it("refuses an existing file naming another project before any Firebase call", async () => {
+    readEnvFile.mockReturnValue({
+      ...completeEnv(),
+      FIREBASE_PROJECT_ID: "other-project",
+    });
 
-      await expect(main(options)).rejects.toThrowError(
-        /Firebase project mismatch: .*"other-project"/,
-      );
-      expectNothingExternal();
-    },
-  );
+    await expect(main({})).rejects.toThrowError(
+      /Firebase project mismatch: .*"other-project"/,
+    );
+    expectNothingExternal();
+  });
 
   it("writes nothing when an upsert rejects", async () => {
     readEnvFile.mockReturnValue(completeEnv());
@@ -913,20 +893,25 @@ describe("commandLine", () => {
   it("names the script and each token as given", () => {
     expect(commandLine()).toBe(SCRIPT);
     expect(fromArgv([])).toBe(SCRIPT);
-    expect(fromArgv(["--reset-passwords", "--firebase-env", "a/.env"])).toBe(
-      `${SCRIPT} --reset-passwords --firebase-env a/.env`,
+    expect(fromArgv(["--sync-only"])).toBe(`${SCRIPT} --sync-only`);
+    expect(fromArgv(["--firebase-env", "a/.env"])).toBe(
+      `${SCRIPT} --firebase-env a/.env`,
     );
   });
 
-  it("keeps a reversed flag order", () => {
-    const args = ["--firebase-env", "a/.env", "--reset-passwords"];
-
-    expect(fromArgv(args)).toBe(
-      `${SCRIPT} --firebase-env a/.env --reset-passwords`,
+  it("keeps a given flag order", () => {
+    expect(commandLine(["--firebase-env", "a/.env", "--x"])).toBe(
+      `${SCRIPT} --firebase-env a/.env --x`,
     );
-    expect(parseCliOptions(["node", "s.js", ...args])).toMatchObject({
-      resetPasswords: true,
-      firebaseEnvPath: "a/.env",
+    expect(commandLine(["--x", "--firebase-env", "a/.env"])).toBe(
+      `${SCRIPT} --x --firebase-env a/.env`,
+    );
+    expect(
+      parseCliOptions(["node", "s.js", "--firebase-env", "a/.env"]),
+    ).toMatchObject({ syncOnly: false, firebaseEnvPath: "a/.env" });
+    expect(parseCliOptions(["node", "s.js", "--sync-only"])).toMatchObject({
+      syncOnly: true,
+      firebaseEnvPath: undefined,
     });
   });
 
@@ -955,5 +940,137 @@ describe("commandLine", () => {
     expect(writeTestAccountsRecord.mock.calls[0][1].command).toBe(
       "node custom.js --flag",
     );
+  });
+});
+
+describe("parseCliOptions", () => {
+  const COMMAND = "node e2e/scripts/provision-e2e-firebase-users.js";
+  const parse = (...args) => parseCliOptions(["node", "s.js", ...args]);
+  const naming = (pattern) =>
+    expect.objectContaining({
+      message: expect.stringMatching(pattern),
+    });
+
+  // The retired reset flag; the only place its name survives.
+  const RETIRED_FLAG = "--reset-passwords";
+
+  it("refuses the retired reset flag as unknown, naming the supported command", () => {
+    const supported = naming(
+      new RegExp(`Unknown flag: ${RETIRED_FLAG}[\\s\\S]*${COMMAND}`),
+    );
+
+    expect(() => parse(RETIRED_FLAG)).toThrowError(supported);
+    expect(() => parse(RETIRED_FLAG)).toThrowError(
+      naming(/--sync-only[\s\S]*--firebase-env <path>/),
+    );
+  });
+
+  it("refuses an arbitrary unknown flag", () => {
+    expect(() => parse("--sync-only", "--verbose")).toThrowError(
+      naming(/Unknown flag: --verbose/),
+    );
+  });
+
+  it("refuses a positional argument without echoing it", () => {
+    const token = "hunter2-secret";
+
+    expect(() => parse(token)).toThrowError(
+      naming(/Unexpected argument at position 1/),
+    );
+    expect(() => parse(token)).toThrowError(
+      expect.objectContaining({ message: expect.not.stringContaining(token) }),
+    );
+  });
+
+  it("refuses a duplicate --sync-only", () => {
+    expect(() => parse("--sync-only", "--sync-only")).toThrowError(
+      naming(/--sync-only was given more than once/),
+    );
+  });
+
+  it("refuses a duplicate --firebase-env", () => {
+    expect(() =>
+      parse("--firebase-env", "a/.env", "--firebase-env", "b/.env"),
+    ).toThrowError(naming(/--firebase-env was given more than once/));
+  });
+
+  it.each([
+    ["no value", []],
+    ["an empty value", [""]],
+    ["another flag", ["--sync-only"]],
+  ])("refuses --firebase-env followed by %s", (_label, rest) => {
+    expect(() => parse("--firebase-env", ...rest)).toThrowError(
+      naming(/--firebase-env needs a path value/),
+    );
+  });
+
+  it("refuses --sync-only with --firebase-env", () => {
+    expect(() => parse("--sync-only", "--firebase-env", "a/.env")).toThrowError(
+      naming(/--sync-only loads no Firebase credentials/),
+    );
+  });
+
+  it("stops before main does any work", () => {
+    const argv = ["node", "s.js", RETIRED_FLAG];
+
+    expect(() => main(parseCliOptions(argv))).toThrowError(/Unknown flag/);
+    expect(console.log).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).not.toHaveBeenCalled();
+    expect(existsSync).not.toHaveBeenCalled();
+    expect(readEnvFile).not.toHaveBeenCalled();
+    expectNothingExternal();
+  });
+
+  it("rejects a direct invocation in the parser before any filesystem call", async () => {
+    const scriptFile = fileURLToPath(
+      new URL("../provision-e2e-firebase-users.js", import.meta.url),
+    );
+    const savedArgv = process.argv;
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.resetModules();
+    fsCalls.length = 0;
+    process.argv = ["node", scriptFile, RETIRED_FLAG];
+    try {
+      await import("../provision-e2e-firebase-users.js");
+      await vi.waitFor(() => expect(exit).toHaveBeenCalled());
+    } finally {
+      process.argv = savedArgv;
+    }
+    const exitCodes = exit.mock.calls.map(([code]) => code);
+    exit.mockRestore();
+
+    expect(exitCodes).toEqual([1]);
+    expect(error).toHaveBeenCalledWith(
+      expect.stringMatching(/\[fatal\] Unknown flag: --reset-passwords/),
+    );
+    expect(fsCalls).toEqual([]);
+    expect(existsSync).not.toHaveBeenCalled();
+    expect(console.log).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).not.toHaveBeenCalled();
+    expectNothingExternal();
+  });
+});
+
+describe("isDirectInvocation", () => {
+  const moduleFile = fileURLToPath(
+    new URL("../provision-e2e-firebase-users.js", import.meta.url),
+  );
+  const moduleUrl = pathToFileURL(moduleFile).href;
+
+  it("matches the module path without touching the filesystem", () => {
+    fsCalls.length = 0;
+
+    expect(isDirectInvocation(moduleFile, moduleUrl)).toBe(true);
+    expect(isDirectInvocation(`${moduleFile}.other`, moduleUrl)).toBe(false);
+    expect(isDirectInvocation(undefined, moduleUrl)).toBe(false);
+    expect(fsCalls).toEqual([]);
+    expect(existsSync).not.toHaveBeenCalled();
+  });
+
+  it("compares Windows paths case-insensitively", () => {
+    expect(
+      isDirectInvocation(moduleFile.toUpperCase(), moduleUrl, "win32"),
+    ).toBe(true);
   });
 });

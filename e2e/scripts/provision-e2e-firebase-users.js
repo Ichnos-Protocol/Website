@@ -14,10 +14,10 @@
  *     Push e2e/.env.e2e as it stands to GitHub and the Vercel Preview env
  *     without touching Firebase. It neither reads the web config nor
  *     converges the bypass. The only mode that requires the file; it writes nothing.
- *   node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords [--firebase-env <path>]
- *     Re-apply the six pattern passwords to the E2E Firebase project,
- *     regenerate both files and push the passwords to GitHub. An alias for the
- *     default provisioning/reset run; nothing is random.
+ *
+ * The default run is the provisioning and reset operation: every run reapplies
+ * the deterministic pattern passwords to the five accounts, so there is no
+ * separate reset command. Any other flag or argument is refused before any work.
  *
  * e2e/.env.e2e is a generated file. The emails, URLs and project come from
  * code (e2eFixedConfig.js), the passwords from the account pattern, the UIDs
@@ -28,23 +28,24 @@
  * ignored, with no secret marked as set by this run; it is rewritten after the
  * GitHub secret sync to date only the secrets that sync confirmed.
  *
- * Every mode but --sync-only loads the Firebase admin credentials from, in
- * order: --firebase-env <path>, server/.env.e2e, then a single
- * secrets/*ichnos-protocol-test*.json service-account file. No mode reads
+ * The default run loads the Firebase admin credentials from, in order:
+ * --firebase-env <path>, server/.env.e2e, then a single
+ * secrets/*ichnos-protocol-test*.json service-account file; --firebase-env is
+ * accepted only there, since --sync-only loads none. No mode reads
  * server/.env, and every mode is locked to the ichnos-protocol-test project;
  * an existing e2e/.env.e2e naming another project is refused before any
  * Firebase call. Shell-exported E2E_*_PASSWORD values are captured once at
  * startup, and every mode refuses a password that is not its account's
- * pattern password (AGENTS.md "Passwords and secrets"). The provisioning modes
- * check every password in e2e/.env.e2e and in the shell before any provider
- * call, although they write the pattern passwords themselves.
+ * pattern password (AGENTS.md "Passwords and secrets"). The default run
+ * checks every password in e2e/.env.e2e and in the shell before any provider
+ * call, although it writes the pattern passwords itself.
  *
  * Vercel traffic goes through the Vercel REST API: the `vercel api`
  * subcommand over the `vercel login` session, or, when the installed CLI
  * lacks it, an exported VERCEL_TOKEN. The only manual steps are `gh auth
  * login`, `vercel login` and, in that last case, the VERCEL_TOKEN export.
  */
-import { existsSync, realpathSync } from "fs";
+import { existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, relative, resolve } from "path";
 import { runPreflight } from "./helpers/e2ePreflight.js";
@@ -84,11 +85,6 @@ import {
   ROLES,
 } from "./helpers/e2eCredentials.js";
 import {
-  prepareReset,
-  applyReset,
-  RECOVERY_NOTE,
-} from "./helpers/e2ePasswordReset.js";
-import {
   assertEnvFileProjectMatch,
   loadFirebaseCredentials,
 } from "./helpers/e2eFirebaseCredentials.js";
@@ -107,14 +103,57 @@ const envFilePath = resolve(__dirname, "../.env.e2e");
 const recordPath = resolve(repoRoot, "secrets", "test-accounts.md");
 const SCRIPT_PATH = "e2e/scripts/provision-e2e-firebase-users.js";
 
-/** argv is process.argv; args keeps the operator's tokens in their order. */
+const SUPPORTED_USAGE =
+  "Supported command: node e2e/scripts/provision-e2e-firebase-users.js, " +
+  "with the flags --sync-only or --firebase-env <path>.";
+
+// Messages name flags and positions only: a mistyped token can hold a secret.
+function cliError(detail) {
+  return new Error(`${detail}\n${SUPPORTED_USAGE}`);
+}
+
+function readFirebaseEnv(args, i, found) {
+  if (found.firebaseEnvPath !== undefined) {
+    throw cliError("--firebase-env was given more than once.");
+  }
+  const value = args[i + 1];
+  if (!value || value.startsWith("--")) {
+    throw cliError("--firebase-env needs a path value.");
+  }
+  found.firebaseEnvPath = value;
+  return 2;
+}
+
+// Validates the token at i and returns how many tokens it consumed.
+function readToken(args, i, found) {
+  const token = args[i];
+  if (token === "--firebase-env") return readFirebaseEnv(args, i, found);
+  if (token === "--sync-only") {
+    if (found.syncOnly) throw cliError("--sync-only was given more than once.");
+    found.syncOnly = true;
+    return 1;
+  }
+  if (token.startsWith("--")) {
+    throw cliError(`Unknown flag: ${token.split("=")[0]}.`);
+  }
+  throw cliError(`Unexpected argument at position ${i + 1}.`);
+}
+
+/**
+ * argv is process.argv; args keeps the operator's tokens in their order.
+ * Pure: every token is validated before any option is returned.
+ */
 export function parseCliOptions(argv, cwd = process.cwd()) {
   const args = argv.slice(2);
-  const index = args.indexOf("--firebase-env");
+  const found = { syncOnly: false, firebaseEnvPath: undefined };
+  for (let i = 0; i < args.length; ) i += readToken(args, i, found);
+  if (found.syncOnly && found.firebaseEnvPath !== undefined) {
+    throw cliError(
+      "--sync-only loads no Firebase credentials, so --firebase-env cannot apply.",
+    );
+  }
   return {
-    syncOnly: args.includes("--sync-only"),
-    resetPasswords: args.includes("--reset-passwords"),
-    firebaseEnvPath: index === -1 ? undefined : args[index + 1],
+    ...found,
     args,
     scriptPath: argv[1]
       ? relative(cwd, argv[1]).split("\\").join("/")
@@ -137,10 +176,9 @@ export function commandLine(args = [], scriptPath = SCRIPT_PATH) {
 
 // A main() call without raw tokens (tests, programmatic use) records the
 // flags its options stand for.
-function argsFromOptions({ syncOnly, resetPasswords, firebaseEnvPath }) {
+function argsFromOptions({ syncOnly, firebaseEnvPath }) {
   const args = [];
   if (syncOnly) args.push("--sync-only");
-  if (resetPasswords) args.push("--reset-passwords");
   if (firebaseEnvPath) args.push("--firebase-env", firebaseEnvPath);
   return args;
 }
@@ -156,7 +194,7 @@ function assertGitHubConfigComplete(values) {
   if (missing.length === 0) return;
   throw new Error(
     `Missing GitHub config value(s): ${missing.join(", ")}\n` +
-      "e2e/.env.e2e is generated: re-run the provisioning command once the missing values can be supplied (the default run reads the web config from Firebase; --reset-passwords carries it over from an earlier file).",
+      "e2e/.env.e2e is generated: re-run the provisioning command once the missing values can be supplied (the default run reads the web config from Firebase).",
   );
 }
 
@@ -290,7 +328,13 @@ function refreshRecordAfterProviders(run, bypass) {
   refreshRecord(run, ghResults, providerSetNow);
 }
 
-function syncGitHubConfig(githubVariables, github, { recoveryNote, run } = {}) {
+// Printed by the default run when the GitHub sync fails.
+export const SYNC_RECOVERY_HINT =
+  "[recovery] Firebase and e2e/.env.e2e already hold the pattern passwords; " +
+  "e2e/.env.e2e is now the source of truth. Re-run with --sync-only to push " +
+  "it to GitHub without touching Firebase.";
+
+function syncGitHubConfig(githubVariables, github, { recoveryHint, run } = {}) {
   // A first run has UIDs only after provisioning, so the check runs here.
   assertGitHubConfigComplete({ ...githubVariables, ...github });
   console.log("\n=== GitHub Actions Sync ===");
@@ -302,7 +346,7 @@ function syncGitHubConfig(githubVariables, github, { recoveryNote, run } = {}) {
     printSummary(ghResults, [], varResults);
     printFailedDetails("GitHub variables", varResults);
     printFailedDetails("GitHub secrets", ghResults);
-    if (recoveryNote) console.error(recoveryNote);
+    if (recoveryHint) console.error(recoveryHint);
     process.exit(1);
   }
   return { ghResults, varResults };
@@ -378,18 +422,14 @@ function reportVercel({ ghResults, varResults }, outcome) {
   ]);
 }
 
-function modeLabel(syncOnly, resetPasswords) {
-  if (resetPasswords) return "reset-passwords";
+function modeLabel(syncOnly) {
   return syncOnly ? "sync-only" : "full pipeline";
 }
 
 export async function main(options = parseCliOptions(process.argv)) {
-  const { syncOnly, resetPasswords, firebaseEnvPath } = options;
+  const { syncOnly, firebaseEnvPath } = options;
   const exportedPasswords = captureExportedPasswords();
-  if (syncOnly && resetPasswords) {
-    throw new Error("--sync-only and --reset-passwords cannot be combined.");
-  }
-  console.log(`[orchestrator] ${modeLabel(syncOnly, resetPasswords)}\n`);
+  console.log(`[orchestrator] ${modeLabel(syncOnly)}\n`);
 
   const credentials = syncOnly
     ? null
@@ -400,9 +440,6 @@ export async function main(options = parseCliOptions(process.argv)) {
       });
   const fileEnv = readLocalEnv(syncOnly);
   if (credentials) assertEnvFileProjectMatch(fileEnv, credentials);
-  const reset = resetPasswords
-    ? prepareReset({ credentials, envFilePath })
-    : null;
   const env = syncOnly
     ? mergeEnvPasswords(fileEnv, exportedPasswords)
     : composeRunEnv(fileEnv, exportedPasswords);
@@ -429,31 +466,12 @@ export async function main(options = parseCliOptions(process.argv)) {
   console.log("[preflight] all checks passed");
 
   const run = { command: runCommand(options), now: new Date() };
-  if (reset) {
-    const { vcResults } = await applyReset({
-      ...maps,
-      env,
-      vercelContext: {
-        api: vercelContext.api,
-        project: vercelContext.projects.server,
-      },
-      credentials,
-      syncGitHubConfig: (variables, secrets, opts) =>
-        syncGitHubConfig(variables, secrets, { ...opts, run }),
-      writeGeneratedFiles: (uidMap) =>
-        writeGeneratedFiles({ ...maps, env, uidMap }, run),
-    });
-    exitOnVercelFailure(vcResults);
-    console.log("[done] E2E passwords reset.");
-    return;
-  }
-
   if (!syncOnly) await provisionFullPipeline(maps, credentials, env, run);
 
   const gitHub = syncGitHubConfig(
     githubVariables,
     github,
-    syncOnly ? {} : { recoveryNote: RECOVERY_NOTE, run },
+    syncOnly ? {} : { recoveryHint: SYNC_RECOVERY_HINT, run },
   );
 
   const outcome = await syncVercel(vercelContext, {
@@ -471,12 +489,24 @@ export async function main(options = parseCliOptions(process.argv)) {
   console.log("[done] E2E credential pipeline complete.");
 }
 
-const invokedDirectly =
-  Boolean(process.argv[1]) &&
-  realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+// Pure path comparison: no filesystem call runs before parseCliOptions, so an
+// invalid invocation is refused before any I/O. Windows paths compare
+// case-insensitively.
+export function isDirectInvocation(
+  argvPath,
+  moduleUrl = import.meta.url,
+  platform = process.platform,
+) {
+  if (!argvPath) return false;
+  const normalize = (p) => (platform === "win32" ? p.toLowerCase() : p);
+  return normalize(resolve(argvPath)) === normalize(fileURLToPath(moduleUrl));
+}
 
+const invokedDirectly = isDirectInvocation(process.argv[1]);
+
+// The async wrapper routes a synchronous parse error to the same handler.
 if (invokedDirectly) {
-  main().catch((err) => {
+  (async () => main())().catch((err) => {
     console.error(`\n[fatal] ${err.message}`);
     process.exit(1);
   });

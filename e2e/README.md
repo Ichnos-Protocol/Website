@@ -92,7 +92,7 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 
 **What one run produces:**
 
-- creates or updates the five role accounts in `ichnos-protocol-test`, with the pattern passwords, and reads the test project's web config
+- creates or updates the five role accounts in `ichnos-protocol-test`, with the pattern passwords, and reads the test project's web config. Every default run reapplies the deterministic pattern passwords to the five accounts, so the run is itself the password reset and there is no separate reset command
 - generates `e2e/.env.e2e` whole, with a header giving the date and the exact command; do not edit it by hand
 - writes the gitignored `secrets/test-accounts.md`: each account's email, role, password, UID and project, and the infrastructure secrets by name, tier, where applied and when last set, never their values and never production values
 - syncs 15 GitHub repository variables and 8 GitHub repository secrets
@@ -101,8 +101,7 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 
 **Other modes:**
 
-- `--sync-only` pushes the generated `e2e/.env.e2e` as it stands to GitHub and the Vercel Preview env. It does not touch Firebase, read the web config or rotate the bypass secret.
-- `--reset-passwords` is an alias for the provisioning run that resets the account passwords. The values are deterministic, so a reset produces the same passwords.
+- `--sync-only` pushes the generated `e2e/.env.e2e` as it stands to GitHub and the Vercel Preview env. It does not touch Firebase, read the web config or converge the bypass secret.
 
 **Manual prerequisites** (the only ones):
 
