@@ -7,7 +7,11 @@ import {
   findPasswordMismatchNames,
   passwordNames,
   patternPasswords,
+  envFileNames,
+  fixedE2EConfig,
+  ROLES,
 } from "./e2eCredentials.js";
+import { E2E_FIREBASE_PROJECT_ID } from "./e2eFirebaseCredentials.js";
 
 describe("buildCredentialMaps", () => {
   it("returns empty maps when no credentials are set", () => {
@@ -418,5 +422,27 @@ describe("findInvalidRoleEmailNames", () => {
   it("ignores absent emails and accepts the canonical ones", () => {
     expect(findInvalidRoleEmailNames(EMAILS)).toEqual([]);
     expect(findInvalidRoleEmailNames({})).toEqual([]);
+  });
+});
+
+describe("fixed E2E configuration", () => {
+  it("fixes the five role emails", () => {
+    expect(ROLES.map((r) => r.email)).toEqual(Object.values(EMAILS));
+    const fixed = fixedE2EConfig();
+    for (const [name, email] of Object.entries(EMAILS)) {
+      expect(fixed[name]).toBe(email);
+    }
+  });
+
+  it("reuses the project ID the credential loader is locked to", () => {
+    expect(fixedE2EConfig().FIREBASE_PROJECT_ID).toBe(E2E_FIREBASE_PROJECT_ID);
+  });
+
+  it("derives the six pattern passwords from the fixed emails", () => {
+    expect(patternPasswords(fixedE2EConfig())).toEqual(PATTERN);
+  });
+
+  it("lists exactly the names findMissingGitHubNames reports for an empty env", () => {
+    expect(envFileNames()).toEqual(findMissingGitHubNames({}));
   });
 });

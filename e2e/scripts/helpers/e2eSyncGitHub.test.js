@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "child_process";
-import { syncToGitHub, syncVariablesToGitHub } from "./e2eSyncGitHub.js";
+import {
+  listGitHubSecretMetadata,
+  syncToGitHub,
+  syncVariablesToGitHub,
+} from "./e2eSyncGitHub.js";
 
 vi.mock("child_process", () => ({
   spawnSync: vi.fn(() => ({ status: 0, stderr: "" })),
@@ -242,5 +246,46 @@ describe("syncVariablesToGitHub", () => {
     expect(() => syncVariablesToGitHub({ VAR_A: "val" }, "")).toThrow(
       /repoRoot is required/,
     );
+  });
+});
+
+describe("listGitHubSecretMetadata", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("runs one gh secret list in the repo root and maps names to dates", () => {
+    spawnSync.mockReturnValueOnce({
+      status: 0,
+      stdout: JSON.stringify([
+        { name: "NEON_API_KEY", updatedAt: "2026-09-01T10:00:00Z" },
+        { name: "SYNC_PAT", updatedAt: "2026-08-15T08:00:00Z" },
+      ]),
+    });
+
+    const metadata = listGitHubSecretMetadata("/fake/repo");
+
+    expect(metadata).toEqual({
+      NEON_API_KEY: "2026-09-01T10:00:00Z",
+      SYNC_PAT: "2026-08-15T08:00:00Z",
+    });
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+    expect(spawnSync).toHaveBeenCalledWith(
+      "gh",
+      ["secret", "list", "--json", "name,updatedAt"],
+      expect.objectContaining({ cwd: "/fake/repo" }),
+    );
+  });
+
+  it("returns {} when gh exits non-zero", () => {
+    spawnSync.mockReturnValueOnce({ status: 1, stderr: "not logged in" });
+
+    expect(listGitHubSecretMetadata("/fake/repo")).toEqual({});
+  });
+
+  it("returns {} when the output is not a JSON list", () => {
+    spawnSync.mockReturnValueOnce({ status: 0, stdout: "not json" });
+
+    expect(listGitHubSecretMetadata("/fake/repo")).toEqual({});
   });
 });

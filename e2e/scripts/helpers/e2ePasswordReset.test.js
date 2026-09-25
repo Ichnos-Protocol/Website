@@ -13,8 +13,6 @@ import { tmpdir } from "os";
 const execFileSync = vi.fn();
 const spawnSync = vi.fn();
 const readEnvFile = vi.fn();
-const writePasswordsToEnvFile = vi.fn();
-const writeUidsToEnvFile = vi.fn();
 const getTestApp = vi.fn();
 const upsertUser = vi.fn();
 const syncToVercel = vi.fn();
@@ -29,8 +27,6 @@ vi.mock("dotenv", async (importOriginal) => {
 vi.mock("./e2eEnvFile.js", async (importOriginal) => ({
   ...(await importOriginal()),
   readEnvFile,
-  writePasswordsToEnvFile,
-  writeUidsToEnvFile,
 }));
 vi.mock("./firebaseTestSetup.js", () => ({ getTestApp, upsertUser }));
 vi.mock("./e2eSyncVercel.js", () => ({ syncToVercel }));
@@ -39,6 +35,7 @@ const { prepareReset, applyReset } = await import("./e2ePasswordReset.js");
 const { buildCredentialMaps, passwordNames } =
   await import("./e2eCredentials.js");
 const { main } = await import("../provision-e2e-firebase-users.js");
+const { writeEnvFile } = await import("./e2eEnvFile.js");
 
 const PROJECT = "ichnos-protocol-test";
 const ROLE_LOCAL_PARTS = {
@@ -67,6 +64,10 @@ function e2eEnv() {
   }
   return env;
 }
+
+const COMMAND =
+  "node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords";
+const NOW = new Date("2026-09-25T08:00:00Z");
 
 const CREDENTIALS = {
   projectId: PROJECT,
@@ -105,8 +106,6 @@ function expectNothingExternal() {
   expect(upsertUser).not.toHaveBeenCalled();
   expect(execFileSync).not.toHaveBeenCalled();
   expect(spawnSync).not.toHaveBeenCalled();
-  expect(writePasswordsToEnvFile).not.toHaveBeenCalled();
-  expect(writeUidsToEnvFile).not.toHaveBeenCalled();
 }
 
 describe("prepareReset", () => {
@@ -127,15 +126,21 @@ describe("prepareReset", () => {
     expectNothingExternal();
   });
 
-  it("routes a missing E2E project ID to the project guard", () => {
+  it("accepts an existing file that names no project", () => {
     readEnvFile.mockReturnValue({
       ...e2eEnv(),
       FIREBASE_PROJECT_ID: undefined,
     });
 
-    expect(() => prepare()).toThrowError(
-      `Firebase project mismatch: credential file is for "${PROJECT}", e2e/.env.e2e names "". Nothing was changed.`,
-    );
+    expect(prepare().passwords).toEqual(PATTERN);
+    expectNothingExternal();
+  });
+
+  it("starts without e2e/.env.e2e and reads nothing", () => {
+    rmSync(envFilePath);
+
+    expect(prepare().passwords).toEqual(PATTERN);
+    expect(readEnvFile).not.toHaveBeenCalled();
     expectNothingExternal();
   });
 
@@ -147,22 +152,13 @@ describe("prepareReset", () => {
     expectNothingExternal();
   });
 
-  it("refuses a role email without the e2e- prefix after the project guard", () => {
+  it("derives the passwords from the fixed emails, not from the file's", () => {
     readEnvFile.mockReturnValue({
       ...e2eEnv(),
       E2E_USER_EMAIL: "user@ichnos-test.com",
     });
 
-    expect(() => prepare()).toThrowError(
-      expect.objectContaining({
-        message: expect.stringMatching(/E2E_USER_EMAIL/),
-      }),
-    );
-    expect(() => prepare()).toThrowError(
-      expect.objectContaining({
-        message: expect.not.stringMatching(/useruser|user@ichnos/),
-      }),
-    );
+    expect(prepare().passwords).toEqual(PATTERN);
     expectNothingExternal();
   });
 });
@@ -173,14 +169,22 @@ function resetArgs(passwords, order) {
     order.push("github");
     return { ghResults: [], varResults: [] };
   });
+  // The orchestrator's writer: the whole e2e/.env.e2e (the record is mocked out).
+  const writeGeneratedFiles = vi.fn((uidMap) => {
+    order.push("write");
+    writeEnvFile(
+      envFilePath,
+      { ...env, ...uidMap },
+      { command: COMMAND, now: NOW },
+    );
+  });
   return {
     ...buildCredentialMaps(env),
     env,
-    envFilePath,
     serverDir: join(repoRoot, "server"),
     credentials: { projectId: PROJECT, clientEmail: "c", privateKey: "k" },
-    passwords,
     syncGitHubConfig,
+    writeGeneratedFiles,
   };
 }
 
@@ -196,11 +200,10 @@ describe("applyReset", () => {
       order.push(`upsert:${spec.uidKey}`);
       return spec.uidKey.replace(/^E2E_(\w+)_UID$/, "uid-$1");
     });
-    writePasswordsToEnvFile.mockImplementation(() => order.push("write"));
     syncToVercel.mockReturnValue([]);
   });
 
-  it("upserts every role before writing, then syncs GitHub", async () => {
+  it("upserts every role before writing the whole file, then syncs GitHub", async () => {
     await applyReset(resetArgs(passwords, order));
 
     expect(order).toEqual([
@@ -208,7 +211,14 @@ describe("applyReset", () => {
       "write",
       "github",
     ]);
-    expect(writePasswordsToEnvFile).toHaveBeenCalledWith(envFilePath, PATTERN);
+    const lines = readFileSync(envFilePath, "utf8").split("\n");
+    expect(lines[0]).toBe(`# Generated on 2026-09-25 (UTC) by: ${COMMAND}`);
+    for (const [name, value] of Object.entries(PATTERN)) {
+      expect(lines).toContain(`${name}=${value}`);
+    }
+    for (const key of ROLE_KEYS) {
+      expect(lines).toContain(`E2E_${key}_UID=uid-${key}`);
+    }
     const sent = Object.fromEntries(
       upsertUser.mock.calls.map(([, spec]) => [spec.uidKey, spec.password]),
     );
@@ -227,7 +237,8 @@ describe("applyReset", () => {
     const args = resetArgs(passwords, order);
 
     await expect(applyReset(args)).rejects.toThrowError("quota");
-    expect(writePasswordsToEnvFile).not.toHaveBeenCalled();
+    expect(args.writeGeneratedFiles).not.toHaveBeenCalled();
+    expect(readFileSync(envFilePath, "utf8")).toBe("");
     expect(args.syncGitHubConfig).not.toHaveBeenCalled();
   });
 
@@ -235,7 +246,6 @@ describe("applyReset", () => {
     await applyReset(resetArgs(passwords, order));
 
     expect(syncToVercel).not.toHaveBeenCalled();
-    expect(writeUidsToEnvFile).not.toHaveBeenCalled();
   });
 
   it("sends only the changed role's email and UID to Vercel", async () => {
@@ -247,9 +257,9 @@ describe("applyReset", () => {
 
     await applyReset(args);
 
-    expect(writeUidsToEnvFile).toHaveBeenCalledWith(envFilePath, {
-      E2E_USER_UID: "uid-new",
-    });
+    expect(readFileSync(envFilePath, "utf8")).toContain(
+      "E2E_USER_UID=uid-new\n",
+    );
     expect(syncToVercel).toHaveBeenCalledWith(
       {
         E2E_USER_EMAIL: "e2e-user@ichnos-test.com",

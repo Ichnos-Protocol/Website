@@ -1,13 +1,15 @@
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { parse } from "dotenv";
 
-const UID_KEY_PATTERN =
-  /^(E2E_(?:ADMIN|USER|INCOMPLETE_USER|SUPER_ADMIN|MANAGE_ADMIN_TARGET)_UID)=[^#]*?(#.*)?$/;
+import { envFileNames } from "./e2eCredentials.js";
+
 const PASSWORD_KEY_PATTERN = /^E2E_\w+_PASSWORD$/;
-// Group 2 keeps an inline comment with its exact separator, which may be empty
-// ("old#note", '"old"#note'). A quoted value may hold "#"; an unquoted one ends at it.
-const PASSWORD_LINE_PATTERN =
-  /^(E2E_\w+_PASSWORD)=(?:"[^"]*"|'[^']*'|[^#]*?)(\s*#.*)?$/;
+// Not derivable from code: carried over from an earlier file (P2c supplies them).
+const PRESERVED_WEB_CONFIG_NAMES = [
+  "FIREBASE_API_KEY",
+  "FIREBASE_AUTH_DOMAIN",
+  "FIREBASE_STORAGE_BUCKET",
+];
 
 export function readEnvFile(filePath) {
   const content = readFileSync(filePath, "utf8");
@@ -40,44 +42,42 @@ export function mergeEnvPasswords(fileEnv, exportedPasswords = {}) {
   return merged;
 }
 
-export function writeUidsToEnvFile(filePath, uidMap) {
-  const content = readFileSync(filePath, "utf8");
-  const lines = content.split("\n");
-
-  const updated = lines.map((line) => {
-    const match = line.match(UID_KEY_PATTERN);
-    if (match && uidMap[match[1]] !== undefined) {
-      const comment = match[2] ? ` ${match[2]}` : "";
-      return `${match[1]}=${uidMap[match[1]]}${comment}`;
-    }
-    return line;
-  });
-
-  writeFileSync(filePath, updated.join("\n"), "utf8");
+/** The public web-config values an earlier file supplied; {} without a file. */
+export function readPreservedWebConfig(filePath) {
+  if (!existsSync(filePath)) return {};
+  const env = readEnvFile(filePath);
+  return Object.fromEntries(
+    PRESERVED_WEB_CONFIG_NAMES.filter((name) => env[name]).map((name) => [
+      name,
+      env[name],
+    ]),
+  );
 }
 
-function replacePasswordLines(lines, passwordMap, written) {
-  return lines.map((line) => {
-    const match = line.match(PASSWORD_LINE_PATTERN);
-    if (!match || passwordMap[match[1]] === undefined) return line;
-    written.add(match[1]);
-    return `${match[1]}=${passwordMap[match[1]]}${match[2] ?? ""}`;
-  });
+/** YYYY-MM-DD of the given instant, in UTC. */
+export function utcDate(now) {
+  return now.toISOString().slice(0, 10);
 }
 
-/** Replace or append E2E_*_PASSWORD lines; every other line is kept verbatim. */
-export function writePasswordsToEnvFile(filePath, passwordMap) {
-  const content = readFileSync(filePath, "utf8");
-  const written = new Set();
-  const lines = content.split("\n");
-  const updated = replacePasswordLines(lines, passwordMap, written);
-  while (updated.length > 0 && updated[updated.length - 1] === "") {
-    updated.pop();
-  }
-  for (const [key, value] of Object.entries(passwordMap)) {
-    if (!written.has(key)) updated.push(`${key}=${value}`);
-  }
-  writeFileSync(filePath, `${updated.join("\n")}\n`, "utf8");
+/**
+ * The whole generated e2e/.env.e2e: a header naming the UTC date and the exact
+ * command, then one NAME=value line per envFileNames() entry, in that order.
+ */
+export function buildEnvFileContent(values, { command, now }) {
+  const header = [
+    `# Generated on ${utcDate(now)} (UTC) by: ${command}`,
+    "# Generated file: do not edit by hand. Re-run the command above to change it.",
+  ];
+  const lines = envFileNames().map((name) => `${name}=${values[name] ?? ""}`);
+  return `${[...header, ...lines].join("\n")}\n`;
+}
+
+export function writeEnvFile(filePath, values, { command, now }) {
+  writeFileSync(
+    filePath,
+    buildEnvFileContent(values, { command, now }),
+    "utf8",
+  );
 }
 
 export function maskValue(value) {

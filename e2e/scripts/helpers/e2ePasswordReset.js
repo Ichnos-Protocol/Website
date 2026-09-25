@@ -1,8 +1,9 @@
 /**
  * --reset-passwords: re-apply the six pattern passwords, derived from the
  * account emails (AGENTS.md "Passwords and secrets"), to the E2E Firebase
- * project, write them to e2e/.env.e2e and push them to GitHub. Nothing is
- * generated; this is another name for the default provisioning/reset run.
+ * project, regenerate e2e/.env.e2e and secrets/test-accounts.md and push the
+ * passwords to GitHub. Nothing is random; this is another name for the default
+ * provisioning/reset run. e2e/.env.e2e is optional: the emails are fixed in code.
  *
  * prepareReset runs before anything external (Firebase, gh, vercel, writes).
  * The Firebase admin credentials arrive already loaded by the shared loader
@@ -11,12 +12,9 @@
  */
 import { existsSync } from "fs";
 
-import { ROLES, patternPasswords } from "./e2eCredentials.js";
-import {
-  readEnvFile,
-  writePasswordsToEnvFile,
-  writeUidsToEnvFile,
-} from "./e2eEnvFile.js";
+import { ROLES, fixedE2EConfig, patternPasswords } from "./e2eCredentials.js";
+import { readEnvFile } from "./e2eEnvFile.js";
+import { assertEnvFileProjectMatch } from "./e2eFirebaseCredentials.js";
 import { getTestApp, upsertUser } from "./firebaseTestSetup.js";
 import { syncToVercel } from "./e2eSyncVercel.js";
 import { printSummary } from "./e2eReporting.js";
@@ -25,19 +23,9 @@ function readLocalEnv(envFilePath) {
   return existsSync(envFilePath) ? readEnvFile(envFilePath) : {};
 }
 
-function assertProjectMatch(credentials, fileEnv) {
-  const e2eProjectId = fileEnv.FIREBASE_PROJECT_ID;
-  if (e2eProjectId && e2eProjectId === credentials.projectId) return;
-  throw new Error(
-    `Firebase project mismatch: credential file is for "${credentials.projectId ?? ""}", ` +
-      `e2e/.env.e2e names "${e2eProjectId ?? ""}". Nothing was changed.`,
-  );
-}
-
 export function prepareReset({ credentials, envFilePath }) {
-  const fileEnv = readLocalEnv(envFilePath);
-  assertProjectMatch(credentials, fileEnv);
-  return { credentials, passwords: patternPasswords(fileEnv) };
+  assertEnvFileProjectMatch(readLocalEnv(envFilePath), credentials);
+  return { credentials, passwords: patternPasswords(fixedE2EConfig()) };
 }
 
 function assertRoleEmails(env) {
@@ -92,26 +80,22 @@ function syncChangedToVercel(changedUids, vercel, serverDir) {
 
 export async function applyReset({
   env,
-  envFilePath,
   serverDir,
   firebaseCreds,
   githubVariables,
   github,
   vercel,
   credentials,
-  passwords,
   syncGitHubConfig,
+  writeGeneratedFiles,
 }) {
   assertRoleEmails(env);
   console.log("\n=== Firebase Password Reset ===");
   const uidMap = await upsertAll(credentials, firebaseCreds);
   const changedUids = collectChangedUids(env, uidMap);
 
-  writePasswordsToEnvFile(envFilePath, passwords);
-  if (Object.keys(changedUids).length > 0) {
-    writeUidsToEnvFile(envFilePath, changedUids);
-  }
-  console.log("[env] new passwords written to .env.e2e");
+  // Whole-file e2e/.env.e2e and the record, after every upsert, before any sync.
+  writeGeneratedFiles(uidMap);
   Object.assign(githubVariables, changedUids);
 
   const { ghResults, varResults } = syncGitHubConfig(githubVariables, github, {

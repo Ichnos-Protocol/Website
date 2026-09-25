@@ -1,3 +1,12 @@
+import { ROLES } from "./e2eFixedConfig.js";
+
+export {
+  ROLES,
+  fixedE2EConfig,
+  E2E_BASE_URL_VALUE,
+  E2E_API_BASE_URL_VALUE,
+} from "./e2eFixedConfig.js";
+
 const GITHUB_VARIABLE_EXTRAS = [
   "FIREBASE_PROJECT_ID",
   "FIREBASE_AUTH_DOMAIN",
@@ -18,18 +27,6 @@ const ROLE_EMAIL_PREFIX = "e2e-";
 const SIGNUP_PASSWORD_NAME = "E2E_SIGNUP_PASSWORD";
 const SIGNUP_PASSWORD_VALUE = "signup";
 
-export const ROLES = [
-  { key: "ADMIN", name: "E2E Admin", claims: { admin: true } },
-  { key: "USER", name: "E2E Test User", claims: {} },
-  { key: "INCOMPLETE_USER", name: "E2E Incomplete User", claims: {} },
-  {
-    key: "SUPER_ADMIN",
-    name: "E2E Super Admin",
-    claims: { admin: true, superAdmin: true },
-  },
-  { key: "MANAGE_ADMIN_TARGET", name: "E2E Manage-Admin Target", claims: {} },
-];
-
 function githubVariableNames() {
   const roleNames = ROLES.flatMap((r) => [
     `E2E_${r.key}_EMAIL`,
@@ -43,6 +40,14 @@ function githubSecretNames() {
     ...ROLES.map((r) => `E2E_${r.key}_PASSWORD`),
     ...GITHUB_SECRET_EXTRAS,
   ];
+}
+
+/**
+ * Every name e2e/.env.e2e holds, in the order the generated file writes them.
+ * Also the names findMissingGitHubNames checks, so the two cannot drift.
+ */
+export function envFileNames() {
+  return [...githubVariableNames(), ...githubSecretNames()];
 }
 
 /** The five role passwords, then E2E_SIGNUP_PASSWORD. */
@@ -93,9 +98,7 @@ export function buildCredentialMaps(env) {
 }
 
 export function findMissingGitHubNames(values) {
-  return [...githubVariableNames(), ...githubSecretNames()].filter(
-    (name) => !values[name],
-  );
+  return envFileNames().filter((name) => !values[name]);
 }
 
 function emailNameFor(passwordName) {

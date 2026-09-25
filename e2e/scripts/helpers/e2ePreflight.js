@@ -1,5 +1,4 @@
 import { existsSync } from "fs";
-import { readEnvFile, mergeEnvPasswords } from "./e2eEnvFile.js";
 import { validateCredentials } from "./e2ePreflightValidators.js";
 import {
   checkGhAuth,
@@ -25,24 +24,25 @@ function assertParsedFirebaseCredentials(credentials) {
 }
 
 /**
- * `exportedPasswords` is the startup snapshot of shell-exported passwords.
- * `firebaseCredentials` is the object from loadFirebaseCredentials; every mode
- * but sync-only validates it. process.env is never consulted for Firebase.
+ * `env` is the run's composed configuration (the file for sync-only; fixed
+ * config, pattern passwords and shell exports otherwise). Only sync-only needs
+ * e2e/.env.e2e to exist. `firebaseCredentials` is the object from
+ * loadFirebaseCredentials; every mode but sync-only validates it. process.env
+ * is never consulted for Firebase.
  */
 export function runPreflight({
   syncOnly,
   envFilePath,
+  env,
   serverDir,
-  exportedPasswords,
   firebaseCredentials,
 }) {
-  if (!existsSync(envFilePath)) {
+  if (syncOnly && !existsSync(envFilePath)) {
     throw new Error(
       `.env.e2e not found at ${envFilePath}.\nRemediation: The provision script reads e2e/.env.e2e. Verify the file exists at that path and contains your credentials.`,
     );
   }
 
-  const env = mergeEnvPasswords(readEnvFile(envFilePath), exportedPasswords);
   validateCredentials(env, syncOnly);
 
   checkGhAuth();

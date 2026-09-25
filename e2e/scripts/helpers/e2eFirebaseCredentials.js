@@ -129,6 +129,20 @@ export function assertE2EProjectId(projectId) {
   );
 }
 
+/**
+ * Refuses an existing e2e/.env.e2e that names a project other than the
+ * credential file's. A no-op when the file supplied no FIREBASE_PROJECT_ID
+ * (no file yet): the credentials are already locked by assertE2EProjectId.
+ */
+export function assertEnvFileProjectMatch(fileEnv, credentials) {
+  const e2eProjectId = fileEnv.FIREBASE_PROJECT_ID;
+  if (!e2eProjectId || e2eProjectId === credentials.projectId) return;
+  throw new Error(
+    `Firebase project mismatch: credential file is for "${credentials.projectId ?? ""}", ` +
+      `e2e/.env.e2e names "${e2eProjectId ?? ""}". Nothing was changed.`,
+  );
+}
+
 function assertCredentialKeys(credentials) {
   const missing = Object.entries(REQUIRED_CREDENTIAL_KEYS)
     .filter(([field]) => !credentials[field])

@@ -63,3 +63,28 @@ export function syncVariablesToGitHub(variables, repoRoot) {
 
   return results;
 }
+
+function parseSecretList(stdout) {
+  try {
+    return Object.fromEntries(
+      JSON.parse(stdout).map(({ name, updatedAt }) => [name, updatedAt]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Secret name → ISO last-updated date, from `gh secret list`. Names and dates
+ * only; gh never returns a value. Best effort: {} on any failure.
+ */
+export function listGitHubSecretMetadata(repoRoot) {
+  assertRepoRoot(repoRoot);
+  const result = spawnSync(
+    "gh",
+    ["secret", "list", "--json", "name,updatedAt"],
+    { encoding: "utf8", cwd: repoRoot },
+  );
+  if (result?.status !== 0) return {};
+  return parseSecretList(result.stdout);
+}

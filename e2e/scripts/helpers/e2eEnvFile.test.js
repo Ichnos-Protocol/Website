@@ -5,9 +5,14 @@ import { tmpdir } from "os";
 import {
   captureExportedPasswords,
   mergeEnvPasswords,
-  writePasswordsToEnvFile,
-  writeUidsToEnvFile,
+  readPreservedWebConfig,
+  writeEnvFile,
 } from "./e2eEnvFile.js";
+import {
+  envFileNames,
+  fixedE2EConfig,
+  patternPasswords,
+} from "./e2eCredentials.js";
 
 describe("mergeEnvPasswords", () => {
   const savedEnv = {};
@@ -104,7 +109,31 @@ describe("mergeEnvPasswords", () => {
   });
 });
 
-describe("writePasswordsToEnvFile", () => {
+const COMMAND = "node e2e/scripts/provision-e2e-firebase-users.js";
+const NOW = new Date("2026-09-24T23:30:00Z");
+const WEB_CONFIG = {
+  FIREBASE_API_KEY: "api-key-fixture",
+  FIREBASE_AUTH_DOMAIN: "ichnos-protocol-test.firebaseapp.com",
+  FIREBASE_STORAGE_BUCKET: "ichnos-protocol-test.appspot.com",
+};
+const UIDS = {
+  E2E_ADMIN_UID: "uid-a",
+  E2E_USER_UID: "uid-u",
+  E2E_INCOMPLETE_USER_UID: "uid-i",
+  E2E_SUPER_ADMIN_UID: "uid-s",
+  E2E_MANAGE_ADMIN_TARGET_UID: "uid-m",
+};
+
+function generatedValues(webConfig) {
+  const fixed = fixedE2EConfig();
+  return { ...fixed, ...webConfig, ...patternPasswords(fixed), ...UIDS };
+}
+
+function keyLines(content) {
+  return content.split("\n").filter((line) => line && !line.startsWith("#"));
+}
+
+describe("writeEnvFile", () => {
   let tmpDir;
   let tmpFile;
 
@@ -117,170 +146,76 @@ describe("writePasswordsToEnvFile", () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("replaces existing lines, appends missing ones and keeps the rest", () => {
-    const initial = [
-      "# E2E credentials",
-      "E2E_ADMIN_EMAIL=a@test.com",
-      "E2E_ADMIN_PASSWORD=admin",
-      "E2E_USER_PASSWORD=keep-me-unchanged",
-      "FIREBASE_API_KEY=abc # inline comment",
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
+  function generate() {
+    const values = generatedValues(readPreservedWebConfig(tmpFile));
+    writeEnvFile(tmpFile, values, { command: COMMAND, now: NOW });
+    return readFileSync(tmpFile, "utf8");
+  }
 
-    writePasswordsToEnvFile(tmpFile, {
-      E2E_ADMIN_PASSWORD: "new-admin-pass",
-      E2E_SIGNUP_PASSWORD: "new-signup-pass",
-    });
+  it("emits exactly the envFileNames() keys, in that order, with one trailing newline", () => {
+    const content = generate();
 
-    expect(readFileSync(tmpFile, "utf8")).toBe(
-      [
-        "# E2E credentials",
-        "E2E_ADMIN_EMAIL=a@test.com",
-        "E2E_ADMIN_PASSWORD=new-admin-pass",
-        "E2E_USER_PASSWORD=keep-me-unchanged",
-        "FIREBASE_API_KEY=abc # inline comment",
-        "E2E_SIGNUP_PASSWORD=new-signup-pass",
-        "",
-      ].join("\n"),
-    );
+    const names = keyLines(content).map((line) => line.split("=")[0]);
+    expect(names).toEqual(envFileNames());
+    expect(content.endsWith("\n")).toBe(true);
+    expect(content.endsWith("\n\n")).toBe(false);
   });
 
-  it("keeps an inline comment and its spacing on a replaced password line", () => {
-    const initial = [
-      "E2E_ADMIN_PASSWORD=old-admin   # rotated by --reset-passwords",
-      'E2E_USER_PASSWORD="old #user"\t# quoted value',
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
+  it("writes the fixed emails, URLs and project, the pattern passwords and the UIDs", () => {
+    const content = generate();
 
-    writePasswordsToEnvFile(tmpFile, {
-      E2E_ADMIN_PASSWORD: "new-admin-pass",
-      E2E_USER_PASSWORD: "new-user-pass",
-    });
-
-    expect(readFileSync(tmpFile, "utf8")).toBe(
-      [
-        "E2E_ADMIN_PASSWORD=new-admin-pass   # rotated by --reset-passwords",
-        "E2E_USER_PASSWORD=new-user-pass\t# quoted value",
-        "",
-      ].join("\n"),
-    );
+    const fixed = fixedE2EConfig();
+    const expected = { ...fixed, ...patternPasswords(fixed), ...UIDS };
+    for (const [name, value] of Object.entries(expected)) {
+      expect(keyLines(content)).toContain(`${name}=${value}`);
+    }
   });
 
-  it("keeps a comment that immediately follows an unquoted or quoted value", () => {
-    const initial = [
-      "E2E_ADMIN_PASSWORD=old-admin#rotated",
-      'E2E_USER_PASSWORD="old #user"#quoted',
-      "E2E_SUPER_ADMIN_PASSWORD='old#super'#single",
-      'E2E_SIGNUP_PASSWORD="has #hash inside"',
-      "FIREBASE_API_KEY=abc#untouched",
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
+  it("names the injected UTC date and the exact command in the header", () => {
+    const content = generate();
 
-    writePasswordsToEnvFile(tmpFile, {
-      E2E_ADMIN_PASSWORD: "new-admin-pass",
-      E2E_USER_PASSWORD: "new-user-pass",
-      E2E_SUPER_ADMIN_PASSWORD: "new-super-pass",
-      E2E_SIGNUP_PASSWORD: "new-signup-pass",
-    });
-
-    expect(readFileSync(tmpFile, "utf8")).toBe(
-      [
-        "E2E_ADMIN_PASSWORD=new-admin-pass#rotated",
-        "E2E_USER_PASSWORD=new-user-pass#quoted",
-        "E2E_SUPER_ADMIN_PASSWORD=new-super-pass#single",
-        "E2E_SIGNUP_PASSWORD=new-signup-pass",
-        "FIREBASE_API_KEY=abc#untouched",
-        "",
-      ].join("\n"),
-    );
+    const header = content.split("\n").slice(0, 2);
+    expect(header[0]).toBe(`# Generated on 2026-09-24 (UTC) by: ${COMMAND}`);
+    expect(header[1]).toMatch(/do not edit by hand/);
   });
 
-  it("ends the file with exactly one newline when it had none", () => {
-    writeFileSync(tmpFile, "E2E_ADMIN_PASSWORD=old", "utf8");
-    writePasswordsToEnvFile(tmpFile, { E2E_ADMIN_PASSWORD: "new-value" });
-    expect(readFileSync(tmpFile, "utf8")).toBe(
-      "E2E_ADMIN_PASSWORD=new-value\n",
+  it("carries the three web-config values over from an earlier file", () => {
+    const prior = Object.entries(WEB_CONFIG).map(([k, v]) => `${k}=${v}`);
+    writeFileSync(tmpFile, `${prior.join("\n")}\n`, "utf8");
+
+    const lines = keyLines(generate());
+
+    for (const [name, value] of Object.entries(WEB_CONFIG)) {
+      expect(lines).toContain(`${name}=${value}`);
+    }
+  });
+
+  it("emits the web-config names empty when no earlier file exists", () => {
+    const lines = keyLines(generate());
+
+    for (const name of Object.keys(WEB_CONFIG)) {
+      expect(lines).toContain(`${name}=`);
+    }
+  });
+
+  it("drops an unrelated stale line from an earlier file", () => {
+    writeFileSync(
+      tmpFile,
+      "STALE_NAME=stale-value\nE2E_ADMIN_PASSWORD=old\n",
+      "utf8",
     );
+
+    const content = generate();
+
+    expect(content).not.toContain("STALE_NAME");
+    expect(content).not.toContain("E2E_ADMIN_PASSWORD=old\n");
   });
 });
 
-describe("writeUidsToEnvFile", () => {
-  let tmpDir;
-  let tmpFile;
-
-  beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "e2e-env-"));
-    tmpFile = join(tmpDir, ".env.e2e");
-  });
-
-  afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it("writes the INCOMPLETE_USER UID back while preserving its inline comment", () => {
-    const initial = [
-      "E2E_ADMIN_UID=old-admin",
-      "E2E_INCOMPLETE_USER_UID=                # To be filled after Firebase provisioning",
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
-
-    writeUidsToEnvFile(tmpFile, {
-      E2E_ADMIN_UID: "new-admin",
-      E2E_INCOMPLETE_USER_UID: "incomplete-uid-123",
-    });
-
-    const result = readFileSync(tmpFile, "utf8");
-    expect(result).toContain("E2E_ADMIN_UID=new-admin");
-    expect(result).toContain(
-      "E2E_INCOMPLETE_USER_UID=incomplete-uid-123 # To be filled after Firebase provisioning",
-    );
-  });
-
-  it("updates all known UID keys including INCOMPLETE_USER", () => {
-    const initial = [
-      "E2E_ADMIN_UID=a",
-      "E2E_USER_UID=u",
-      "E2E_INCOMPLETE_USER_UID=",
-      "E2E_SUPER_ADMIN_UID=s",
-      "E2E_MANAGE_ADMIN_TARGET_UID=m",
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
-
-    writeUidsToEnvFile(tmpFile, {
-      E2E_ADMIN_UID: "uid-a",
-      E2E_USER_UID: "uid-u",
-      E2E_INCOMPLETE_USER_UID: "uid-i",
-      E2E_SUPER_ADMIN_UID: "uid-s",
-      E2E_MANAGE_ADMIN_TARGET_UID: "uid-m",
-    });
-
-    const result = readFileSync(tmpFile, "utf8");
-    expect(result).toContain("E2E_ADMIN_UID=uid-a");
-    expect(result).toContain("E2E_USER_UID=uid-u");
-    expect(result).toContain("E2E_INCOMPLETE_USER_UID=uid-i");
-    expect(result).toContain("E2E_SUPER_ADMIN_UID=uid-s");
-    expect(result).toContain("E2E_MANAGE_ADMIN_TARGET_UID=uid-m");
-  });
-
-  it("leaves unrelated lines untouched", () => {
-    const initial = [
-      "FIREBASE_API_KEY=abc",
-      "E2E_INCOMPLETE_USER_UID=                # comment here",
-      "E2E_BASE_URL=https://example.com",
-      "",
-    ].join("\n");
-    writeFileSync(tmpFile, initial, "utf8");
-
-    writeUidsToEnvFile(tmpFile, { E2E_INCOMPLETE_USER_UID: "new-uid" });
-
-    const result = readFileSync(tmpFile, "utf8");
-    expect(result).toContain("FIREBASE_API_KEY=abc");
-    expect(result).toContain("E2E_BASE_URL=https://example.com");
-    expect(result).toContain("E2E_INCOMPLETE_USER_UID=new-uid # comment here");
+describe("readPreservedWebConfig", () => {
+  it("returns {} for a missing file without throwing", () => {
+    expect(
+      readPreservedWebConfig(join(tmpdir(), "no-such-dir", ".env")),
+    ).toEqual({});
   });
 });
