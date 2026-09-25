@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   findPreviewEntry,
   isAllBranchesPreview,
+  normalizeUpdatedAt,
   setPreviewEnv,
 } from "./e2eVercelEnv.js";
 
@@ -24,7 +25,8 @@ const MAIN = entry({ id: "env_main", gitBranch: "main" });
 const CUSTOM = entry({ id: "env_custom", customEnvironmentIds: ["env_x"] });
 const OVERRIDES = [PRODUCTION, STAGING, MAIN, CUSTOM];
 
-// envs is one page, or { first, <cursor>: page } for a paginated list.
+// envs is one page, or { first, <cursor>: page } for a paginated list. A
+// decrypted entry is a value, or the whole GET body when it is an object.
 function fakeApi(envs, decrypted = {}) {
   const pages = Array.isArray(envs) ? { first: { envs } } : envs;
   const request = vi.fn(async (path, { method = "GET" } = {}) => {
@@ -34,7 +36,8 @@ function fakeApi(envs, decrypted = {}) {
       return pages[new URLSearchParams(query).get("until") ?? "first"];
     }
     const id = base.split("/").pop();
-    return { value: decrypted[id] };
+    const body = decrypted[id];
+    return body && typeof body === "object" ? body : { value: body };
   });
   return { request, registerSecret: vi.fn() };
 }
@@ -169,6 +172,114 @@ describe("setPreviewEnv", () => {
     expect(JSON.stringify(result)).not.toContain("AIzaSecretApiKeyValue");
     expect(api.registerSecret).toHaveBeenCalledWith("AIzaSecretApiKeyValue");
   });
+});
+
+describe("setPreviewEnv outcome metadata", () => {
+  const API_KEY = "AIzaSecretApiKeyValue";
+  const EPOCH_MS = 1758784500000;
+  const EPOCH_ISO = new Date(EPOCH_MS).toISOString();
+
+  function run(api, key = KEY, value = "uid-value") {
+    return setPreviewEnv({ api, projectId: "prj_s", key, value });
+  }
+
+  it("reports a create as created, with no timestamp", async () => {
+    const result = await run(fakeApi([]));
+
+    expect(result).toMatchObject({ status: "success", operation: "created" });
+    expect(result.updatedAt).toBeUndefined();
+  });
+
+  it("reports a changed value as updated, with no timestamp", async () => {
+    const api = fakeApi([entry({ updatedAt: EPOCH_MS })], {
+      env_all: { value: "old", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ status: "success", operation: "updated" });
+    expect(result.updatedAt).toBeUndefined();
+  });
+
+  it("reports an unchanged value with the decrypted entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: 1 })], {
+      env_all: { value: "uid-value", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      status: "unchanged",
+      operation: "unchanged",
+      updatedAt: EPOCH_ISO,
+    });
+  });
+
+  it("falls back to the listed entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: String(EPOCH_MS) })], {
+      env_all: "uid-value",
+    });
+
+    expect((await run(api)).updatedAt).toBe(EPOCH_ISO);
+  });
+
+  it("leaves the timestamp undefined when neither carries one", async () => {
+    const api = fakeApi([entry()], { env_all: "uid-value" });
+
+    const result = await run(api);
+
+    expect(result.operation).toBe("unchanged");
+    expect(result.updatedAt).toBeUndefined();
+  });
+
+  it("carries no operation or timestamp on a failure", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" })]);
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("masks a secret-named key fully and leaks no id, value or branch", async () => {
+    const listed = entry({ key: "VITE_FIREBASE_API_KEY", gitBranch: null });
+    const api = fakeApi([listed], {
+      env_all: { value: API_KEY, updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api, "VITE_FIREBASE_API_KEY", API_KEY);
+    const serialized = JSON.stringify(result);
+
+    expect(result.masked).toBe("****");
+    expect(serialized).not.toContain(API_KEY);
+    expect(serialized).not.toContain(API_KEY.slice(-4));
+    expect(serialized).not.toContain("env_all");
+    expect(result).not.toHaveProperty("value");
+    expect(result).not.toHaveProperty("id");
+    expect(result).not.toHaveProperty("gitBranch");
+  });
+});
+
+describe("normalizeUpdatedAt", () => {
+  const ISO = "2026-09-20T08:15:00.000Z";
+  const MS = Date.parse(ISO);
+
+  it("reads a number or an all-digit string as epoch milliseconds", () => {
+    expect(normalizeUpdatedAt(MS)).toBe(ISO);
+    expect(normalizeUpdatedAt(String(MS))).toBe(ISO);
+  });
+
+  it("keeps a string Date parses, as ISO", () => {
+    expect(normalizeUpdatedAt(ISO)).toBe(ISO);
+  });
+
+  it.each([undefined, null, "", "  ", "not a date", NaN, Infinity, {}])(
+    "yields undefined for %s",
+    (raw) => {
+      expect(normalizeUpdatedAt(raw)).toBeUndefined();
+    },
+  );
 });
 
 describe("findPreviewEntry pagination", () => {

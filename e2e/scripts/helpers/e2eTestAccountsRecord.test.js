@@ -222,7 +222,7 @@ describe("the Vercel-store bypass row", () => {
 
   it("stays undated when the bypass was not confirmed", () => {
     const record = buildTestAccountsRecord(
-      recordInput({ setNow: [], providerSetNow: [] }),
+      recordInput({ setNow: [], providerProvenance: [] }),
     );
 
     expect(vercelRow(record)).toContain("unknown — not set by this run");
@@ -232,8 +232,12 @@ describe("the Vercel-store bypass row", () => {
     const record = buildTestAccountsRecord(
       recordInput({
         setNow: ["VERCEL_AUTOMATION_BYPASS_SECRET"],
-        providerSetNow: [
-          { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "vercel" },
+        providerProvenance: [
+          {
+            name: "VERCEL_AUTOMATION_BYPASS_SECRET",
+            store: "vercel",
+            state: "set",
+          },
         ],
       }),
     );
@@ -246,13 +250,94 @@ describe("the Vercel-store bypass row", () => {
   it("ignores a provider write recorded for another store", () => {
     const record = buildTestAccountsRecord(
       recordInput({
-        providerSetNow: [
-          { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "github" },
+        providerProvenance: [
+          {
+            name: "VERCEL_AUTOMATION_BYPASS_SECRET",
+            store: "github",
+            state: "set",
+          },
         ],
       }),
     );
 
     expect(vercelRow(record)).toContain("unknown — not set by this run");
+  });
+});
+
+describe("the client Preview Firebase API key row", () => {
+  const UNKNOWN = "unknown — not set by this run";
+  const READ_AT = "2026-09-20T08:15:00.000Z";
+
+  function clientKeyRow(record) {
+    return lineFor(record, "VITE_FIREBASE_API_KEY");
+  }
+
+  function withProvenance(entry, overrides = {}) {
+    return buildTestAccountsRecord(
+      recordInput({ setNow: [], providerProvenance: [entry], ...overrides }),
+    );
+  }
+
+  const clientEntry = (fields) => ({
+    name: "VITE_FIREBASE_API_KEY",
+    store: "vercel",
+    ...fields,
+  });
+
+  it("lists the GitHub secret and the client Preview env as separate rows, neither with a value", () => {
+    const record = buildTestAccountsRecord(recordInput());
+    const github = lineFor(record, "FIREBASE_API_KEY");
+    const vercel = clientKeyRow(record);
+
+    expect(github).toContain("GitHub Actions secret");
+    expect(vercel).toContain("all-branches Preview environment");
+    expect(vercel).toContain("ichnos-client");
+    expect(record).not.toContain(API_KEY_FIXTURE);
+  });
+
+  it("dates the row with this run when the state is set", () => {
+    const row = clientKeyRow(withProvenance(clientEntry({ state: "set" })));
+
+    expect(row).toContain(DATE);
+    expect(row).toContain(`\`${COMMAND}\``);
+  });
+
+  it("prints the provider timestamp when the state is read", () => {
+    const row = clientKeyRow(
+      withProvenance(clientEntry({ state: "read", timestamp: READ_AT })),
+    );
+
+    expect(row).toContain(READ_AT);
+    expect(row).toContain("not this run");
+    expect(row).not.toContain(COMMAND);
+  });
+
+  it.each([
+    ["read without a timestamp", clientEntry({ state: "read" })],
+    ["unknown", clientEntry({ state: "unknown" })],
+    ["a wrong store", clientEntry({ store: "github", state: "set" })],
+  ])("stays unknown for %s", (_label, entry) => {
+    expect(clientKeyRow(withProvenance(entry))).toContain(UNKNOWN);
+  });
+
+  it("stays unknown with no entry", () => {
+    const record = buildTestAccountsRecord(
+      recordInput({ providerProvenance: [] }),
+    );
+
+    expect(clientKeyRow(record)).toContain(UNKNOWN);
+  });
+
+  it("keeps the GitHub and Vercel rows independent", () => {
+    const githubOnly = buildTestAccountsRecord(
+      recordInput({ setNow: ["FIREBASE_API_KEY"], providerProvenance: [] }),
+    );
+    const vercelOnly = withProvenance(clientEntry({ state: "set" }));
+
+    expect(lineFor(githubOnly, "FIREBASE_API_KEY")).toContain(DATE);
+    expect(clientKeyRow(githubOnly)).toContain(UNKNOWN);
+    expect(clientKeyRow(vercelOnly)).toContain(DATE);
+    expect(lineFor(vercelOnly, "FIREBASE_API_KEY")).toContain(UNKNOWN);
   });
 });
 
