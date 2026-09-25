@@ -5,7 +5,6 @@ import {
   checkGhAuth,
   checkVercelAuth,
   checkVercelProject,
-  checkFirebaseEnv,
 } from "./e2ePreflightChecks.js";
 
 const PARSED_FIREBASE_KEYS = {
@@ -21,13 +20,14 @@ function assertParsedFirebaseCredentials(credentials) {
   if (missing.length === 0) return;
   throw new Error(
     `Missing Firebase admin credential(s): ${missing.join(", ")}\n` +
-      "Remediation: add them to the Firebase credential file passed to --reset-passwords.",
+      "Remediation: add them to the Firebase credential file (--firebase-env, server/.env.e2e or the secrets/ service-account file).",
   );
 }
 
 /**
  * `exportedPasswords` is the startup snapshot of shell-exported passwords.
- * `firebaseCredentials` (reset mode) replaces the process.env Firebase check.
+ * `firebaseCredentials` is the object from loadFirebaseCredentials; every mode
+ * but sync-only validates it. process.env is never consulted for Firebase.
  */
 export function runPreflight({
   syncOnly,
@@ -49,11 +49,7 @@ export function runPreflight({
   checkVercelAuth();
   checkVercelProject(serverDir);
 
-  if (firebaseCredentials) {
-    assertParsedFirebaseCredentials(firebaseCredentials);
-  } else if (!syncOnly) {
-    checkFirebaseEnv();
-  }
+  if (!syncOnly) assertParsedFirebaseCredentials(firebaseCredentials ?? {});
 
   return true;
 }

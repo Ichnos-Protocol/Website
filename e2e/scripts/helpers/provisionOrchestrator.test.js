@@ -3,12 +3,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const execFileSync = vi.fn();
 const spawnSync = vi.fn();
 const readEnvFile = vi.fn();
-const checkFirebaseEnv = vi.fn();
 const writeUidsToEnvFile = vi.fn();
 const provisionFirebaseUsers = vi.fn();
 const syncToGitHub = vi.fn();
 const syncVariablesToGitHub = vi.fn();
 const syncToVercel = vi.fn();
+const FAKE_CREDENTIALS = {
+  projectId: "ichnos-protocol-test",
+  clientEmail: "sa@ichnos-protocol-test.iam.gserviceaccount.com",
+  privateKey: "-----BEGIN KEY-----\nabc\n-----END KEY-----",
+};
+const loadFirebaseCredentials = vi.fn();
 
 vi.mock("child_process", () => ({ execFileSync, spawnSync }));
 vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
@@ -16,8 +21,10 @@ vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
   checkGhAuth: vi.fn(),
   checkVercelAuth: vi.fn(),
   checkVercelProject: vi.fn(),
-  checkFirebaseEnv,
 }));
+// Mandatory: existsSync is mocked to true below, so an unmocked loader would
+// read real credential files.
+vi.mock("./e2eFirebaseCredentials.js", () => ({ loadFirebaseCredentials }));
 const config = vi.fn();
 vi.mock("dotenv", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -78,6 +85,7 @@ describe("provision orchestrator ordering", () => {
     vi.clearAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
     readEnvFile.mockReturnValue({ ...incompleteEnv });
+    loadFirebaseCredentials.mockReturnValue({ ...FAKE_CREDENTIALS });
   });
 
   it("reports missing GitHub names in sync-only mode before any gh call", async () => {
@@ -115,28 +123,31 @@ describe("provision orchestrator ordering", () => {
     expect(spawnSync).not.toHaveBeenCalled();
   });
 
-  it("never loads server/.env in sync-only mode", async () => {
+  it("never loads server/.env or Firebase credentials in sync-only mode", async () => {
     await expect(main({ syncOnly: true })).rejects.toThrowError();
 
     expect(config).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).not.toHaveBeenCalled();
   });
 
-  it("loads server/.env before the full-mode Firebase preflight check", async () => {
-    const stop = new Error("stop after Firebase preflight");
-    checkFirebaseEnv.mockImplementationOnce(() => {
+  it("loads Firebase credentials, never server/.env, before full-mode preflight", async () => {
+    const stop = new Error("stop at credential load");
+    loadFirebaseCredentials.mockImplementationOnce(() => {
       throw stop;
     });
 
-    await expect(main({})).rejects.toBe(stop);
+    await expect(main({ firebaseEnvPath: "creds/.env" })).rejects.toBe(stop);
 
-    expect(config).toHaveBeenCalledTimes(1);
-    expect(config.mock.calls[0][0].path).toMatch(/server[\\/]\.env$/);
-    expect(config.mock.invocationCallOrder[0]).toBeLessThan(
-      checkFirebaseEnv.mock.invocationCallOrder[0],
+    expect(config).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).toHaveBeenCalledTimes(1);
+    expect(loadFirebaseCredentials.mock.calls[0][0].firebaseEnvPath).toBe(
+      "creds/.env",
     );
+    expect(execFileSync).not.toHaveBeenCalled();
+    expect(spawnSync).not.toHaveBeenCalled();
   });
 
-  it("loads server/.env exactly once in a successful full-mode run", async () => {
+  it("passes the loaded credentials to provisioning and never calls config in a full-mode run", async () => {
     readEnvFile.mockReturnValue(completeEnv());
     provisionFirebaseUsers.mockResolvedValue(
       Object.fromEntries(ROLE_KEYS.map((k) => [`E2E_${k}_UID`, `uid-${k}`])),
@@ -147,21 +158,25 @@ describe("provision orchestrator ordering", () => {
 
     await main({});
 
-    expect(config).toHaveBeenCalledTimes(1);
-    expect(config.mock.calls[0][0].path).toMatch(/server[\\/]\.env$/);
-    const loadedAt = config.mock.invocationCallOrder[0];
-    expect(loadedAt).toBeLessThan(checkFirebaseEnv.mock.invocationCallOrder[0]);
-    expect(loadedAt).toBeLessThan(
+    expect(config).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).toHaveBeenCalledTimes(1);
+    expect(provisionFirebaseUsers.mock.calls[0][1]).toEqual(FAKE_CREDENTIALS);
+    expect(loadFirebaseCredentials.mock.invocationCallOrder[0]).toBeLessThan(
       provisionFirebaseUsers.mock.invocationCallOrder[0],
     );
   });
 
-  it("never loads server/.env or checks process.env Firebase vars in reset mode", async () => {
+  it("never loads server/.env in reset mode and loads credentials once", async () => {
+    const stop = new Error("stop at credential load");
+    loadFirebaseCredentials.mockImplementationOnce(() => {
+      throw stop;
+    });
+
     await expect(
       main({ resetPasswords: true, firebaseEnvPath: "missing/.env.e2e" }),
-    ).rejects.toThrowError();
+    ).rejects.toBe(stop);
 
     expect(config).not.toHaveBeenCalled();
-    expect(checkFirebaseEnv).not.toHaveBeenCalled();
+    expect(loadFirebaseCredentials).toHaveBeenCalledTimes(1);
   });
 });

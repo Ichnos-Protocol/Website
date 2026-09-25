@@ -3,14 +3,12 @@
  * Firebase project, write them to e2e/.env.e2e and push them to GitHub.
  *
  * prepareReset runs before anything external (Firebase, gh, vercel, writes).
- * The Firebase admin credentials are read with dotenv.parse from a dedicated
- * file (default server/.env.e2e) and never reach process.env; server/.env is
- * always refused.
+ * The Firebase admin credentials arrive already loaded by the shared loader
+ * (e2eFirebaseCredentials.js), which refuses server/.env and any project other
+ * than ichnos-protocol-test; they never reach process.env.
  */
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, realpathSync } from "fs";
-import { resolve } from "path";
-import { parse } from "dotenv";
+import { existsSync } from "fs";
 
 import {
   ROLES,
@@ -22,65 +20,9 @@ import {
   writePasswordsToEnvFile,
   writeUidsToEnvFile,
 } from "./e2eEnvFile.js";
-import { getPasswordResetApp, upsertUser } from "./firebaseTestSetup.js";
+import { getTestApp, upsertUser } from "./firebaseTestSetup.js";
 import { syncToVercel } from "./e2eSyncVercel.js";
 import { printSummary } from "./e2eReporting.js";
-
-const DEFAULT_CREDENTIAL_PATH = "server/.env.e2e";
-const REFUSED_SERVER_ENV_PATH = "server/.env";
-// FIREBASE_PROJECT_ID is not listed: assertProjectMatch owns a missing project ID
-// and runs first, so a combined omission still reports the project guard.
-const REQUIRED_CREDENTIAL_KEYS = {
-  clientEmail: "FIREBASE_CLIENT_EMAIL",
-  privateKey: "FIREBASE_PRIVATE_KEY",
-};
-
-function resolveCredentialPath(repoRoot, firebaseEnvPath, cwd) {
-  if (!firebaseEnvPath) return resolve(repoRoot, DEFAULT_CREDENTIAL_PATH);
-  return resolve(cwd, firebaseEnvPath);
-}
-
-function normalizePath(path) {
-  const resolved = resolve(path);
-  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
-}
-
-// The filesystem target, following symlinks and junctions; null when the path
-// does not exist, so a missing file never matches another missing file.
-function canonicalPath(path) {
-  try {
-    return normalizePath(realpathSync.native(path));
-  } catch {
-    return null;
-  }
-}
-
-function isServerEnvPath(credentialPath, refused) {
-  if (normalizePath(credentialPath) === normalizePath(refused)) return true;
-  const target = canonicalPath(credentialPath);
-  return target !== null && target === canonicalPath(refused);
-}
-
-function assertNotServerEnv(credentialPath, repoRoot) {
-  const refused = resolve(repoRoot, REFUSED_SERVER_ENV_PATH);
-  if (!isServerEnvPath(credentialPath, refused)) return;
-  throw new Error(
-    `Refusing to read Firebase credentials from ${credentialPath}.\n` +
-      "Remediation: put the E2E project's admin credentials in server/.env.e2e (or pass another file with --firebase-env).",
-  );
-}
-
-function parseFirebaseCredentials(credentialPath) {
-  if (!existsSync(credentialPath)) {
-    throw new Error(`Firebase credential file not found: ${credentialPath}`);
-  }
-  const parsed = parse(readFileSync(credentialPath, "utf8"));
-  return {
-    projectId: parsed.FIREBASE_PROJECT_ID,
-    clientEmail: parsed.FIREBASE_CLIENT_EMAIL,
-    privateKey: parsed.FIREBASE_PRIVATE_KEY,
-  };
-}
 
 function assertProjectMatch(credentials, envFilePath) {
   const e2eProjectId = existsSync(envFilePath)
@@ -91,23 +33,6 @@ function assertProjectMatch(credentials, envFilePath) {
     `Firebase project mismatch: credential file is for "${credentials.projectId ?? ""}", ` +
       `e2e/.env.e2e names "${e2eProjectId ?? ""}". Nothing was changed.`,
   );
-}
-
-function assertCredentialKeys(credentials) {
-  const missing = Object.entries(REQUIRED_CREDENTIAL_KEYS)
-    .filter(([field]) => !credentials[field])
-    .map(([, key]) => key);
-  if (missing.length === 0) return;
-  throw new Error(
-    `Missing key(s) in the Firebase credential file: ${missing.join(", ")}`,
-  );
-}
-
-function normalizePrivateKey(credentials) {
-  return {
-    ...credentials,
-    privateKey: credentials.privateKey.replace(/\\n/g, "\n"),
-  };
 }
 
 function generatePasswords() {
@@ -125,13 +50,8 @@ function generatePasswords() {
   return passwords;
 }
 
-export function prepareReset({ repoRoot, envFilePath, firebaseEnvPath, cwd }) {
-  const credentialPath = resolveCredentialPath(repoRoot, firebaseEnvPath, cwd);
-  assertNotServerEnv(credentialPath, repoRoot);
-  const parsed = parseFirebaseCredentials(credentialPath);
-  assertProjectMatch(parsed, envFilePath);
-  assertCredentialKeys(parsed);
-  const credentials = normalizePrivateKey(parsed);
+export function prepareReset({ credentials, envFilePath }) {
+  assertProjectMatch(credentials, envFilePath);
   return { credentials, passwords: generatePasswords() };
 }
 
@@ -146,7 +66,7 @@ function assertRoleEmails(env) {
 }
 
 async function upsertAll(credentials, firebaseCreds) {
-  const auth = getPasswordResetApp(credentials).auth();
+  const auth = getTestApp(credentials).auth();
   const uidMap = {};
   for (const spec of firebaseCreds) {
     uidMap[spec.uidKey] = await upsertUser(auth, spec);

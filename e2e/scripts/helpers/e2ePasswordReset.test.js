@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -8,17 +8,16 @@ const spawnSync = vi.fn();
 const readEnvFile = vi.fn();
 const writePasswordsToEnvFile = vi.fn();
 const writeUidsToEnvFile = vi.fn();
-const getPasswordResetApp = vi.fn();
+const getTestApp = vi.fn();
 const upsertUser = vi.fn();
 const syncToVercel = vi.fn();
-const config = vi.fn();
 const parse = vi.fn();
 
 vi.mock("child_process", () => ({ execFileSync, spawnSync }));
 vi.mock("dotenv", async (importOriginal) => {
   const actual = await importOriginal();
   parse.mockImplementation(actual.parse);
-  return { ...actual, config, parse };
+  return { ...actual, parse };
 });
 vi.mock("./e2eEnvFile.js", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -26,7 +25,7 @@ vi.mock("./e2eEnvFile.js", async (importOriginal) => ({
   writePasswordsToEnvFile,
   writeUidsToEnvFile,
 }));
-vi.mock("./firebaseTestSetup.js", () => ({ getPasswordResetApp, upsertUser }));
+vi.mock("./firebaseTestSetup.js", () => ({ getTestApp, upsertUser }));
 vi.mock("./e2eSyncVercel.js", () => ({ syncToVercel }));
 
 const { prepareReset, applyReset } = await import("./e2ePasswordReset.js");
@@ -34,7 +33,7 @@ const { buildCredentialMaps, findPlaceholderPasswordNames } =
   await import("./e2eCredentials.js");
 const { main } = await import("../provision-e2e-firebase-users.js");
 
-const PROJECT = "ichnos-e2e";
+const PROJECT = "ichnos-protocol-test";
 const ROLE_KEYS = [
   "ADMIN",
   "USER",
@@ -52,26 +51,18 @@ function e2eEnv() {
   return env;
 }
 
-function credentialFile(projectId, extra = "") {
-  return [
-    `FIREBASE_PROJECT_ID=${projectId}`,
-    "FIREBASE_CLIENT_EMAIL=sa@ichnos-e2e.iam.gserviceaccount.com",
-    'FIREBASE_PRIVATE_KEY="-----BEGIN KEY-----\\nabc\\n-----END KEY-----"',
-    extra,
-    "",
-  ].join("\n");
-}
+const CREDENTIALS = {
+  projectId: PROJECT,
+  clientEmail: "sa@ichnos-protocol-test.iam.gserviceaccount.com",
+  privateKey: "-----BEGIN KEY-----\nabc\n-----END KEY-----",
+};
 
 let repoRoot;
 let envFilePath;
 let logged;
 
-function writeCredentials(content) {
-  writeFileSync(join(repoRoot, "server", ".env.e2e"), content, "utf8");
-}
-
-function prepare(extra = {}) {
-  return prepareReset({ repoRoot, envFilePath, cwd: repoRoot, ...extra });
+function prepare() {
+  return prepareReset({ credentials: CREDENTIALS, envFilePath });
 }
 
 beforeEach(() => {
@@ -90,11 +81,10 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(repoRoot, { recursive: true, force: true });
-  delete process.env.DATABASE_URL;
 });
 
 function expectNothingExternal() {
-  expect(getPasswordResetApp).not.toHaveBeenCalled();
+  expect(getTestApp).not.toHaveBeenCalled();
   expect(upsertUser).not.toHaveBeenCalled();
   expect(execFileSync).not.toHaveBeenCalled();
   expect(spawnSync).not.toHaveBeenCalled();
@@ -103,156 +93,36 @@ function expectNothingExternal() {
 }
 
 describe("prepareReset", () => {
-  it("rejects a project mismatch naming only the two project IDs", () => {
-    writeCredentials(credentialFile("ichnos-prod"));
-
-    const error = (() => {
-      try {
-        prepare();
-      } catch (err) {
-        return err;
-      }
-    })();
-
-    expect(error.message).toContain("ichnos-prod");
-    expect(error.message).toContain(PROJECT);
-    expect(error.message).not.toContain("sa@ichnos-e2e");
-    expect(error.message).not.toContain("BEGIN KEY");
-    expectNothingExternal();
-  });
-
-  it("refuses a --firebase-env path that resolves to server/.env", () => {
-    writeFileSync(join(repoRoot, "server", ".env"), credentialFile(PROJECT));
-
-    expect(() => prepare({ firebaseEnvPath: "server/.env" })).toThrowError(
-      /Refusing to read Firebase credentials/,
-    );
-    expect(parse).not.toHaveBeenCalled();
-  });
-
-  it("refuses a --firebase-env alias whose target is server/.env", () => {
-    writeFileSync(join(repoRoot, "server", ".env"), credentialFile(PROJECT));
-    // A junction needs no privilege on Windows; elsewhere it is a symlink.
-    symlinkSync(join(repoRoot, "server"), join(repoRoot, "alias"), "junction");
-
-    expect(() => prepare({ firebaseEnvPath: "alias/.env" })).toThrowError(
-      /Refusing to read Firebase credentials/,
-    );
-    expect(parse).not.toHaveBeenCalled();
-    expectNothingExternal();
-  });
-
-  it("still refuses the literal server/.env path when the file is missing", () => {
-    expect(() => prepare({ firebaseEnvPath: "server/.env" })).toThrowError(
-      /Refusing to read Firebase credentials/,
-    );
-    expect(parse).not.toHaveBeenCalled();
-  });
-
-  it("names a missing credential key", () => {
-    writeCredentials(`FIREBASE_PROJECT_ID=${PROJECT}\n`);
+  it("rejects a stale e2e/.env.e2e project naming only the two project IDs", () => {
+    readEnvFile.mockReturnValue({
+      ...e2eEnv(),
+      FIREBASE_PROJECT_ID: "ichnos-e2e",
+    });
 
     expect(() => prepare()).toThrowError(
-      /FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY/,
-    );
-  });
-
-  it("names only the missing keys, never the credential file path", () => {
-    writeCredentials(`FIREBASE_PROJECT_ID=${PROJECT}\n`);
-
-    expect(() => prepare()).toThrowError(
-      "Missing key(s) in the Firebase credential file: FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
+      `Firebase project mismatch: credential file is for "${PROJECT}", e2e/.env.e2e names "ichnos-e2e". Nothing was changed.`,
     );
     expect(() => prepare()).toThrowError(
       expect.objectContaining({
-        message: expect.not.stringContaining(repoRoot),
+        message: expect.not.stringMatching(/sa@ichnos|BEGIN KEY/),
       }),
-    );
-    expectNothingExternal();
-  });
-
-  it("routes a missing credential project ID to the project guard", () => {
-    writeCredentials(
-      credentialFile(PROJECT).replace(/^FIREBASE_PROJECT_ID=.*\n/, ""),
-    );
-
-    expect(() => prepare()).toThrowError(
-      `Firebase project mismatch: credential file is for "", e2e/.env.e2e names "${PROJECT}". Nothing was changed.`,
     );
     expectNothingExternal();
   });
 
   it("routes a missing E2E project ID to the project guard", () => {
-    writeCredentials(credentialFile("ichnos-prod"));
     readEnvFile.mockReturnValue({
       ...e2eEnv(),
       FIREBASE_PROJECT_ID: undefined,
     });
 
     expect(() => prepare()).toThrowError(
-      'Firebase project mismatch: credential file is for "ichnos-prod", e2e/.env.e2e names "". Nothing was changed.',
+      `Firebase project mismatch: credential file is for "${PROJECT}", e2e/.env.e2e names "". Nothing was changed.`,
     );
     expectNothingExternal();
-  });
-
-  it("reports the project guard when the credential project ID and client email are both missing", () => {
-    writeCredentials(
-      credentialFile(PROJECT)
-        .replace(/^FIREBASE_PROJECT_ID=.*\n/, "")
-        .replace(/^FIREBASE_CLIENT_EMAIL=.*\n/m, ""),
-    );
-
-    expect(() => prepare()).toThrowError(
-      `Firebase project mismatch: credential file is for "", e2e/.env.e2e names "${PROJECT}". Nothing was changed.`,
-    );
-    expect(() => prepare()).toThrowError(
-      expect.objectContaining({
-        message: expect.not.stringMatching(/FIREBASE_CLIENT_EMAIL|BEGIN KEY/),
-      }),
-    );
-    expectNothingExternal();
-  });
-
-  it("reports the project guard when the E2E project ID and the private key are both missing", () => {
-    writeCredentials(
-      credentialFile("ichnos-prod").replace(/^FIREBASE_PRIVATE_KEY=.*\n/m, ""),
-    );
-    readEnvFile.mockReturnValue({
-      ...e2eEnv(),
-      FIREBASE_PROJECT_ID: undefined,
-    });
-
-    expect(() => prepare()).toThrowError(
-      'Firebase project mismatch: credential file is for "ichnos-prod", e2e/.env.e2e names "". Nothing was changed.',
-    );
-    expect(() => prepare()).toThrowError(
-      expect.objectContaining({
-        message: expect.not.stringMatching(/FIREBASE_PRIVATE_KEY|sa@ichnos/),
-      }),
-    );
-    expectNothingExternal();
-  });
-
-  it("never copies other keys of the credential file into process.env", () => {
-    writeCredentials(
-      credentialFile(PROJECT, "DATABASE_URL=postgres://secret@db/x"),
-    );
-
-    const { credentials } = prepare();
-
-    expect(process.env.DATABASE_URL).toBeUndefined();
-    expect(Object.keys(credentials)).toEqual([
-      "projectId",
-      "clientEmail",
-      "privateKey",
-    ]);
-    expect(credentials.privateKey).toContain("\nabc\n");
-    expect(config).not.toHaveBeenCalled();
   });
 
   it("generates six distinct long passwords that pass the guard", () => {
-    writeCredentials(credentialFile(PROJECT));
-
     const { passwords } = prepare();
     const values = Object.values(passwords);
 
@@ -287,10 +157,9 @@ describe("applyReset", () => {
   let order;
 
   beforeEach(() => {
-    writeCredentials(credentialFile(PROJECT));
     ({ passwords } = prepare());
     order = [];
-    getPasswordResetApp.mockReturnValue({ auth: () => ({}) });
+    getTestApp.mockReturnValue({ auth: () => ({}) });
     upsertUser.mockImplementation(async (_auth, spec) => {
       order.push(`upsert:${spec.uidKey}`);
       return spec.uidKey.replace(/^E2E_(\w+)_UID$/, "uid-$1");
@@ -368,7 +237,7 @@ describe("applyReset", () => {
     await expect(applyReset(args)).rejects.toThrowError(
       /E2E_SUPER_ADMIN_EMAIL/,
     );
-    expect(getPasswordResetApp).not.toHaveBeenCalled();
+    expect(getTestApp).not.toHaveBeenCalled();
   });
 });
 

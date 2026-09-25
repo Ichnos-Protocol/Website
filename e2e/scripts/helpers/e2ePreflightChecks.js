@@ -86,18 +86,3 @@ export function checkVercelProject(serverDir) {
     );
   }
 }
-
-export function checkFirebaseEnv() {
-  const required = [
-    "FIREBASE_PROJECT_ID",
-    "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY",
-  ];
-  const missing = required.filter((k) => !process.env[k]);
-  if (missing.length > 0) {
-    fail(
-      `Missing Firebase Admin SDK env vars: ${missing.join(", ")}.`,
-      "Ensure server/.env contains the Firebase Admin SDK credentials.",
-    );
-  }
-}

@@ -2,17 +2,21 @@
  * Create or update Firebase Auth users for E2E testing.
  *
  * Exports:
- *   - provisionFirebaseUsers(credentialsArray) — general-purpose provisioning
+ *   - provisionFirebaseUsers(credentialsArray, adminCredentials?) — general-purpose provisioning
  *   - setupFirebaseTestUsers() — backward-compatible wrapper (reads process.env)
- *   - getPasswordResetApp(credentials) — app built from explicit credentials,
- *     never from process.env (used by --reset-passwords)
+ *   - getTestApp(credentials?) — the one admin app, built from explicit
+ *     credentials or, without them, from process.env. Refuses any project other
+ *     than E2E_FIREBASE_PROJECT_ID before a cached app is returned or a new one
+ *     is initialized.
  *   - upsertUser(auth, spec) — create or update one user and set its claims
  *
  * Returns { userUid, adminUid, superAdminUid }.
  */
 import admin from "firebase-admin";
 
-const RESET_APP_NAME = "e2e-password-reset";
+import { assertE2EProjectId } from "./e2eFirebaseCredentials.js";
+
+const TEST_APP_NAME = "test-setup";
 
 const USER_SPECS = [
   {
@@ -45,32 +49,29 @@ const USER_SPECS = [
   },
 ];
 
-function getTestApp() {
-  const existing = admin.apps.find((a) => a.name === "test-setup");
-  if (existing) return existing;
-
-  return admin.initializeApp(
-    {
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      }),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    },
-    "test-setup",
-  );
+function credentialsFromEnv() {
+  return {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  };
 }
 
-export function getPasswordResetApp({ projectId, clientEmail, privateKey }) {
-  const existing = admin.apps.find((a) => a.name === RESET_APP_NAME);
+export function getTestApp(credentials) {
+  const { projectId, clientEmail, privateKey, storageBucket } =
+    credentials ?? credentialsFromEnv();
+  assertE2EProjectId(projectId);
+
+  const existing = admin.apps.find((a) => a.name === TEST_APP_NAME);
   if (existing) return existing;
 
   return admin.initializeApp(
     {
       credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+      ...(storageBucket ? { storageBucket } : {}),
     },
-    RESET_APP_NAME,
+    TEST_APP_NAME,
   );
 }
 
@@ -92,8 +93,11 @@ export async function upsertUser(auth, spec) {
   return user.uid;
 }
 
-export async function provisionFirebaseUsers(credentialsArray) {
-  const app = getTestApp();
+export async function provisionFirebaseUsers(
+  credentialsArray,
+  adminCredentials,
+) {
+  const app = getTestApp(adminCredentials);
   const auth = app.auth();
   const result = {};
 

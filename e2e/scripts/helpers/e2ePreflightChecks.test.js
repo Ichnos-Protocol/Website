@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { existsSync, readFileSync } from "fs";
 import { execFileSync } from "child_process";
 
@@ -11,7 +11,7 @@ vi.mock("child_process", () => ({
   execFileSync: vi.fn(),
 }));
 
-const { checkGhAuth, checkVercelAuth, checkVercelProject, checkFirebaseEnv } =
+const { checkGhAuth, checkVercelAuth, checkVercelProject } =
   await import("./e2ePreflightChecks.js");
 
 const SERVER_DIR = "/fake/server";
@@ -202,44 +202,6 @@ describe("checkVercelProject", () => {
     );
     expect(() => checkVercelProject(SERVER_DIR)).toThrow(
       /does not contain a valid projectName/,
-    );
-  });
-});
-
-describe("checkFirebaseEnv", () => {
-  const requiredVars = [
-    "FIREBASE_PROJECT_ID",
-    "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY",
-  ];
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it("passes when all Firebase env vars are set", () => {
-    for (const key of requiredVars) process.env[key] = "value";
-    expect(() => checkFirebaseEnv()).not.toThrow();
-  });
-
-  it("throws when all Firebase env vars are missing", () => {
-    for (const key of requiredVars) delete process.env[key];
-    expect(() => checkFirebaseEnv()).toThrow(
-      /Missing Firebase Admin SDK env vars/,
-    );
-  });
-
-  it("lists each missing var in the error message", () => {
-    delete process.env.FIREBASE_PROJECT_ID;
-    process.env.FIREBASE_CLIENT_EMAIL = "val";
-    delete process.env.FIREBASE_PRIVATE_KEY;
-    expect(() => checkFirebaseEnv()).toThrow(
-      /FIREBASE_PROJECT_ID.*FIREBASE_PRIVATE_KEY/,
     );
   });
 });

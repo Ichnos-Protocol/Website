@@ -2,22 +2,24 @@
  * E2E Credential Pipeline — Orchestrator. See e2e/.env.e2e.example for usage.
  * Run from the repository root:
  *
- *   node e2e/scripts/provision-e2e-firebase-users.js
+ *   node e2e/scripts/provision-e2e-firebase-users.js [--firebase-env <path>]
  *     Full pipeline: provision Firebase users, write UIDs, sync GitHub + Vercel.
  *   node e2e/scripts/provision-e2e-firebase-users.js --sync-only
  *     Push e2e/.env.e2e to GitHub and Vercel without touching Firebase.
  *   node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords [--firebase-env <path>]
- *     Generate six new passwords, apply them to the E2E Firebase project using
- *     the admin credentials in server/.env.e2e (or <path>), write them to
- *     e2e/.env.e2e and push them to GitHub.
+ *     Generate six new passwords, apply them to the E2E Firebase project,
+ *     write them to e2e/.env.e2e and push them to GitHub.
  *
- * Only the full pipeline reads server/.env. Shell-exported E2E_*_PASSWORD
- * values are captured once at startup and override e2e/.env.e2e.
+ * Every mode but --sync-only loads the Firebase admin credentials from, in
+ * order: --firebase-env <path>, server/.env.e2e, then a single
+ * secrets/*ichnos-protocol-test*.json service-account file. No mode reads
+ * server/.env, and every mode is locked to the ichnos-protocol-test project.
+ * Shell-exported E2E_*_PASSWORD values are captured once at startup and
+ * override e2e/.env.e2e.
  */
 import { existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { config } from "dotenv";
 import { runPreflight } from "./helpers/e2ePreflight.js";
 import {
   readEnvFile,
@@ -36,13 +38,13 @@ import {
   findPlaceholderPasswordNames,
 } from "./helpers/e2eCredentials.js";
 import { prepareReset, applyReset } from "./helpers/e2ePasswordReset.js";
+import { loadFirebaseCredentials } from "./helpers/e2eFirebaseCredentials.js";
 import { printFailedDetails, printSummary } from "./helpers/e2eReporting.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverDir = resolve(__dirname, "../../server");
 const repoRoot = resolve(__dirname, "../..");
 const envFilePath = resolve(__dirname, "../.env.e2e");
-const serverEnvPath = resolve(serverDir, ".env");
 
 export function parseCliOptions(argv) {
   const index = argv.indexOf("--firebase-env");
@@ -98,15 +100,14 @@ function syncGitHubConfig(githubVariables, github, { recoveryNote } = {}) {
   return { ghResults, varResults };
 }
 
-async function provisionFullPipeline({
-  firebaseCreds,
-  vercel,
-  githubVariables,
-}) {
+async function provisionFullPipeline(
+  { firebaseCreds, vercel, githubVariables },
+  credentials,
+) {
   console.log("\n=== Firebase Provisioning ===");
   const { provisionFirebaseUsers } =
     await import("./helpers/firebaseTestSetup.js");
-  const uidMap = await provisionFirebaseUsers(firebaseCreds);
+  const uidMap = await provisionFirebaseUsers(firebaseCreds, credentials);
   writeUidsToEnvFile(envFilePath, uidMap);
   console.log("[env] UIDs written back to .env.e2e");
   for (const [key, uid] of Object.entries(uidMap)) {
@@ -135,13 +136,15 @@ export async function main(
   }
   console.log(`[orchestrator] ${modeLabel(syncOnly, resetPasswords)}\n`);
 
-  const reset = resetPasswords
-    ? prepareReset({
+  const credentials = syncOnly
+    ? null
+    : loadFirebaseCredentials({
         repoRoot,
-        envFilePath,
         firebaseEnvPath,
         cwd: process.cwd(),
-      })
+      });
+  const reset = resetPasswords
+    ? prepareReset({ credentials, envFilePath })
     : null;
   const env = {
     ...loadLocalEnv(reset ? {} : exportedPasswords),
@@ -153,15 +156,13 @@ export async function main(
   // Sync-only and reset already hold every UID: report missing names before preflight runs `gh`.
   if (syncOnly || reset)
     assertGitHubConfigComplete({ ...githubVariables, ...github });
-  // Full pipeline only: checkFirebaseEnv in preflight reads the admin SDK vars from server/.env.
-  if (!syncOnly && !reset) config({ path: serverEnvPath });
 
   runPreflight({
     syncOnly,
     envFilePath,
     serverDir,
     exportedPasswords: reset ? reset.passwords : exportedPasswords,
-    firebaseCredentials: reset?.credentials,
+    firebaseCredentials: credentials,
   });
   console.log("[preflight] all checks passed");
 
@@ -171,7 +172,7 @@ export async function main(
       env,
       envFilePath,
       serverDir,
-      credentials: reset.credentials,
+      credentials,
       passwords: reset.passwords,
       syncGitHubConfig,
     });
@@ -180,7 +181,7 @@ export async function main(
     return;
   }
 
-  if (!syncOnly) await provisionFullPipeline(maps);
+  if (!syncOnly) await provisionFullPipeline(maps, credentials);
 
   // Full pipeline: UIDs exist only after provisioning, so the check runs here.
   assertGitHubConfigComplete({ ...githubVariables, ...github });
