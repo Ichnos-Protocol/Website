@@ -6,6 +6,8 @@ const spawnSync = vi.fn();
 const existsSync = vi.fn(() => true);
 // Names of every other fs function called, in order.
 const fsCalls = vi.hoisted(() => []);
+// The first argument of every tracked fs call, in the same order.
+const fsArgs = vi.hoisted(() => []);
 const readEnvFile = vi.fn();
 const readPreservedWebConfig = vi.fn();
 const writeEnvFile = vi.fn();
@@ -41,8 +43,6 @@ vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
   ...(await importOriginal()),
   checkGhAuth: vi.fn(),
   checkVercelAuth: vi.fn(),
-  checkVercelProject: vi.fn(),
-  checkOptionalVercelProject: vi.fn(),
   checkVercelApiAccess: vi.fn(() => ({ mode: "cli" })),
 }));
 vi.mock("./e2eVercelProjects.js", async (importOriginal) => ({
@@ -74,6 +74,7 @@ vi.mock("fs", async (importOriginal) => {
       name,
       (...args) => {
         fsCalls.push(name);
+        fsArgs.push(String(args[0] ?? ""));
         return fn(...args);
       },
     ]);
@@ -250,6 +251,11 @@ function mockSuccessfulSync() {
   syncProviders.mockImplementation(async ({ converge }) =>
     providerOutcome(converge ? CONFIRMED_BYPASS : { attempted: false }),
   );
+}
+
+function fsCallsWithLinkPaths() {
+  const touched = [...fsArgs, ...existsSync.mock.calls.map(([p]) => String(p))];
+  return touched.filter((path) => /\.vercel[\\/]project\.json/.test(path));
 }
 
 function order(mock) {
@@ -719,6 +725,41 @@ describe("web config and provider sync", () => {
     expect(order(connectVercelProjects)).toBeLessThan(
       order(provisionFirebaseUsers),
     );
+  });
+
+  it("discovers the Vercel scope after the auth checks and before every write", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    const checks = await import("./e2ePreflightChecks.js");
+    const linkPaths = [];
+    connectVercelProjects.mockImplementation(async () => {
+      linkPaths.push(...fsCallsWithLinkPaths());
+      return VERCEL_CONTEXT;
+    });
+    fsCalls.length = 0;
+    fsArgs.length = 0;
+
+    await main({});
+
+    const discovery = order(connectVercelProjects);
+    for (const check of [
+      checks.checkGhAuth,
+      checks.checkVercelAuth,
+      checks.checkVercelApiAccess,
+    ]) {
+      expect(order(check)).toBeLessThan(discovery);
+    }
+    // syncProviders owns the Vercel env writes and every redeploy.
+    for (const write of [
+      provisionFirebaseUsers,
+      writeEnvFile,
+      syncVariablesToGitHub,
+      syncToGitHub,
+      syncProviders,
+    ]) {
+      expect(discovery).toBeLessThan(order(write));
+    }
+    expect(linkPaths).toEqual([]);
   });
 
   it("reads the web config from the locked project and writes it everywhere", async () => {

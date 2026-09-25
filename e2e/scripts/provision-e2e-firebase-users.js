@@ -42,8 +42,10 @@
  *
  * Vercel traffic goes through the Vercel REST API: the `vercel api`
  * subcommand over the `vercel login` session, or, when the installed CLI
- * lacks it, an exported VERCEL_TOKEN. The only manual steps are `gh auth
- * login`, `vercel login` and, in that last case, the VERCEL_TOKEN export.
+ * lacks it, an exported VERCEL_TOKEN. The scope that owns both projects is
+ * discovered through that authenticated API; a .vercel/project.json is an
+ * optional cross-check, never a prerequisite. The only manual steps are `gh
+ * auth login`, `vercel login` and, in that last case, the VERCEL_TOKEN export.
  */
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -453,8 +455,6 @@ export async function main(options = parseCliOptions(process.argv)) {
     syncOnly,
     envFilePath,
     env,
-    serverDir,
-    clientDir,
     firebaseCredentials: credentials,
   });
   // Resolved once, read-only, before any provider write.

@@ -15,11 +15,15 @@ import {
   createCliTransport,
   createTokenTransport,
   createVercelApi,
+  isNotFoundError,
+  readCliUsername,
   redact,
+  resolveCliAccountScope,
   resolveVercelCommand,
   supportsVercelApi,
   withTeam,
 } from "./e2eVercelApi.js";
+import { createFakeVercelCli } from "./e2eVercelFakeCli.js";
 
 const TEAM = "team_abc123";
 const SECRET = "Q7wErTy12345678901234567890abcdE";
@@ -185,6 +189,37 @@ describe("createCliTransport", () => {
 
     expect(run.mock.calls[0][0]).not.toContain("--scope");
   });
+
+  it("passes an explicit scope verbatim", async () => {
+    const run = okRun();
+    await createCliTransport({ run, scope: "ichnos-team" })("/v2/user", {
+      method: "GET",
+    });
+
+    const args = run.mock.calls[0][0];
+    expect(
+      args.slice(args.indexOf("--scope"), args.indexOf("--scope") + 2),
+    ).toEqual(["--scope", "ichnos-team"]);
+  });
+
+  it("prefers the explicit scope over a team id", async () => {
+    const run = okRun();
+    await createCliTransport({ run, scope: "someone", teamId: TEAM })("/x", {
+      method: "GET",
+    });
+
+    const args = run.mock.calls[0][0];
+    expect(args.filter((arg) => arg === "--scope")).toHaveLength(1);
+    expect(args).toContain("someone");
+    expect(args).not.toContain(TEAM);
+  });
+
+  it("adds no scope when neither a scope nor a team id is given", async () => {
+    const run = okRun();
+    await createCliTransport({ run })("/v2/teams", { method: "GET" });
+
+    expect(run.mock.calls[0][0]).not.toContain("--scope");
+  });
 });
 
 describe("withTeam", () => {
@@ -259,6 +294,57 @@ describe("createVercelApi", () => {
     expect(error.message).not.toContain(SECRET);
     expect(error.message).not.toContain("plain-body-value");
   });
+
+  it("attaches the status, redacted detail and path to the thrown error", async () => {
+    const api = createVercelApi({
+      transport: async () => ({
+        ok: false,
+        status: 404,
+        text: "",
+        errorText: `not_found: project missing for ${SECRET}\nsecond line`,
+      }),
+    });
+    api.registerSecret(SECRET);
+
+    const error = await api.request("/v9/projects/p").catch((err) => err);
+
+    expect(error.status).toBe(404);
+    expect(error.path).toBe("/v9/projects/p");
+    expect(error.detail).toMatch(/^not_found: project missing for \*\*\*\*$/);
+    expect(JSON.stringify({ ...error, message: error.message })).not.toContain(
+      SECRET,
+    );
+  });
+});
+
+describe("isNotFoundError", () => {
+  it("is true for a 404 status", () => {
+    expect(isNotFoundError({ status: 404, detail: "" })).toBe(true);
+  });
+
+  it.each([
+    ["Error: Project not found (404)"],
+    ['{"error":{"code":"not_found","message":"Project not found"}}'],
+  ])("is true for the not-found detail %s", (detail) => {
+    expect(isNotFoundError({ status: 1, detail })).toBe(true);
+  });
+
+  it.each([
+    [401, "Error: unauthorized (401)"],
+    [403, "Error: forbidden (403)"],
+    [429, "Error: rate limit exceeded (429)"],
+    [1, "Error: not_found or forbidden (403)"],
+    [1, "Error: 404 after rate limit"],
+    [1, ""],
+    [1, "Error: something else"],
+    [null, undefined],
+  ])("is false for status %s and detail %s", (status, detail) => {
+    expect(isNotFoundError({ status, detail })).toBe(false);
+  });
+
+  it("is false for a missing error", () => {
+    expect(isNotFoundError(undefined)).toBe(false);
+  });
 });
 
 describe("redact", () => {
@@ -317,5 +403,135 @@ describe("resolveVercelCommand", () => {
         exists: () => false,
       }),
     ).toBeNull();
+  });
+});
+
+describe("readCliUsername", () => {
+  it("reads the username from `vercel whoami --format json`", () => {
+    const cli = createFakeVercelCli({
+      user: { id: "user_1", username: "alice" },
+      currentTeam: "team_other",
+    });
+
+    expect(readCliUsername({ run: cli.run })).toBe("alice");
+    expect(cli.calls).toEqual([["whoami", "--format", "json"]]);
+  });
+
+  it("refuses when the CLI session is not signed in", () => {
+    const run = vi.fn(() => ({
+      status: 1,
+      stdout: "",
+      stderr: "Error: No existing credentials found.\n",
+    }));
+
+    expect(() => readCliUsername({ run })).toThrowError(
+      /whoami failed \(1\): Error: No existing credentials found\.[\s\S]*vercel login/,
+    );
+  });
+
+  it("refuses a whoami answer with no username", () => {
+    expect(() =>
+      readCliUsername({ run: okRun('{"email":"a@b.c"}') }),
+    ).toThrowError(/returned no username/);
+  });
+});
+
+describe("resolveCliAccountScope", () => {
+  const LEGACY = { id: "user_1", username: "alice", email: "a@example.com" };
+  const NORTHSTAR = {
+    ...LEGACY,
+    version: "northstar",
+    defaultTeamId: "team_home",
+  };
+  const TEAMS = [
+    { id: "team_other", slug: "other" },
+    { id: "team_home", slug: "alice-home" },
+  ];
+
+  async function teamsRequest(cli, scope) {
+    await createCliTransport({ run: cli.run, scope })("/v2/teams?limit=100", {
+      method: "GET",
+    });
+    return cli.requests.at(-1);
+  }
+
+  it("models a CLI request without --scope inheriting the current team", async () => {
+    const cli = createFakeVercelCli({
+      user: LEGACY,
+      teams: TEAMS,
+      currentTeam: "team_other",
+    });
+
+    expect((await teamsRequest(cli, undefined)).teamId).toBe("team_other");
+  });
+
+  it("clears an existing current team for a legacy account with its username", async () => {
+    const cli = createFakeVercelCli({
+      user: LEGACY,
+      teams: TEAMS,
+      currentTeam: "team_other",
+    });
+
+    const account = resolveCliAccountScope({ run: cli.run });
+
+    expect(account).toEqual({ cliScope: "alice", northstar: false });
+    expect(cli.calls[1]).toEqual([
+      "api",
+      "/v2/user",
+      "-X",
+      "GET",
+      "--raw",
+      "--scope",
+      "alice",
+    ]);
+    expect((await teamsRequest(cli, account.cliScope)).teamId).toBeNull();
+  });
+
+  it("pins a Northstar account to a named team, never its personal scope or the current team", async () => {
+    const cli = createFakeVercelCli({
+      user: NORTHSTAR,
+      teams: TEAMS,
+      currentTeam: "team_other",
+    });
+
+    const account = resolveCliAccountScope({ run: cli.run });
+
+    expect(account).toEqual({ cliScope: "team_home", northstar: true });
+    expect(cli.calls.map((args) => args[0])).toEqual([
+      "whoami",
+      "api",
+      "teams",
+    ]);
+    expect(cli.calls[2]).toEqual(["teams", "ls", "--format", "json"]);
+    expect(cli.requests).toEqual([]);
+    expect((await teamsRequest(cli, account.cliScope)).teamId).toBe(
+      "team_home",
+    );
+  });
+
+  it("refuses a Northstar account that belongs to no team", () => {
+    const cli = createFakeVercelCli({ user: NORTHSTAR, currentTeam: null });
+
+    expect(() => resolveCliAccountScope({ run: cli.run })).toThrowError(
+      /no team for this Northstar account; refusing to inherit the current team/,
+    );
+    expect(cli.requests).toEqual([]);
+  });
+
+  it("refuses any other probe failure instead of falling back to the current team", () => {
+    const run = vi
+      .fn()
+      .mockReturnValueOnce({ status: 0, stdout: '{"username":"alice"}' })
+      .mockReturnValueOnce({
+        status: 1,
+        stdout: "",
+        stderr:
+          "Error: Rate limited. Too many requests to the same endpoint: /teams\n",
+      });
+
+    expect(() => resolveCliAccountScope({ run })).toThrowError(
+      /personal-scope probe failed \(1\): Error: Rate limited/,
+    );
+    expect(run).toHaveBeenCalledTimes(2);
   });
 });

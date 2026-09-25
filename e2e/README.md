@@ -99,6 +99,8 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 - sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on `ichnos-client`, `ichnos-protocol_server` and GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
 - writes the all-branches Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) and redeploys only the previews whose variables changed
 
+Before any write, the command finds the Vercel scope that owns both projects. It lists the signed-in user's personal scope and teams, looks up the exact names `ichnos-client` and `ichnos-protocol_server` in each, and requires exactly one scope to contain both. If no scope or more than one scope contains both, the run stops before any write.
+
 **Other modes:**
 
 - `--sync-only` pushes the generated `e2e/.env.e2e` as it stands to GitHub and the Vercel Preview env. It does not touch Firebase, read the web config or converge the bypass secret.
@@ -110,4 +112,6 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 - the Firebase test service account in one of the credential sources above
 - `VERCEL_TOKEN`, only when the installed Vercel CLI lacks `vercel api`
 
-> **Troubleshooting:** the script checks its prerequisites first and stops naming the missing command or token. If it fails, check: (1) you are authenticated: `gh auth login`, `vercel login`; (2) the Firebase admin credentials come from `--firebase-env`, `server/.env.e2e` or the single `secrets/*ichnos-protocol-test*.json`, never `server/.env`; (3) you are running from the repository root; (4) both Vercel projects are linked to the exact names `ichnos-client` and `ichnos-protocol_server` (`cd server && vercel link`, `cd client && vercel link`); (5) the script's own message names the missing command or token.
+The run discovers the Vercel scope through the authenticated API, so `vercel link` is not required.
+
+> **Troubleshooting:** the script checks its prerequisites first and stops naming the missing command or token. If it fails, check: (1) you are authenticated: `gh auth login`, `vercel login`; (2) the Firebase admin credentials come from `--firebase-env`, `server/.env.e2e` or the single `secrets/*ichnos-protocol-test*.json`, never `server/.env`; (3) you are running from the repository root; (4) `client/.vercel/project.json` and `server/.vercel/project.json` are optional cross-checks: when one is present, its project name, project ID and organization ID must match the discovered scope, and you can delete a stale file; (5) the script's own message names the missing command or token.

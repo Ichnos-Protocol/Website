@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { existsSync, readFileSync } from "fs";
 import { execFileSync } from "child_process";
 
@@ -11,17 +11,8 @@ vi.mock("child_process", () => ({
   execFileSync: vi.fn(),
 }));
 
-const {
-  checkGhAuth,
-  checkOptionalVercelProject,
-  checkVercelApiAccess,
-  checkVercelAuth,
-  checkVercelProject,
-} = await import("./e2ePreflightChecks.js");
-const { EXPECTED_PROJECT_NAMES } = await import("./e2eVercelProjects.js");
-
-const SERVER_DIR = "/fake/server";
-const CLIENT_DIR = "/fake/client";
+const checks = await import("./e2ePreflightChecks.js");
+const { checkGhAuth, checkVercelApiAccess, checkVercelAuth } = checks;
 
 describe("checkGhAuth", () => {
   it("passes when gh auth status succeeds", () => {
@@ -94,206 +85,23 @@ describe("session checks name their login command", () => {
   });
 });
 
-describe("checkOptionalVercelProject", () => {
-  it("skips an absent client link file", () => {
+describe("no link-file check", () => {
+  it("exports no .vercel link check and reads no file to pass", () => {
+    existsSync.mockClear();
     readFileSync.mockClear();
-    existsSync.mockReturnValue(false);
+    execFileSync.mockReset();
+    execFileSync.mockReturnValue("");
 
-    expect(() =>
-      checkOptionalVercelProject(CLIENT_DIR, "ichnos-client"),
-    ).not.toThrow();
+    expect(Object.keys(checks).sort()).toEqual([
+      "checkGhAuth",
+      "checkVercelApiAccess",
+      "checkVercelAuth",
+    ]);
+    checkGhAuth();
+    checkVercelAuth();
+    checkVercelApiAccess({ supports: () => true, env: {} });
+
     expect(readFileSync).not.toHaveBeenCalled();
-  });
-
-  it("refuses a present client link naming the server project", () => {
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_1",
-        orgId: "team_1",
-        projectName: "ichnos-protocol_server",
-      }),
-    );
-
-    expect(() =>
-      checkOptionalVercelProject(CLIENT_DIR, "ichnos-client"),
-    ).toThrow(/does not match the expected client project 'ichnos-client'/);
-  });
-
-  it("refuses a present client link naming ichnos-protocol", () => {
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_1",
-        orgId: "team_1",
-        projectName: "ichnos-protocol",
-      }),
-    );
-
-    expect(() =>
-      checkOptionalVercelProject(CLIENT_DIR, EXPECTED_PROJECT_NAMES.client),
-    ).toThrow(/does not match the expected client project 'ichnos-client'/);
-  });
-});
-
-describe("checkVercelProject", () => {
-  beforeEach(() => {
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "ichnos-protocol_server",
-      }),
-    );
-  });
-
-  it("passes with valid project.json and matching project name", () => {
-    expect(() => checkVercelProject(SERVER_DIR)).not.toThrow();
-  });
-
-  it("throws when project.json does not exist", () => {
-    existsSync.mockReturnValue(false);
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json not found/,
-    );
-  });
-
-  it("throws when project.json is malformed JSON", () => {
-    readFileSync.mockReturnValue("not-json{");
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json is malformed/,
-    );
-  });
-
-  it("throws actionable error when project.json contains valid JSON null", () => {
-    readFileSync.mockReturnValue("null");
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json is malformed/,
-    );
-  });
-
-  it("throws when projectId is missing", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        orgId: "org_456",
-        projectName: "ichnos-protocol_server",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /missing projectId or orgId/,
-    );
-  });
-
-  it("throws when orgId is missing", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        projectName: "ichnos-protocol_server",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /missing projectId or orgId/,
-    );
-  });
-
-  it("throws when projectName is absent", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not contain a valid projectName/,
-    );
-  });
-
-  it("throws when projectName is a truthy non-string value", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: 12345,
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not contain a valid projectName/,
-    );
-  });
-
-  it("throws when projectName does not match expected identity", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "wrong-project",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is the stale deleted 'ichnos-protocolserver'", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "ichnos-protocolserver",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is a substring match like my-server-project", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "my-server-project",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName has wrong casing", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "ichnos-protocolServer",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is a client project", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "ichnos-client",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is empty string", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({
-        projectId: "prj_123",
-        orgId: "org_456",
-        projectName: "",
-      }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not contain a valid projectName/,
-    );
+    expect(existsSync).not.toHaveBeenCalled();
   });
 });

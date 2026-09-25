@@ -10,6 +10,16 @@
  * the transport returns, whatever the outcome.
  * Error messages pass through a scrubber that replaces every registered
  * secret before the message is built.
+ *
+ * The CLI transport takes an optional `scope`, passed verbatim as `--scope`,
+ * so a caller that has discovered the owning team or personal account pins
+ * it instead of inheriting the CLI's current scope. `vercel api` appends the
+ * CLI's current team to every request that carries no `--scope`, so
+ * resolveCliAccountScope finds the `--scope` value that keeps account-level
+ * reads off that inherited team. A failed request throws
+ * an error carrying its status, redacted detail and path, and
+ * isNotFoundError classifies it: only an unambiguous not-found is an
+ * absence, never an auth or rate-limit failure.
  */
 import { spawnSync } from "child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "fs";
@@ -104,20 +114,34 @@ function toResponse(result, bodyFile) {
   };
 }
 
+function scopeArgs(scope, teamId) {
+  if (typeof scope === "string" && scope) return ["--scope", scope];
+  return isTeamId(teamId) ? ["--scope", teamId] : [];
+}
+
 /**
  * `vercel api` ignores a teamId in the path and applies its own current
- * scope, so the team travels as --scope instead. A body goes in a temporary
- * file passed as `--input <FILE>`, the form every `vercel api` release reads.
+ * scope, so the scope travels as --scope instead: an explicit `scope` (a
+ * team slug or the personal username) verbatim, else a `team_` id. A body
+ * goes in a temporary file passed as `--input <FILE>`, the form every
+ * `vercel api` release reads.
  */
 export function createCliTransport({
   run = defaultRun,
   teamId,
+  scope,
   tempRoot = tmpdir(),
   writeFile = writeFileSync,
 } = {}) {
   return async (path, { method, body }) => {
-    const args = ["api", path, "-X", method, "--raw"];
-    if (isTeamId(teamId)) args.push("--scope", teamId);
+    const args = [
+      "api",
+      path,
+      "-X",
+      method,
+      "--raw",
+      ...scopeArgs(scope, teamId),
+    ];
     const bodyFile =
       body === undefined ? null : writeBodyFile(body, tempRoot, writeFile);
     try {
@@ -127,6 +151,94 @@ export function createCliTransport({
       if (bodyFile) rmSync(bodyFile.dir, { recursive: true, force: true });
     }
   };
+}
+
+// The CLI's refusal of a personal --scope for a Northstar account.
+const NORTHSTAR_SCOPE_REFUSAL =
+  /cannot set your Personal Account as the scope/i;
+
+function cliFailure(what, result) {
+  const detail = firstLine(result?.stderr || result?.error?.message);
+  return new Error(
+    `Vercel CLI ${what} failed (${result?.status ?? "no status"}): ${detail || "no detail"}. ` +
+      "Run `vercel login` or export VERCEL_TOKEN, then re-run. Nothing was changed.",
+  );
+}
+
+function runCliJson(run, args, what) {
+  const result = run(args);
+  if (result?.status !== 0) throw cliFailure(what, result);
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    throw new Error(`Vercel CLI ${what} returned a non-JSON response.`);
+  }
+}
+
+/** The signed-in username; `vercel whoami` reads it with no team applied. */
+export function readCliUsername({ run = defaultRun } = {}) {
+  const who = runCliJson(run, ["whoami", "--format", "json"], "whoami");
+  if (typeof who?.username !== "string" || !who.username) {
+    throw new Error(
+      "Vercel CLI whoami returned no username; refusing to guess the account. Nothing was changed.",
+    );
+  }
+  return who.username;
+}
+
+/** The lowest team id `vercel teams ls` lists; it reads with no team applied. */
+function readFirstCliTeamId(run) {
+  const list = runCliJson(run, ["teams", "ls", "--format", "json"], "teams ls");
+  const ids = (Array.isArray(list?.teams) ? list.teams : [])
+    .map((team) => team?.id)
+    .filter(isTeamId)
+    .sort();
+  if (ids.length === 0) {
+    throw new Error(
+      "Vercel CLI teams ls returned no team for this Northstar account; refusing to inherit the current team. Nothing was changed.",
+    );
+  }
+  return ids[0];
+}
+
+/**
+ * The `--scope` value for account-level reads (GET /v2/user, /v2/teams) over
+ * the CLI session. A legacy account takes its own username, which makes the
+ * CLI drop its current team. A Northstar account's CLI refuses a personal
+ * scope, so the reads are pinned to an explicitly named team the account
+ * belongs to, and `northstar: true` tells the caller that this session
+ * cannot probe the personal scope. Either way no read inherits the current
+ * team.
+ */
+export function resolveCliAccountScope({ run = defaultRun } = {}) {
+  const username = readCliUsername({ run });
+  const probe = run([
+    "api",
+    "/v2/user",
+    "-X",
+    "GET",
+    "--raw",
+    "--scope",
+    username,
+  ]);
+  if (probe?.status === 0) return { cliScope: username, northstar: false };
+  const text = `${probe?.stdout ?? ""}${probe?.stderr ?? ""}`;
+  if (!NORTHSTAR_SCOPE_REFUSAL.test(text)) {
+    throw cliFailure("personal-scope probe", probe);
+  }
+  return { cliScope: readFirstCliTeamId(run), northstar: true };
+}
+
+/**
+ * The refusal when the CLI session cannot probe a personal scope: a Northstar
+ * account's CLI refuses a personal --scope, and a request without one reads
+ * the current team. Discovery stops rather than skip the candidate.
+ */
+export function cliPersonalScopeRefusal(label) {
+  return new Error(
+    `The Vercel CLI cannot probe the personal scope '${label}' of this Northstar account: it refuses a personal --scope, and without one it reads the current team. ` +
+      "Refusing to decide without that scope. Export VERCEL_TOKEN, whose requests without a teamId reach the personal scope, then re-run. Nothing was changed.",
+  );
 }
 
 export function createTokenTransport({ token, fetchImpl = fetch, teamId }) {
@@ -183,6 +295,35 @@ function bodyStrings(body) {
     .flatMap(([, value]) => bodyStrings(value));
 }
 
+const NOT_FOUND_SIGNATURE = /\b404\b|not_found/i;
+const AUTH_OR_QUOTA_MARKERS =
+  /\b(401|403|429)\b|forbidden|unauthorized|rate limit/i;
+
+/**
+ * True only for an unambiguous not-found: a 404 status, or a detail naming
+ * 404 or not_found and none of the auth or quota markers. Anything else,
+ * ambiguity included, is false, so a failure is never hidden as an absence.
+ */
+export function isNotFoundError(error) {
+  if (error?.status === 404) return true;
+  const detail = typeof error?.detail === "string" ? error.detail : "";
+  return (
+    NOT_FOUND_SIGNATURE.test(detail) && !AUTH_OR_QUOTA_MARKERS.test(detail)
+  );
+}
+
+function requestError(label, path, response, scrub) {
+  const detail = redact(firstLine(response.errorText) || "no detail", scrub);
+  const status = response.status ?? "no status";
+  const error = new Error(
+    redact(`${label} failed (${status}): ${detail}`, scrub),
+  );
+  error.status = response.status ?? null;
+  error.detail = detail;
+  error.path = redact(path, scrub);
+  return error;
+}
+
 export function createVercelApi({ transport, secrets = [] }) {
   const registered = new Set(secrets.filter(Boolean));
   return {
@@ -193,13 +334,7 @@ export function createVercelApi({ transport, secrets = [] }) {
       const label = `Vercel API ${method} ${path.split("?")[0]}`;
       const response = await transport(path, { method, body });
       const scrub = [...registered, ...bodyStrings(body)];
-      if (!response.ok) {
-        const detail = firstLine(response.errorText) || "no detail";
-        const status = response.status ?? "no status";
-        throw new Error(
-          redact(`${label} failed (${status}): ${detail}`, scrub),
-        );
-      }
+      if (!response.ok) throw requestError(label, path, response, scrub);
       return parseJson(response.text, label, scrub);
     },
   };
