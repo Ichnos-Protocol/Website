@@ -22,6 +22,8 @@ cd e2e && npx playwright test --headed
 
 ## Environment variables
 
+Every name below except `BASE_URL` is generated and synced by the provisioning command (see [Provisioning](#provisioning)): it writes the GitHub secret or variable, and the Vercel Preview variables that go with it. The tables list what exists; nothing in them is set by hand.
+
 | Variable | Source | Description |
 |---|---|---|
 | `BASE_URL` | Local env | Defaults to `http://localhost:5173`. Set in CI from the `E2E_BASE_URL` GitHub repository variable. |
@@ -34,13 +36,13 @@ cd e2e && npx playwright test --headed
 | `E2E_SUPER_ADMIN_PASSWORD` | GitHub Secret | Super-admin test account password |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD` | GitHub Secret | Manage-admin target password |
 | `E2E_INCOMPLETE_USER_PASSWORD` | GitHub Secret | Incomplete-profile test account password |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | GitHub Secret | Vercel Deployment Protection bypass — **the same value must be set on both** the `ichnos-client` and `ichnos-protocolserver` Vercel projects (Settings → Deployment Protection → Protection Bypass for Automation) |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | GitHub Secret | Vercel Deployment Protection bypass. The provisioning command sets one identical value on the `ichnos-client` and `ichnos-protocol_server` Vercel projects and on GitHub in a single run. |
 
-> **Other non-secret values** (`FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, and the `E2E_*_EMAIL` / `E2E_*_UID` names for each role) are GitHub repository variables in CI. See [`GITHUB_SETTINGS.md`](../GITHUB_SETTINGS.md) §2 for the full list.
+> **Other non-secret values** (`FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, and the `E2E_*_EMAIL` / `E2E_*_UID` names for each role) are GitHub repository variables in CI, also generated and synced by the provisioning command. See [`GITHUB_SETTINGS.md`](../GITHUB_SETTINGS.md) §2 for the full list.
 >
-> **Local runs** read the gitignored `e2e/.env.e2e` (copy it from `e2e/.env.e2e.example`). `playwright.config.js` loads it with `dotenv` only when the file exists, and never overrides variables already set in the shell.
+> **Local runs** read the gitignored `e2e/.env.e2e`, which the provisioning command generates whole. `playwright.config.js` loads it with `dotenv` only when the file exists, and never overrides variables already set in the shell. `e2e/.env.e2e.example` is a reference for the names the generated file contains, nothing more.
 
-> **Bypass secret invariant:** The workflow uses a single GitHub Actions secret to probe both Vercel projects' readiness URLs. If client and server hold different bypass values on Vercel, exactly one of the readiness checks will fail with HTTP 401. When rotating, update **both** Vercel projects and the GitHub secret in the same change window.
+> **Symptom:** if exactly one of the two readiness checks fails with HTTP 401, the bypass values on Vercel and GitHub disagree. Re-run the provisioning command; it sets all three in one run.
 
 If `E2E_ADMIN_EMAIL` or `E2E_ADMIN_PASSWORD` are not set, all tests in `admin-kanban.spec.js` are automatically skipped — the pipeline will not fail.
 
@@ -72,6 +74,41 @@ Before tests run, a safety gate validates that target URLs do not match producti
 
 ### Provisioning
 
-The provisioning script (`node e2e/scripts/provision-e2e-firebase-users.js`) is a **local/manual developer/admin tool** run from your own machine. The root wrapper `node scripts/provision-e2e-firebase-users.js` also works (it delegates to `e2e/scripts/provision-e2e-firebase-users.js`). The script is **not** executed by `ci.yml` or `e2e.yml`. CI and E2E workflows consume the synced GitHub secrets and Vercel Preview env vars after the script has already run.
+This section is the single authority for E2E configuration. One command, run from the repository root, does all of it:
 
-> **Troubleshooting:** If the provisioning script fails with terminal or CLI errors, the cause is almost always a local environment/setup issue. The script depends on local CLI installation/PATH, `gh` and `vercel` CLI auth state, `server/.vercel/project.json` linkage, and `server/.env` files. Verify: (1) the local, gitignored `e2e/.env.e2e` exists (copied from `e2e/.env.e2e.example`) with emails, UIDs, and passwords for provisioning, (2) `server/.env` exists with Firebase admin credentials (needed unless running `--sync-only`), (3) you are running from the repo root, (4) `gh auth status`, (5) `vercel whoami`, (6) `cd server && vercel link`. Environment differences (CLI installation, auth state, linked project, shell session) can make one terminal work while another fails.
+```bash
+node e2e/scripts/provision-e2e-firebase-users.js
+```
+
+It is a **local developer/admin tool** run from your own machine. It is **not** executed by `ci.yml` or `e2e.yml`; those workflows consume the synced GitHub secrets, variables and Vercel Preview env vars after the command has run.
+
+**Firebase admin credentials**, in this order of precedence:
+
+1. `--firebase-env <path>`
+2. `server/.env.e2e`
+3. exactly one `secrets/*ichnos-protocol-test*.json` service-account file
+
+`server/.env` is never read and is refused if named. The project is locked to `ichnos-protocol-test`.
+
+**What one run produces:**
+
+- creates or updates the five role accounts in `ichnos-protocol-test`, with the pattern passwords, and reads the test project's web config
+- generates `e2e/.env.e2e` whole, with a header giving the date and the exact command; do not edit it by hand
+- writes the gitignored `secrets/test-accounts.md`: each account's email, role, password, UID and project, and the infrastructure secrets by name, tier, where applied and when last set, never their values and never production values
+- syncs 15 GitHub repository variables and 8 GitHub repository secrets
+- sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on `ichnos-client`, `ichnos-protocol_server` and GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
+- writes the all-branches Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) and redeploys only the previews whose variables changed
+
+**Other modes:**
+
+- `--sync-only` pushes the generated `e2e/.env.e2e` as it stands to GitHub and the Vercel Preview env. It does not touch Firebase, read the web config or rotate the bypass secret.
+- `--reset-passwords` is an alias for the provisioning run that resets the account passwords. The values are deterministic, so a reset produces the same passwords.
+
+**Manual prerequisites** (the only ones):
+
+- `gh auth login`
+- `vercel login`
+- the Firebase test service account in one of the credential sources above
+- `VERCEL_TOKEN`, only when the installed Vercel CLI lacks `vercel api`
+
+> **Troubleshooting:** the script checks its prerequisites first and stops naming the missing command or token. If it fails, check: (1) you are authenticated: `gh auth login`, `vercel login`; (2) the Firebase admin credentials come from `--firebase-env`, `server/.env.e2e` or the single `secrets/*ichnos-protocol-test*.json`, never `server/.env`; (3) you are running from the repository root; (4) both Vercel projects are linked to the exact names `ichnos-client` and `ichnos-protocol_server` (`cd server && vercel link`, `cd client && vercel link`); (5) the script's own message names the missing command or token.

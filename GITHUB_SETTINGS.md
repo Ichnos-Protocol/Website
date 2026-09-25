@@ -10,14 +10,14 @@ Complete configuration guide for the Ichnos Protocol GitHub repository. This doc
 
 The GitHub repository requires the following settings to support the 3-branch lifecycle (`feature/* → main → release` automated promotion chain, plus `staging` as a parallel manual-QA lane):
 
-| Area                      | What                                                                                    | Why                                                                                                                         |
-| ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Repository Secrets**    | 8 secrets for CI/E2E (7 P10 E2E configuration secrets + `VERCEL_AUTOMATION_BYPASS_SECRET`, all required), `SYNC_PAT` + 2 deploy-hook URLs for staging sync, 2 optional Neon secrets for preview-branch cleanup | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
-| **Environments**          | `production` environment optional — no workflow references it                           | The production gate is the required pull request into `release`, not an environment approval                                |
-| **Branch Protections**    | `main` (5 required checks + PR required) and `release` (1 required check + PR required) | Enforces the CI → Preview → E2E → merge pipeline and the `main`-only release policy                                         |
-| **Old Rule Cleanup**      | Remove stale branch protections and rulesets from previous configurations               | Stale rules (e.g., for `e2e-testing` or different check names) can block merges or silently bypass the pipeline              |
-| **Staging Sync Secrets**  | `SYNC_PAT`, `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`    | `sync-staging.yml` pushes `main` to `staging` with the PAT, then calls both deploy hooks; it fails if either hook is empty   |
-| **Auto-Merge** (optional) | Allow auto-merge at the repository level                                                | Enables automatic merge of `main → release` PRs once the `Release Policy Check` passes                                      |
+| Area                      | What                                                                                                                                                                                                                                                                                                 | Why                                                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Repository Secrets**    | 8 secrets for CI/E2E (7 P10 E2E configuration secrets + `VERCEL_AUTOMATION_BYPASS_SECRET`, all required), set by the E2E provisioning command. `SYNC_PAT` + 2 deploy-hook URLs for staging sync and 2 optional Neon secrets for preview-branch cleanup are provider-issued and set once by the owner | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
+| **Environments**          | `production` environment optional — no workflow references it                                                                                                                                                                                                                                        | The production gate is the required pull request into `release`, not an environment approval                                              |
+| **Branch Protections**    | `main` (5 required checks + PR required) and `release` (1 required check + PR required)                                                                                                                                                                                                              | Enforces the CI → Preview → E2E → merge pipeline and the `main`-only release policy                                                       |
+| **Old Rule Cleanup**      | Remove stale branch protections and rulesets from previous configurations                                                                                                                                                                                                                            | Stale rules (e.g., for `e2e-testing` or different check names) can block merges or silently bypass the pipeline                           |
+| **Staging Sync Secrets**  | `SYNC_PAT`, `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`                                                                                                                                                                                                                 | `sync-staging.yml` pushes `main` to `staging` with the PAT, then calls both deploy hooks; it fails if either hook is empty                |
+| **Auto-Merge** (optional) | Allow auto-merge at the repository level                                                                                                                                                                                                                                                             | Enables automatic merge of `main → release` PRs once the `Release Policy Check` passes                                                    |
 
 ---
 
@@ -53,71 +53,67 @@ If this repository was previously configured with different branch protections (
 
 ## 2. Repository Secrets
 
-Navigate to **Settings → Secrets and variables → Actions → New repository secret** and add each secret listed below.
+This section is the inventory of the secrets the workflows read. The E2E secrets are written by the provisioning command below; the provider-issued ones (staging sync, Neon cleanup) have their own subsections further down.
 
 ### E2E Test Account Secrets
 
-Three test accounts are required for Playwright E2E tests. `e2e.yml` reads non-secret E2E configuration (emails, UIDs, Firebase project names, target URLs) from GitHub repository **variables** and credentials (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords) from repository **secrets**. The local `e2e/.env.e2e` is gitignored and never read by CI; copy it from `e2e/.env.e2e.example`. The canonical way to create these accounts and populate their secrets is the provisioning script:
+Five role accounts are required for Playwright E2E tests. `e2e.yml` reads non-secret E2E configuration (emails, UIDs, Firebase project names, target URLs) from GitHub repository **variables** and credentials (`FIREBASE_API_KEY`, `E2E_SIGNUP_PASSWORD`, the role passwords) from repository **secrets**. One command, run from the repository root, sets all of them:
 
 ```bash
 node e2e/scripts/provision-e2e-firebase-users.js
 ```
 
-> The root wrapper `node scripts/provision-e2e-firebase-users.js` also works (it delegates to `e2e/scripts/provision-e2e-firebase-users.js`).
+The command creates or updates the role accounts in `ichnos-protocol-test`, reads the test project's web config, generates the gitignored `e2e/.env.e2e`, and syncs the 15 variables and 8 secrets below plus the Vercel Preview variables. The local file is generated, never filled in, and CI never reads it. The command is a **local developer/admin tool**; it is not executed by `ci.yml` or `e2e.yml`, which consume the synced values after it has run. [`e2e/README.md`](e2e/README.md#provisioning) describes its modes and prerequisites.
 
-This script reads the local `e2e/.env.e2e`, provisions Firebase users, syncs the secrets and variables below to GitHub, and syncs emails/UIDs to Vercel Preview environment variables. The provisioning script is a **local/manual developer/admin tool** — it is not executed by `ci.yml` or `e2e.yml`. CI and E2E workflows consume the synced secrets after the script has run.
+The run sets these seven password and API-key secrets, plus `VERCEL_AUTOMATION_BYPASS_SECRET` (below), 8 in total:
 
-After running the script, the following GitHub Actions secrets will be set automatically:
-
-| Secret                             | Description                            |
-| ---------------------------------- | -------------------------------------- |
-| `FIREBASE_API_KEY`                 | Firebase Web API key of the E2E project |
+| Secret                             | Description                                         |
+| ---------------------------------- | --------------------------------------------------- |
+| `FIREBASE_API_KEY`                 | Firebase Web API key of the E2E project             |
 | `E2E_SIGNUP_PASSWORD`              | Default password for accounts created by `signUpAs` |
-| `E2E_ADMIN_PASSWORD`               | Admin test account password            |
-| `E2E_USER_PASSWORD`                | Regular user test account password     |
-| `E2E_SUPER_ADMIN_PASSWORD`         | Super-admin test account password      |
-| `E2E_MANAGE_ADMIN_TARGET_PASSWORD` | Manage-admin target account password   |
-| `E2E_INCOMPLETE_USER_PASSWORD`     | Incomplete-profile test account password |
+| `E2E_ADMIN_PASSWORD`               | Admin test account password                         |
+| `E2E_USER_PASSWORD`                | Regular user test account password                  |
+| `E2E_SUPER_ADMIN_PASSWORD`         | Super-admin test account password                   |
+| `E2E_MANAGE_ADMIN_TARGET_PASSWORD` | Manage-admin target account password                |
+| `E2E_INCOMPLETE_USER_PASSWORD`     | Incomplete-profile test account password            |
 
 > All seven secrets above are required. `e2e.yml`'s `Validate E2E configuration` step fails the run, naming each empty one, before any test runs.
 
 ### E2E Repository Variables
 
-Navigate to **Settings → Secrets and variables → Actions → Variables → New repository variable**. `e2e.yml` maps each of these into its job-level `env:` block and fails the run, naming the empty ones, if any is unset. The provisioning script syncs them.
+`e2e.yml` maps each of these into its job-level `env:` block and fails the run, naming the empty ones, if any is unset. All 15 are written by the provisioning command.
 
-| Variable                        | Description                                                 |
-| ------------------------------- | ----------------------------------------------------------- |
-| `FIREBASE_PROJECT_ID`           | Firebase project ID of the E2E project                      |
-| `FIREBASE_AUTH_DOMAIN`          | Firebase auth domain of the E2E project                     |
-| `FIREBASE_STORAGE_BUCKET`       | Firebase storage bucket of the E2E project                  |
-| `E2E_BASE_URL`                  | Stable E2E client URL (ephemeral preview, never `staging`)  |
-| `E2E_API_BASE_URL`              | Stable E2E API URL (ephemeral preview, never `staging`)     |
-| `E2E_ADMIN_EMAIL`               | Admin test account email                                    |
-| `E2E_ADMIN_UID`                 | Admin test account Firebase UID                             |
-| `E2E_USER_EMAIL`                | Regular user test account email                             |
-| `E2E_USER_UID`                  | Regular user test account Firebase UID                      |
-| `E2E_INCOMPLETE_USER_EMAIL`     | Incomplete-profile test account email                       |
-| `E2E_INCOMPLETE_USER_UID`       | Incomplete-profile test account Firebase UID                |
-| `E2E_SUPER_ADMIN_EMAIL`         | Super-admin test account email                              |
-| `E2E_SUPER_ADMIN_UID`           | Super-admin test account Firebase UID                       |
-| `E2E_MANAGE_ADMIN_TARGET_EMAIL` | Manage-admin target account email                           |
-| `E2E_MANAGE_ADMIN_TARGET_UID`   | Manage-admin target account Firebase UID                    |
+| Variable                        | Description                                                |
+| ------------------------------- | ---------------------------------------------------------- |
+| `FIREBASE_PROJECT_ID`           | Firebase project ID of the E2E project                     |
+| `FIREBASE_AUTH_DOMAIN`          | Firebase auth domain of the E2E project                    |
+| `FIREBASE_STORAGE_BUCKET`       | Firebase storage bucket of the E2E project                 |
+| `E2E_BASE_URL`                  | Stable E2E client URL (ephemeral preview, never `staging`) |
+| `E2E_API_BASE_URL`              | Stable E2E API URL (ephemeral preview, never `staging`)    |
+| `E2E_ADMIN_EMAIL`               | Admin test account email                                   |
+| `E2E_ADMIN_UID`                 | Admin test account Firebase UID                            |
+| `E2E_USER_EMAIL`                | Regular user test account email                            |
+| `E2E_USER_UID`                  | Regular user test account Firebase UID                     |
+| `E2E_INCOMPLETE_USER_EMAIL`     | Incomplete-profile test account email                      |
+| `E2E_INCOMPLETE_USER_UID`       | Incomplete-profile test account Firebase UID               |
+| `E2E_SUPER_ADMIN_EMAIL`         | Super-admin test account email                             |
+| `E2E_SUPER_ADMIN_UID`           | Super-admin test account Firebase UID                      |
+| `E2E_MANAGE_ADMIN_TARGET_EMAIL` | Manage-admin target account email                          |
+| `E2E_MANAGE_ADMIN_TARGET_UID`   | Manage-admin target account Firebase UID                   |
 
 > **Note:** Firebase UIDs (`E2E_*_UID`) are also synced to Vercel Preview environment variables by the provisioning script (see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §2).
 >
-> **Manual fallback (exception only):** If the provisioning script is unavailable (e.g., missing Firebase service account credentials), you can create the accounts manually in Firebase Console → Authentication → Users and set the password secrets above by hand in Settings → Secrets → Actions. However, the script-based flow is the canonical path and should be used whenever possible.
->
-> **Environment note:** Environment and terminal differences can cause the provisioning script to succeed in one shell but fail in another. The script depends on local CLI installation/PATH, `gh` and `vercel` CLI auth state, `server/.vercel/project.json` linkage, and `server/.env` files. For terminal-related errors, first verify: (1) you are in the repo root, (2) `gh auth status`, (3) `vercel whoami`, (4) `cd server && vercel link`.
+> **Environment note:** The command reads Firebase admin credentials from, in order, `--firebase-env <path>`, `server/.env.e2e`, then exactly one `secrets/*ichnos-protocol-test*.json`; it never reads `server/.env`. For terminal-related errors, first verify: (1) you are in the repo root, (2) `gh auth status`, (3) `vercel whoami`, (4) both Vercel projects are linked to `ichnos-client` and `ichnos-protocol_server` (`cd client && vercel link`, `cd server && vercel link`).
 
 ### Vercel Bypass Secret
 
 This secret is required by `e2e.yml` for Playwright tests to bypass Vercel Deployment Protection.
 
-| Secret                            | Description                                                                   | Where to Find                                                                        |
-| --------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Single Vercel Deployment Protection bypass secret shared by **both** the `ichnos-client` and `ichnos-protocolserver` projects | Vercel → Project Settings → Deployment Protection → Protection Bypass for Automation |
+| Secret                            | Description                                                                                                                    | Where to Find                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Single Vercel Deployment Protection bypass secret shared by **both** the `ichnos-client` and `ichnos-protocol_server` projects | Generated and applied by the provisioning command |
 
-> **Critical:** The bypass secret value **must be identical** on both the client and server Vercel projects. The E2E workflow uses a single `VERCEL_AUTOMATION_BYPASS_SECRET` GitHub secret to probe both deployments; if the two Vercel projects hold different bypass values, one of the readiness checks will return 401. When rotating or regenerating the secret, update **both** Vercel projects (Settings → Deployment Protection → "Protection Bypass for Automation") and the GitHub Actions secret in one pass.
+> The E2E workflow uses this one GitHub secret to probe both deployments. The provisioning command sets one identical value on `ichnos-client`, `ichnos-protocol_server` and GitHub in a single run, so the three cannot drift. If any of the three is not confirmed, the run stops without writing Preview variables or redeploying; the recovery is to re-run the command.
 
 > **Note:** `FIREBASE_API_KEY` is a GitHub Secret (see the E2E secrets table above), not a repository variable.
 
@@ -129,11 +125,13 @@ This secret is required by `e2e.yml` for Playwright tests to bypass Vercel Deplo
 
 These three secrets are required by `sync-staging.yml`, which runs only when dispatched manually (`workflow_dispatch`). It force-pushes `main` to `staging`, then calls both deploy hooks. The run exits nonzero if either hook secret is empty.
 
-| Secret                              | Description                                                                               | Where to Find                                                        |
-| ----------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+The E2E provisioning command never generates these; the owner creates them with the provider and sets them once. `secrets/test-accounts.md` lists them by name, tier, where they are applied and when they were last set, never their values.
+
+| Secret                              | Description                                                                                | Where to Find                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | `SYNC_PAT`                          | Personal Access Token with `contents: write` scope, used to force-push `main` to `staging` | GitHub → Settings → Developer settings → Personal access tokens (fine-grained or classic) |
-| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` | Deploy Hook URL that builds the client project from `staging`                             | Vercel → `ichnos-client` → Settings → Git → Deploy Hooks (branch `staging`) |
-| `VERCEL_DEPLOY_HOOK_STAGING_SERVER` | Deploy Hook URL that builds the server project from `staging`                             | Vercel → `ichnos-protocolserver` → Settings → Git → Deploy Hooks (branch `staging`) |
+| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` | Deploy Hook URL that builds the client project from `staging`                              | Vercel → `ichnos-client` → Settings → Git → Deploy Hooks (branch `staging`)               |
+| `VERCEL_DEPLOY_HOOK_STAGING_SERVER` | Deploy Hook URL that builds the server project from `staging`                              | Vercel → `ichnos-protocol_server` → Settings → Git → Deploy Hooks (branch `staging`)      |
 
 > **Why a PAT and deploy hooks?** Pushes made with the default `GITHUB_TOKEN` do not trigger Vercel's native Git integration. Vercel also stopped building PAT-driven force-pushes from CI, so the workflow calls the two deploy hooks to start the `staging` builds directly.
 
@@ -141,10 +139,12 @@ These three secrets are required by `sync-staging.yml`, which runs only when dis
 
 These two optional secrets are read by the `Delete Neon preview branch` step in `e2e.yml`. The step runs with `if: always()` at the end of every E2E workflow run and deletes `preview/{gitBranch}*` Neon branches via the Neon API so they do not accumulate past the project's branch-count limit. Without these secrets the step soft-skips (exit 0) and cleanup falls back to the manual Neon console or Neon's retention policy — the workflow itself still runs normally.
 
-| Secret            | Description                                      | Where to Find                                                                        |
-| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `NEON_API_KEY`    | Neon personal or organization API key            | Neon Console → Account Settings → API Keys → Create new API key                      |
-| `NEON_PROJECT_ID` | Neon project ID (e.g. `wispy-bar-12345678`)      | Neon Console → Project → Settings → General → Project ID                             |
+Like the staging sync secrets, these are provider-issued: the E2E provisioning command never generates them, and `secrets/test-accounts.md` lists them by name, tier, where they are applied and when they were last set, never their values.
+
+| Secret            | Description                                 | Where to Find                                                   |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------------- |
+| `NEON_API_KEY`    | Neon personal or organization API key       | Neon Console → Account Settings → API Keys → Create new API key |
+| `NEON_PROJECT_ID` | Neon project ID (e.g. `wispy-bar-12345678`) | Neon Console → Project → Settings → General → Project ID        |
 
 > **Minimum scope:** The API key needs permission to list and delete branches on the target project. A project-scoped key is preferred over an account-wide key. The key is read only by the `Delete Neon preview branch` step — it is never exposed to test code or the Playwright runner.
 >
@@ -232,56 +232,56 @@ If enabled:
 
 ## Verification Matrix
 
-After completing setup (or when verifying an existing configuration), confirm every row in this matrix:
+These rows are verification targets to check after the provisioning command has run and the provider-issued secrets are in place, not manual-entry instructions. Confirm every row:
 
-| Setting                                                  | Expected State                                     | How to Verify                                          |
-| -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
-| `FIREBASE_PROJECT_ID` variable                           | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `FIREBASE_AUTH_DOMAIN` variable                          | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `FIREBASE_STORAGE_BUCKET` variable                       | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_BASE_URL` variable                                  | Set to an ephemeral preview URL, never `staging`   | Settings → Secrets and variables → Actions → Variables |
-| `E2E_API_BASE_URL` variable                              | Set to an ephemeral preview URL, never `staging`   | Settings → Secrets and variables → Actions → Variables |
-| `E2E_ADMIN_EMAIL` variable                               | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_ADMIN_UID` variable                                 | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_USER_EMAIL` variable                                | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_USER_UID` variable                                  | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_INCOMPLETE_USER_EMAIL` variable                     | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_INCOMPLETE_USER_UID` variable                       | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_SUPER_ADMIN_EMAIL` variable                         | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_SUPER_ADMIN_UID` variable                           | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_MANAGE_ADMIN_TARGET_EMAIL` variable                 | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `E2E_MANAGE_ADMIN_TARGET_UID` variable                   | Set, non-empty                                     | Settings → Secrets and variables → Actions → Variables |
-| `FIREBASE_API_KEY` secret                                | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_SIGNUP_PASSWORD` secret                             | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_ADMIN_PASSWORD` secret                              | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_USER_PASSWORD` secret                               | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_SUPER_ADMIN_PASSWORD` secret                        | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_MANAGE_ADMIN_TARGET_PASSWORD` secret                | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `E2E_INCOMPLETE_USER_PASSWORD` secret                    | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` secret                 | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `NEON_API_KEY` secret (optional, E2E branch cleanup)     | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `NEON_PROJECT_ID` secret (optional, E2E branch cleanup)  | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `production` environment                                 | Optional (no workflow depends on it)               | Settings → Environments                                |
-| `main` branch protection                                 | PR required + 5 status checks                      | Settings → Branches (or Rules → Rulesets)              |
-| `release` branch protection                              | PR required + `Release Policy Check`               | Settings → Branches (or Rules → Rulesets)              |
-| Include administrators (`main`)                          | Enabled                                            | Settings → Branches → `main` rule                      |
-| Include administrators (`release`)                       | Enabled                                            | Settings → Branches → `release` rule                   |
-| `SYNC_PAT` secret                                        | Set, non-empty                                     | Settings → Secrets → Actions                           |
-| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` secret               | Set to the client `staging` Deploy Hook URL        | Settings → Secrets → Actions                           |
-| `VERCEL_DEPLOY_HOOK_STAGING_SERVER` secret               | Set to the server `staging` Deploy Hook URL        | Settings → Secrets → Actions                           |
-| `staging` branch protection                              | **None** (intentionally unprotected)               | Settings → Branches                                    |
-| Stale branch protections                                 | None (no rules for `e2e-testing`, etc.)            | Settings → Branches                                    |
-| Stale rulesets                                           | None (no rulesets referencing removed branches)    | Settings → Rules → Rulesets                            |
-| Auto-merge (optional)                                    | Enabled at repo level                              | Settings → General                                     |
+| Setting                                                 | Expected State                                   | How to Verify                                          |
+| ------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `FIREBASE_PROJECT_ID` variable                          | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_AUTH_DOMAIN` variable                         | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_STORAGE_BUCKET` variable                      | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_BASE_URL` variable                                 | Set to an ephemeral preview URL, never `staging` | Settings → Secrets and variables → Actions → Variables |
+| `E2E_API_BASE_URL` variable                             | Set to an ephemeral preview URL, never `staging` | Settings → Secrets and variables → Actions → Variables |
+| `E2E_ADMIN_EMAIL` variable                              | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_ADMIN_UID` variable                                | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_USER_EMAIL` variable                               | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_USER_UID` variable                                 | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_INCOMPLETE_USER_EMAIL` variable                    | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_INCOMPLETE_USER_UID` variable                      | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_SUPER_ADMIN_EMAIL` variable                        | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_SUPER_ADMIN_UID` variable                          | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_MANAGE_ADMIN_TARGET_EMAIL` variable                | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `E2E_MANAGE_ADMIN_TARGET_UID` variable                  | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
+| `FIREBASE_API_KEY` secret                               | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_SIGNUP_PASSWORD` secret                            | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_ADMIN_PASSWORD` secret                             | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_USER_PASSWORD` secret                              | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_SUPER_ADMIN_PASSWORD` secret                       | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_MANAGE_ADMIN_TARGET_PASSWORD` secret               | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `E2E_INCOMPLETE_USER_PASSWORD` secret                   | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` secret                | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `NEON_API_KEY` secret (optional, E2E branch cleanup)    | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `NEON_PROJECT_ID` secret (optional, E2E branch cleanup) | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `production` environment                                | Optional (no workflow depends on it)             | Settings → Environments                                |
+| `main` branch protection                                | PR required + 5 status checks                    | Settings → Branches (or Rules → Rulesets)              |
+| `release` branch protection                             | PR required + `Release Policy Check`             | Settings → Branches (or Rules → Rulesets)              |
+| Include administrators (`main`)                         | Enabled                                          | Settings → Branches → `main` rule                      |
+| Include administrators (`release`)                      | Enabled                                          | Settings → Branches → `release` rule                   |
+| `SYNC_PAT` secret                                       | Set, non-empty                                   | Settings → Secrets → Actions                           |
+| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` secret              | Set to the client `staging` Deploy Hook URL      | Settings → Secrets → Actions                           |
+| `VERCEL_DEPLOY_HOOK_STAGING_SERVER` secret              | Set to the server `staging` Deploy Hook URL      | Settings → Secrets → Actions                           |
+| `staging` branch protection                             | **None** (intentionally unprotected)             | Settings → Branches                                    |
+| Stale branch protections                                | None (no rules for `e2e-testing`, etc.)          | Settings → Branches                                    |
+| Stale rulesets                                          | None (no rulesets referencing removed branches)  | Settings → Rules → Rulesets                            |
+| Auto-merge (optional)                                   | Enabled at repo level                            | Settings → General                                     |
 
 ---
 
-## Copy-Paste Setup Checklist
+## Setup Checklist
 
 Use this checklist when setting up a new repository or verifying an existing one:
 
 - [ ] **Old rules cleaned up** — No stale branch protections or rulesets from previous configurations (§1)
-- [ ] **Variables (E2E)** — All 15 E2E repository variables are set (§2)
+- [ ] **Variables (E2E)** — Confirm the provisioning command set all 15 E2E repository variables (§2)
   - [ ] `FIREBASE_PROJECT_ID`
   - [ ] `FIREBASE_AUTH_DOMAIN`
   - [ ] `FIREBASE_STORAGE_BUCKET`
@@ -297,7 +297,7 @@ Use this checklist when setting up a new repository or verifying an existing one
   - [ ] `E2E_SUPER_ADMIN_UID`
   - [ ] `E2E_MANAGE_ADMIN_TARGET_EMAIL`
   - [ ] `E2E_MANAGE_ADMIN_TARGET_UID`
-- [ ] **Secrets (CI/E2E)** — All 8 CI/E2E secrets are set (§2)
+- [ ] **Secrets (CI/E2E)** — Confirm the provisioning command set all 8 CI/E2E secrets (§2)
   - [ ] `FIREBASE_API_KEY`
   - [ ] `E2E_SIGNUP_PASSWORD`
   - [ ] `E2E_ADMIN_PASSWORD`
@@ -306,11 +306,11 @@ Use this checklist when setting up a new repository or verifying an existing one
   - [ ] `E2E_MANAGE_ADMIN_TARGET_PASSWORD`
   - [ ] `E2E_INCOMPLETE_USER_PASSWORD`
   - [ ] `VERCEL_AUTOMATION_BYPASS_SECRET`
-- [ ] **Secrets (staging sync)** — All 3 set; `sync-staging.yml` fails without either hook (§2)
+- [ ] **Secrets (staging sync)** — Owner creates all 3 with the provider and sets them; `sync-staging.yml` fails without either hook (§2)
   - [ ] `SYNC_PAT`
   - [ ] `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`
   - [ ] `VERCEL_DEPLOY_HOOK_STAGING_SERVER`
-- [ ] **Secrets (Neon preview cleanup)** — Both set if ephemeral preview branches are desired (§2)
+- [ ] **Secrets (Neon preview cleanup)** — Owner creates both in the Neon Console and sets them, if ephemeral preview branches are desired (§2)
   - [ ] `NEON_API_KEY`
   - [ ] `NEON_PROJECT_ID`
 - [ ] **Environment (optional)** — `production` environment may exist; no workflow depends on it (§3)
