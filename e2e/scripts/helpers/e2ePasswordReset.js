@@ -1,20 +1,17 @@
 /**
- * --reset-passwords: generate six fresh E2E passwords, apply them to the E2E
- * Firebase project, write them to e2e/.env.e2e and push them to GitHub.
+ * --reset-passwords: re-apply the six pattern passwords, derived from the
+ * account emails (AGENTS.md "Passwords and secrets"), to the E2E Firebase
+ * project, write them to e2e/.env.e2e and push them to GitHub. Nothing is
+ * generated; this is another name for the default provisioning/reset run.
  *
  * prepareReset runs before anything external (Firebase, gh, vercel, writes).
  * The Firebase admin credentials arrive already loaded by the shared loader
  * (e2eFirebaseCredentials.js), which refuses server/.env and any project other
  * than ichnos-protocol-test; they never reach process.env.
  */
-import { randomBytes } from "node:crypto";
 import { existsSync } from "fs";
 
-import {
-  ROLES,
-  passwordNames,
-  findPlaceholderPasswordNames,
-} from "./e2eCredentials.js";
+import { ROLES, patternPasswords } from "./e2eCredentials.js";
 import {
   readEnvFile,
   writePasswordsToEnvFile,
@@ -24,10 +21,12 @@ import { getTestApp, upsertUser } from "./firebaseTestSetup.js";
 import { syncToVercel } from "./e2eSyncVercel.js";
 import { printSummary } from "./e2eReporting.js";
 
-function assertProjectMatch(credentials, envFilePath) {
-  const e2eProjectId = existsSync(envFilePath)
-    ? readEnvFile(envFilePath).FIREBASE_PROJECT_ID
-    : undefined;
+function readLocalEnv(envFilePath) {
+  return existsSync(envFilePath) ? readEnvFile(envFilePath) : {};
+}
+
+function assertProjectMatch(credentials, fileEnv) {
+  const e2eProjectId = fileEnv.FIREBASE_PROJECT_ID;
   if (e2eProjectId && e2eProjectId === credentials.projectId) return;
   throw new Error(
     `Firebase project mismatch: credential file is for "${credentials.projectId ?? ""}", ` +
@@ -35,24 +34,10 @@ function assertProjectMatch(credentials, envFilePath) {
   );
 }
 
-function generatePasswords() {
-  const names = passwordNames();
-  const passwords = Object.fromEntries(
-    names.map((name) => [name, randomBytes(24).toString("base64url")]),
-  );
-  if (new Set(Object.values(passwords)).size !== names.length) {
-    throw new Error(`Expected ${names.length} distinct generated passwords.`);
-  }
-  const placeholders = findPlaceholderPasswordNames(passwords);
-  if (placeholders.length > 0) {
-    throw new Error(`Generated password(s) failed the guard: ${placeholders}`);
-  }
-  return passwords;
-}
-
 export function prepareReset({ credentials, envFilePath }) {
-  assertProjectMatch(credentials, envFilePath);
-  return { credentials, passwords: generatePasswords() };
+  const fileEnv = readLocalEnv(envFilePath);
+  assertProjectMatch(credentials, fileEnv);
+  return { credentials, passwords: patternPasswords(fileEnv) };
 }
 
 function assertRoleEmails(env) {
@@ -90,7 +75,8 @@ function buildVercelChanges(changedUids, vercel) {
   return changes;
 }
 
-const RECOVERY_NOTE =
+// Also printed by the default provisioning run when GitHub sync fails.
+export const RECOVERY_NOTE =
   "[recovery] Firebase and e2e/.env.e2e already hold the new passwords; " +
   "e2e/.env.e2e is now the source of truth. Re-run with --sync-only to push " +
   "it to GitHub without touching Firebase.";

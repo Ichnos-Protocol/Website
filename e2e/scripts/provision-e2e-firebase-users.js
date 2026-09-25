@@ -3,19 +3,22 @@
  * Run from the repository root:
  *
  *   node e2e/scripts/provision-e2e-firebase-users.js [--firebase-env <path>]
- *     Full pipeline: provision Firebase users, write UIDs, sync GitHub + Vercel.
+ *     Full pipeline: provision Firebase users, write pattern passwords and UIDs,
+ *     sync GitHub + Vercel.
  *   node e2e/scripts/provision-e2e-firebase-users.js --sync-only
  *     Push e2e/.env.e2e to GitHub and Vercel without touching Firebase.
  *   node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords [--firebase-env <path>]
- *     Generate six new passwords, apply them to the E2E Firebase project,
- *     write them to e2e/.env.e2e and push them to GitHub.
+ *     Re-apply the six pattern passwords to the E2E Firebase project, write
+ *     them to e2e/.env.e2e and push them to GitHub. An alias for the default
+ *     provisioning/reset run; nothing is generated.
  *
  * Every mode but --sync-only loads the Firebase admin credentials from, in
  * order: --firebase-env <path>, server/.env.e2e, then a single
  * secrets/*ichnos-protocol-test*.json service-account file. No mode reads
  * server/.env, and every mode is locked to the ichnos-protocol-test project.
  * Shell-exported E2E_*_PASSWORD values are captured once at startup and
- * override e2e/.env.e2e.
+ * override e2e/.env.e2e. Every mode refuses a password that is not its
+ * account's pattern password (AGENTS.md "Passwords and secrets").
  */
 import { existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
@@ -25,6 +28,7 @@ import {
   readEnvFile,
   captureExportedPasswords,
   mergeEnvPasswords,
+  writePasswordsToEnvFile,
   writeUidsToEnvFile,
 } from "./helpers/e2eEnvFile.js";
 import {
@@ -35,9 +39,15 @@ import { syncToVercel } from "./helpers/e2eSyncVercel.js";
 import {
   buildCredentialMaps,
   findMissingGitHubNames,
-  findPlaceholderPasswordNames,
+  findInvalidRoleEmailNames,
+  findPasswordMismatchNames,
+  patternPasswords,
 } from "./helpers/e2eCredentials.js";
-import { prepareReset, applyReset } from "./helpers/e2ePasswordReset.js";
+import {
+  prepareReset,
+  applyReset,
+  RECOVERY_NOTE,
+} from "./helpers/e2ePasswordReset.js";
 import { loadFirebaseCredentials } from "./helpers/e2eFirebaseCredentials.js";
 import { printFailedDetails, printSummary } from "./helpers/e2eReporting.js";
 
@@ -64,15 +74,26 @@ function assertGitHubConfigComplete(values) {
   );
 }
 
-function assertNoPlaceholderPasswords(env) {
-  const names = findPlaceholderPasswordNames(env);
+const PATTERN_REMEDIATION =
+  "Remediation: clear the listed line(s) in the local, gitignored e2e/.env.e2e, " +
+  "unset any shell export of them, and re-run.";
+
+function assertPatternPasswords(env) {
+  const invalidEmails = findInvalidRoleEmailNames(env);
+  if (invalidEmails.length > 0) {
+    throw new Error(
+      `Invalid role email(s): ${invalidEmails.join(", ")}\n` +
+        'A role email must begin with the "e2e-" prefix. Nothing was changed.',
+    );
+  }
+  const names = findPasswordMismatchNames(env);
   if (names.length === 0) return;
   throw new Error(
-    `Placeholder password value(s): ${names.join(", ")}\n` +
-      "Each password must be at least 6 characters and must not equal a word " +
-      "from the variable's own role name or account email. Nothing was synced.\n" +
-      "Remediation: run with --reset-passwords, or set real values in the " +
-      "local, gitignored e2e/.env.e2e.",
+    `Password(s) not matching the account pattern: ${names.join(", ")}\n` +
+      "Each E2E_*_PASSWORD must equal its account's pattern password as defined " +
+      'in AGENTS.md "Passwords and secrets"; E2E_SIGNUP_PASSWORD has its own ' +
+      "fixed pattern value. Nothing was changed or synced.\n" +
+      PATTERN_REMEDIATION,
   );
 }
 
@@ -100,14 +121,19 @@ function syncGitHubConfig(githubVariables, github, { recoveryNote } = {}) {
   return { ghResults, varResults };
 }
 
+// Passwords are written only once every Firebase upsert has succeeded, and
+// before GitHub sync, so e2e/.env.e2e is the recovery source if the sync fails.
 async function provisionFullPipeline(
   { firebaseCreds, vercel, githubVariables },
   credentials,
+  passwords,
 ) {
   console.log("\n=== Firebase Provisioning ===");
   const { provisionFirebaseUsers } =
     await import("./helpers/firebaseTestSetup.js");
   const uidMap = await provisionFirebaseUsers(firebaseCreds, credentials);
+  writePasswordsToEnvFile(envFilePath, passwords);
+  console.log("[env] pattern passwords written to .env.e2e");
   writeUidsToEnvFile(envFilePath, uidMap);
   console.log("[env] UIDs written back to .env.e2e");
   for (const [key, uid] of Object.entries(uidMap)) {
@@ -146,13 +172,14 @@ export async function main(
   const reset = resetPasswords
     ? prepareReset({ credentials, envFilePath })
     : null;
-  const env = {
-    ...loadLocalEnv(reset ? {} : exportedPasswords),
-    ...(reset?.passwords ?? {}),
-  };
+  const fileEnv = loadLocalEnv(exportedPasswords);
+  assertPatternPasswords(fileEnv);
+  const applied = syncOnly
+    ? {}
+    : (reset?.passwords ?? patternPasswords(fileEnv));
+  const env = { ...fileEnv, ...applied };
   const maps = buildCredentialMaps(env);
   const { github, githubVariables, vercel } = maps;
-  assertNoPlaceholderPasswords(env);
   // Sync-only and reset already hold every UID: report missing names before preflight runs `gh`.
   if (syncOnly || reset)
     assertGitHubConfigComplete({ ...githubVariables, ...github });
@@ -181,11 +208,15 @@ export async function main(
     return;
   }
 
-  if (!syncOnly) await provisionFullPipeline(maps, credentials);
+  if (!syncOnly) await provisionFullPipeline(maps, credentials, applied);
 
   // Full pipeline: UIDs exist only after provisioning, so the check runs here.
   assertGitHubConfigComplete({ ...githubVariables, ...github });
-  const { ghResults, varResults } = syncGitHubConfig(githubVariables, github);
+  const { ghResults, varResults } = syncGitHubConfig(
+    githubVariables,
+    github,
+    syncOnly ? {} : { recoveryNote: RECOVERY_NOTE },
+  );
 
   console.log("\n=== Vercel Preview Sync ===");
   const vcResults = syncToVercel(vercel, serverDir);

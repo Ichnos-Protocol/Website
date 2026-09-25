@@ -8,8 +8,15 @@ const GITHUB_VARIABLE_EXTRAS = [
 
 const GITHUB_SECRET_EXTRAS = ["FIREBASE_API_KEY", "E2E_SIGNUP_PASSWORD"];
 
-// Firebase Auth rejects passwords shorter than this.
+// Firebase Auth rejects passwords shorter than this, so a shorter role word is
+// written twice to form its pattern password.
 export const FIREBASE_MIN_PASSWORD_LENGTH = 6;
+
+// Every role email's local part begins with this prefix; the rest is the role word.
+const ROLE_EMAIL_PREFIX = "e2e-";
+
+const SIGNUP_PASSWORD_NAME = "E2E_SIGNUP_PASSWORD";
+const SIGNUP_PASSWORD_VALUE = "signup";
 
 export const ROLES = [
   { key: "ADMIN", name: "E2E Admin", claims: { admin: true } },
@@ -91,36 +98,70 @@ export function findMissingGitHubNames(values) {
   );
 }
 
-function roleWordsFor(passwordName) {
-  const role = passwordName.slice("E2E_".length, -"_PASSWORD".length);
-  return role.toLowerCase().split("_");
+function emailNameFor(passwordName) {
+  return passwordName.replace(/_PASSWORD$/, "_EMAIL");
 }
 
-function emailTokens(email) {
-  if (!email) return [];
-  return email
-    .toLowerCase()
-    .split(/[^a-z0-9]+/i)
-    .filter(Boolean);
-}
-
-function isOwnWordPlaceholder(value, words) {
-  return words.includes(value.trim().toLowerCase());
+// The role word after the e2e- prefix, taken verbatim, or null when the local
+// part does not begin exactly with the lowercase prefix or names no role after
+// it. No trimming or case folding: " e2e-x" and "E2E-x" are refused.
+function roleWordOf(email) {
+  const localPart = email.split("@")[0];
+  if (!localPart.startsWith(ROLE_EMAIL_PREFIX)) return null;
+  const word = localPart.slice(ROLE_EMAIL_PREFIX.length);
+  return word || null;
 }
 
 /**
- * Names of the password variables whose value is a placeholder: shorter than
- * Firebase accepts, or equal to a word from the variable's own role name or
- * its own account email. Missing values are left to findMissingGitHubNames.
- * Returns names only, never a value or the matched word.
+ * The pattern password for one password variable: the role word from its
+ * account email (after the e2e- prefix), written twice when shorter than
+ * Firebase accepts. E2E_SIGNUP_PASSWORD has a fixed value. Returns undefined
+ * when the email is missing; throws, naming variables only, when the email
+ * does not follow the e2e-<role> form.
  */
-export function findPlaceholderPasswordNames(values) {
+export function expectedPasswordFor(passwordName, values) {
+  if (passwordName === SIGNUP_PASSWORD_NAME) return SIGNUP_PASSWORD_VALUE;
+  const emailName = emailNameFor(passwordName);
+  const email = values[emailName];
+  if (!email) return undefined;
+  const word = roleWordOf(email);
+  if (!word) {
+    throw new Error(
+      `${emailName} must begin with "${ROLE_EMAIL_PREFIX}" and name a role after it ` +
+        `(needed to derive ${passwordName}). Nothing was changed.`,
+    );
+  }
+  return word.length < FIREBASE_MIN_PASSWORD_LENGTH ? word + word : word;
+}
+
+/** Email variable names whose non-empty value is not of the e2e-<role> form. */
+export function findInvalidRoleEmailNames(values) {
+  return ROLES.map((r) => `E2E_${r.key}_EMAIL`).filter(
+    (name) => Boolean(values[name]) && roleWordOf(values[name]) === null,
+  );
+}
+
+/** Every derivable pattern password, keyed in passwordNames() order. */
+export function patternPasswords(values) {
+  const passwords = {};
+  for (const name of passwordNames()) {
+    const expected = expectedPasswordFor(name, values);
+    if (expected !== undefined) passwords[name] = expected;
+  }
+  return passwords;
+}
+
+/**
+ * Names of the password variables whose non-empty value differs from its
+ * pattern password. Missing values, and names whose email is missing or
+ * invalid, are skipped. Returns names only, never a value.
+ */
+export function findPasswordMismatchNames(values) {
+  const invalidEmails = findInvalidRoleEmailNames(values);
   return passwordNames().filter((name) => {
     const value = values[name];
-    if (!value) return false;
-    if (value.length < FIREBASE_MIN_PASSWORD_LENGTH) return true;
-    const emailName = name.replace(/_PASSWORD$/, "_EMAIL");
-    const words = [...roleWordsFor(name), ...emailTokens(values[emailName])];
-    return isOwnWordPlaceholder(value, words);
+    if (!value || invalidEmails.includes(emailNameFor(name))) return false;
+    const expected = expectedPasswordFor(name, values);
+    return expected !== undefined && value !== expected;
   });
 }

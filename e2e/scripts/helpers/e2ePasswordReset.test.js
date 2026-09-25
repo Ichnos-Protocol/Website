@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "fs";
-import { join } from "path";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { tmpdir } from "os";
 
 const execFileSync = vi.fn();
@@ -29,23 +36,33 @@ vi.mock("./firebaseTestSetup.js", () => ({ getTestApp, upsertUser }));
 vi.mock("./e2eSyncVercel.js", () => ({ syncToVercel }));
 
 const { prepareReset, applyReset } = await import("./e2ePasswordReset.js");
-const { buildCredentialMaps, findPlaceholderPasswordNames } =
+const { buildCredentialMaps, passwordNames } =
   await import("./e2eCredentials.js");
 const { main } = await import("../provision-e2e-firebase-users.js");
 
 const PROJECT = "ichnos-protocol-test";
-const ROLE_KEYS = [
-  "ADMIN",
-  "USER",
-  "INCOMPLETE_USER",
-  "SUPER_ADMIN",
-  "MANAGE_ADMIN_TARGET",
-];
+const ROLE_LOCAL_PARTS = {
+  ADMIN: "e2e-admin",
+  USER: "e2e-user",
+  INCOMPLETE_USER: "e2e-incomplete",
+  SUPER_ADMIN: "e2e-superadmin",
+  MANAGE_ADMIN_TARGET: "e2e-manage-target",
+};
+const ROLE_KEYS = Object.keys(ROLE_LOCAL_PARTS);
+
+const PATTERN = {
+  E2E_ADMIN_PASSWORD: "adminadmin",
+  E2E_USER_PASSWORD: "useruser",
+  E2E_INCOMPLETE_USER_PASSWORD: "incomplete",
+  E2E_SUPER_ADMIN_PASSWORD: "superadmin",
+  E2E_MANAGE_ADMIN_TARGET_PASSWORD: "manage-target",
+  E2E_SIGNUP_PASSWORD: "signup",
+};
 
 function e2eEnv() {
   const env = { FIREBASE_PROJECT_ID: PROJECT };
   for (const key of ROLE_KEYS) {
-    env[`E2E_${key}_EMAIL`] = `e2e-${key.toLowerCase()}@ichnos-test.com`;
+    env[`E2E_${key}_EMAIL`] = `${ROLE_LOCAL_PARTS[key]}@ichnos-test.com`;
     env[`E2E_${key}_UID`] = `uid-${key}`;
   }
   return env;
@@ -122,16 +139,31 @@ describe("prepareReset", () => {
     expectNothingExternal();
   });
 
-  it("generates six distinct long passwords that pass the guard", () => {
+  it("returns exactly the six pattern passwords keyed by passwordNames()", () => {
     const { passwords } = prepare();
-    const values = Object.values(passwords);
 
-    expect(values).toHaveLength(6);
-    expect(new Set(values).size).toBe(6);
-    for (const value of values) expect(value.length).toBeGreaterThanOrEqual(32);
-    expect(findPlaceholderPasswordNames({ ...e2eEnv(), ...passwords })).toEqual(
-      [],
+    expect(passwords).toEqual(PATTERN);
+    expect(Object.keys(passwords)).toEqual(passwordNames());
+    expectNothingExternal();
+  });
+
+  it("refuses a role email without the e2e- prefix after the project guard", () => {
+    readEnvFile.mockReturnValue({
+      ...e2eEnv(),
+      E2E_USER_EMAIL: "user@ichnos-test.com",
+    });
+
+    expect(() => prepare()).toThrowError(
+      expect.objectContaining({
+        message: expect.stringMatching(/E2E_USER_EMAIL/),
+      }),
     );
+    expect(() => prepare()).toThrowError(
+      expect.objectContaining({
+        message: expect.not.stringMatching(/useruser|user@ichnos/),
+      }),
+    );
+    expectNothingExternal();
   });
 });
 
@@ -176,9 +208,17 @@ describe("applyReset", () => {
       "write",
       "github",
     ]);
-    expect(writePasswordsToEnvFile).toHaveBeenCalledWith(
-      envFilePath,
-      passwords,
+    expect(writePasswordsToEnvFile).toHaveBeenCalledWith(envFilePath, PATTERN);
+    const sent = Object.fromEntries(
+      upsertUser.mock.calls.map(([, spec]) => [spec.uidKey, spec.password]),
+    );
+    expect(sent).toEqual(
+      Object.fromEntries(
+        ROLE_KEYS.map((key) => [
+          `E2E_${key}_UID`,
+          PATTERN[`E2E_${key}_PASSWORD`],
+        ]),
+      ),
     );
   });
 
@@ -219,13 +259,13 @@ describe("applyReset", () => {
     );
   });
 
-  it("never logs a generated password", async () => {
+  it("never logs a pattern password", async () => {
     await applyReset(resetArgs(passwords, order));
 
     const sent = upsertUser.mock.calls.map(([, spec]) => spec.password);
     expect(sent).toHaveLength(5);
     const output = logged.join("\n");
-    for (const value of [...sent, ...Object.values(passwords)]) {
+    for (const value of [...sent, ...Object.values(PATTERN)]) {
       expect(output).not.toContain(value);
     }
   });
@@ -248,5 +288,20 @@ describe("main with --reset-passwords", () => {
     ).rejects.toThrowError(/cannot be combined/);
     expect(parse).not.toHaveBeenCalled();
     expectNothingExternal();
+  });
+});
+
+describe("pattern passwords are never random", () => {
+  it("imports neither randomBytes nor node:crypto in the password sources", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const sources = [
+      join(here, "e2eCredentials.js"),
+      join(here, "e2ePasswordReset.js"),
+      join(here, "..", "provision-e2e-firebase-users.js"),
+    ];
+
+    for (const file of sources) {
+      expect(readFileSync(file, "utf8")).not.toMatch(/randomBytes|node:crypto/);
+    }
   });
 });

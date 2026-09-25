@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   buildCredentialMaps,
   findMissingGitHubNames,
-  findPlaceholderPasswordNames,
+  expectedPasswordFor,
+  findInvalidRoleEmailNames,
+  findPasswordMismatchNames,
   passwordNames,
+  patternPasswords,
 } from "./e2eCredentials.js";
 
 describe("buildCredentialMaps", () => {
@@ -231,15 +234,24 @@ describe("findMissingGitHubNames", () => {
   });
 });
 
-describe("findPlaceholderPasswordNames", () => {
-  const EMAILS = {
-    E2E_ADMIN_EMAIL: "e2e-admin@ichnos-test.com",
-    E2E_USER_EMAIL: "e2e-user@ichnos-test.com",
-    E2E_INCOMPLETE_USER_EMAIL: "e2e-incomplete@ichnos-test.com",
-    E2E_SUPER_ADMIN_EMAIL: "e2e-super-admin@ichnos-test.com",
-    E2E_MANAGE_ADMIN_TARGET_EMAIL: "e2e-manage-target@ichnos-test.com",
-  };
+const EMAILS = {
+  E2E_ADMIN_EMAIL: "e2e-admin@ichnos-test.com",
+  E2E_USER_EMAIL: "e2e-user@ichnos-test.com",
+  E2E_INCOMPLETE_USER_EMAIL: "e2e-incomplete@ichnos-test.com",
+  E2E_SUPER_ADMIN_EMAIL: "e2e-superadmin@ichnos-test.com",
+  E2E_MANAGE_ADMIN_TARGET_EMAIL: "e2e-manage-target@ichnos-test.com",
+};
 
+const PATTERN = {
+  E2E_ADMIN_PASSWORD: "adminadmin",
+  E2E_USER_PASSWORD: "useruser",
+  E2E_INCOMPLETE_USER_PASSWORD: "incomplete",
+  E2E_SUPER_ADMIN_PASSWORD: "superadmin",
+  E2E_MANAGE_ADMIN_TARGET_PASSWORD: "manage-target",
+  E2E_SIGNUP_PASSWORD: "signup",
+};
+
+describe("passwordNames", () => {
   it("lists the five role passwords, then the signup password", () => {
     expect(passwordNames()).toEqual([
       "E2E_ADMIN_PASSWORD",
@@ -250,84 +262,161 @@ describe("findPlaceholderPasswordNames", () => {
       "E2E_SIGNUP_PASSWORD",
     ]);
   });
+});
 
-  it("refuses a 5-character value and accepts an unrelated 6-character one", () => {
-    expect(
-      findPlaceholderPasswordNames({ ...EMAILS, E2E_ADMIN_PASSWORD: "x7k2q" }),
-    ).toEqual(["E2E_ADMIN_PASSWORD"]);
-    expect(
-      findPlaceholderPasswordNames({ ...EMAILS, E2E_ADMIN_PASSWORD: "x7k2qz" }),
-    ).toEqual([]);
+describe("expectedPasswordFor and patternPasswords", () => {
+  it.each(Object.entries(PATTERN))("derives %s as %s", (name, value) => {
+    expect(expectedPasswordFor(name, EMAILS)).toBe(value);
+  });
+
+  it("builds the six pattern values keyed in passwordNames() order", () => {
+    const passwords = patternPasswords(EMAILS);
+
+    expect(passwords).toEqual(PATTERN);
+    expect(Object.keys(passwords)).toEqual(passwordNames());
+  });
+
+  it("doubles a 5-character role word and keeps a 6-character one", () => {
+    const values = {
+      E2E_USER_EMAIL: "e2e-abcde@ichnos-test.com",
+      E2E_ADMIN_EMAIL: "e2e-abcdef@ichnos-test.com",
+    };
+
+    expect(expectedPasswordFor("E2E_USER_PASSWORD", values)).toBe("abcdeabcde");
+    expect(expectedPasswordFor("E2E_ADMIN_PASSWORD", values)).toBe("abcdef");
   });
 
   it.each([
-    ["E2E_ADMIN_PASSWORD", "admin"],
-    ["E2E_USER_PASSWORD", "user"],
-    ["E2E_INCOMPLETE_USER_PASSWORD", "incomplete"],
-    ["E2E_SUPER_ADMIN_PASSWORD", "super"],
-    ["E2E_MANAGE_ADMIN_TARGET_PASSWORD", "target"],
-    ["E2E_SIGNUP_PASSWORD", "signup"],
-  ])("refuses the observed placeholder for %s", (name, value) => {
-    expect(findPlaceholderPasswordNames({ ...EMAILS, [name]: value })).toEqual([
-      name,
+    "admin@ichnos-test.com",
+    "xe2e-admin@ichnos-test.com",
+    "e2e-@ichnos-test.com",
+    "E2E-admin@ichnos-test.com",
+    "E2e-admin@ichnos-test.com",
+    " e2e-admin@ichnos-test.com",
+    "\te2e-admin@ichnos-test.com",
+  ])("refuses the role email %j by variable name only", (email) => {
+    const values = { ...EMAILS, E2E_ADMIN_EMAIL: email };
+    const localPart = email.split("@")[0].trim();
+
+    expect(() =>
+      expectedPasswordFor("E2E_ADMIN_PASSWORD", values),
+    ).toThrowError(
+      expect.objectContaining({
+        message: expect.stringMatching(/E2E_ADMIN_EMAIL.*E2E_ADMIN_PASSWORD/),
+      }),
+    );
+    expect(() =>
+      expectedPasswordFor("E2E_ADMIN_PASSWORD", values),
+    ).toThrowError(
+      expect.objectContaining({
+        message: expect.not.stringMatching(
+          new RegExp(`${localPart}@|adminadmin|ichnos-test`),
+        ),
+      }),
+    );
+  });
+
+  it("returns undefined for an absent email and omits it from the map", () => {
+    const values = { ...EMAILS };
+    delete values.E2E_USER_EMAIL;
+
+    expect(expectedPasswordFor("E2E_USER_PASSWORD", values)).toBeUndefined();
+    expect(patternPasswords(values)).not.toHaveProperty("E2E_USER_PASSWORD");
+    expect(Object.keys(patternPasswords(values))).toHaveLength(5);
+  });
+});
+
+describe("findPasswordMismatchNames", () => {
+  it("returns an empty list for the six pattern values", () => {
+    expect(findPasswordMismatchNames({ ...EMAILS, ...PATTERN })).toEqual([]);
+  });
+
+  it("returns the one wrong name and neither the supplied nor the expected value", () => {
+    const values = { ...EMAILS, ...PATTERN, E2E_USER_PASSWORD: "hunter22" };
+    const names = findPasswordMismatchNames(values);
+
+    expect(names).toEqual(["E2E_USER_PASSWORD"]);
+    expect(names.join(" ")).not.toContain("hunter22");
+    expect(names.join(" ")).not.toContain("useruser");
+  });
+
+  it("compares strictly, without trimming or case folding", () => {
+    const values = {
+      ...EMAILS,
+      ...PATTERN,
+      E2E_ADMIN_PASSWORD: " adminadmin",
+      E2E_SIGNUP_PASSWORD: "Signup",
+    };
+
+    expect(findPasswordMismatchNames(values)).toEqual([
+      "E2E_ADMIN_PASSWORD",
+      "E2E_SIGNUP_PASSWORD",
     ]);
   });
 
-  it("compares case- and whitespace-insensitively", () => {
+  it("returns several mismatches in passwordNames() order", () => {
     const values = {
       ...EMAILS,
-      E2E_ADMIN_PASSWORD: "  Admin  ",
-      E2E_MANAGE_ADMIN_TARGET_PASSWORD: "manage",
+      E2E_SIGNUP_PASSWORD: "x",
+      E2E_MANAGE_ADMIN_TARGET_PASSWORD: "x",
+      E2E_ADMIN_PASSWORD: "x",
     };
-    expect(findPlaceholderPasswordNames(values)).toEqual([
+
+    expect(findPasswordMismatchNames(values)).toEqual([
       "E2E_ADMIN_PASSWORD",
       "E2E_MANAGE_ADMIN_TARGET_PASSWORD",
-    ]);
-  });
-
-  it("refuses a word taken from the variable's own email", () => {
-    const values = { ...EMAILS, E2E_USER_PASSWORD: "ichnos" };
-    expect(findPlaceholderPasswordNames(values)).toEqual(["E2E_USER_PASSWORD"]);
-  });
-
-  it("accepts a word that belongs to another role only", () => {
-    const values = { E2E_USER_PASSWORD: "target" };
-    expect(findPlaceholderPasswordNames(values)).toEqual([]);
-  });
-
-  it("never matches by containment", () => {
-    const values = { ...EMAILS, E2E_ADMIN_PASSWORD: "xadminx-longer-value" };
-    expect(findPlaceholderPasswordNames(values)).toEqual([]);
-  });
-
-  it("reports several failures by name", () => {
-    const values = {
-      ...EMAILS,
-      E2E_ADMIN_PASSWORD: "abc",
-      E2E_USER_PASSWORD: "user",
-      E2E_SIGNUP_PASSWORD: "signup",
-    };
-    expect(findPlaceholderPasswordNames(values)).toEqual([
-      "E2E_ADMIN_PASSWORD",
-      "E2E_USER_PASSWORD",
       "E2E_SIGNUP_PASSWORD",
     ]);
   });
 
   it("ignores missing and empty values", () => {
     expect(
-      findPlaceholderPasswordNames({ ...EMAILS, E2E_ADMIN_PASSWORD: "" }),
+      findPasswordMismatchNames({ ...EMAILS, E2E_ADMIN_PASSWORD: "" }),
     ).toEqual([]);
+    expect(findPasswordMismatchNames({ E2E_USER_PASSWORD: "x" })).toEqual([]);
   });
 
-  it("returns no value and no matched word", () => {
+  it("skips a password whose email is invalid instead of throwing", () => {
     const values = {
       ...EMAILS,
-      E2E_ADMIN_PASSWORD: "admin",
-      E2E_USER_PASSWORD: "ab1",
+      E2E_ADMIN_EMAIL: "admin@ichnos-test.com",
+      E2E_ADMIN_PASSWORD: "x",
     };
-    const output = findPlaceholderPasswordNames(values).join(" ");
-    expect(output).not.toMatch(/\badmin\b/);
-    expect(output).not.toContain("ab1");
+
+    expect(findPasswordMismatchNames(values)).toEqual([]);
+  });
+});
+
+describe("findInvalidRoleEmailNames", () => {
+  it("returns only the offending email variable names", () => {
+    const values = {
+      ...EMAILS,
+      E2E_USER_EMAIL: "user@ichnos-test.com",
+      E2E_SUPER_ADMIN_EMAIL: "e2e-@ichnos-test.com",
+    };
+    const names = findInvalidRoleEmailNames(values);
+
+    expect(names).toEqual(["E2E_USER_EMAIL", "E2E_SUPER_ADMIN_EMAIL"]);
+    expect(names.join(" ")).not.toContain("ichnos-test");
+  });
+
+  it("refuses an uppercase prefix and a whitespace-prefixed local part by name only", () => {
+    const values = {
+      ...EMAILS,
+      E2E_ADMIN_EMAIL: "E2E-admin@ichnos-test.com",
+      E2E_USER_EMAIL: " e2e-user@ichnos-test.com",
+      E2E_ADMIN_PASSWORD: "adminadmin",
+      E2E_USER_PASSWORD: "useruser",
+    };
+    const names = findInvalidRoleEmailNames(values);
+
+    expect(names).toEqual(["E2E_ADMIN_EMAIL", "E2E_USER_EMAIL"]);
+    expect(names.join(" ")).not.toMatch(/ichnos-test|adminadmin|useruser/i);
+    expect(findPasswordMismatchNames(values)).toEqual([]);
+  });
+
+  it("ignores absent emails and accepts the canonical ones", () => {
+    expect(findInvalidRoleEmailNames(EMAILS)).toEqual([]);
+    expect(findInvalidRoleEmailNames({})).toEqual([]);
   });
 });
