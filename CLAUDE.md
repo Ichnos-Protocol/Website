@@ -359,6 +359,7 @@ Rules:
 - **Auth tokens**: Verify Firebase ID tokens server-side on every protected request. Never store tokens in localStorage — use httpOnly cookies or in-memory storage.
 - **Helmet**: Use `helmet` middleware for HTTP security headers.
 - **Dependencies**: Run `npm audit` regularly. No packages with known critical vulnerabilities.
+- **Passwords and secrets**: three tiers in `AGENTS.md` "Passwords and secrets". Test accounts get easy passwords from one pattern and exist only in the `ichnos-protocol-test` project; production accounts are security first; a production demo account is easy only because it can do no harm. No step asks a person to type or reconcile a password or secret a script can produce.
 - **Claims**: the Catena-X Qualified Advisor qualification is Francesco's, not the company's. Corporate surfaces attribute it to the founder, and `CORPORATE_ADVISOR_CLAIM_PATTERNS` in `client/src/constants/vocabulary.js` guards the corporate form.
 
 ---
@@ -422,6 +423,7 @@ Rules:
 - Assert on visible text, roles, and user-facing behavior — not CSS classes or internal IDs.
 - For admin tests, use Playwright's `storageState` to persist auth state.
 - E2E tests are **not** blocking for commits. CI pipeline details are in `AGENTS.md`.
+- **Full E2E runs** follow `AGENTS.md` "Test runs": five tickets (run, diagnose, plan, correct, confirm), at most two full runs per phase, no run-level time limit. A red result is the diagnosis's input, never fixed inside the run ticket, and a commit from outside the run never invalidates a result.
 
 ---
 
@@ -536,6 +538,8 @@ When receiving a plan from Traycer (via paste or CLI handoff), Claude must addit
 21. **If the plan conflicts with CLAUDE.md conventions**, follow CLAUDE.md conventions (Sections 4–5) and note the conflict in the completion summary.
 22. **After completing a phase, provide a summary**: files changed, what was done, any deviations from the plan, and any issues encountered. This enables Traycer verification.
 23. **Commit changes per phase** using Conventional Commit format (Section 15). One commit per phase so Traycer can assess each independently.
+24. **Tests follow `AGENTS.md` "Test runs".** Only a run ticket dispatches the E2E run; a verification judges a run ticket by completeness, never by green results.
+25. **Rule and continue.** When a check cannot be met because of work outside the ticket's scope, or contradicts a decision already accepted, scope it to the ticket, record the rest as findings with an owner, continue, and list every ruling taken at the top of the summary. Ask the owner only when the answer changes what the code does and no document decides it.
 
 ### Permissions for Automated Execution
 
