@@ -135,6 +135,28 @@ describe("printSummary", () => {
     expect(resultLine[0]).toContain("a***@t.com");
   });
 
+  it("prints the client API key as **** with no tail, and its status", () => {
+    printSummary(
+      [],
+      [
+        {
+          name: "VITE_FIREBASE_API_KEY",
+          masked: "****",
+          status: "unchanged",
+          operation: "unchanged",
+          updatedAt: "2026-09-20T08:15:00.000Z",
+        },
+      ],
+    );
+
+    const resultLine = console.log.mock.calls.find(
+      (c) => typeof c[0] === "string" && c[0].includes("VITE_FIREBASE_API_KEY"),
+    );
+    expect(resultLine[0]).toContain("unchanged");
+    expect(resultLine[0]).toMatch(/\*\*\*\*/);
+    expect(resultLine[0]).not.toMatch(/\*\*\*\*\w/);
+  });
+
   it("renders inline error for failed results", () => {
     printSummary(
       [],

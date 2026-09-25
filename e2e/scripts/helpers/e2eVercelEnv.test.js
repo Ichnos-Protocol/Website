@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   findPreviewEntry,
   isAllBranchesPreview,
+  normalizeUpdatedAt,
   setPreviewEnv,
 } from "./e2eVercelEnv.js";
 
@@ -24,17 +25,20 @@ const MAIN = entry({ id: "env_main", gitBranch: "main" });
 const CUSTOM = entry({ id: "env_custom", customEnvironmentIds: ["env_x"] });
 const OVERRIDES = [PRODUCTION, STAGING, MAIN, CUSTOM];
 
-// envs is one page, or { first, <cursor>: page } for a paginated list.
-function fakeApi(envs, decrypted = {}) {
+// envs is one page, or { first, <cursor>: page } for a paginated list. A
+// decrypted entry is a value, or the whole GET body when it is an object.
+// written maps a write method (POST, PATCH) to its response body.
+function fakeApi(envs, decrypted = {}, written = {}) {
   const pages = Array.isArray(envs) ? { first: { envs } } : envs;
   const request = vi.fn(async (path, { method = "GET" } = {}) => {
-    if (method !== "GET") return {};
+    if (method !== "GET") return written[method] ?? {};
     const [base, query] = path.split("?");
     if (base.endsWith("/env")) {
       return pages[new URLSearchParams(query).get("until") ?? "first"];
     }
     const id = base.split("/").pop();
-    return { value: decrypted[id] };
+    const body = decrypted[id];
+    return body && typeof body === "object" ? body : { value: body };
   });
   return { request, registerSecret: vi.fn() };
 }
@@ -168,6 +172,202 @@ describe("setPreviewEnv", () => {
 
     expect(JSON.stringify(result)).not.toContain("AIzaSecretApiKeyValue");
     expect(api.registerSecret).toHaveBeenCalledWith("AIzaSecretApiKeyValue");
+  });
+});
+
+describe("setPreviewEnv outcome metadata", () => {
+  const API_KEY = "AIzaSecretApiKeyValue";
+  const EPOCH_MS = 1758784500000;
+  const EPOCH_ISO = new Date(EPOCH_MS).toISOString();
+
+  function run(api, key = KEY, value = "uid-value") {
+    return setPreviewEnv({ api, projectId: "prj_s", key, value });
+  }
+
+  it("reports a create as created, with no timestamp when none is returned", async () => {
+    const result = await run(fakeApi([]));
+
+    expect(result).toMatchObject({ status: "success", operation: "created" });
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it.each([
+    ["an object", { created: { id: "env_new", updatedAt: EPOCH_MS } }],
+    ["an array", { created: [{ id: "env_new", updatedAt: String(EPOCH_MS) }] }],
+  ])(
+    "keeps the create response's updatedAt when created is %s",
+    async (_, body) => {
+      const result = await run(fakeApi([], {}, { POST: body }));
+
+      expect(result).toEqual({
+        name: KEY,
+        masked: expect.any(String),
+        status: "success",
+        operation: "created",
+        updatedAt: EPOCH_ISO,
+      });
+    },
+  );
+
+  it("reports a changed value as updated, with no timestamp when none is returned", async () => {
+    const api = fakeApi([entry({ updatedAt: EPOCH_MS })], {
+      env_all: { value: "old", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ status: "success", operation: "updated" });
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("keeps the update response's updatedAt and no other provider field", async () => {
+    const patched = {
+      id: "env_all",
+      key: KEY,
+      value: "uid-value",
+      gitBranch: null,
+      target: ["preview"],
+      updatedAt: EPOCH_MS,
+    };
+    const api = fakeApi(
+      [entry()],
+      { env_all: { value: "old" } },
+      { PATCH: patched },
+    );
+
+    const result = await run(api);
+
+    expect(result).toEqual({
+      name: KEY,
+      masked: expect.any(String),
+      status: "success",
+      operation: "updated",
+      updatedAt: EPOCH_ISO,
+    });
+    expect(JSON.stringify(result)).not.toContain("env_all");
+  });
+
+  it("drops an ambiguous write-response timestamp", async () => {
+    const api = fakeApi(
+      [],
+      {},
+      { POST: { created: { updatedAt: "9/20/2026" } } },
+    );
+
+    expect(await run(api)).not.toHaveProperty("updatedAt");
+  });
+
+  it("reports an unchanged value with the decrypted entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: 1 })], {
+      env_all: { value: "uid-value", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      status: "unchanged",
+      operation: "unchanged",
+      updatedAt: EPOCH_ISO,
+    });
+  });
+
+  it("falls back to the listed entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: String(EPOCH_MS) })], {
+      env_all: "uid-value",
+    });
+
+    expect((await run(api)).updatedAt).toBe(EPOCH_ISO);
+  });
+
+  it("leaves the timestamp undefined when neither carries one", async () => {
+    const api = fakeApi([entry()], { env_all: "uid-value" });
+
+    const result = await run(api);
+
+    expect(result.operation).toBe("unchanged");
+    expect(result.updatedAt).toBeUndefined();
+  });
+
+  // Without a timestamp, clientApiKeyProvenance leaves the record row unknown.
+  it.each(["9/20/2026", "Sep 20 2026", "2026-09-20T08:15:00"])(
+    "leaves an unchanged value undated for the ambiguous %s",
+    async (raw) => {
+      const api = fakeApi([entry()], {
+        env_all: { value: "uid-value", updatedAt: raw },
+      });
+
+      const result = await run(api);
+
+      expect(result.operation).toBe("unchanged");
+      expect(result.updatedAt).toBeUndefined();
+    },
+  );
+
+  it("carries no operation or timestamp on a failure", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" })]);
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("masks a secret-named key fully and leaks no id, value or branch", async () => {
+    const listed = entry({ key: "VITE_FIREBASE_API_KEY", gitBranch: null });
+    const api = fakeApi([listed], {
+      env_all: { value: API_KEY, updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api, "VITE_FIREBASE_API_KEY", API_KEY);
+    const serialized = JSON.stringify(result);
+
+    expect(result.masked).toBe("****");
+    expect(serialized).not.toContain(API_KEY);
+    expect(serialized).not.toContain(API_KEY.slice(-4));
+    expect(serialized).not.toContain("env_all");
+    expect(result).not.toHaveProperty("value");
+    expect(result).not.toHaveProperty("id");
+    expect(result).not.toHaveProperty("gitBranch");
+  });
+});
+
+describe("normalizeUpdatedAt", () => {
+  const ISO = "2026-09-20T08:15:00.000Z";
+  const MS = Date.parse(ISO);
+
+  it("reads a number or an all-digit string as epoch milliseconds", () => {
+    expect(normalizeUpdatedAt(MS)).toBe(ISO);
+    expect(normalizeUpdatedAt(String(MS))).toBe(ISO);
+  });
+
+  it("keeps an ISO 8601 string with a zone, as UTC ISO", () => {
+    expect(normalizeUpdatedAt(ISO)).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T08:15:00Z")).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T10:15:00.000+02:00")).toBe(ISO);
+  });
+
+  it.each([undefined, null, "", "  ", "not a date", NaN, Infinity, {}])(
+    "yields undefined for %s",
+    (raw) => {
+      expect(normalizeUpdatedAt(raw)).toBeUndefined();
+    },
+  );
+
+  // Each of these parses in Node's Date, so permissive parsing would have
+  // turned it into a trusted provenance date.
+  it.each([
+    "9/20/2026",
+    "20/09/2026 08:15",
+    "Sep 20 2026",
+    "Sun, 20 Sep 2026 08:15:00 GMT",
+    "2026-09-20",
+    "2026-09-20T08:15:00",
+    "2026-09-20 08:15:00Z",
+    "2026-02-30T08:15:00Z",
+    " 2026-09-20T08:15:00Z",
+  ])("yields undefined for the ambiguous or non-standard %s", (raw) => {
+    expect(normalizeUpdatedAt(raw)).toBeUndefined();
   });
 });
 

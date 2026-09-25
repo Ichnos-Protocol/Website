@@ -65,6 +65,7 @@ import {
   syncVariablesToGitHub,
 } from "./helpers/e2eSyncGitHub.js";
 import {
+  CLIENT_API_KEY_NAME,
   confirmedSecretNames,
   VERCEL_SETTING,
   writeTestAccountsRecord,
@@ -305,29 +306,48 @@ function writeGeneratedFiles({ env, uidMap, firebaseCreds }, run) {
 
 // Rewrites the record from the actual per-secret outcomes: only the names the
 // sync confirmed carry this run's date; the rest keep the prior metadata.
-function refreshRecord(run, ghResults, providerSetNow = []) {
+function refreshRecord(run, ghResults, providerProvenance = []) {
   if (!run?.record) return;
   run.ghResults = ghResults;
   const setNow = confirmedSecretNames(ghResults);
   writeTestAccountsRecord(
     recordPath,
-    { ...run.record, setNow, providerSetNow },
+    { ...run.record, setNow, providerProvenance },
     { repoRoot },
   );
+}
+
+// The client project's Preview API key, looked up in the client results only
+// so a same-named server result is never taken for it. A write is "set", an
+// unchanged value with a provider timestamp is "read", anything else unknown.
+export function clientApiKeyProvenance(clientResults = []) {
+  const result = clientResults.find((r) => r.name === CLIENT_API_KEY_NAME);
+  const base = { name: CLIENT_API_KEY_NAME, store: VERCEL_SETTING };
+  const wrote = ["created", "updated"].includes(result?.operation);
+  if (result?.status === "success" && wrote) return { ...base, state: "set" };
+  if (result?.status === "unchanged" && result.updatedAt) {
+    return { ...base, state: "read", timestamp: result.updatedAt };
+  }
+  return { ...base, state: "unknown" };
 }
 
 // The Vercel-store bypass row is dated only when this run wrote the value to
 // at least one project and the convergence completed (both projects, GitHub,
 // revocation). A steady-state run writes nothing to Vercel, so the row keeps
 // its prior provenance. The GitHub row is dated when GitHub confirmed.
-function refreshRecordAfterProviders(run, bypass) {
-  if (!run?.record || !bypass.attempted) return;
-  const wroteVercel = bypass.complete && bypass.results.some((r) => r.added);
-  const providerSetNow = wroteVercel
-    ? [{ name: BYPASS_SECRET_NAME, store: VERCEL_SETTING }]
-    : [];
+function refreshRecordAfterProviders(run, outcome) {
+  if (!run?.record) return;
+  const bypass = outcome.bypass ?? {};
+  const wroteVercel =
+    bypass.complete && (bypass.results ?? []).some((r) => r.added);
+  const providerProvenance = [
+    ...(wroteVercel
+      ? [{ name: BYPASS_SECRET_NAME, store: VERCEL_SETTING, state: "set" }]
+      : []),
+    clientApiKeyProvenance(outcome.clientResults),
+  ];
   const ghResults = [...(run.ghResults ?? []), ...(bypass.ghResults ?? [])];
-  refreshRecord(run, ghResults, providerSetNow);
+  refreshRecord(run, ghResults, providerProvenance);
 }
 
 // Printed by the default run when the GitHub sync fails.
@@ -403,12 +423,12 @@ async function syncVercel(vercelContext, { env, vercel, syncOnly, run }) {
   console.log("\n=== Vercel Sync ===");
   const outcome = await syncProviders({
     ...vercelContext,
-    client: { VITE_FIREBASE_API_KEY: env.FIREBASE_API_KEY },
+    client: { [CLIENT_API_KEY_NAME]: env.FIREBASE_API_KEY },
     vercel,
     setGitHubSecrets: (secrets) => syncToGitHub(secrets, repoRoot),
     converge: !syncOnly,
   });
-  refreshRecordAfterProviders(run, outcome.bypass);
+  refreshRecordAfterProviders(run, outcome);
   return outcome;
 }
 

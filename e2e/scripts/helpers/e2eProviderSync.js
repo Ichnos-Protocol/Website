@@ -235,7 +235,14 @@ export async function syncProviders({
     ? await convergeBypass({ api, projects, setGitHubSecrets, generate })
     : { attempted: false };
   if (bypassIncomplete(bypass)) {
-    return { envResults: [], bypass, redeploys: [], stopped: true };
+    return {
+      envResults: [],
+      clientResults: [],
+      serverResults: [],
+      bypass,
+      redeploys: [],
+      stopped: true,
+    };
   }
   const clientResults = await syncToVercel(client, {
     api,
@@ -253,6 +260,8 @@ export async function syncProviders({
   });
   return {
     envResults: [...clientResults, ...serverResults],
+    clientResults,
+    serverResults,
     bypass,
     redeploys,
     stopped: false,

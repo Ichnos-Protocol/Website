@@ -278,6 +278,8 @@ describe("syncProviders: convergence", () => {
     expect(afterBypassCalls(api)).toEqual([]);
     expect(outcome.stopped).toBe(true);
     expect(outcome.envResults).toEqual([]);
+    expect(outcome.clientResults).toEqual([]);
+    expect(outcome.serverResults).toEqual([]);
     expect(outcome.redeploys).toEqual([]);
     expect(outcome.bypass.failure.stage).toBe("add");
     expect(outcome.bypass.githubConfirmed).toBe(false);
@@ -538,6 +540,17 @@ describe("syncProviders: env and redeploy", () => {
       ["E2E_USER_EMAIL", "unchanged"],
       ["E2E_USER_UID", "success"],
     ]);
+    expect(outcome.clientResults.map((r) => r.name)).toEqual([
+      "VITE_FIREBASE_API_KEY",
+    ]);
+    expect(outcome.serverResults.map((r) => r.name)).toEqual([
+      "E2E_USER_EMAIL",
+      "E2E_USER_UID",
+    ]);
+    expect(outcome.envResults).toEqual([
+      ...outcome.clientResults,
+      ...outcome.serverResults,
+    ]);
     expect(outcome.redeploys).toEqual([
       {
         project: "ichnos-protocol_server",
@@ -579,5 +592,6 @@ describe("syncProviders: env and redeploy", () => {
     expect(text).not.toContain(STALE);
     expect(text).not.toContain(STALE.slice(-4));
     expect(text).not.toContain(API_KEY);
+    expect(text).not.toContain(API_KEY.slice(-4));
   });
 });

@@ -239,8 +239,24 @@ const CONFIRMED_BYPASS = {
   ],
 };
 
-function providerOutcome(bypass = CONFIRMED_BYPASS) {
-  return { envResults: [], bypass, redeploys: [] };
+function providerOutcome(
+  bypass = CONFIRMED_BYPASS,
+  { clientResults = [], serverResults = [] } = {},
+) {
+  return {
+    envResults: [...clientResults, ...serverResults],
+    clientResults,
+    serverResults,
+    bypass,
+    redeploys: [],
+  };
+}
+
+// The Vercel-store provenance entries that carry a date: set or read.
+function datedVercel(record) {
+  return record.providerProvenance.filter(
+    (p) => p.store === "vercel" && p.state !== "unknown",
+  );
 }
 
 function mockSuccessfulSync() {
@@ -600,8 +616,12 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
       ...secrets,
       "VERCEL_AUTOMATION_BYPASS_SECRET",
     ]);
-    expect(calls[2][1].providerSetNow).toEqual([
-      { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "vercel" },
+    expect(datedVercel(calls[2][1])).toEqual([
+      {
+        name: "VERCEL_AUTOMATION_BYPASS_SECRET",
+        store: "vercel",
+        state: "set",
+      },
     ]);
     expect(order(syncProviders)).toBeLessThan(
       writeTestAccountsRecord.mock.invocationCallOrder[2],
@@ -635,7 +655,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     await main({});
 
     const last = writeTestAccountsRecord.mock.calls.at(-1)[1];
-    expect(last.providerSetNow).toEqual([]);
+    expect(datedVercel(last)).toEqual([]);
     expect(last.setNow).toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
   });
 
@@ -696,6 +716,135 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     for (const value of Object.values(PATTERN)) {
       expect(text).not.toContain(value);
     }
+  });
+});
+
+describe("client Preview API key provenance", () => {
+  const KEY = "VITE_FIREBASE_API_KEY";
+  const READ_AT = "2026-09-20T08:15:00.000Z";
+
+  function clientKey(record) {
+    return record.providerProvenance.find(
+      (p) => p.name === KEY && p.store === "vercel",
+    );
+  }
+
+  function arrange(bypass, results) {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    syncToGitHub.mockImplementation((secrets) =>
+      Object.keys(secrets).map((name) => ({ name, status: "success" })),
+    );
+    syncProviders.mockResolvedValue(providerOutcome(bypass, results));
+  }
+
+  async function lastRecord(bypass, results) {
+    arrange(bypass, results);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(process, "exit").mockImplementation((code) => {
+      throw new Error(`exit ${code}`);
+    });
+    await main({}).catch((err) => err);
+    return writeTestAccountsRecord.mock.calls.at(-1)[1];
+  }
+
+  const result = (fields) => ({ name: KEY, masked: "****", ...fields });
+
+  it.each(["created", "updated"])(
+    "records a %s client result as set by this run",
+    async (operation) => {
+      const record = await lastRecord(CONFIRMED_BYPASS, {
+        clientResults: [result({ status: "success", operation })],
+      });
+
+      expect(clientKey(record)).toEqual({
+        name: KEY,
+        store: "vercel",
+        state: "set",
+      });
+    },
+  );
+
+  it("records an unchanged client result with its provider timestamp", async () => {
+    const record = await lastRecord(CONFIRMED_BYPASS, {
+      clientResults: [
+        result({
+          status: "unchanged",
+          operation: "unchanged",
+          updatedAt: READ_AT,
+        }),
+      ],
+    });
+
+    expect(clientKey(record)).toEqual({
+      name: KEY,
+      store: "vercel",
+      state: "read",
+      timestamp: READ_AT,
+    });
+  });
+
+  it.each([
+    [
+      "unchanged without a timestamp",
+      [result({ status: "unchanged", operation: "unchanged" })],
+    ],
+    ["failed", [result({ status: "failed", error: "Vercel API 502" })]],
+    ["absent", []],
+  ])("dates nothing for a client result that is %s", async (_l, results) => {
+    const record = await lastRecord(CONFIRMED_BYPASS, {
+      clientResults: results,
+    });
+
+    expect(clientKey(record)?.state ?? "unknown").toBe("unknown");
+    expect(clientKey(record)).not.toHaveProperty("timestamp");
+  });
+
+  it("dates nothing when the bypass stopped the run", async () => {
+    const stopped = {
+      ...CONFIRMED_BYPASS,
+      complete: false,
+      failure: { stage: "github", reason: "the GitHub secret was not set" },
+    };
+
+    const record = await lastRecord(stopped, {});
+
+    expect(datedVercel(record)).toEqual([]);
+  });
+
+  it("leaves both Vercel rows undated on a steady-state second run", async () => {
+    const held = { heldBefore: true, added: false, confirmed: true };
+    const steady = {
+      ...CONFIRMED_BYPASS,
+      generated: false,
+      steadyState: true,
+      results: [
+        { ...held, project: "ichnos-client", revoked: 0, preserved: 0 },
+        {
+          ...held,
+          project: "ichnos-protocol_server",
+          revoked: 0,
+          preserved: 0,
+        },
+      ],
+    };
+
+    const record = await lastRecord(steady, {
+      clientResults: [result({ status: "unchanged", operation: "unchanged" })],
+    });
+
+    expect(datedVercel(record)).toEqual([]);
+    expect(record.setNow).toContain("FIREBASE_API_KEY");
+    expect(record.setNow).toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
+  });
+
+  it("ignores a same-named server result", async () => {
+    const record = await lastRecord(CONFIRMED_BYPASS, {
+      clientResults: [result({ status: "unchanged", operation: "unchanged" })],
+      serverResults: [result({ status: "success", operation: "created" })],
+    });
+
+    expect(clientKey(record).state).toBe("unknown");
   });
 });
 
@@ -876,7 +1025,7 @@ describe("web config and provider sync", () => {
 
     expect(error.message).toBe("exit 1");
     const last = writeTestAccountsRecord.mock.calls.at(-1)[1];
-    expect(last.providerSetNow).toEqual([]);
+    expect(datedVercel(last)).toEqual([]);
     expect(last.setNow).not.toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
     expect(output()).toMatch(/Identical state cannot be achieved/);
   });

@@ -2,8 +2,9 @@
  * secrets/test-accounts.md: the gitignored record of every test account and
  * every infrastructure secret (AGENTS.md "Passwords and secrets"). Test-tier
  * passwords are recorded; infrastructure secrets are recorded by name, where
- * they are applied and when they were last set, never by value. The record is
- * written only to a path git ignores.
+ * they are applied and when they were last set, never by value. Every
+ * application of a secret is listed, one row per store. The record is written
+ * only to a path git ignores.
  */
 import { spawnSync } from "child_process";
 import { mkdirSync, writeFileSync } from "fs";
@@ -11,6 +12,7 @@ import { dirname } from "path";
 
 const GITHUB_SECRET = "github";
 export const VERCEL_SETTING = "vercel";
+export const CLIENT_API_KEY_NAME = "VITE_FIREBASE_API_KEY";
 const E2E_WORKFLOW = "GitHub Actions secret, read by e2e.yml";
 const SYNC_WORKFLOW = "GitHub Actions secret, read by sync-staging.yml";
 
@@ -52,6 +54,13 @@ export const INFRASTRUCTURE_SECRETS = [
     name: "VERCEL_AUTOMATION_BYPASS_SECRET",
     appliedWhere:
       "Vercel Protection Bypass for Automation, on both the client and the server project",
+    tier: "Test",
+    store: VERCEL_SETTING,
+  },
+  {
+    name: CLIENT_API_KEY_NAME,
+    appliedWhere:
+      "Vercel env var on the all-branches Preview environment of the ichnos-client project",
     tier: "Test",
     store: VERCEL_SETTING,
   },
@@ -117,12 +126,21 @@ function signupRow({ project, command, date }) {
   ]);
 }
 
-// A provider-store row (not GitHub) is dated only from a confirmed write.
-function providerLastSet(secret, { command, date, providerSetNow }) {
-  const confirmed = providerSetNow.some(
+/**
+ * A provider-store row (not GitHub), from the caller's provenance entry
+ * matched by name and store: "set" means this run wrote it, "read" carries
+ * the provider's own timestamp, anything else is unknown. The state is never
+ * inferred here from a value match.
+ */
+function providerLastSet(secret, { command, date, providerProvenance }) {
+  const entry = providerProvenance.find(
     (p) => p.name === secret.name && p.store === secret.store,
   );
-  return confirmed ? [date, `\`${command}\``] : [UNKNOWN_LAST_SET, ""];
+  if (entry?.state === "set") return [date, `\`${command}\``];
+  if (entry?.state === "read" && entry.timestamp) {
+    return [entry.timestamp, "Vercel env metadata (not this run)"];
+  }
+  return [UNKNOWN_LAST_SET, ""];
 }
 
 function lastSetCells(secret, run) {
@@ -162,7 +180,7 @@ export function buildTestAccountsRecord({
   date,
   setNow = [],
   secretMetadata = {},
-  providerSetNow = [],
+  providerProvenance = [],
 }) {
   const run = {
     project,
@@ -170,7 +188,7 @@ export function buildTestAccountsRecord({
     date,
     setNow,
     secretMetadata,
-    providerSetNow,
+    providerProvenance,
   };
   return [
     "# Test accounts and infrastructure secrets",
