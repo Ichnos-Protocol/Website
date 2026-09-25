@@ -1,6 +1,12 @@
-import { existsSync, readFileSync } from "fs";
-import { join } from "path";
+import { existsSync } from "fs";
 import { execFileSync } from "child_process";
+
+import { supportsVercelApi } from "./e2eVercelApi.js";
+import {
+  EXPECTED_PROJECT_NAMES,
+  linkFilePath,
+  readLinkedProject,
+} from "./e2eVercelProjects.js";
 
 function fail(message, remediation) {
   throw new Error(`${message}\nRemediation: ${remediation}`);
@@ -28,61 +34,36 @@ export function checkVercelAuth() {
   }
 }
 
-function resolveProjectJsonPath(serverDir) {
-  const projectJsonPath = join(serverDir, ".vercel", "project.json");
-  if (!existsSync(projectJsonPath)) {
-    fail(
-      "server/.vercel/project.json not found.",
-      "Run `cd server && vercel link` to link the server project.",
-    );
-  }
-  return projectJsonPath;
+/** Fail-closed check of <dir>/.vercel/project.json against expectedName. */
+export function checkVercelProject(
+  dir,
+  expectedName = EXPECTED_PROJECT_NAMES.server,
+) {
+  readLinkedProject(dir, expectedName);
 }
 
-function parseProjectJson(projectJsonPath) {
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(projectJsonPath, "utf8"));
-  } catch {
-    fail(
-      "server/.vercel/project.json is malformed.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    fail(
-      "server/.vercel/project.json is malformed.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-  return parsed;
+/**
+ * The client link file is optional: when present it must name the client
+ * project; when absent the project is resolved by exact name later.
+ */
+export function checkOptionalVercelProject(dir, expectedName) {
+  if (!existsSync(linkFilePath(dir))) return;
+  checkVercelProject(dir, expectedName);
 }
 
-function validateProjectMetadata(projectJson) {
-  if (!projectJson.projectId || !projectJson.orgId) {
-    fail(
-      "server/.vercel/project.json is missing projectId or orgId.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-}
-
-export function checkVercelProject(serverDir) {
-  const projectJsonPath = resolveProjectJsonPath(serverDir);
-  const projectJson = parseProjectJson(projectJsonPath);
-  validateProjectMetadata(projectJson);
-
-  if (!projectJson.projectName || typeof projectJson.projectName !== "string") {
-    fail(
-      "server/.vercel/project.json does not contain a valid projectName.",
-      "Run `cd server && vercel link` with the latest Vercel CLI to re-link the server project.",
-    );
-  }
-
-  if (projectJson.projectName !== "ichnos-protocol_server") {
-    fail(
-      `Linked Vercel project '${projectJson.projectName}' does not match the expected server project 'ichnos-protocol_server'.`,
-      "Run `cd server && vercel link` and select the 'ichnos-protocol_server' project.",
-    );
-  }
+/**
+ * How the run reaches the Vercel REST API: the `vercel api` subcommand over
+ * the `vercel login` session, else an exported VERCEL_TOKEN. Neither means the
+ * run stops here, naming the missing token.
+ */
+export function checkVercelApiAccess({
+  supports = supportsVercelApi,
+  env = process.env,
+} = {}) {
+  if (supports()) return { mode: "cli" };
+  if (env.VERCEL_TOKEN) return { mode: "token" };
+  fail(
+    "The installed Vercel CLI has no `vercel api` subcommand and VERCEL_TOKEN is not set.",
+    "Update the CLI with `npm i -g vercel@latest`, or export VERCEL_TOKEN (a Vercel access token for the team that owns both projects), then re-run.",
+  );
 }

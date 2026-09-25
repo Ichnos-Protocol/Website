@@ -2,9 +2,12 @@ import { existsSync } from "fs";
 import { validateCredentials } from "./e2ePreflightValidators.js";
 import {
   checkGhAuth,
+  checkOptionalVercelProject,
+  checkVercelApiAccess,
   checkVercelAuth,
   checkVercelProject,
 } from "./e2ePreflightChecks.js";
+import { EXPECTED_PROJECT_NAMES } from "./e2eVercelProjects.js";
 
 const PARSED_FIREBASE_KEYS = {
   projectId: "FIREBASE_PROJECT_ID",
@@ -28,13 +31,15 @@ function assertParsedFirebaseCredentials(credentials) {
  * config, pattern passwords and shell exports otherwise). Only sync-only needs
  * e2e/.env.e2e to exist. `firebaseCredentials` is the object from
  * loadFirebaseCredentials; every mode but sync-only validates it. process.env
- * is never consulted for Firebase.
+ * is never consulted for Firebase. Every check runs before any provider write.
+ * Returns the Vercel API access mode so the caller builds the transport once.
  */
 export function runPreflight({
   syncOnly,
   envFilePath,
   env,
   serverDir,
+  clientDir,
   firebaseCredentials,
 }) {
   if (syncOnly && !existsSync(envFilePath)) {
@@ -47,9 +52,13 @@ export function runPreflight({
 
   checkGhAuth();
   checkVercelAuth();
-  checkVercelProject(serverDir);
+  checkVercelProject(serverDir, EXPECTED_PROJECT_NAMES.server);
+  if (clientDir) {
+    checkOptionalVercelProject(clientDir, EXPECTED_PROJECT_NAMES.client);
+  }
+  const vercelAccess = checkVercelApiAccess();
 
   if (!syncOnly) assertParsedFirebaseCredentials(firebaseCredentials ?? {});
 
-  return true;
+  return { vercelAccess };
 }

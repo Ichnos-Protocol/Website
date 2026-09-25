@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 
 const GITHUB_SECRET = "github";
-const VERCEL_SETTING = "vercel";
+export const VERCEL_SETTING = "vercel";
 const E2E_WORKFLOW = "GitHub Actions secret, read by e2e.yml";
 const SYNC_WORKFLOW = "GitHub Actions secret, read by sync-staging.yml";
 
@@ -117,8 +117,17 @@ function signupRow({ project, command, date }) {
   ]);
 }
 
-function lastSetCells(secret, { command, date, setNow, secretMetadata }) {
-  if (secret.store !== GITHUB_SECRET) return [UNKNOWN_LAST_SET, ""];
+// A provider-store row (not GitHub) is dated only from a confirmed write.
+function providerLastSet(secret, { command, date, providerSetNow }) {
+  const confirmed = providerSetNow.some(
+    (p) => p.name === secret.name && p.store === secret.store,
+  );
+  return confirmed ? [date, `\`${command}\``] : [UNKNOWN_LAST_SET, ""];
+}
+
+function lastSetCells(secret, run) {
+  const { command, date, setNow, secretMetadata } = run;
+  if (secret.store !== GITHUB_SECRET) return providerLastSet(secret, run);
   if (setNow.includes(secret.name)) return [date, `\`${command}\``];
   const updatedAt = secretMetadata[secret.name];
   if (updatedAt) return [updatedAt, "`gh secret list` (not this run)"];
@@ -153,8 +162,16 @@ export function buildTestAccountsRecord({
   date,
   setNow = [],
   secretMetadata = {},
+  providerSetNow = [],
 }) {
-  const run = { project, command, date, setNow, secretMetadata };
+  const run = {
+    project,
+    command,
+    date,
+    setNow,
+    secretMetadata,
+    providerSetNow,
+  };
   return [
     "# Test accounts and infrastructure secrets",
     "",

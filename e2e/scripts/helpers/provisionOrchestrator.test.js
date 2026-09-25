@@ -16,6 +16,16 @@ const syncToGitHub = vi.fn();
 const syncVariablesToGitHub = vi.fn();
 const listGitHubSecretMetadata = vi.fn(() => ({}));
 const syncToVercel = vi.fn();
+const syncProviders = vi.fn();
+const fetchWebConfig = vi.fn();
+const connectVercelProjects = vi.fn();
+const VERCEL_CONTEXT = {
+  api: { request: vi.fn(), registerSecret: vi.fn() },
+  projects: {
+    client: { projectId: "prj_client", projectName: "ichnos-client" },
+    server: { projectId: "prj_server", projectName: "ichnos-protocol_server" },
+  },
+};
 const FAKE_CREDENTIALS = {
   projectId: "ichnos-protocol-test",
   clientEmail: "sa@ichnos-protocol-test.iam.gserviceaccount.com",
@@ -29,6 +39,17 @@ vi.mock("./e2ePreflightChecks.js", async (importOriginal) => ({
   checkGhAuth: vi.fn(),
   checkVercelAuth: vi.fn(),
   checkVercelProject: vi.fn(),
+  checkOptionalVercelProject: vi.fn(),
+  checkVercelApiAccess: vi.fn(() => ({ mode: "cli" })),
+}));
+vi.mock("./e2eVercelProjects.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  connectVercelProjects,
+}));
+vi.mock("./e2eFirebaseWebConfig.js", () => ({ fetchWebConfig }));
+vi.mock("./e2eProviderSync.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  syncProviders,
 }));
 // Mandatory: the loader is mocked so no real credential file is ever read.
 vi.mock("./e2eFirebaseCredentials.js", async (importOriginal) => ({
@@ -152,6 +173,9 @@ function expectNothingExternal() {
   expect(syncToGitHub).not.toHaveBeenCalled();
   expect(syncVariablesToGitHub).not.toHaveBeenCalled();
   expect(syncToVercel).not.toHaveBeenCalled();
+  expect(connectVercelProjects).not.toHaveBeenCalled();
+  expect(fetchWebConfig).not.toHaveBeenCalled();
+  expect(syncProviders).not.toHaveBeenCalled();
 }
 
 function expectPatternRefusal(error, name, expected) {
@@ -160,11 +184,40 @@ function expectPatternRefusal(error, name, expected) {
   expect(error.message).not.toContain(expected);
 }
 
+const CONFIRMED_BYPASS = {
+  rotated: true,
+  results: [
+    { project: "ichnos-client", confirmed: true, revoked: 1, preserved: 0 },
+    {
+      project: "ichnos-protocol_server",
+      confirmed: true,
+      revoked: 1,
+      preserved: 0,
+    },
+  ],
+  confirmedProjects: ["ichnos-client", "ichnos-protocol_server"],
+  githubConfirmed: true,
+  ghResults: [
+    {
+      name: "VERCEL_AUTOMATION_BYPASS_SECRET",
+      status: "success",
+      masked: "****",
+    },
+  ],
+};
+
+function providerOutcome(bypass = CONFIRMED_BYPASS) {
+  return { envResults: [], bypass, redeploys: [] };
+}
+
 function mockSuccessfulSync() {
   provisionFirebaseUsers.mockResolvedValue({ ...UIDS });
   syncToGitHub.mockReturnValue([]);
   syncVariablesToGitHub.mockReturnValue([]);
   syncToVercel.mockReturnValue([]);
+  syncProviders.mockImplementation(async ({ rotateBypass }) =>
+    providerOutcome(rotateBypass ? CONFIRMED_BYPASS : { rotated: false }),
+  );
 }
 
 function order(mock) {
@@ -179,6 +232,8 @@ beforeEach(() => {
   readPreservedWebConfig.mockReturnValue({ ...WEB_CONFIG });
   listGitHubSecretMetadata.mockReturnValue({});
   loadFirebaseCredentials.mockReturnValue({ ...FAKE_CREDENTIALS });
+  connectVercelProjects.mockResolvedValue(VERCEL_CONTEXT);
+  fetchWebConfig.mockResolvedValue({ ...WEB_CONFIG });
 });
 
 describe("provision orchestrator ordering", () => {
@@ -340,7 +395,7 @@ describe("provision orchestrator ordering", () => {
       expect(written[name]).toBe(value);
     }
     expect(order(writeEnvFile)).toBeLessThan(order(syncVariablesToGitHub));
-    expect(syncToVercel).not.toHaveBeenCalled();
+    expect(syncProviders).not.toHaveBeenCalled();
     const text = output();
     expect(text).toContain(RECOVERY_NOTE);
     for (const value of Object.values(PATTERN)) {
@@ -411,7 +466,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(order(provisionFirebaseUsers)).toBeLessThan(order(writeEnvFile));
     expect(order(writeEnvFile)).toBeLessThan(order(writeTestAccountsRecord));
     const lastWrite = order(writeTestAccountsRecord);
-    for (const sync of [syncVariablesToGitHub, syncToGitHub, syncToVercel]) {
+    for (const sync of [syncVariablesToGitHub, syncToGitHub, syncProviders]) {
       expect(lastWrite).toBeLessThan(order(sync));
     }
   });
@@ -453,10 +508,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(record.project).toBe("ichnos-protocol-test");
   });
 
-  it.each([
-    ["full pipeline", {}],
-    ["reset-passwords", { resetPasswords: true }],
-  ])(
+  it.each([["reset-passwords", { resetPasswords: true }]])(
     "starts without e2e/.env.e2e in %s mode and stops on the missing API key after writing",
     async (_label, options) => {
       existsSync.mockReturnValue(false);
@@ -483,6 +535,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
       expect(syncToGitHub).not.toHaveBeenCalled();
       expect(syncVariablesToGitHub).not.toHaveBeenCalled();
       expect(syncToVercel).not.toHaveBeenCalled();
+      expect(syncProviders).not.toHaveBeenCalled();
     },
   );
 
@@ -518,7 +571,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
       expect(
         writeTestAccountsRecord.mock.invocationCallOrder[1],
       ).toBeGreaterThan(order(syncToGitHub));
-      expect(syncToVercel).not.toHaveBeenCalled();
+      expect(syncProviders).not.toHaveBeenCalled();
     },
   );
 
@@ -532,12 +585,21 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     await main({});
 
     const calls = writeTestAccountsRecord.mock.calls;
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     expect(calls[0][1].setNow).toEqual([]);
-    expect(calls[1][1].setNow).toEqual(
-      Object.keys(syncToGitHub.mock.calls[0][0]),
-    );
+    const secrets = Object.keys(syncToGitHub.mock.calls[0][0]);
+    expect(calls[1][1].setNow).toEqual(secrets);
     expect(calls[1][1].setNow).toContain("E2E_ADMIN_PASSWORD");
+    expect(calls[2][1].setNow).toEqual([
+      ...secrets,
+      "VERCEL_AUTOMATION_BYPASS_SECRET",
+    ]);
+    expect(calls[2][1].providerSetNow).toEqual([
+      { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "vercel" },
+    ]);
+    expect(order(syncProviders)).toBeLessThan(
+      writeTestAccountsRecord.mock.invocationCallOrder[2],
+    );
   });
 
   it("still refuses a missing file in sync-only mode", async () => {
@@ -588,7 +650,8 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(writeTestAccountsRecord).not.toHaveBeenCalled();
     expect(syncToGitHub).not.toHaveBeenCalled();
     expect(syncVariablesToGitHub).not.toHaveBeenCalled();
-    expect(syncToVercel).not.toHaveBeenCalled();
+    expect(fetchWebConfig).not.toHaveBeenCalled();
+    expect(syncProviders).not.toHaveBeenCalled();
   });
 
   it("prints none of the pattern passwords in a full run", async () => {
@@ -602,6 +665,184 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     for (const value of Object.values(PATTERN)) {
       expect(text).not.toContain(value);
     }
+  });
+});
+
+describe("web config and provider sync", () => {
+  const FRESH_WEB_CONFIG = {
+    FIREBASE_API_KEY: "fresh-firebase-api-key-value",
+    FIREBASE_AUTH_DOMAIN: "fresh.firebaseapp.com",
+    FIREBASE_STORAGE_BUCKET: "fresh.firebasestorage.app",
+  };
+
+  it("orders upserts, web config, env file, record, GitHub, then providers", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+
+    await main({});
+
+    const sequence = [
+      provisionFirebaseUsers,
+      fetchWebConfig,
+      writeEnvFile,
+      writeTestAccountsRecord,
+      syncVariablesToGitHub,
+      syncToGitHub,
+      syncProviders,
+    ].map(order);
+    expect(sequence).toEqual([...sequence].sort((a, b) => a - b));
+    expect(order(connectVercelProjects)).toBeLessThan(
+      order(provisionFirebaseUsers),
+    );
+  });
+
+  it("reads the web config from the locked project and writes it everywhere", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    fetchWebConfig.mockResolvedValue({ ...FRESH_WEB_CONFIG });
+
+    await main({});
+
+    const [{ projectId }] = fetchWebConfig.mock.calls[0];
+    expect(projectId).toBe("ichnos-protocol-test");
+    expect(getTestApp).toHaveBeenCalledWith(FAKE_CREDENTIALS);
+    const written = writeEnvFile.mock.calls[0][1];
+    for (const [name, value] of Object.entries(FRESH_WEB_CONFIG)) {
+      expect(written[name]).toBe(value);
+    }
+    const variables = syncVariablesToGitHub.mock.calls[0][0];
+    expect(variables.FIREBASE_AUTH_DOMAIN).toBe("fresh.firebaseapp.com");
+    expect(variables.FIREBASE_STORAGE_BUCKET).toBe("fresh.firebasestorage.app");
+    expect(syncToGitHub.mock.calls[0][0].FIREBASE_API_KEY).toBe(
+      FRESH_WEB_CONFIG.FIREBASE_API_KEY,
+    );
+    const [args] = syncProviders.mock.calls[0];
+    expect(args.client).toEqual({
+      VITE_FIREBASE_API_KEY: FRESH_WEB_CONFIG.FIREBASE_API_KEY,
+    });
+    expect(args.rotateBypass).toBe(true);
+    expect(args.projects).toBe(VERCEL_CONTEXT.projects);
+  });
+
+  it("starts without e2e/.env.e2e in a full run and completes from Firebase", async () => {
+    existsSync.mockReturnValue(false);
+    readPreservedWebConfig.mockReturnValue({});
+    mockSuccessfulSync();
+
+    await main({});
+
+    expect(readEnvFile).not.toHaveBeenCalled();
+    expect(writeEnvFile.mock.calls[0][1].FIREBASE_API_KEY).toBe(
+      WEB_CONFIG.FIREBASE_API_KEY,
+    );
+    expect(syncProviders).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes nothing when the web config cannot be read", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    fetchWebConfig.mockRejectedValue(new Error("found 2 web apps"));
+
+    await expect(main({})).rejects.toThrowError("found 2 web apps");
+
+    expect(writeEnvFile).not.toHaveBeenCalled();
+    expect(syncToGitHub).not.toHaveBeenCalled();
+    expect(syncProviders).not.toHaveBeenCalled();
+  });
+
+  it("neither reads the web config nor rotates the bypass in sync-only mode", async () => {
+    readEnvFile.mockReturnValue({ ...completeEnv(), ...UIDS });
+    mockSuccessfulSync();
+    const output = captureOutput();
+
+    await main({ syncOnly: true });
+
+    expect(fetchWebConfig).not.toHaveBeenCalled();
+    expect(getTestApp).not.toHaveBeenCalled();
+    const [args] = syncProviders.mock.calls[0];
+    expect(args.rotateBypass).toBe(false);
+    expect(args.client).toEqual({
+      VITE_FIREBASE_API_KEY: WEB_CONFIG.FIREBASE_API_KEY,
+    });
+    expect(output()).toMatch(/not rotated/);
+  });
+
+  it("exits non-zero and leaves the bypass rows undated when a project is unconfirmed", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    const unconfirmed = {
+      rotated: true,
+      results: [
+        {
+          project: "ichnos-client",
+          confirmed: false,
+          reason: "the project does not hold the value this run generated",
+          revoked: 0,
+          preserved: 0,
+        },
+        {
+          project: "ichnos-protocol_server",
+          confirmed: true,
+          revoked: 0,
+          preserved: 0,
+        },
+      ],
+      confirmedProjects: ["ichnos-protocol_server"],
+      githubConfirmed: false,
+    };
+    syncProviders.mockResolvedValue(providerOutcome(unconfirmed));
+    const output = captureOutput();
+    vi.spyOn(process, "exit").mockImplementation((code) => {
+      throw new Error(`exit ${code}`);
+    });
+
+    const error = await main({}).catch((err) => err);
+
+    expect(error.message).toBe("exit 1");
+    const last = writeTestAccountsRecord.mock.calls.at(-1)[1];
+    expect(last.providerSetNow).toEqual([]);
+    expect(last.setNow).not.toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
+    expect(output()).toMatch(/Identical state cannot be achieved/);
+  });
+
+  it("exits non-zero when a redeploy finds no deployment for the E2E host", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    syncProviders.mockResolvedValue({
+      ...providerOutcome(),
+      redeploys: [
+        {
+          project: "ichnos-protocol_server",
+          host: "e2e-api.ichnos-protocol.com",
+          status: "failed",
+          reason: "no deployment serves e2e-api.ichnos-protocol.com",
+        },
+      ],
+    });
+    const output = captureOutput();
+    vi.spyOn(process, "exit").mockImplementation((code) => {
+      throw new Error(`exit ${code}`);
+    });
+
+    const error = await main({}).catch((err) => err);
+
+    expect(error.message).toBe("exit 1");
+    expect(output()).toMatch(/no deployment serves e2e-api/);
+  });
+
+  it("prints no pattern password or web API key in a full run", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    fetchWebConfig.mockResolvedValue({ ...FRESH_WEB_CONFIG });
+    const output = captureOutput();
+
+    await main({});
+
+    const text = output();
+    for (const value of Object.values(PATTERN)) {
+      expect(text).not.toContain(value);
+    }
+    expect(text).not.toContain(FRESH_WEB_CONFIG.FIREBASE_API_KEY);
   });
 });
 

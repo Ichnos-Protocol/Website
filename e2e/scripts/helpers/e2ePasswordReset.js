@@ -16,8 +16,9 @@ import { ROLES, fixedE2EConfig, patternPasswords } from "./e2eCredentials.js";
 import { readEnvFile } from "./e2eEnvFile.js";
 import { assertEnvFileProjectMatch } from "./e2eFirebaseCredentials.js";
 import { getTestApp, upsertUser } from "./firebaseTestSetup.js";
+import { redeployChanged } from "./e2eProviderSync.js";
 import { syncToVercel } from "./e2eSyncVercel.js";
-import { printSummary } from "./e2eReporting.js";
+import { printRedeploys, printSummary } from "./e2eReporting.js";
 
 function readLocalEnv(envFilePath) {
   return existsSync(envFilePath) ? readEnvFile(envFilePath) : {};
@@ -69,18 +70,43 @@ export const RECOVERY_NOTE =
   "e2e/.env.e2e is now the source of truth. Re-run with --sync-only to push " +
   "it to GitHub without touching Firebase.";
 
-function syncChangedToVercel(changedUids, vercel, serverDir) {
+// vercelContext is { api, project } for the server project.
+async function syncChangedToVercel(changedUids, vercel, vercelContext) {
   console.log("\n=== Vercel Preview Sync ===");
   if (Object.keys(changedUids).length === 0) {
     console.log("[vercel] no UID changed — skipping Vercel sync");
     return [];
   }
-  return syncToVercel(buildVercelChanges(changedUids, vercel), serverDir);
+  return syncToVercel(buildVercelChanges(changedUids, vercel), vercelContext);
+}
+
+/**
+ * The server redeploy the default run does after a changed Preview env: the
+ * bypass is not rotated, and the deployment is the one serving the exact
+ * E2E_API_BASE_URL alias. None when no server value was written.
+ */
+async function redeployServer(vcResults, vercelContext) {
+  return redeployChanged({
+    api: vercelContext.api,
+    projects: { server: vercelContext.project },
+    serverResults: vcResults,
+  });
+}
+
+function assertRedeployed(redeploys) {
+  const failed = redeploys.filter((r) => r.status === "failed");
+  if (failed.length === 0) return;
+  const detail = failed
+    .map((r) => `${r.project} (${r.host}): ${r.reason}`)
+    .join("; ");
+  throw new Error(
+    `Redeploy after the UID change failed: ${detail}. The server Preview env holds the new UIDs; re-run with --reset-passwords.`,
+  );
 }
 
 export async function applyReset({
   env,
-  serverDir,
+  vercelContext,
   firebaseCreds,
   githubVariables,
   github,
@@ -101,7 +127,14 @@ export async function applyReset({
   const { ghResults, varResults } = syncGitHubConfig(githubVariables, github, {
     recoveryNote: RECOVERY_NOTE,
   });
-  const vcResults = syncChangedToVercel(changedUids, vercel, serverDir);
+  const vcResults = await syncChangedToVercel(
+    changedUids,
+    vercel,
+    vercelContext,
+  );
+  const redeploys = await redeployServer(vcResults, vercelContext);
   printSummary(ghResults, vcResults, varResults);
-  return { ghResults, vcResults, varResults };
+  printRedeploys(redeploys);
+  assertRedeployed(redeploys);
+  return { ghResults, vcResults, varResults, redeploys };
 }

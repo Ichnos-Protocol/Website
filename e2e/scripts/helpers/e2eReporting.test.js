@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { printFailedDetails, printSummary } from "./e2eReporting.js";
+import {
+  printBypass,
+  printFailedDetails,
+  printRedeploys,
+  printSummary,
+} from "./e2eReporting.js";
 
 describe("printFailedDetails", () => {
   beforeEach(() => {
@@ -202,5 +207,91 @@ describe("printSummary with GitHub variables", () => {
     );
     expect(resultLine[0]).toContain("https://x.test");
     expect(resultLine[0]).not.toContain("undefined");
+  });
+});
+
+describe("provider sections", () => {
+  const SECRET = "BypassValueThatMustNeverPrint01";
+
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function printed() {
+    return console.log.mock.calls.map((args) => args.join(" ")).join("\n");
+  }
+
+  it("prints an unchanged Preview entry with its masked value", () => {
+    printSummary(
+      [],
+      [{ name: "E2E_USER_UID", status: "unchanged", masked: "****ab12" }],
+    );
+
+    expect(printed()).toMatch(/E2E_USER_UID\s+unchanged\s+\*\*\*\*ab12/);
+  });
+
+  it("prints each redeploy with project, host and outcome", () => {
+    printRedeploys([
+      {
+        project: "ichnos-protocol_server",
+        host: "e2e-api.ichnos-protocol.com",
+        status: "success",
+      },
+      {
+        project: "ichnos-protocol",
+        host: "e2e-client.ichnos-protocol.com",
+        status: "failed",
+        reason: "no deployment serves e2e-client.ichnos-protocol.com",
+      },
+    ]);
+
+    const text = printed();
+    expect(text).toContain("Redeployments:");
+    expect(text).toMatch(
+      /ichnos-protocol_server\s+e2e-api\.ichnos-protocol\.com\s+success/,
+    );
+    expect(text).toMatch(/failed\s+no deployment serves/);
+  });
+
+  it("says when nothing was redeployed", () => {
+    printRedeploys([]);
+
+    expect(printed()).toMatch(/none: no project's Preview env changed/);
+  });
+
+  it("prints the bypass as **** with no tail", () => {
+    printBypass({
+      rotated: true,
+      results: [
+        {
+          project: "ichnos-protocol",
+          confirmed: true,
+          revoked: 1,
+          preserved: 0,
+        },
+        {
+          project: "ichnos-protocol_server",
+          confirmed: false,
+          reason: "the project does not hold the value this run generated",
+        },
+      ],
+      githubConfirmed: false,
+    });
+
+    const text = printed();
+    expect(text).toMatch(/ichnos-protocol\s+\*\*\*\* confirmed/);
+    expect(text).toMatch(/GitHub secret\s+\*\*\*\* not set/);
+    expect(text).not.toContain(SECRET);
+    expect(text).not.toMatch(/\*\*\*\*\w/);
+  });
+
+  it("says when the bypass was not rotated", () => {
+    printBypass({ rotated: false });
+
+    expect(printed()).toMatch(/not rotated by this run/);
   });
 });

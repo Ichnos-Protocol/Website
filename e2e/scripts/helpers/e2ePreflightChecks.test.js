@@ -11,10 +11,17 @@ vi.mock("child_process", () => ({
   execFileSync: vi.fn(),
 }));
 
-const { checkGhAuth, checkVercelAuth, checkVercelProject } =
-  await import("./e2ePreflightChecks.js");
+const {
+  checkGhAuth,
+  checkOptionalVercelProject,
+  checkVercelApiAccess,
+  checkVercelAuth,
+  checkVercelProject,
+} = await import("./e2ePreflightChecks.js");
+const { EXPECTED_PROJECT_NAMES } = await import("./e2eVercelProjects.js");
 
 const SERVER_DIR = "/fake/server";
+const CLIENT_DIR = "/fake/client";
 
 describe("checkGhAuth", () => {
   it("passes when gh auth status succeeds", () => {
@@ -41,6 +48,91 @@ describe("checkVercelAuth", () => {
       throw new Error("not logged in");
     });
     expect(() => checkVercelAuth()).toThrow(/Vercel CLI is not authenticated/);
+  });
+});
+
+describe("checkVercelApiAccess", () => {
+  it("uses the CLI when `vercel api` is supported", () => {
+    expect(checkVercelApiAccess({ supports: () => true, env: {} })).toEqual({
+      mode: "cli",
+    });
+  });
+
+  it("falls back to an exported VERCEL_TOKEN", () => {
+    expect(
+      checkVercelApiAccess({
+        supports: () => false,
+        env: { VERCEL_TOKEN: "tok" },
+      }),
+    ).toEqual({ mode: "token" });
+  });
+
+  it("stops naming VERCEL_TOKEN when neither is available, with no call made", () => {
+    execFileSync.mockClear();
+
+    expect(() =>
+      checkVercelApiAccess({ supports: () => false, env: {} }),
+    ).toThrow(/VERCEL_TOKEN is not set[\s\S]*npm i -g vercel@latest/);
+    expect(execFileSync).not.toHaveBeenCalled();
+  });
+});
+
+describe("session checks name their login command", () => {
+  it.each([
+    [() => checkGhAuth(), /gh auth login/],
+    [() => checkVercelAuth(), /vercel login/],
+  ])("stops with the remediation and makes no write call", (check, pattern) => {
+    execFileSync.mockReset();
+    execFileSync.mockImplementation(() => {
+      throw new Error("not logged in");
+    });
+
+    expect(check).toThrow(pattern);
+    expect(execFileSync).toHaveBeenCalledTimes(1);
+    const [, args] = execFileSync.mock.calls[0];
+    expect(["status", "whoami"]).toContain(args.at(-1));
+  });
+});
+
+describe("checkOptionalVercelProject", () => {
+  it("skips an absent client link file", () => {
+    readFileSync.mockClear();
+    existsSync.mockReturnValue(false);
+
+    expect(() =>
+      checkOptionalVercelProject(CLIENT_DIR, "ichnos-client"),
+    ).not.toThrow();
+    expect(readFileSync).not.toHaveBeenCalled();
+  });
+
+  it("refuses a present client link naming the server project", () => {
+    existsSync.mockReturnValue(true);
+    readFileSync.mockReturnValue(
+      JSON.stringify({
+        projectId: "prj_1",
+        orgId: "team_1",
+        projectName: "ichnos-protocol_server",
+      }),
+    );
+
+    expect(() =>
+      checkOptionalVercelProject(CLIENT_DIR, "ichnos-client"),
+    ).toThrow(/does not match the expected client project 'ichnos-client'/);
+  });
+
+  it("refuses a present client link naming ichnos-protocol", () => {
+    existsSync.mockReturnValue(true);
+    readFileSync.mockReturnValue(
+      JSON.stringify({
+        projectId: "prj_1",
+        orgId: "team_1",
+        projectName: "ichnos-protocol",
+      }),
+    );
+
+    expect(() =>
+      checkOptionalVercelProject(CLIENT_DIR, EXPECTED_PROJECT_NAMES.client),
+    ).toThrow(/does not match the expected client project 'ichnos-client'/);
   });
 });
 

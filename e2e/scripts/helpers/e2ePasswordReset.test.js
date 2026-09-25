@@ -163,6 +163,30 @@ describe("prepareReset", () => {
   });
 });
 
+const SERVER_PROJECT = {
+  projectId: "prj_server",
+  projectName: "ichnos-protocol_server",
+};
+
+// Aliases, deployment metadata and the redeploy POST of one server project.
+function fakeVercelApi({ alias = "e2e-api.ichnos-protocol.com" } = {}) {
+  const request = vi.fn(async (path, { method = "GET" } = {}) => {
+    if (method === "POST") return { id: "dpl_new" };
+    if (path.startsWith("/v4/aliases")) {
+      return { aliases: [{ alias, deploymentId: "dpl_served" }] };
+    }
+    if (path.startsWith("/v13/deployments/")) {
+      return { id: "dpl_served", projectId: "prj_server", target: null };
+    }
+    return {};
+  });
+  return { request, registerSecret: vi.fn() };
+}
+
+function redeployPosts(api) {
+  return api.request.mock.calls.filter(([, opts]) => opts?.method === "POST");
+}
+
 function resetArgs(passwords, order) {
   const env = { ...e2eEnv(), ...passwords };
   const syncGitHubConfig = vi.fn(() => {
@@ -181,7 +205,7 @@ function resetArgs(passwords, order) {
   return {
     ...buildCredentialMaps(env),
     env,
-    serverDir: join(repoRoot, "server"),
+    vercelContext: { api: fakeVercelApi(), project: SERVER_PROJECT },
     credentials: { projectId: PROJECT, clientEmail: "c", privateKey: "k" },
     syncGitHubConfig,
     writeGeneratedFiles,
@@ -265,7 +289,92 @@ describe("applyReset", () => {
         E2E_USER_EMAIL: "e2e-user@ichnos-test.com",
         E2E_USER_UID: "uid-new",
       },
-      args.serverDir,
+      args.vercelContext,
+    );
+  });
+
+  function changeUserUid(args) {
+    upsertUser.mockImplementation(async (_auth, spec) =>
+      spec.uidKey === "E2E_USER_UID" ? "uid-new" : "uid-unchanged",
+    );
+    for (const key of ROLE_KEYS) args.env[`E2E_${key}_UID`] = "uid-unchanged";
+    syncToVercel.mockResolvedValue([
+      { name: "E2E_USER_EMAIL", status: "unchanged", masked: "****" },
+      { name: "E2E_USER_UID", status: "success", masked: "****" },
+    ]);
+  }
+
+  it("redeploys the exact E2E_API_BASE_URL deployment once after a changed UID", async () => {
+    const args = resetArgs(passwords, order);
+    changeUserUid(args);
+
+    const { redeploys } = await applyReset(args);
+
+    const { api } = args.vercelContext;
+    expect(api.request).toHaveBeenCalledWith(
+      "/v4/aliases?projectId=prj_server&limit=100",
+    );
+    expect(api.request).toHaveBeenCalledWith("/v13/deployments/dpl_served");
+    const posts = redeployPosts(api);
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toEqual([
+      "/v13/deployments?forceNew=1",
+      {
+        method: "POST",
+        body: { name: "ichnos-protocol_server", deploymentId: "dpl_served" },
+      },
+    ]);
+    expect(
+      api.request.mock.calls.some(([path]) =>
+        path.endsWith("/protection-bypass"),
+      ),
+    ).toBe(false);
+    expect(redeploys).toEqual([
+      {
+        project: "ichnos-protocol_server",
+        host: "e2e-api.ichnos-protocol.com",
+        status: "success",
+        deploymentId: "dpl_new",
+      },
+    ]);
+  });
+
+  it("redeploys nothing when every UID is unchanged", async () => {
+    const args = resetArgs(passwords, order);
+    for (const key of ROLE_KEYS) args.env[`E2E_${key}_UID`] = `uid-${key}`;
+
+    const { redeploys } = await applyReset(args);
+
+    expect(syncToVercel).not.toHaveBeenCalled();
+    expect(redeploys).toEqual([]);
+    expect(args.vercelContext.api.request).not.toHaveBeenCalled();
+  });
+
+  it("propagates a missing E2E alias to the caller with no redeploy", async () => {
+    const args = resetArgs(passwords, order);
+    args.vercelContext.api = fakeVercelApi({
+      alias: "other.ichnos-protocol.com",
+    });
+    changeUserUid(args);
+
+    await expect(applyReset(args)).rejects.toThrowError(
+      /Redeploy after the UID change failed: ichnos-protocol_server \(e2e-api\.ichnos-protocol\.com\): no deployment serves e2e-api\.ichnos-protocol\.com/,
+    );
+    expect(redeployPosts(args.vercelContext.api)).toHaveLength(0);
+  });
+
+  it("propagates a redeploy failure to the caller", async () => {
+    const args = resetArgs(passwords, order);
+    changeUserUid(args);
+    const { api } = args.vercelContext;
+    const served = api.request.getMockImplementation();
+    api.request.mockImplementation(async (path, opts = {}) => {
+      if (opts.method === "POST") throw new Error("deploy quota exceeded");
+      return served(path, opts);
+    });
+
+    await expect(applyReset(args)).rejects.toThrowError(
+      /Redeploy after the UID change failed: .*deploy quota exceeded/,
     );
   });
 

@@ -209,6 +209,53 @@ describe("buildTestAccountsRecord", () => {
   });
 });
 
+describe("the Vercel-store bypass row", () => {
+  function vercelRow(record) {
+    return record
+      .split("\n")
+      .find(
+        (line) =>
+          line.startsWith("| VERCEL_AUTOMATION_BYPASS_SECRET |") &&
+          line.includes("Vercel Protection Bypass"),
+      );
+  }
+
+  it("stays undated when the bypass was not confirmed", () => {
+    const record = buildTestAccountsRecord(
+      recordInput({ setNow: [], providerSetNow: [] }),
+    );
+
+    expect(vercelRow(record)).toContain("unknown — not set by this run");
+  });
+
+  it("carries this run's date and command once confirmed", () => {
+    const record = buildTestAccountsRecord(
+      recordInput({
+        setNow: ["VERCEL_AUTOMATION_BYPASS_SECRET"],
+        providerSetNow: [
+          { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "vercel" },
+        ],
+      }),
+    );
+
+    expect(vercelRow(record)).toContain(DATE);
+    expect(vercelRow(record)).toContain(COMMAND);
+    expect(lineFor(record, "VERCEL_AUTOMATION_BYPASS_SECRET")).toContain(DATE);
+  });
+
+  it("ignores a provider write recorded for another store", () => {
+    const record = buildTestAccountsRecord(
+      recordInput({
+        providerSetNow: [
+          { name: "VERCEL_AUTOMATION_BYPASS_SECRET", store: "github" },
+        ],
+      }),
+    );
+
+    expect(vercelRow(record)).toContain("unknown — not set by this run");
+  });
+});
+
 describe("confirmedSecretNames", () => {
   it("keeps only the names syncToGitHub confirmed", () => {
     const names = confirmedSecretNames([

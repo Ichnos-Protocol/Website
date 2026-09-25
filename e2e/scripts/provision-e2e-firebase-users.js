@@ -2,11 +2,16 @@
  * E2E Credential Pipeline — Orchestrator. Run from the repository root:
  *
  *   node e2e/scripts/provision-e2e-firebase-users.js [--firebase-env <path>]
- *     Full pipeline: provision the five role accounts in Firebase, generate
- *     e2e/.env.e2e and secrets/test-accounts.md, sync GitHub + Vercel.
+ *     Full pipeline: provision the five role accounts in Firebase, read the
+ *     E2E project's web config (API key, auth domain, storage bucket) from
+ *     Firebase, generate e2e/.env.e2e and secrets/test-accounts.md, sync
+ *     GitHub, set one new automation bypass secret on both Vercel projects
+ *     (and in GitHub once both confirm it), set the all-branches Preview env
+ *     on both projects and redeploy each preview whose env changed.
  *   node e2e/scripts/provision-e2e-firebase-users.js --sync-only
- *     Push e2e/.env.e2e as it stands to GitHub and Vercel without touching
- *     Firebase. The only mode that requires the file; it writes nothing.
+ *     Push e2e/.env.e2e as it stands to GitHub and the Vercel Preview env
+ *     without touching Firebase. It neither reads the web config nor rotates
+ *     the bypass. The only mode that requires the file; it writes nothing.
  *   node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords [--firebase-env <path>]
  *     Re-apply the six pattern passwords to the E2E Firebase project,
  *     regenerate both files and push the passwords to GitHub. An alias for the
@@ -31,6 +36,11 @@
  * pattern password (AGENTS.md "Passwords and secrets"). The provisioning modes
  * check every password in e2e/.env.e2e and in the shell before any provider
  * call, although they write the pattern passwords themselves.
+ *
+ * Vercel traffic goes through the Vercel REST API: the `vercel api`
+ * subcommand over the `vercel login` session, or, when the installed CLI
+ * lacks it, an exported VERCEL_TOKEN. The only manual steps are `gh auth
+ * login`, `vercel login` and, in that last case, the VERCEL_TOKEN export.
  */
 import { existsSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
@@ -51,9 +61,16 @@ import {
 } from "./helpers/e2eSyncGitHub.js";
 import {
   confirmedSecretNames,
+  VERCEL_SETTING,
   writeTestAccountsRecord,
 } from "./helpers/e2eTestAccountsRecord.js";
-import { syncToVercel } from "./helpers/e2eSyncVercel.js";
+import { connectVercelProjects } from "./helpers/e2eVercelProjects.js";
+import { fetchWebConfig } from "./helpers/e2eFirebaseWebConfig.js";
+import {
+  BYPASS_SECRET_NAME,
+  bypassFailures,
+  syncProviders,
+} from "./helpers/e2eProviderSync.js";
 import {
   buildCredentialMaps,
   findMissingGitHubNames,
@@ -73,10 +90,16 @@ import {
   assertEnvFileProjectMatch,
   loadFirebaseCredentials,
 } from "./helpers/e2eFirebaseCredentials.js";
-import { printFailedDetails, printSummary } from "./helpers/e2eReporting.js";
+import {
+  printBypass,
+  printFailedDetails,
+  printRedeploys,
+  printSummary,
+} from "./helpers/e2eReporting.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverDir = resolve(__dirname, "../../server");
+const clientDir = resolve(__dirname, "../../client");
 const repoRoot = resolve(__dirname, "../..");
 const envFilePath = resolve(__dirname, "../.env.e2e");
 const recordPath = resolve(repoRoot, "secrets", "test-accounts.md");
@@ -131,7 +154,7 @@ function assertGitHubConfigComplete(values) {
   if (missing.length === 0) return;
   throw new Error(
     `Missing GitHub config value(s): ${missing.join(", ")}\n` +
-      "e2e/.env.e2e is generated: re-run the provisioning command once the missing values can be supplied (FIREBASE_API_KEY is carried over from an earlier file).",
+      "e2e/.env.e2e is generated: re-run the provisioning command once the missing values can be supplied (the default run reads the web config from Firebase; --reset-passwords carries it over from an earlier file).",
   );
 }
 
@@ -240,10 +263,27 @@ function writeGeneratedFiles({ env, uidMap, firebaseCreds }, run) {
 
 // Rewrites the record from the actual per-secret outcomes: only the names the
 // sync confirmed carry this run's date; the rest keep the prior metadata.
-function refreshRecord(run, ghResults) {
+function refreshRecord(run, ghResults, providerSetNow = []) {
   if (!run?.record) return;
+  run.ghResults = ghResults;
   const setNow = confirmedSecretNames(ghResults);
-  writeTestAccountsRecord(recordPath, { ...run.record, setNow }, { repoRoot });
+  writeTestAccountsRecord(
+    recordPath,
+    { ...run.record, setNow, providerSetNow },
+    { repoRoot },
+  );
+}
+
+// The Vercel-store bypass row is dated only when both projects confirmed the
+// value; the GitHub row only when GitHub confirmed its secret.
+function refreshRecordAfterProviders(run, bypass) {
+  if (!run?.record || !bypass.rotated) return;
+  const bothConfirmed = bypass.confirmedProjects.length === 2;
+  const providerSetNow = bothConfirmed
+    ? [{ name: BYPASS_SECRET_NAME, store: VERCEL_SETTING }]
+    : [];
+  const ghResults = [...(run.ghResults ?? []), ...(bypass.ghResults ?? [])];
+  refreshRecord(run, ghResults, providerSetNow);
 }
 
 function syncGitHubConfig(githubVariables, github, { recoveryNote, run } = {}) {
@@ -264,11 +304,28 @@ function syncGitHubConfig(githubVariables, github, { recoveryNote, run } = {}) {
   return { ghResults, varResults };
 }
 
+// The web config comes from Firebase, not from an earlier file: it replaces
+// the carried-over values in the env file, the GitHub variables and secret.
+async function applyWebConfig(maps, credentials, env) {
+  const { getTestApp } = await import("./helpers/firebaseTestSetup.js");
+  const webConfig = await fetchWebConfig({
+    app: getTestApp(credentials),
+    projectId: credentials.projectId,
+  });
+  Object.assign(env, webConfig);
+  maps.githubVariables.FIREBASE_AUTH_DOMAIN = webConfig.FIREBASE_AUTH_DOMAIN;
+  maps.githubVariables.FIREBASE_STORAGE_BUCKET =
+    webConfig.FIREBASE_STORAGE_BUCKET;
+  maps.github.FIREBASE_API_KEY = webConfig.FIREBASE_API_KEY;
+  console.log("[firebase] web config read from the E2E project");
+}
+
 async function provisionFullPipeline(maps, credentials, env, run) {
   console.log("\n=== Firebase Provisioning ===");
   const { provisionFirebaseUsers } =
     await import("./helpers/firebaseTestSetup.js");
   const uidMap = await provisionFirebaseUsers(maps.firebaseCreds, credentials);
+  await applyWebConfig(maps, credentials, env);
   writeGeneratedFiles({ ...maps, env, uidMap }, run);
   for (const [key, uid] of Object.entries(uidMap)) {
     maps.vercel[key] = uid;
@@ -280,6 +337,41 @@ function exitOnVercelFailure(vcResults) {
   if (!vcResults.some((r) => r.status === "failed")) return;
   printFailedDetails("Vercel", vcResults);
   process.exit(1);
+}
+
+function redeployFailures(redeploys) {
+  return redeploys
+    .filter((r) => r.status === "failed")
+    .map((r) => ({
+      name: `redeploy ${r.project}`,
+      status: "failed",
+      error: r.reason,
+    }));
+}
+
+async function syncVercel(vercelContext, { env, vercel, syncOnly, run }) {
+  console.log("\n=== Vercel Sync ===");
+  const outcome = await syncProviders({
+    ...vercelContext,
+    client: { VITE_FIREBASE_API_KEY: env.FIREBASE_API_KEY },
+    vercel,
+    setGitHubSecrets: (secrets) => syncToGitHub(secrets, repoRoot),
+    rotateBypass: !syncOnly,
+  });
+  refreshRecordAfterProviders(run, outcome.bypass);
+  return outcome;
+}
+
+function reportVercel({ ghResults, varResults }, outcome) {
+  printSummary(ghResults, outcome.envResults, varResults);
+  printRedeploys(outcome.redeploys);
+  printBypass(outcome.bypass);
+  console.log("");
+  exitOnVercelFailure([
+    ...outcome.envResults,
+    ...redeployFailures(outcome.redeploys),
+    ...bypassFailures(outcome.bypass),
+  ]);
 }
 
 function modeLabel(syncOnly, resetPasswords) {
@@ -316,12 +408,19 @@ export async function main(options = parseCliOptions(process.argv)) {
   // Sync-only already holds every UID: report missing names before preflight runs `gh`.
   if (syncOnly) assertGitHubConfigComplete({ ...githubVariables, ...github });
 
-  runPreflight({
+  const { vercelAccess } = runPreflight({
     syncOnly,
     envFilePath,
     env,
     serverDir,
+    clientDir,
     firebaseCredentials: credentials,
+  });
+  // Resolved once, read-only, before any provider write.
+  const vercelContext = await connectVercelProjects({
+    access: vercelAccess,
+    serverDir,
+    clientDir,
   });
   console.log("[preflight] all checks passed");
 
@@ -330,7 +429,10 @@ export async function main(options = parseCliOptions(process.argv)) {
     const { vcResults } = await applyReset({
       ...maps,
       env,
-      serverDir,
+      vercelContext: {
+        api: vercelContext.api,
+        project: vercelContext.projects.server,
+      },
       credentials,
       syncGitHubConfig: (variables, secrets, opts) =>
         syncGitHubConfig(variables, secrets, { ...opts, run }),
@@ -344,21 +446,22 @@ export async function main(options = parseCliOptions(process.argv)) {
 
   if (!syncOnly) await provisionFullPipeline(maps, credentials, env, run);
 
-  const { ghResults, varResults } = syncGitHubConfig(
+  const gitHub = syncGitHubConfig(
     githubVariables,
     github,
     syncOnly ? {} : { recoveryNote: RECOVERY_NOTE, run },
   );
 
-  console.log("\n=== Vercel Preview Sync ===");
-  const vcResults = syncToVercel(vercel, serverDir);
-
-  printSummary(ghResults, vcResults, varResults);
-  exitOnVercelFailure(vcResults);
-
-  console.log(
-    "[reminder] Vercel Preview env changes require a new deployment or redeploy.",
-  );
+  const outcome = await syncVercel(vercelContext, {
+    env,
+    vercel,
+    syncOnly,
+    run,
+  });
+  reportVercel(gitHub, outcome);
+  if (syncOnly) {
+    console.log("[bypass] not rotated: --sync-only never rotates the bypass.");
+  }
   console.log("[done] E2E credential pipeline complete.");
 }
 
