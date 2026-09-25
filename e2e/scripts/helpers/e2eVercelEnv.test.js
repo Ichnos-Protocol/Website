@@ -27,10 +27,11 @@ const OVERRIDES = [PRODUCTION, STAGING, MAIN, CUSTOM];
 
 // envs is one page, or { first, <cursor>: page } for a paginated list. A
 // decrypted entry is a value, or the whole GET body when it is an object.
-function fakeApi(envs, decrypted = {}) {
+// written maps a write method (POST, PATCH) to its response body.
+function fakeApi(envs, decrypted = {}, written = {}) {
   const pages = Array.isArray(envs) ? { first: { envs } } : envs;
   const request = vi.fn(async (path, { method = "GET" } = {}) => {
-    if (method !== "GET") return {};
+    if (method !== "GET") return written[method] ?? {};
     const [base, query] = path.split("?");
     if (base.endsWith("/env")) {
       return pages[new URLSearchParams(query).get("until") ?? "first"];
@@ -183,14 +184,32 @@ describe("setPreviewEnv outcome metadata", () => {
     return setPreviewEnv({ api, projectId: "prj_s", key, value });
   }
 
-  it("reports a create as created, with no timestamp", async () => {
+  it("reports a create as created, with no timestamp when none is returned", async () => {
     const result = await run(fakeApi([]));
 
     expect(result).toMatchObject({ status: "success", operation: "created" });
-    expect(result.updatedAt).toBeUndefined();
+    expect(result).not.toHaveProperty("updatedAt");
   });
 
-  it("reports a changed value as updated, with no timestamp", async () => {
+  it.each([
+    ["an object", { created: { id: "env_new", updatedAt: EPOCH_MS } }],
+    ["an array", { created: [{ id: "env_new", updatedAt: String(EPOCH_MS) }] }],
+  ])(
+    "keeps the create response's updatedAt when created is %s",
+    async (_, body) => {
+      const result = await run(fakeApi([], {}, { POST: body }));
+
+      expect(result).toEqual({
+        name: KEY,
+        masked: expect.any(String),
+        status: "success",
+        operation: "created",
+        updatedAt: EPOCH_ISO,
+      });
+    },
+  );
+
+  it("reports a changed value as updated, with no timestamp when none is returned", async () => {
     const api = fakeApi([entry({ updatedAt: EPOCH_MS })], {
       env_all: { value: "old", updatedAt: EPOCH_MS },
     });
@@ -198,7 +217,44 @@ describe("setPreviewEnv outcome metadata", () => {
     const result = await run(api);
 
     expect(result).toMatchObject({ status: "success", operation: "updated" });
-    expect(result.updatedAt).toBeUndefined();
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("keeps the update response's updatedAt and no other provider field", async () => {
+    const patched = {
+      id: "env_all",
+      key: KEY,
+      value: "uid-value",
+      gitBranch: null,
+      target: ["preview"],
+      updatedAt: EPOCH_MS,
+    };
+    const api = fakeApi(
+      [entry()],
+      { env_all: { value: "old" } },
+      { PATCH: patched },
+    );
+
+    const result = await run(api);
+
+    expect(result).toEqual({
+      name: KEY,
+      masked: expect.any(String),
+      status: "success",
+      operation: "updated",
+      updatedAt: EPOCH_ISO,
+    });
+    expect(JSON.stringify(result)).not.toContain("env_all");
+  });
+
+  it("drops an ambiguous write-response timestamp", async () => {
+    const api = fakeApi(
+      [],
+      {},
+      { POST: { created: { updatedAt: "9/20/2026" } } },
+    );
+
+    expect(await run(api)).not.toHaveProperty("updatedAt");
   });
 
   it("reports an unchanged value with the decrypted entry's updatedAt", async () => {
@@ -231,6 +287,21 @@ describe("setPreviewEnv outcome metadata", () => {
     expect(result.operation).toBe("unchanged");
     expect(result.updatedAt).toBeUndefined();
   });
+
+  // Without a timestamp, clientApiKeyProvenance leaves the record row unknown.
+  it.each(["9/20/2026", "Sep 20 2026", "2026-09-20T08:15:00"])(
+    "leaves an unchanged value undated for the ambiguous %s",
+    async (raw) => {
+      const api = fakeApi([entry()], {
+        env_all: { value: "uid-value", updatedAt: raw },
+      });
+
+      const result = await run(api);
+
+      expect(result.operation).toBe("unchanged");
+      expect(result.updatedAt).toBeUndefined();
+    },
+  );
 
   it("carries no operation or timestamp on a failure", async () => {
     const api = fakeApi([entry(), entry({ id: "env_all_2" })]);
@@ -270,8 +341,10 @@ describe("normalizeUpdatedAt", () => {
     expect(normalizeUpdatedAt(String(MS))).toBe(ISO);
   });
 
-  it("keeps a string Date parses, as ISO", () => {
+  it("keeps an ISO 8601 string with a zone, as UTC ISO", () => {
     expect(normalizeUpdatedAt(ISO)).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T08:15:00Z")).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T10:15:00.000+02:00")).toBe(ISO);
   });
 
   it.each([undefined, null, "", "  ", "not a date", NaN, Infinity, {}])(
@@ -280,6 +353,22 @@ describe("normalizeUpdatedAt", () => {
       expect(normalizeUpdatedAt(raw)).toBeUndefined();
     },
   );
+
+  // Each of these parses in Node's Date, so permissive parsing would have
+  // turned it into a trusted provenance date.
+  it.each([
+    "9/20/2026",
+    "20/09/2026 08:15",
+    "Sep 20 2026",
+    "Sun, 20 Sep 2026 08:15:00 GMT",
+    "2026-09-20",
+    "2026-09-20T08:15:00",
+    "2026-09-20 08:15:00Z",
+    "2026-02-30T08:15:00Z",
+    " 2026-09-20T08:15:00Z",
+  ])("yields undefined for the ambiguous or non-standard %s", (raw) => {
+    expect(normalizeUpdatedAt(raw)).toBeUndefined();
+  });
 });
 
 describe("findPreviewEntry pagination", () => {

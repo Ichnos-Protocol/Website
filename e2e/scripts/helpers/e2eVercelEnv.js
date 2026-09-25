@@ -3,9 +3,9 @@
  * branch, no custom environment, not Production. Branch-scoped overrides and
  * Production entries are never selected, read or written. An unchanged value
  * is not written. A result carries non-secret outcome metadata only: the
- * operation and, for an unchanged value, the provider's updatedAt. A key whose
- * name marks it as a secret is fully masked at the source, so no consumer can
- * print a tail of its value.
+ * operation and the provider's updatedAt wherever the read, create or update
+ * response supplies one. A key whose name marks it as a secret is fully
+ * masked at the source, so no consumer can print a tail of its value.
  */
 import { maskValue } from "./e2eEnvFile.js";
 
@@ -15,18 +15,53 @@ function maskFor(key, value) {
   return SECRET_KEY_NAME.test(key) ? "****" : maskValue(value);
 }
 
+// ISO 8601 date-time with an explicit zone. A zoneless or locale-style string
+// is ambiguous, so it is refused rather than handed to permissive Date parsing.
+const ISO_8601 =
+  /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d)(?:\.\d{1,9})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+function parseIso8601(raw) {
+  const match = ISO_8601.exec(raw);
+  if (!match) return undefined;
+  const [year, month, day] = match.slice(1, 4).map(Number);
+  const calendar = new Date(Date.UTC(year, month - 1, day));
+  const realDay =
+    calendar.getUTCFullYear() === year &&
+    calendar.getUTCMonth() === month - 1 &&
+    calendar.getUTCDate() === day;
+  return realDay ? new Date(raw) : undefined;
+}
+
 /**
- * The provider timestamp as ISO, or undefined. A number or all-digit string
- * is epoch milliseconds; another string is kept when Date parses it.
+ * The provider timestamp as ISO, or undefined. A finite number or all-digit
+ * string is epoch milliseconds; another string must be ISO 8601 with a zone.
  */
 export function normalizeUpdatedAt(raw) {
   let date;
-  if (typeof raw === "number") date = new Date(raw);
+  if (typeof raw === "number" && Number.isFinite(raw)) date = new Date(raw);
   else if (typeof raw === "string" && /^\d+$/.test(raw)) {
     date = new Date(Number(raw));
-  } else if (typeof raw === "string" && raw.trim()) date = new Date(raw);
+  } else if (typeof raw === "string") date = parseIso8601(raw);
   if (!date || !Number.isFinite(date.getTime())) return undefined;
   return date.toISOString();
+}
+
+// Only the normalized timestamp leaves a write response; ids, values,
+// branches and every other provider field are dropped here.
+function writeOutcome(operation, raw) {
+  const updatedAt = normalizeUpdatedAt(raw);
+  return {
+    status: "success",
+    operation,
+    ...(updatedAt ? { updatedAt } : {}),
+  };
+}
+
+// The v10 create response wraps the entry in created, as an object or array.
+function createdUpdatedAt(response) {
+  const created = response?.created;
+  const first = Array.isArray(created) ? created[0] : created;
+  return first?.updatedAt ?? response?.updatedAt;
 }
 
 // Vercel omits gitBranch on an entry that applies to every branch; target and
@@ -99,15 +134,15 @@ export async function findPreviewEntry({ api, projectId, key }) {
 }
 
 async function createPreviewEntry(api, projectId, key, value) {
-  await api.request(envPath(projectId, "v10"), {
+  const response = await api.request(envPath(projectId, "v10"), {
     method: "POST",
     body: { key, value, type: "encrypted", target: ["preview"] },
   });
-  return { status: "success", operation: "created" };
+  return writeOutcome("created", createdUpdatedAt(response));
 }
 
-// The timestamp of an unchanged value comes only from provider metadata; a
-// write is dated by the run itself, so none is read for it.
+// An unchanged value takes its timestamp from the decrypted or listed entry;
+// a write takes it from the PATCH response, when the provider supplies one.
 async function updatePreviewEntry(api, projectId, entry, value) {
   const id = encodeURIComponent(entry.id);
   const current = await api.request(envPath(projectId, "v1", `/${id}`));
@@ -118,11 +153,11 @@ async function updatePreviewEntry(api, projectId, entry, value) {
       updatedAt: normalizeUpdatedAt(current?.updatedAt ?? entry?.updatedAt),
     };
   }
-  await api.request(envPath(projectId, "v9", `/${id}`), {
+  const response = await api.request(envPath(projectId, "v9", `/${id}`), {
     method: "PATCH",
     body: { value },
   });
-  return { status: "success", operation: "updated" };
+  return writeOutcome("updated", response?.updatedAt);
 }
 
 /**
