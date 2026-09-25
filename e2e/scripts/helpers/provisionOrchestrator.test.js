@@ -185,11 +185,22 @@ function expectPatternRefusal(error, name, expected) {
 }
 
 const CONFIRMED_BYPASS = {
-  rotated: true,
+  attempted: true,
+  generated: true,
+  steadyState: false,
   results: [
-    { project: "ichnos-client", confirmed: true, revoked: 1, preserved: 0 },
+    {
+      project: "ichnos-client",
+      heldBefore: false,
+      added: true,
+      confirmed: true,
+      revoked: 1,
+      preserved: 0,
+    },
     {
       project: "ichnos-protocol_server",
+      heldBefore: false,
+      added: true,
       confirmed: true,
       revoked: 1,
       preserved: 0,
@@ -197,6 +208,9 @@ const CONFIRMED_BYPASS = {
   ],
   confirmedProjects: ["ichnos-client", "ichnos-protocol_server"],
   githubConfirmed: true,
+  revocationComplete: true,
+  complete: true,
+  failure: null,
   ghResults: [
     {
       name: "VERCEL_AUTOMATION_BYPASS_SECRET",
@@ -215,8 +229,8 @@ function mockSuccessfulSync() {
   syncToGitHub.mockReturnValue([]);
   syncVariablesToGitHub.mockReturnValue([]);
   syncToVercel.mockReturnValue([]);
-  syncProviders.mockImplementation(async ({ rotateBypass }) =>
-    providerOutcome(rotateBypass ? CONFIRMED_BYPASS : { rotated: false }),
+  syncProviders.mockImplementation(async ({ converge }) =>
+    providerOutcome(converge ? CONFIRMED_BYPASS : { attempted: false }),
   );
 }
 
@@ -602,6 +616,37 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     );
   });
 
+  it("leaves the Vercel bypass row undated after a steady-state run while dating the GitHub row", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    syncToGitHub.mockImplementation((secrets) =>
+      Object.keys(secrets).map((name) => ({ name, status: "success" })),
+    );
+    const held = { heldBefore: true, added: false, confirmed: true };
+    syncProviders.mockResolvedValue(
+      providerOutcome({
+        ...CONFIRMED_BYPASS,
+        generated: false,
+        steadyState: true,
+        results: [
+          { ...held, project: "ichnos-client", revoked: 0, preserved: 0 },
+          {
+            ...held,
+            project: "ichnos-protocol_server",
+            revoked: 0,
+            preserved: 0,
+          },
+        ],
+      }),
+    );
+
+    await main({});
+
+    const last = writeTestAccountsRecord.mock.calls.at(-1)[1];
+    expect(last.providerSetNow).toEqual([]);
+    expect(last.setNow).toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
+  });
+
   it("still refuses a missing file in sync-only mode", async () => {
     existsSync.mockReturnValue(false);
 
@@ -720,7 +765,7 @@ describe("web config and provider sync", () => {
     expect(args.client).toEqual({
       VITE_FIREBASE_API_KEY: FRESH_WEB_CONFIG.FIREBASE_API_KEY,
     });
-    expect(args.rotateBypass).toBe(true);
+    expect(args.converge).toBe(true);
     expect(args.projects).toBe(VERCEL_CONTEXT.projects);
   });
 
@@ -750,7 +795,7 @@ describe("web config and provider sync", () => {
     expect(syncProviders).not.toHaveBeenCalled();
   });
 
-  it("neither reads the web config nor rotates the bypass in sync-only mode", async () => {
+  it("neither reads the web config nor converges the bypass in sync-only mode", async () => {
     readEnvFile.mockReturnValue({ ...completeEnv(), ...UIDS });
     mockSuccessfulSync();
     const output = captureOutput();
@@ -760,35 +805,45 @@ describe("web config and provider sync", () => {
     expect(fetchWebConfig).not.toHaveBeenCalled();
     expect(getTestApp).not.toHaveBeenCalled();
     const [args] = syncProviders.mock.calls[0];
-    expect(args.rotateBypass).toBe(false);
+    expect(args.converge).toBe(false);
     expect(args.client).toEqual({
       VITE_FIREBASE_API_KEY: WEB_CONFIG.FIREBASE_API_KEY,
     });
-    expect(output()).toMatch(/not rotated/);
+    expect(output()).toMatch(/not converged/);
   });
 
   it("exits non-zero and leaves the bypass rows undated when a project is unconfirmed", async () => {
     readEnvFile.mockReturnValue(completeEnv());
     mockSuccessfulSync();
     const unconfirmed = {
-      rotated: true,
+      attempted: true,
+      generated: true,
+      steadyState: false,
       results: [
         {
           project: "ichnos-client",
+          heldBefore: false,
+          added: true,
           confirmed: false,
-          reason: "the project does not hold the value this run generated",
+          reason: "the project does not hold the value this run selected",
           revoked: 0,
           preserved: 0,
         },
         {
           project: "ichnos-protocol_server",
-          confirmed: true,
+          heldBefore: false,
+          added: false,
+          confirmed: false,
+          reason: "not attempted: another project failed first",
           revoked: 0,
           preserved: 0,
         },
       ],
-      confirmedProjects: ["ichnos-protocol_server"],
+      confirmedProjects: [],
       githubConfirmed: false,
+      revocationComplete: false,
+      complete: false,
+      failure: { stage: "add", reason: "a project does not hold the value" },
     };
     syncProviders.mockResolvedValue(providerOutcome(unconfirmed));
     const output = captureOutput();

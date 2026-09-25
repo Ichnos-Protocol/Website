@@ -5,13 +5,15 @@
  *     Full pipeline: provision the five role accounts in Firebase, read the
  *     E2E project's web config (API key, auth domain, storage bucket) from
  *     Firebase, generate e2e/.env.e2e and secrets/test-accounts.md, sync
- *     GitHub, set one new automation bypass secret on both Vercel projects
- *     (and in GitHub once both confirm it), set the all-branches Preview env
- *     on both projects and redeploy each preview whose env changed.
+ *     GitHub, converge the automation bypass on both Vercel projects (reuse
+ *     the value both already share, generate one only when none is shared,
+ *     set it in GitHub once both confirm it, and revoke older keys only after
+ *     GitHub confirms), set the all-branches Preview env on both projects and
+ *     redeploy each preview whose env changed.
  *   node e2e/scripts/provision-e2e-firebase-users.js --sync-only
  *     Push e2e/.env.e2e as it stands to GitHub and the Vercel Preview env
- *     without touching Firebase. It neither reads the web config nor rotates
- *     the bypass. The only mode that requires the file; it writes nothing.
+ *     without touching Firebase. It neither reads the web config nor
+ *     converges the bypass. The only mode that requires the file; it writes nothing.
  *   node e2e/scripts/provision-e2e-firebase-users.js --reset-passwords [--firebase-env <path>]
  *     Re-apply the six pattern passwords to the E2E Firebase project,
  *     regenerate both files and push the passwords to GitHub. An alias for the
@@ -274,12 +276,14 @@ function refreshRecord(run, ghResults, providerSetNow = []) {
   );
 }
 
-// The Vercel-store bypass row is dated only when both projects confirmed the
-// value; the GitHub row only when GitHub confirmed its secret.
+// The Vercel-store bypass row is dated only when this run wrote the value to
+// at least one project and the convergence completed (both projects, GitHub,
+// revocation). A steady-state run writes nothing to Vercel, so the row keeps
+// its prior provenance. The GitHub row is dated when GitHub confirmed.
 function refreshRecordAfterProviders(run, bypass) {
-  if (!run?.record || !bypass.rotated) return;
-  const bothConfirmed = bypass.confirmedProjects.length === 2;
-  const providerSetNow = bothConfirmed
+  if (!run?.record || !bypass.attempted) return;
+  const wroteVercel = bypass.complete && bypass.results.some((r) => r.added);
+  const providerSetNow = wroteVercel
     ? [{ name: BYPASS_SECRET_NAME, store: VERCEL_SETTING }]
     : [];
   const ghResults = [...(run.ghResults ?? []), ...(bypass.ghResults ?? [])];
@@ -356,7 +360,7 @@ async function syncVercel(vercelContext, { env, vercel, syncOnly, run }) {
     client: { VITE_FIREBASE_API_KEY: env.FIREBASE_API_KEY },
     vercel,
     setGitHubSecrets: (secrets) => syncToGitHub(secrets, repoRoot),
-    rotateBypass: !syncOnly,
+    converge: !syncOnly,
   });
   refreshRecordAfterProviders(run, outcome.bypass);
   return outcome;
@@ -460,7 +464,9 @@ export async function main(options = parseCliOptions(process.argv)) {
   });
   reportVercel(gitHub, outcome);
   if (syncOnly) {
-    console.log("[bypass] not rotated: --sync-only never rotates the bypass.");
+    console.log(
+      "[bypass] not converged: --sync-only never touches the bypass.",
+    );
   }
   console.log("[done] E2E credential pipeline complete.");
 }
