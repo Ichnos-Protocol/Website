@@ -84,9 +84,9 @@ describe("domainMismatch", () => {
       "the response names another domain, and it follows branch main",
     ],
     [
-      "an absent redirect",
+      "an absent redirect field",
       { name: CLIENT_HOST, gitBranch: "main" },
-      "the response omits the redirect field, and it follows branch main",
+      null,
     ],
     [
       "a false redirect",
@@ -237,21 +237,20 @@ describe("assertE2EDomainsFollowMain", () => {
     expect(error.message).toMatch(/Nothing was changed\.$/);
   });
 
-  it("refuses a domain body that omits the redirect field", async () => {
+  it("accepts domain bodies that omit the redirect field", async () => {
     const api = fakeApi({
-      ...healthy(),
       [CLIENT_HOST]: { name: CLIENT_HOST, gitBranch: "main" },
+      [SERVER_HOST]: { name: SERVER_HOST, gitBranch: "main" },
     });
 
-    const error = await assertE2EDomainsFollowMain({
-      api,
-      projects: PROJECTS,
-    }).catch((err) => err);
+    await expect(
+      assertE2EDomainsFollowMain({ api, projects: PROJECTS }),
+    ).resolves.toBeUndefined();
 
-    expect(error.message).toContain(CLIENT_HOST);
-    expect(error.message).toContain("omits the redirect field");
-    expect(error.message).toMatch(/Nothing was changed\.$/);
-    expect(api.request).toHaveBeenCalledTimes(1);
+    expect(api.request.mock.calls).toEqual([
+      [`/v9/projects/prj_c/domains/${CLIENT_HOST}`],
+      [`/v9/projects/prj_s/domains/${SERVER_HOST}`],
+    ]);
   });
 
   it("says a redirected domain follows no branch when gitBranch is absent", async () => {

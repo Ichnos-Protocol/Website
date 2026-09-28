@@ -1,8 +1,9 @@
 /**
  * The pre-write check of the two E2E domains. Each domain is read through the
  * already-pinned Vercel API with one GET and must name its host, follow
- * branch `main` and carry an explicit `redirect: null`; anything else,
- * including a body that omits `redirect` or a provider error, stops the run before any Firebase, GitHub or Vercel write. A refusal
+ * branch `main` and have a `redirect` field that is absent or `null`; any
+ * other redirect value, or a provider error, stops the run before any
+ * Firebase, GitHub or Vercel write. A refusal
  * names only the host, the project and the branch found, never a value.
  */
 import {
@@ -17,12 +18,8 @@ export function domainPath(projectId, host) {
   return `/v9/projects/${encodeURIComponent(projectId)}/domains/${encodeURIComponent(host)}`;
 }
 
-function hasRedirectField(domain) {
-  return Object.hasOwn(domain, "redirect");
-}
-
 function hasNoRedirect(domain) {
-  return domain.redirect === null;
+  return domain.redirect == null;
 }
 
 function foundBranch(domain) {
@@ -32,7 +29,6 @@ function foundBranch(domain) {
 
 function bodyProblem(domain, host) {
   if (domain?.name !== host) return "the response names another domain";
-  if (!hasRedirectField(domain)) return "the response omits the redirect field";
   if (!hasNoRedirect(domain)) return "it redirects";
   return null;
 }
@@ -43,8 +39,8 @@ function bodyProblem(domain, host) {
  * the body follows, or says it follows none. host is already normalized, and
  * the response name must equal it character for character: a URL, a path, a
  * port, another case or a trailing dot names another domain. redirect must be
- * present and exactly null: a body without the field is malformed and
- * refused, and any other value, falsy or not, counts as a redirect.
+ * absent or exactly null; any other value, falsy or not, counts as a
+ * redirect.
  */
 export function domainMismatch(domain, host) {
   const problem = bodyProblem(domain, host);

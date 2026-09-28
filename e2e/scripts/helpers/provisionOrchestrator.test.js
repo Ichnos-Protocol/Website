@@ -1382,7 +1382,7 @@ describe("E2E domain check before any write", () => {
     },
   );
 
-  it("stops before any write when a domain response omits the redirect field", async () => {
+  it("passes the domain check when a domain response omits the redirect field", async () => {
     const actual = await vi.importActual("./e2eVercelDomains.js");
     onTestFinished(() => VERCEL_CONTEXT.api.request.mockReset());
     readEnvFile.mockReturnValue(completeEnv());
@@ -1397,17 +1397,13 @@ describe("E2E domain check before any write", () => {
     );
     const output = captureOutput();
 
-    const error = await main({}).catch((err) => err);
+    await main({});
 
-    expect(error.message).toContain(HOST);
-    expect(error.message).toContain("omits the redirect field");
-    expect(error.message).toMatch(/Nothing was changed\.$/);
     expect(VERCEL_CONTEXT.api.request.mock.calls).toEqual([
       ["/v9/projects/prj_client/domains/e2e-client.ichnos-protocol.com"],
       [`/v9/projects/prj_server/domains/${HOST}`],
     ]);
     expect(VERCEL_CONTEXT.api.registerSecret).not.toHaveBeenCalled();
-    expectNoWrite();
-    expect(output()).not.toMatch(/\[preflight\] all checks passed/);
+    expect(output()).toMatch(/\[preflight\] all checks passed/);
   });
 });
