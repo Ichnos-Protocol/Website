@@ -13,11 +13,16 @@ export function printFailedDetails(platform, results) {
   console.error("Fix the issue(s) above and re-run.");
 }
 
+// A Preview row carries its scope; a GitHub row has none and prints as is.
+function rowLabel(r) {
+  return r.scope ? `${r.name} (${r.scope})` : r.name;
+}
+
 function printSection(label, results) {
   console.log(`\n  ${label}:`);
   for (const r of results) {
     console.log(
-      `    ${r.name.padEnd(30)} ${r.status.padEnd(10)} ${r.masked ?? r.value}`,
+      `    ${rowLabel(r).padEnd(30)} ${r.status.padEnd(10)} ${r.masked ?? r.value}`,
     );
     if (r.status === "failed" && r.error) {
       const sanitized = r.error.trim().split("\n")[0].slice(0, 200);
@@ -39,7 +44,7 @@ export function printSummary(ghResults, vcResults, varResults = []) {
 export function printRedeploys(redeploys = []) {
   console.log("\n  Redeployments:");
   if (redeploys.length === 0) {
-    console.log("    none: no project's Preview env changed");
+    console.log("    none: no project's main Preview value changed");
     return;
   }
   for (const r of redeploys) {

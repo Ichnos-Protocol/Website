@@ -121,6 +121,37 @@ describe("printSummary", () => {
     expect(allOutput).toContain("E2E Credential Sync Summary");
   });
 
+  it("prints a Preview row's scope and a scopeless GitHub row as before", () => {
+    printSummary(
+      [{ name: "E2E_ADMIN_EMAIL", status: "success", masked: "a***@t.com" }],
+      [
+        {
+          name: "E2E_ADMIN_UID",
+          scope: "all-branches",
+          status: "unchanged",
+          masked: "****-uid",
+        },
+        {
+          name: "E2E_ADMIN_UID",
+          scope: "main",
+          status: "success",
+          masked: "****-uid",
+        },
+      ],
+    );
+
+    const lines = console.log.mock.calls.map((c) => c[0]);
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_EMAIL".padEnd(30)} ${"success".padEnd(10)} a***@t.com`,
+    );
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_UID (all-branches)".padEnd(30)} ${"unchanged".padEnd(10)} ****-uid`,
+    );
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_UID (main)".padEnd(30)} ${"success".padEnd(10)} ****-uid`,
+    );
+  });
+
   it("renders each result with name, status, and masked value", () => {
     printSummary(
       [{ name: "E2E_ADMIN_EMAIL", status: "ok", masked: "a***@t.com" }],
@@ -282,7 +313,7 @@ describe("provider sections", () => {
   it("says when nothing was redeployed", () => {
     printRedeploys([]);
 
-    expect(printed()).toMatch(/none: no project's Preview env changed/);
+    expect(printed()).toMatch(/none: no project's main Preview value changed/);
   });
 
   it("prints the bypass as **** with no tail", () => {

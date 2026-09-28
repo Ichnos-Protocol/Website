@@ -74,22 +74,36 @@ function fakeVercel({
     }
     if (method === "GET") return { protectionBypass: { ...bypass[id] } };
     if (method === "POST" && path.endsWith("/env")) {
-      return { created: { id: `env_${body.key}`, key: body.key } };
+      return {
+        created: {
+          id: `env_${body.key}`,
+          key: body.key,
+          ...(body.gitBranch && { gitBranch: body.gitBranch }),
+        },
+      };
     }
     return {};
   });
   return { request, registerSecret: vi.fn(), bypass };
 }
 
-function previewEntry(key, value) {
+function previewEntry(key, value, gitBranch) {
   return {
-    id: `env_${key}`,
+    id: gitBranch ? `env_${key}_${gitBranch}` : `env_${key}`,
     key,
     value,
     target: ["preview"],
     customEnvironmentIds: [],
+    ...(gitBranch && { gitBranch }),
   };
 }
+
+// The same value on the all-branches and the main Preview scope.
+function bothScopes(key, value) {
+  return [previewEntry(key, value), previewEntry(key, value, "main")];
+}
+
+const HELD_BYPASS = { prj_c: automation(HELD), prj_s: automation(HELD) };
 
 function githubSuccess() {
   return vi.fn((secrets) =>
@@ -575,25 +589,31 @@ describe("syncProviders: a zero-exit error envelope", () => {
 describe("syncProviders: env and redeploy", () => {
   it("redeploys only the project whose env changed", async () => {
     const api = fakeVercel({
-      bypass: { prj_c: automation(HELD), prj_s: automation(HELD) },
+      bypass: HELD_BYPASS,
       env: {
-        prj_c: [previewEntry("VITE_FIREBASE_API_KEY", API_KEY)],
-        prj_s: [previewEntry("E2E_USER_EMAIL", "e2e-user@ichnos-test.com")],
+        prj_c: bothScopes("VITE_FIREBASE_API_KEY", API_KEY),
+        prj_s: bothScopes("E2E_USER_EMAIL", "e2e-user@ichnos-test.com"),
       },
     });
 
     const outcome = await run(api);
 
-    expect(outcome.envResults.map((r) => [r.name, r.status])).toEqual([
-      ["VITE_FIREBASE_API_KEY", "unchanged"],
-      ["E2E_USER_EMAIL", "unchanged"],
-      ["E2E_USER_UID", "success"],
+    expect(outcome.envResults.map((r) => [r.name, r.scope, r.status])).toEqual([
+      ["VITE_FIREBASE_API_KEY", "all-branches", "unchanged"],
+      ["VITE_FIREBASE_API_KEY", "main", "unchanged"],
+      ["E2E_USER_EMAIL", "all-branches", "unchanged"],
+      ["E2E_USER_EMAIL", "main", "unchanged"],
+      ["E2E_USER_UID", "all-branches", "success"],
+      ["E2E_USER_UID", "main", "success"],
     ]);
     expect(outcome.clientResults.map((r) => r.name)).toEqual([
+      "VITE_FIREBASE_API_KEY",
       "VITE_FIREBASE_API_KEY",
     ]);
     expect(outcome.serverResults.map((r) => r.name)).toEqual([
       "E2E_USER_EMAIL",
+      "E2E_USER_EMAIL",
+      "E2E_USER_UID",
       "E2E_USER_UID",
     ]);
     expect(outcome.envResults).toEqual([
@@ -608,6 +628,57 @@ describe("syncProviders: env and redeploy", () => {
         deploymentId: "dpl_new",
       },
     ]);
+  });
+
+  it("never redeploys for writes on the all-branches scope alone", async () => {
+    const api = fakeVercel({
+      bypass: HELD_BYPASS,
+      env: {
+        prj_c: [previewEntry("VITE_FIREBASE_API_KEY", "old", "main")],
+        prj_s: [
+          previewEntry("E2E_USER_EMAIL", "e2e-user@ichnos-test.com", "main"),
+          previewEntry("E2E_USER_UID", "uid-1", "main"),
+        ],
+      },
+    });
+
+    const outcome = await run(api);
+
+    const written = outcome.envResults.filter((r) => r.status === "success");
+    expect(written.map((r) => [r.name, r.scope, r.operation])).toEqual([
+      ["VITE_FIREBASE_API_KEY", "all-branches", "created"],
+      ["VITE_FIREBASE_API_KEY", "main", "updated"],
+      ["E2E_USER_EMAIL", "all-branches", "created"],
+      ["E2E_USER_UID", "all-branches", "created"],
+    ]);
+    // Only the client's main value changed; the server's writes are
+    // all-branches only.
+    expect(outcome.redeploys.map((r) => r.project)).toEqual([
+      "ichnos-protocol",
+    ]);
+  });
+
+  it("returns no redeploy when only all-branches values were written", async () => {
+    const api = fakeVercel({
+      bypass: HELD_BYPASS,
+      env: {
+        prj_c: [previewEntry("VITE_FIREBASE_API_KEY", API_KEY, "main")],
+        prj_s: [
+          previewEntry("E2E_USER_EMAIL", "e2e-user@ichnos-test.com", "main"),
+          previewEntry("E2E_USER_UID", "uid-1", "main"),
+        ],
+      },
+    });
+
+    const outcome = await run(api);
+
+    expect(
+      outcome.envResults.filter((r) => r.status === "success").length,
+    ).toBe(3);
+    expect(
+      outcome.envResults.filter((r) => r.scope === "main").map((r) => r.status),
+    ).toEqual(["unchanged", "unchanged", "unchanged"]);
+    expect(outcome.redeploys).toEqual([]);
   });
 
   it("neither generates nor sets a bypass when convergence is off", async () => {

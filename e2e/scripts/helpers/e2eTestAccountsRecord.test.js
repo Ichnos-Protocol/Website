@@ -290,7 +290,9 @@ describe("the client Preview Firebase API key row", () => {
     const vercel = clientKeyRow(record);
 
     expect(github).toContain("GitHub Actions secret");
-    expect(vercel).toContain("all-branches Preview environment");
+    expect(vercel).toContain("both Preview scopes");
+    expect(vercel).toContain("all-branches");
+    expect(vercel).toContain("branch `main`");
     expect(vercel).toContain("`ichnos-protocol` Vercel project");
     expect(record).not.toContain(API_KEY_FIXTURE);
   });

@@ -315,6 +315,34 @@ describe("createVercelApi", () => {
       SECRET,
     );
   });
+
+  it("treats gitBranch as a scope, so words containing main stay readable", async () => {
+    const api = createVercelApi({
+      transport: async () => ({
+        ok: false,
+        status: 1,
+        text: "",
+        errorText:
+          "Error: the domain maintenance window blocks plain-body-value (400)",
+      }),
+    });
+
+    const error = await api
+      .request("/v10/projects/p/env", {
+        method: "POST",
+        body: {
+          key: "E2E_USER_UID",
+          value: "plain-body-value",
+          type: "encrypted",
+          target: ["preview"],
+          gitBranch: "main",
+        },
+      })
+      .catch((err) => err);
+
+    expect(error.message).toContain("domain maintenance window");
+    expect(error.message).not.toContain("plain-body-value");
+  });
 });
 
 describe("createVercelApi error-envelope guard", () => {

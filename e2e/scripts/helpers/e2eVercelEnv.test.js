@@ -5,7 +5,9 @@ import {
   findPreviewEntry,
   isAllBranchesPreview,
   normalizeUpdatedAt,
+  PREVIEW_SCOPES,
   setPreviewEnv,
+  setPreviewEnvScopes,
 } from "./e2eVercelEnv.js";
 
 const KEY = "E2E_USER_UID";
@@ -308,6 +310,7 @@ describe("setPreviewEnv outcome metadata", () => {
 
       expect(result).toEqual({
         name: KEY,
+        scope: "all-branches",
         masked: expect.any(String),
         status: "success",
         operation: "created",
@@ -346,6 +349,7 @@ describe("setPreviewEnv outcome metadata", () => {
 
     expect(result).toEqual({
       name: KEY,
+      scope: "all-branches",
       masked: expect.any(String),
       status: "success",
       operation: "updated",
@@ -666,5 +670,249 @@ describe("findPreviewEntry pagination", () => {
     expect(result.error).toMatch(/exceeds 50 pages; refusing to decide/);
     expect(request).toHaveBeenCalledTimes(50);
     expect(writeCalls(api)).toHaveLength(0);
+  });
+});
+
+describe("setPreviewEnv on the main Preview scope", () => {
+  const MAIN_SCOPE = PREVIEW_SCOPES[1];
+  const CREATED_MAIN = {
+    created: { id: "env_main_new", key: KEY, gitBranch: "main" },
+  };
+  const OTHERS = [
+    PRODUCTION,
+    STAGING,
+    CUSTOM,
+    entry({ id: "env_feature", gitBranch: "feature/x" }),
+  ];
+
+  function run(api, value = "main-uid-value", key = KEY) {
+    return setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key,
+      value,
+      scope: MAIN_SCOPE,
+    });
+  }
+
+  it("names both scopes, all-branches first", () => {
+    expect(PREVIEW_SCOPES.map((s) => s.name)).toEqual(["all-branches", "main"]);
+    expect(MAIN_SCOPE.gitBranch).toBe("main");
+    expect(Object.isFrozen(PREVIEW_SCOPES)).toBe(true);
+  });
+
+  it("writes nothing when the main value is unchanged", async () => {
+    const api = fakeApi([entry(), MAIN], {
+      env_all: "other",
+      env_main: "main-uid-value",
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      name: KEY,
+      scope: "main",
+      status: "unchanged",
+    });
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("patches only the main entry's id when its value differs", async () => {
+    const api = fakeApi([entry(), MAIN], { env_all: "x", env_main: "old" });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ scope: "main", operation: "updated" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v9/projects/prj_s/env/env_main");
+    expect(writes[0][1]).toEqual({
+      method: "PATCH",
+      body: { value: "main-uid-value" },
+    });
+    const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+    expect(paths).not.toContain("env_all");
+  });
+
+  it("creates a missing main entry with target preview and gitBranch main", async () => {
+    const api = fakeApi([entry()], {}, { POST: CREATED_MAIN });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ scope: "main", operation: "created" });
+    const [[path, opts]] = writeCalls(api);
+    expect(path).toBe("/v10/projects/prj_s/env");
+    expect(opts.body).toEqual({
+      key: KEY,
+      value: "main-uid-value",
+      type: "encrypted",
+      target: ["preview"],
+      gitBranch: "main",
+    });
+    expect(opts.body).not.toHaveProperty("customEnvironmentIds");
+  });
+
+  it("fails before any write on two main entries", async () => {
+    const api = fakeApi([MAIN, entry({ id: "env_main_2", gitBranch: "main" })]);
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(
+      /2 main Preview entries exist for E2E_USER_UID/,
+    );
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it.each(PREVIEW_SCOPES)(
+    "never reads, patches or recreates another scope's entry on $name",
+    async (scope) => {
+      const created = scope.gitBranch ? CREATED_MAIN : CREATED;
+      const api = fakeApi(OTHERS, {}, { POST: created });
+
+      const result = await setPreviewEnv({
+        api,
+        projectId: "prj_s",
+        key: KEY,
+        value: "v",
+        scope,
+      });
+
+      expect(result).toMatchObject({ scope: scope.name, operation: "created" });
+      const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+      for (const id of [
+        "env_prod",
+        "env_staging",
+        "env_custom",
+        "env_feature",
+      ]) {
+        expect(paths).not.toContain(id);
+      }
+      const writes = writeCalls(api);
+      expect(writes).toHaveLength(1);
+      expect(writes[0][1].method).toBe("POST");
+      expect(writes[0][1].body.gitBranch).toBe(scope.gitBranch ?? undefined);
+    },
+  );
+
+  it.each(
+    PREVIEW_SCOPES.flatMap((scope) =>
+      [
+        ["undefined", {}],
+        ["null", { value: null }],
+        ["a number", { value: 3 }],
+        ["an object", { value: { v: 1 } }],
+      ].map(([label, body]) => [scope.name, label, body, scope]),
+    ),
+  )(
+    "fails with no write on the %s scope when the decrypted value is %s",
+    async (_name, _label, body, scope) => {
+      const id = scope.gitBranch ? "env_main" : "env_all";
+      const api = fakeApi([entry(), MAIN], { [id]: { ...body, updatedAt: 1 } });
+
+      const result = await setPreviewEnv({
+        api,
+        projectId: "prj_s",
+        key: KEY,
+        value: "v",
+        scope,
+      });
+
+      expect(result.status).toBe("failed");
+      expect(result.scope).toBe(scope.name);
+      expect(result.error).toContain(KEY);
+      expect(result.error).toContain(`${scope.name} Preview`);
+      expect(result.error).toMatch(/Nothing was written/);
+      expect(writeCalls(api)).toHaveLength(0);
+    },
+  );
+
+  it.each([
+    ["no branch", { created: { id: "env_1", key: KEY } }],
+    ["a null branch", { created: { id: "env_1", key: KEY, gitBranch: null } }],
+    [
+      "another branch",
+      { created: { id: "env_1", key: KEY, gitBranch: "staging" } },
+    ],
+  ])("fails a main create whose response reports %s", async (_label, body) => {
+    const result = await run(fakeApi([], {}, { POST: body }));
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).toMatch(/main Preview scope reported another scope/);
+    expect(result.error).toContain(KEY);
+  });
+
+  it("fails an all-branches create whose response reports gitBranch main", async () => {
+    const api = fakeApi([], {}, { POST: CREATED_MAIN });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "v",
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.scope).toBe("all-branches");
+    expect(result.error).toMatch(
+      /all-branches Preview scope reported another scope/,
+    );
+  });
+
+  it("masks a secret-named key fully on both scopes", async () => {
+    const secret = "AIzaSecretApiKeyValue";
+    const key = "VITE_FIREBASE_API_KEY";
+    const listed = [
+      entry({ key }),
+      entry({ id: "env_main", key, gitBranch: "main" }),
+    ];
+    const api = fakeApi(listed, {
+      env_all: { value: "old", updatedAt: 1 },
+      env_main: { value: "old", updatedAt: 1 },
+    });
+
+    const results = await setPreviewEnvScopes({
+      api,
+      projectId: "prj_s",
+      key,
+      value: secret,
+    });
+
+    expect(results.map((r) => r.scope)).toEqual(["all-branches", "main"]);
+    for (const result of results) {
+      const serialized = JSON.stringify(result);
+      expect(result.masked).toBe("****");
+      expect(serialized).not.toContain(secret.slice(-4));
+      expect(serialized).not.toContain("env_");
+      expect(result).not.toHaveProperty("value");
+      expect(result).not.toHaveProperty("id");
+      expect(result).not.toHaveProperty("gitBranch");
+    }
+  });
+});
+
+describe("setPreviewEnvScopes", () => {
+  it("sets both scopes in order and keeps each independent", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" }), MAIN], {
+      env_main: "old",
+    });
+
+    const results = await setPreviewEnvScopes({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "new",
+    });
+
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({
+      scope: "all-branches",
+      status: "failed",
+    });
+    expect(results[1]).toMatchObject({ scope: "main", operation: "updated" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v9/projects/prj_s/env/env_main");
   });
 });

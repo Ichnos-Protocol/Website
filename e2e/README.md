@@ -97,7 +97,7 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 - writes the gitignored `secrets/test-accounts.md`: each account's email, role, password, UID and project, and the infrastructure secrets by name, tier, where applied and when last set, never their values and never production values
 - syncs 15 GitHub repository variables and 8 GitHub repository secrets
 - sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on the `ichnos-protocol` and `ichnos-protocol_server` Vercel projects and on GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
-- writes the all-branches Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) and redeploys only the previews whose variables changed
+- writes the Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) on two Preview scopes of each project, all-branches and branch `main`, and redeploys a project only when one of its `main` values was created or updated, because the E2E domains follow `main`. A write to the all-branches scope alone never redeploys. `staging`, any other branch, Production and custom environments are never read or written
 
 Before any write, the command finds the Vercel scope that owns both projects by one of two paths:
 
@@ -105,6 +105,8 @@ Before any write, the command finds the Vercel scope that owns both projects by 
 - A Full Account token or the CLI session searches the whole account. It lists the signed-in user's personal scope and teams, looks up both exact names in each, and requires exactly one scope to contain both.
 
 When discovery cannot decide (a project is missing, the projects sit in different scopes, or several scopes qualify), the run stops before any write.
+
+Once both projects are found, and still before any write in every mode, `--sync-only` included, the command reads both E2E domains (`e2e-client.ichnos-protocol.com` on the client project, `e2e-api.ichnos-protocol.com` on the server project). It stops unless each names its host, follows branch `main` and has no redirect.
 
 **Other modes:**
 

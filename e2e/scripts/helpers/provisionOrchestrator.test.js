@@ -24,6 +24,7 @@ const syncToVercel = vi.fn();
 const syncProviders = vi.fn();
 const fetchWebConfig = vi.fn();
 const connectVercelProjects = vi.fn();
+const assertE2EDomainsFollowMain = vi.fn();
 const VERCEL_CONTEXT = {
   api: { request: vi.fn(), registerSecret: vi.fn() },
   projects: {
@@ -52,6 +53,7 @@ vi.mock("./e2eVercelProjects.js", async (importOriginal) => ({
   ...(await importOriginal()),
   connectVercelProjects,
 }));
+vi.mock("./e2eVercelDomains.js", () => ({ assertE2EDomainsFollowMain }));
 vi.mock("./e2eFirebaseWebConfig.js", () => ({ fetchWebConfig }));
 vi.mock("./e2eProviderSync.js", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -291,6 +293,7 @@ beforeEach(() => {
   listGitHubSecretMetadata.mockReturnValue({});
   loadFirebaseCredentials.mockReturnValue({ ...FAKE_CREDENTIALS });
   connectVercelProjects.mockResolvedValue(VERCEL_CONTEXT);
+  assertE2EDomainsFollowMain.mockResolvedValue(undefined);
   fetchWebConfig.mockResolvedValue({ ...WEB_CONFIG });
 });
 
@@ -752,14 +755,31 @@ describe("client Preview API key provenance", () => {
     return writeTestAccountsRecord.mock.calls.at(-1)[1];
   }
 
+  const OLDER_AT = "2026-09-18T08:15:00.000Z";
   const result = (fields) => ({ name: KEY, masked: "****", ...fields });
+  const all = (fields) => result({ scope: "all-branches", ...fields });
+  const onMain = (fields) => result({ scope: "main", ...fields });
+  const unchanged = (updatedAt) => ({
+    status: "unchanged",
+    operation: "unchanged",
+    ...(updatedAt && { updatedAt }),
+  });
 
-  it.each(["created", "updated"])(
-    "records a %s client result as set by this run",
-    async (operation) => {
-      const record = await lastRecord(CONFIRMED_BYPASS, {
-        clientResults: [result({ status: "success", operation })],
-      });
+  it.each([
+    ["created", "all-branches"],
+    ["updated", "all-branches"],
+    ["created", "main"],
+    ["updated", "main"],
+  ])(
+    "records a %s client result on the %s scope as set by this run",
+    async (operation, scope) => {
+      const write = { status: "success", operation };
+      const clientResults =
+        scope === "main"
+          ? [all(unchanged(READ_AT)), onMain(write)]
+          : [all(write), onMain(unchanged(READ_AT))];
+
+      const record = await lastRecord(CONFIRMED_BYPASS, { clientResults });
 
       expect(clientKey(record)).toEqual({
         name: KEY,
@@ -769,31 +789,43 @@ describe("client Preview API key provenance", () => {
     },
   );
 
-  it("records an unchanged client result with its provider timestamp", async () => {
-    const record = await lastRecord(CONFIRMED_BYPASS, {
-      clientResults: [
-        result({
-          status: "unchanged",
-          operation: "unchanged",
-          updatedAt: READ_AT,
-        }),
-      ],
-    });
+  it.each([
+    ["the main", OLDER_AT, READ_AT],
+    ["the all-branches", READ_AT, OLDER_AT],
+  ])(
+    "records both scopes unchanged with %s scope's newer timestamp",
+    async (_label, allAt, mainAt) => {
+      const record = await lastRecord(CONFIRMED_BYPASS, {
+        clientResults: [all(unchanged(allAt)), onMain(unchanged(mainAt))],
+      });
 
-    expect(clientKey(record)).toEqual({
-      name: KEY,
-      store: "vercel",
-      state: "read",
-      timestamp: READ_AT,
-    });
-  });
+      expect(clientKey(record)).toEqual({
+        name: KEY,
+        store: "vercel",
+        state: "read",
+        timestamp: READ_AT,
+      });
+    },
+  );
 
   it.each([
     [
       "unchanged without a timestamp",
-      [result({ status: "unchanged", operation: "unchanged" })],
+      [all(unchanged()), onMain(unchanged(READ_AT))],
     ],
-    ["failed", [result({ status: "failed", error: "Vercel API 502" })]],
+    [
+      "failed on one scope",
+      [
+        all({ status: "success", operation: "created" }),
+        onMain({ status: "failed", error: "Vercel API 502" }),
+      ],
+    ],
+    [
+      "missing its main scope",
+      [all({ status: "success", operation: "created" })],
+    ],
+    ["missing its all-branches scope", [onMain(unchanged(READ_AT))]],
+    ["unscoped", [result({ status: "success", operation: "created" })]],
     ["absent", []],
   ])("dates nothing for a client result that is %s", async (_l, results) => {
     const record = await lastRecord(CONFIRMED_BYPASS, {
@@ -834,7 +866,7 @@ describe("client Preview API key provenance", () => {
     };
 
     const record = await lastRecord(steady, {
-      clientResults: [result({ status: "unchanged", operation: "unchanged" })],
+      clientResults: [all(unchanged()), onMain(unchanged())],
     });
 
     expect(datedVercel(record)).toEqual([]);
@@ -844,8 +876,11 @@ describe("client Preview API key provenance", () => {
 
   it("ignores a same-named server result", async () => {
     const record = await lastRecord(CONFIRMED_BYPASS, {
-      clientResults: [result({ status: "unchanged", operation: "unchanged" })],
-      serverResults: [result({ status: "success", operation: "created" })],
+      clientResults: [all(unchanged()), onMain(unchanged())],
+      serverResults: [
+        all({ status: "success", operation: "created" }),
+        onMain({ status: "success", operation: "created" }),
+      ],
     });
 
     expect(clientKey(record).state).toBe("unknown");
@@ -1267,4 +1302,67 @@ describe("isDirectInvocation", () => {
       isDirectInvocation(moduleFile.toUpperCase(), moduleUrl, "win32"),
     ).toBe(true);
   });
+});
+
+describe("E2E domain check before any write", () => {
+  const HOST = "e2e-api.ichnos-protocol.com";
+  const REFUSAL = `E2E domain ${HOST} on the ichnos-protocol_server Vercel project must follow branch main with no redirect, but it follows branch staging. Nothing was changed.`;
+
+  function expectNoWrite() {
+    expect(getTestApp).not.toHaveBeenCalled();
+    expect(upsertUser).not.toHaveBeenCalled();
+    expect(provisionFirebaseUsers).not.toHaveBeenCalled();
+    expect(fetchWebConfig).not.toHaveBeenCalled();
+    expect(writeEnvFile).not.toHaveBeenCalled();
+    expect(writeTestAccountsRecord).not.toHaveBeenCalled();
+    expect(syncToGitHub).not.toHaveBeenCalled();
+    expect(syncVariablesToGitHub).not.toHaveBeenCalled();
+    expect(syncProviders).not.toHaveBeenCalled();
+    expect(syncToVercel).not.toHaveBeenCalled();
+  }
+
+  it("checks the domains with the discovered context after discovery", async () => {
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+
+    await main({});
+
+    expect(assertE2EDomainsFollowMain).toHaveBeenCalledWith({
+      api: VERCEL_CONTEXT.api,
+      projects: VERCEL_CONTEXT.projects,
+    });
+    expect(order(connectVercelProjects)).toBeLessThan(
+      order(assertE2EDomainsFollowMain),
+    );
+    expect(order(assertE2EDomainsFollowMain)).toBeLessThan(
+      order(provisionFirebaseUsers),
+    );
+  });
+
+  it.each([
+    ["full pipeline", {}, completeEnv],
+    ["sync-only", { syncOnly: true }, () => ({ ...completeEnv(), ...UIDS })],
+  ])(
+    "stops before any Firebase, GitHub or Vercel write in %s mode",
+    async (_label, options, env) => {
+      readEnvFile.mockReturnValue(env());
+      mockSuccessfulSync();
+      assertE2EDomainsFollowMain.mockRejectedValue(new Error(REFUSAL));
+      const output = captureOutput();
+
+      const error = await main(options).catch((err) => err);
+
+      expect(error.message).toBe(REFUSAL);
+      expect(error.message).toContain(HOST);
+      expect(error.message).toContain("ichnos-protocol_server");
+      for (const value of [
+        ...Object.values(PATTERN),
+        WEB_CONFIG.FIREBASE_API_KEY,
+      ]) {
+        expect(error.message).not.toContain(value);
+      }
+      expectNoWrite();
+      expect(output()).not.toMatch(/\[preflight\] all checks passed/);
+    },
+  );
 });

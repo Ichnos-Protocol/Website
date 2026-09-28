@@ -60,7 +60,7 @@ export const INFRASTRUCTURE_SECRETS = [
   {
     name: CLIENT_API_KEY_NAME,
     appliedWhere:
-      "Vercel env var on the all-branches Preview environment of the `ichnos-protocol` Vercel project",
+      "Vercel env var on both Preview scopes of the `ichnos-protocol` Vercel project: the all-branches scope and the branch `main` scope",
     tier: "Test",
     store: VERCEL_SETTING,
   },

@@ -308,8 +308,17 @@ function parseJson(text, label, secrets) {
   }
 }
 
-// Fields that name or scope a request, never carry a value.
-const STRUCTURAL_FIELDS = new Set(["key", "type", "target", "name", "note"]);
+// Fields that name or scope a request, never carry a value. gitBranch names a
+// scope, so the literal branch name is never registered as a secret and error
+// text around words containing it stays readable.
+const STRUCTURAL_FIELDS = new Set([
+  "key",
+  "type",
+  "target",
+  "name",
+  "note",
+  "gitBranch",
+]);
 
 // Every value-bearing string of a request body, so an error never echoes one.
 function bodyStrings(body) {

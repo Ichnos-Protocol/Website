@@ -8,6 +8,10 @@ import { E2E_FIREBASE_PROJECT_ID } from "./e2eFirebaseCredentials.js";
 export const E2E_BASE_URL_VALUE = "https://e2e-client.ichnos-protocol.com";
 export const E2E_API_BASE_URL_VALUE = "https://e2e-api.ichnos-protocol.com";
 
+// The git branch both E2E domains follow, and the only branch scope the
+// provisioning script manages. Not an env-file name.
+export const E2E_GIT_BRANCH = "main";
+
 export const ROLES = [
   {
     key: "ADMIN",

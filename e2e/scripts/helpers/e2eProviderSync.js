@@ -1,8 +1,10 @@
 /**
  * The provider sync that follows the GitHub variable/secret sync: the
  * automation bypass converged onto one value on both Vercel projects, the
- * client and server all-branches Preview env, and a redeploy of each project
- * whose env actually changed. Convergence passes three gates in order: a
+ * client and server Preview env on both managed scopes (all-branches and
+ * branch `main`), and a redeploy of each project whose `main` Preview value
+ * was created or updated, since that is the value the E2E aliases read. A
+ * write to the all-branches scope alone never redeploys. Convergence passes three gates in order: a
  * fresh read of both projects, taken after every add, confirms the value,
  * GitHub confirms its secret, and every older automation key that final read
  * found is revoked. Revocation happens only after GitHub confirms.
@@ -171,8 +173,16 @@ async function convergeBypass({ api, projects, setGitHubSecrets, generate }) {
   return revokeAndFinish({ api, list, results, secret, outcome });
 }
 
-function changed(results) {
-  return results.some((r) => r.status === "success");
+const WRITE_OPERATIONS = new Set(["created", "updated"]);
+
+// Only a main Preview write changes what the E2E aliases serve.
+function changedMain(results) {
+  return results.some(
+    (r) =>
+      r.scope === "main" &&
+      r.status === "success" &&
+      WRITE_OPERATIONS.has(r.operation),
+  );
 }
 
 function bypassIncomplete(bypass) {
@@ -180,8 +190,10 @@ function bypassIncomplete(bypass) {
 }
 
 /**
- * Redeploys each project whose results hold a written value, matched by the
- * exact E2E alias. A project absent from projects needs no results passed.
+ * Redeploys each project whose results hold a created or updated `main`
+ * Preview value, matched by the exact E2E alias: the E2E domains follow
+ * `main`, so an all-branches-only write never redeploys. A project absent
+ * from projects needs no results passed.
  */
 export async function redeployChanged({
   api,
@@ -190,7 +202,7 @@ export async function redeployChanged({
   serverResults = [],
 }) {
   const redeploys = [];
-  if (changed(clientResults)) {
+  if (changedMain(clientResults)) {
     redeploys.push(
       await redeployProject({
         api,
@@ -199,7 +211,7 @@ export async function redeployChanged({
       }),
     );
   }
-  if (changed(serverResults)) {
+  if (changedMain(serverResults)) {
     redeploys.push(
       await redeployProject({
         api,

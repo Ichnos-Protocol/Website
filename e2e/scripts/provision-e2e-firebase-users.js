@@ -8,8 +8,9 @@
  *     GitHub, converge the automation bypass on both Vercel projects (reuse
  *     the value both already share, generate one only when none is shared,
  *     set it in GitHub once both confirm it, and revoke older keys only after
- *     GitHub confirms), set the all-branches Preview env on both projects and
- *     redeploy each preview whose env changed.
+ *     GitHub confirms), set the Preview env on both projects on two scopes,
+ *     all-branches and branch `main`, and redeploy each project whose `main`
+ *     Preview value changed; an all-branches-only change never redeploys.
  *   node e2e/scripts/provision-e2e-firebase-users.js --sync-only
  *     Push e2e/.env.e2e as it stands to GitHub and the Vercel Preview env
  *     without touching Firebase. It neither reads the web config nor
@@ -52,6 +53,10 @@
  * session searches the personal scope and every team and requires exactly
  * one scope to hold both projects. A .vercel/project.json is an optional
  * cross-check, never a prerequisite.
+ * Once both projects are found, and before any Firebase, GitHub or Vercel
+ * write in every mode, the run reads both E2E domains and stops unless each
+ * names its host, follows branch `main` and has no redirect. `staging`, any
+ * other branch, Production and custom environments are never read or written.
  * The only manual steps are `gh auth login` and either `vercel login` or the
  * VERCEL_TOKEN export.
  */
@@ -79,6 +84,7 @@ import {
   writeTestAccountsRecord,
 } from "./helpers/e2eTestAccountsRecord.js";
 import { connectVercelProjects } from "./helpers/e2eVercelProjects.js";
+import { assertE2EDomainsFollowMain } from "./helpers/e2eVercelDomains.js";
 import { fetchWebConfig } from "./helpers/e2eFirebaseWebConfig.js";
 import {
   BYPASS_SECRET_NAME,
@@ -325,18 +331,36 @@ function refreshRecord(run, ghResults, providerProvenance = []) {
   );
 }
 
-// The client project's Preview API key, looked up in the client results only
-// so a same-named server result is never taken for it. A write is "set", an
-// unchanged value with a provider timestamp is "read", anything else unknown.
+function isWrite(result) {
+  return (
+    result.status === "success" &&
+    ["created", "updated"].includes(result.operation)
+  );
+}
+
+function laterTimestamp(a, b) {
+  return Date.parse(a) >= Date.parse(b) ? a : b;
+}
+
+// The client project's Preview API key on both managed scopes, looked up in
+// the client results only so a same-named server result is never taken for
+// it. A missing or failed scope is unknown; a write on either scope is
+// "set"; both unchanged with a provider timestamp is "read", dated with the
+// later of the two; anything else is unknown.
 export function clientApiKeyProvenance(clientResults = []) {
-  const result = clientResults.find((r) => r.name === CLIENT_API_KEY_NAME);
+  const rows = clientResults.filter((r) => r.name === CLIENT_API_KEY_NAME);
+  const all = rows.find((r) => r.scope === "all-branches");
+  const main = rows.find((r) => r.scope === "main");
   const base = { name: CLIENT_API_KEY_NAME, store: VERCEL_SETTING };
-  const wrote = ["created", "updated"].includes(result?.operation);
-  if (result?.status === "success" && wrote) return { ...base, state: "set" };
-  if (result?.status === "unchanged" && result.updatedAt) {
-    return { ...base, state: "read", timestamp: result.updatedAt };
+  const scoped = [all, main];
+  if (scoped.some((r) => !r || r.status === "failed")) {
+    return { ...base, state: "unknown" };
   }
-  return { ...base, state: "unknown" };
+  if (scoped.some(isWrite)) return { ...base, state: "set" };
+  const read = scoped.every((r) => r.status === "unchanged" && r.updatedAt);
+  if (!read) return { ...base, state: "unknown" };
+  const timestamp = laterTimestamp(all.updatedAt, main.updatedAt);
+  return { ...base, state: "read", timestamp };
 }
 
 // The Vercel-store bypass row is dated only when this run wrote the value to
@@ -490,6 +514,12 @@ export async function main(options = parseCliOptions(process.argv)) {
     access: vercelAccess,
     serverDir,
     clientDir,
+  });
+  // Both E2E domains must follow main before any Firebase, GitHub or Vercel
+  // write, in every mode.
+  await assertE2EDomainsFollowMain({
+    api: vercelContext.api,
+    projects: vercelContext.projects,
   });
   console.log("[preflight] all checks passed");
 
