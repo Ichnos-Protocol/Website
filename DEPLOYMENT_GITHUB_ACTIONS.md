@@ -141,7 +141,7 @@ Kept here for quick reference. [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) is the
 | `E2E_SUPER_ADMIN_PASSWORD`          | Super-admin test account password                      |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD`  | Manage-admin target account password                   |
 | `E2E_INCOMPLETE_USER_PASSWORD`      | Incomplete-profile test account password               |
-| `VERCEL_AUTOMATION_BYPASS_SECRET`   | Vercel Deployment Protection bypass for E2E automation — **same value must be set on both** the `ichnos-client` and `ichnos-protocolserver` Vercel projects (Settings → Deployment Protection → Protection Bypass for Automation) |
+| `VERCEL_AUTOMATION_BYPASS_SECRET`   | Vercel Deployment Protection bypass for E2E automation — **same value must be set on both** the `ichnos-protocol` and `ichnos-protocolserver` Vercel projects (Settings → Deployment Protection → Protection Bypass for Automation) |
 
 > Non-secret E2E config comes from 15 GitHub repository **variables**: `FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, `E2E_BASE_URL`, `E2E_API_BASE_URL`, and `E2E_{ADMIN,USER,INCOMPLETE_USER,SUPER_ADMIN,MANAGE_ADMIN_TARGET}_{EMAIL,UID}`. See [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) §2 for the full list.
 
@@ -190,7 +190,7 @@ All three are required by `sync-staging.yml`. The run exits nonzero if either de
 
 ## 7. One-Time Setup — Vercel
 
-Full Vercel project settings — production branch, environment variables, old alias cleanup, and token/ID lookup — are documented in [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md). Follow that guide for both `ichnos-client` and `ichnos-protocolserver`.
+Full Vercel project settings — production branch, environment variables, old alias cleanup, and token/ID lookup — are documented in [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md). Follow that guide for both `ichnos-protocol` and `ichnos-protocolserver`.
 
 Two critical invariants to maintain:
 
@@ -237,4 +237,4 @@ Revert the bad commit on `main` through a normal PR, then open a new `main → r
 2. Find the previous production deployment.
 3. Choose **Promote** (or **Instant Rollback**) from that deployment's menu in the UI.
 
-Repeat for both `ichnos-client` and `ichnos-protocolserver`. No GitHub Actions run is required.
+Repeat for both `ichnos-protocol` and `ichnos-protocolserver`. No GitHub Actions run is required.

@@ -204,8 +204,8 @@ function assertGitHubConfigComplete(values) {
 }
 
 const PATTERN_REMEDIATION =
-  "Remediation: unset any shell export of the listed name(s) and delete any " +
-  "listed line from e2e/.env.e2e (the provisioning command regenerates it); " +
+  "Remediation: unset any shell export of the listed name(s) and delete " +
+  "e2e/.env.e2e (the provisioning run regenerates the whole file); " +
   "for --sync-only, regenerate e2e/.env.e2e with the provisioning command. " +
   "Then re-run.";
 

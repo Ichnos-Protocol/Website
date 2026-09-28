@@ -14,14 +14,14 @@ const HELD_LATER = "HeldBypassValueZZZZZZZZZZZZZZZZ2";
 const STALE = "StaleBypassValueQQQQQQQQQQQQQQQ3";
 const API_KEY = "AIzaClientWebApiKey0123";
 const PROJECTS = {
-  client: { projectId: "prj_c", projectName: "ichnos-client" },
+  client: { projectId: "prj_c", projectName: "ichnos-protocol" },
   server: { projectId: "prj_s", projectName: "ichnos-protocol_server" },
 };
 const ALIASES = {
   prj_c: "e2e-client.ichnos-protocol.com",
   prj_s: "e2e-api.ichnos-protocol.com",
 };
-const BOTH = ["ichnos-client", "ichnos-protocol_server"];
+const BOTH = ["ichnos-protocol", "ichnos-protocol_server"];
 
 function automation(...keys) {
   return Object.fromEntries(keys.map((key) => [key, { scope: BYPASS_SCOPE }]));
@@ -290,7 +290,7 @@ describe("syncProviders: convergence", () => {
     expect(
       outcome.bypass.results.map((r) => [r.project, r.present, r.confirmed]),
     ).toEqual([
-      ["ichnos-client", true, false],
+      ["ichnos-protocol", true, false],
       ["ichnos-protocol_server", false, false],
     ]);
     expect(outcome.bypass.confirmedProjects).toEqual([]);
@@ -441,7 +441,7 @@ describe("syncProviders: convergence", () => {
       expect(outcome.bypass).toMatchObject({
         githubConfirmed: false,
         revocationComplete: false,
-        confirmedProjects: ["ichnos-client"],
+        confirmedProjects: ["ichnos-protocol"],
         failure: { stage: "confirm" },
       });
       expect(outcome.bypass.results[1]).toMatchObject({
@@ -489,11 +489,11 @@ describe("syncProviders: convergence", () => {
     expect(
       outcome.bypass.results.map((r) => [r.project, r.added, r.confirmed]),
     ).toEqual([
-      ["ichnos-client", true, false],
+      ["ichnos-protocol", true, false],
       ["ichnos-protocol_server", false, false],
     ]);
     const failures = bypassFailures(outcome.bypass);
-    expect(failures[0].name).toBe(`${BYPASS_SECRET_NAME} (ichnos-client)`);
+    expect(failures[0].name).toBe(`${BYPASS_SECRET_NAME} (ichnos-protocol)`);
     expect(failures[0].error).toMatch(/add was accepted/);
     expect(failures[0].error).toMatch(/add request accepted/);
     const text = everything(outcome);

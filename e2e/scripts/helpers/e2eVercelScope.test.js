@@ -8,7 +8,7 @@ import {
   MAX_TEAM_PAGES,
 } from "./e2eVercelScope.js";
 
-const NAMES = { client: "ichnos-client", server: "ichnos-protocol_server" };
+const NAMES = { client: "ichnos-protocol", server: "ichnos-protocol_server" };
 const USER = { id: "user_1", username: "alice" };
 
 function project(name, id, accountId) {
@@ -102,7 +102,7 @@ const TEAM_B = { id: "team_b", slug: "beta" };
 
 function bothIn(scopeId) {
   return {
-    "ichnos-client": project("ichnos-client", `prj_c_${scopeId}`, scopeId),
+    "ichnos-protocol": project("ichnos-protocol", `prj_c_${scopeId}`, scopeId),
     "ichnos-protocol_server": project(
       "ichnos-protocol_server",
       `prj_s_${scopeId}`,
@@ -130,7 +130,7 @@ describe("discoverVercelScope", () => {
       client: {
         projectId: "prj_c_team_b",
         orgId: "team_b",
-        projectName: "ichnos-client",
+        projectName: "ichnos-protocol",
       },
       server: {
         projectId: "prj_s_team_b",
@@ -185,7 +185,7 @@ describe("discoverVercelScope", () => {
       teams: [[TEAM_A, TEAM_B]],
       projects: {
         team_a: {
-          "ichnos-client": project("ichnos-client", "prj_c", "team_a"),
+          "ichnos-protocol": project("ichnos-protocol", "prj_c", "team_a"),
         },
       },
     });
@@ -196,7 +196,7 @@ describe("discoverVercelScope", () => {
     expect(error.message).toMatch(
       /personal 'alice': none of the governed projects/,
     );
-    expect(error.message).toMatch(/team 'acme': ichnos-client \(prj_c\)/);
+    expect(error.message).toMatch(/team 'acme': ichnos-protocol \(prj_c\)/);
     expect(error.message).toMatch(/team 'beta': none of the governed projects/);
     expect(error.message).toMatch(/Nothing was changed\.$/);
   });
@@ -210,14 +210,14 @@ describe("discoverVercelScope", () => {
     const error = await discover(vercel).catch((err) => err);
 
     expect(error.message).toMatch(
-      /hold both 'ichnos-client' and 'ichnos-protocol_server'; refusing to choose/,
+      /hold both 'ichnos-protocol' and 'ichnos-protocol_server'; refusing to choose/,
     );
     for (const [label, id] of [
       ["acme", "team_a"],
       ["beta", "team_b"],
     ]) {
       expect(error.message).toContain(
-        `team '${label}': ichnos-client (prj_c_${id}), ichnos-protocol_server (prj_s_${id})`,
+        `team '${label}': ichnos-protocol (prj_c_${id}), ichnos-protocol_server (prj_s_${id})`,
       );
     }
     expect(error.message).not.toMatch(/personal/);
@@ -228,7 +228,7 @@ describe("discoverVercelScope", () => {
     const vercel = fakeVercel({
       teams: [[TEAM_A, TEAM_B]],
       projects: {
-        team_a: { "ichnos-client": bothIn("team_a")["ichnos-client"] },
+        team_a: { "ichnos-protocol": bothIn("team_a")["ichnos-protocol"] },
         team_b: {
           "ichnos-protocol_server": bothIn("team_b")["ichnos-protocol_server"],
         },
@@ -241,17 +241,17 @@ describe("discoverVercelScope", () => {
   });
 
   it.each([
-    ["Ichnos-Client"],
-    ["ichnos-client-old"],
+    ["ichnos-client"],
+    ["Ichnos-Protocol"],
+    ["ichnos-protocol-old"],
     ["ichnos"],
-    ["ichnos-protocol"],
   ])("does not qualify a lookup that returns %s", async (name) => {
     const vercel = fakeVercel({
       teams: [[TEAM_A]],
       projects: {
         team_a: {
           ...bothIn("team_a"),
-          "ichnos-client": project(name, "prj_x", "team_a"),
+          "ichnos-protocol": project(name, "prj_x", "team_a"),
         },
       },
     });
@@ -286,7 +286,7 @@ describe("discoverVercelScope", () => {
     const vercel = fakeVercel({
       teams: [[TEAM_A, TEAM_B]],
       projects: {
-        team_a: { "ichnos-client": { error: { code: "not_found" } } },
+        team_a: { "ichnos-protocol": { error: { code: "not_found" } } },
         team_b: bothIn("team_b"),
       },
     });
@@ -300,7 +300,7 @@ describe("discoverVercelScope", () => {
     const vercel = fakeVercel({
       teams: [[TEAM_A, TEAM_B]],
       projects: {
-        user_1: { "ichnos-client": { error: { code: "forbidden" } } },
+        user_1: { "ichnos-protocol": { error: { code: "forbidden" } } },
         team_b: bothIn("team_b"),
       },
     });
@@ -308,7 +308,7 @@ describe("discoverVercelScope", () => {
     const error = await discover(throughAdapter(vercel)).catch((err) => err);
 
     expect(error.code).toBe("forbidden");
-    expect(error.message).toMatch(/GET \/v9\/projects\/ichnos-client failed/);
+    expect(error.message).toMatch(/GET \/v9\/projects\/ichnos-protocol failed/);
     expect(vercel.requests.some((r) => r.scopeId === "team_a")).toBe(false);
   });
 
@@ -397,7 +397,7 @@ describe("discoverVercelScope", () => {
       const vercel = fakeVercel({
         teams: [[TEAM_A, TEAM_B]],
         projects: {
-          user_1: { "ichnos-client": response },
+          user_1: { "ichnos-protocol": response },
           team_b: bothIn("team_b"),
         },
       });
@@ -714,14 +714,16 @@ describe("lookupProject", () => {
     const api = {
       request: async (path) => {
         calls.push(path);
-        return project("ichnos-client", "prj_c", "team_a");
+        return project("ichnos-protocol", "prj_c", "team_a");
       },
     };
 
     await expect(
-      lookupProject({ api, name: "ichnos-client" }),
-    ).resolves.toEqual({ found: project("ichnos-client", "prj_c", "team_a") });
-    expect(calls).toEqual(["/v9/projects/ichnos-client"]);
+      lookupProject({ api, name: "ichnos-protocol" }),
+    ).resolves.toEqual({
+      found: project("ichnos-protocol", "prj_c", "team_a"),
+    });
+    expect(calls).toEqual(["/v9/projects/ichnos-protocol"]);
   });
 
   it("reports a thrown 404 as an absence", async () => {

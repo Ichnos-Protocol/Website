@@ -8,7 +8,7 @@ Step-by-step instructions for deploying the Ichnos Protocol website to productio
 
 | Service                  | Purpose                                                                                                           |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| **Vercel account**       | Hosting — two projects: `ichnos-client` (frontend) and `ichnos-protocolserver` (backend)                          |
+| **Vercel account**       | Hosting — two projects: `ichnos-protocol` (frontend) and `ichnos-protocolserver` (backend)                        |
 | **Neon Tech PostgreSQL** | Relational database for customer requests, users, and structured data                                             |
 | **Firebase project**     | Authentication (Email/Password), Firestore (knowledge base), Admin SDK (server-side auth) |
 | **xAI API key**          | Grok-powered RAG chatbot                                                                                          |
@@ -98,7 +98,7 @@ node server/scripts/seedKnowledgeBase.js
 1. Create a Vercel project named `ichnos-protocolserver`.
    - Set the **root directory** to `server/`.
    - Add all server environment variables in Vercel project settings.
-2. Create a second Vercel project named `ichnos-client`.
+2. Create a second Vercel project named `ichnos-protocol`.
    - Set the **root directory** to `client/`.
    - Add all client environment variables in Vercel project settings.
 For detailed Vercel settings including environment variable tables, production branch configuration, and staging alias cleanup, see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md).
@@ -258,8 +258,8 @@ Do once before first deploy:
 
 - [ ] All required repository secrets are set (see [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) for the full list)
 - [ ] GitHub rulesets/branch protections are configured for `main` (required checks as listed in [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) §3) and `release` (`Release Policy Check` + PR requirement)
-- [ ] Vercel production branch is set to `release` on both `ichnos-client` and `ichnos-protocolserver`
-- [ ] Production environment variables are set in Vercel project settings for both `ichnos-client` and `ichnos-protocolserver` (never committed to the repo)
+- [ ] Vercel production branch is set to `release` on both `ichnos-protocol` and `ichnos-protocolserver`
+- [ ] Production environment variables are set in Vercel project settings for both `ichnos-protocol` and `ichnos-protocolserver` (never committed to the repo)
 
 ### Daily Flow Verification
 
@@ -268,7 +268,7 @@ After each deployment cycle:
 - [ ] **CI checks**: `Client — Lint & Test` and `Server — Lint & Test` are green on the PR
 - [ ] **Preview deployments**: Vercel native preview deployments completed successfully for both client and server; preview URLs are accessible in the Vercel dashboard
 - [ ] **E2E trigger**: `repository_dispatch (vercel.deployment.success)` event fired and `E2E Tests (Playwright)` check is green on the PR
-- [ ] **Production deploy**: After merging to `release`, confirm in the Vercel dashboard that each project (`ichnos-client`, `ichnos-protocolserver`) has one production deployment for the `release` commit. No GitHub Actions run is expected.
+- [ ] **Production deploy**: After merging to `release`, confirm in the Vercel dashboard that each project (`ichnos-protocol`, `ichnos-protocolserver`) has one production deployment for the `release` commit. No GitHub Actions run is expected.
 - [ ] **App smoke test**: Auth (sign up, log in, log out), Chat (send message, receive AI response), Contact form (submit inquiry, verify it appears in admin dashboard), Admin dashboard (update a request status), Cron jobs (visible in Vercel Dashboard → Cron Jobs tab)
 
 ---

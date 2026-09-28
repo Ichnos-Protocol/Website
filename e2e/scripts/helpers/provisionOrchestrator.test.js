@@ -27,7 +27,7 @@ const connectVercelProjects = vi.fn();
 const VERCEL_CONTEXT = {
   api: { request: vi.fn(), registerSecret: vi.fn() },
   projects: {
-    client: { projectId: "prj_client", projectName: "ichnos-client" },
+    client: { projectId: "prj_client", projectName: "ichnos-protocol" },
     server: { projectId: "prj_server", projectName: "ichnos-protocol_server" },
   },
 };
@@ -204,6 +204,7 @@ function expectPatternRefusal(error, name, expected) {
   expect(error.message).toMatch(new RegExp(`not matching.*${name}`));
   expect(error.message).not.toContain(WRONG);
   expect(error.message).not.toContain(expected);
+  expect(error.message).toContain("delete e2e/.env.e2e");
 }
 
 const CONFIRMED_BYPASS = {
@@ -212,7 +213,7 @@ const CONFIRMED_BYPASS = {
   steadyState: false,
   results: [
     {
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       heldBefore: false,
       added: true,
       confirmed: true,
@@ -228,7 +229,7 @@ const CONFIRMED_BYPASS = {
       preserved: 0,
     },
   ],
-  confirmedProjects: ["ichnos-client", "ichnos-protocol_server"],
+  confirmedProjects: ["ichnos-protocol", "ichnos-protocol_server"],
   githubConfirmed: true,
   revocationComplete: true,
   complete: true,
@@ -644,7 +645,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
         generated: false,
         steadyState: true,
         results: [
-          { ...held, project: "ichnos-client", revoked: 0, preserved: 0 },
+          { ...held, project: "ichnos-protocol", revoked: 0, preserved: 0 },
           {
             ...held,
             project: "ichnos-protocol_server",
@@ -822,7 +823,7 @@ describe("client Preview API key provenance", () => {
       generated: false,
       steadyState: true,
       results: [
-        { ...held, project: "ichnos-client", revoked: 0, preserved: 0 },
+        { ...held, project: "ichnos-protocol", revoked: 0, preserved: 0 },
         {
           ...held,
           project: "ichnos-protocol_server",
@@ -994,7 +995,7 @@ describe("web config and provider sync", () => {
       steadyState: false,
       results: [
         {
-          project: "ichnos-client",
+          project: "ichnos-protocol",
           heldBefore: false,
           added: true,
           confirmed: false,

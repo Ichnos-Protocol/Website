@@ -36,7 +36,7 @@ Every name below except `BASE_URL` is generated and synced by the provisioning c
 | `E2E_SUPER_ADMIN_PASSWORD` | GitHub Secret | Super-admin test account password |
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD` | GitHub Secret | Manage-admin target password |
 | `E2E_INCOMPLETE_USER_PASSWORD` | GitHub Secret | Incomplete-profile test account password |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | GitHub Secret | Vercel Deployment Protection bypass. The provisioning command sets one identical value on the `ichnos-client` and `ichnos-protocol_server` Vercel projects and on GitHub in a single run. |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | GitHub Secret | Vercel Deployment Protection bypass. The provisioning command sets one identical value on the `ichnos-protocol` and `ichnos-protocol_server` Vercel projects and on GitHub in a single run. |
 
 > **Other non-secret values** (`FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, and the `E2E_*_EMAIL` / `E2E_*_UID` names for each role) are GitHub repository variables in CI, also generated and synced by the provisioning command. See [`GITHUB_SETTINGS.md`](../GITHUB_SETTINGS.md) §2 for the full list.
 >
@@ -96,10 +96,10 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 - generates `e2e/.env.e2e` whole, with a header giving the date and the exact command; do not edit it by hand
 - writes the gitignored `secrets/test-accounts.md`: each account's email, role, password, UID and project, and the infrastructure secrets by name, tier, where applied and when last set, never their values and never production values
 - syncs 15 GitHub repository variables and 8 GitHub repository secrets
-- sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on `ichnos-client`, `ichnos-protocol_server` and GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
+- sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on the `ichnos-protocol` and `ichnos-protocol_server` Vercel projects and on GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
 - writes the all-branches Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) and redeploys only the previews whose variables changed
 
-Before any write, the command finds the Vercel scope that owns both projects. It lists the signed-in user's personal scope and teams, looks up the exact names `ichnos-client` and `ichnos-protocol_server` in each, and requires exactly one scope to contain both. If no scope or more than one scope contains both, the run stops before any write.
+Before any write, the command finds the Vercel scope that owns both projects. It lists the signed-in user's personal scope and teams, looks up the exact names `ichnos-protocol` and `ichnos-protocol_server` in each, and requires exactly one scope to contain both. If no scope or more than one scope contains both, the run stops before any write.
 
 **Other modes:**
 

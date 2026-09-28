@@ -4,8 +4,8 @@
  * `vercel link` is not a prerequisite. A .vercel/project.json link file is an
  * optional cross-check: read, never written, and when present it must agree
  * with the discovered project and scope. The names are the governed ones
- * (CLAUDE.md §16): the client project is exactly "ichnos-client"; any other
- * name, "ichnos-protocol" included, is refused.
+ * (CLAUDE.md §16): the client project is exactly "ichnos-protocol"; any other
+ * name, "ichnos-client" included, is refused.
  */
 import { existsSync, readFileSync } from "fs";
 import { basename, join } from "path";
@@ -20,7 +20,7 @@ import {
 import { discoverVercelScope } from "./e2eVercelScope.js";
 
 export const EXPECTED_PROJECT_NAMES = {
-  client: "ichnos-client",
+  client: "ichnos-protocol",
   server: "ichnos-protocol_server",
 };
 

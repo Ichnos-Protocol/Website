@@ -16,7 +16,7 @@ const NEW = "N".repeat(16) + "0123456789abcdef";
 const OLD = "O".repeat(32);
 const OTHER = "P".repeat(32);
 const SHARE = "S".repeat(32);
-const CLIENT = { projectId: "prj_c", projectName: "ichnos-client" };
+const CLIENT = { projectId: "prj_c", projectName: "ichnos-protocol" };
 const SERVER = { projectId: "prj_s", projectName: "ichnos-protocol_server" };
 
 const auto = { scope: BYPASS_SCOPE };
@@ -75,7 +75,7 @@ describe("readAutomationBypass", () => {
     const state = await readAutomationBypass({ api, project: CLIENT });
 
     expect(state).toEqual({
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       keys: [OLD],
       preserved: 1,
     });
@@ -119,7 +119,7 @@ describe("selectBypassValue", () => {
 describe("addBypassValue", () => {
   it("issues no request when the project already holds the value", async () => {
     const { api } = fakeVercel();
-    const state = { project: "ichnos-client", keys: [OLD], preserved: 1 };
+    const state = { project: "ichnos-protocol", keys: [OLD], preserved: 1 };
 
     const result = await addBypassValue({
       api,
@@ -129,7 +129,7 @@ describe("addBypassValue", () => {
     });
 
     expect(result).toEqual({
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       heldBefore: true,
       added: false,
       present: true,
@@ -139,7 +139,7 @@ describe("addBypassValue", () => {
 
   it("patches once and re-reads when the project lacks the value", async () => {
     const { api, patches } = fakeVercel({ maps: { prj_c: { [OLD]: auto } } });
-    const state = { project: "ichnos-client", keys: [OLD], preserved: 0 };
+    const state = { project: "ichnos-protocol", keys: [OLD], preserved: 0 };
 
     const result = await addBypassValue({
       api,
@@ -149,7 +149,7 @@ describe("addBypassValue", () => {
     });
 
     expect(result).toEqual({
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       heldBefore: false,
       added: true,
       present: true,
@@ -162,7 +162,7 @@ describe("addBypassValue", () => {
 
   it("reports unconfirmed and makes no further call when the readback lacks the value", async () => {
     const { api } = fakeVercel({ refuse: ["prj_c"] });
-    const state = { project: "ichnos-client", keys: [], preserved: 0 };
+    const state = { project: "ichnos-protocol", keys: [], preserved: 0 };
 
     const result = await addBypassValue({
       api,
@@ -183,7 +183,7 @@ describe("addBypassValue", () => {
       if (!opts.method) throw new Error("Vercel API GET failed (503)");
       return base(path, opts);
     });
-    const state = { project: "ichnos-client", keys: [], preserved: 0 };
+    const state = { project: "ichnos-protocol", keys: [], preserved: 0 };
 
     const result = await addBypassValue({
       api,
@@ -194,7 +194,7 @@ describe("addBypassValue", () => {
 
     expect(maps.prj_c).toEqual({ [NEW]: auto });
     expect(result).toEqual({
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       heldBefore: false,
       added: true,
       present: false,
@@ -218,7 +218,7 @@ describe("confirmBypassOnProjects", () => {
     });
 
     expect(finals.map((r) => [r.project, r.confirmed])).toEqual([
-      ["ichnos-client", true],
+      ["ichnos-protocol", true],
       ["ichnos-protocol_server", false],
     ]);
     expect(finals[0].keys.sort()).toEqual([NEW, OLD].sort());
@@ -294,7 +294,7 @@ describe("revocation", () => {
     });
 
     expect(outcomes[0]).toMatchObject({
-      project: "ichnos-client",
+      project: "ichnos-protocol",
       revoked: 1,
       revokeFailed: true,
     });

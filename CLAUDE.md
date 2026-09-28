@@ -488,7 +488,7 @@ Then verify:
 
 ## 16. Deployment (Vercel Monorepo)
 
-Two Vercel projects from one repo: `ichnos-client` (Vite static) and `ichnos-protocol_server` (Express serverless via `@vercel/node`).
+Two Vercel projects from one repo: the `ichnos-protocol` Vercel project (Vite static) and `ichnos-protocol_server` (Express serverless via `@vercel/node`).
 
 ### Rules Claude must follow when writing code
 

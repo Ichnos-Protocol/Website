@@ -103,7 +103,7 @@ The run sets these seven password and API-key secrets, plus `VERCEL_AUTOMATION_B
 
 > **Note:** Firebase UIDs (`E2E_*_UID`) are also synced to Vercel Preview environment variables by the provisioning script (see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §2).
 >
-> **Environment note:** The command reads Firebase admin credentials from, in order, `--firebase-env <path>`, `server/.env.e2e`, then exactly one `secrets/*ichnos-protocol-test*.json`; it never reads `server/.env`. For terminal-related errors, first verify: (1) you are in the repo root, (2) `gh auth status`, (3) `vercel whoami`, (4) both Vercel projects are linked to `ichnos-client` and `ichnos-protocol_server` (`cd client && vercel link`, `cd server && vercel link`).
+> **Environment note:** The command reads Firebase admin credentials from, in order, `--firebase-env <path>`, `server/.env.e2e`, then exactly one `secrets/*ichnos-protocol-test*.json`; it never reads `server/.env`. For terminal-related errors, first verify: (1) you are in the repo root, (2) `gh auth status`, (3) `vercel whoami`, (4) both Vercel projects are linked to `ichnos-protocol` and `ichnos-protocol_server` (`cd client && vercel link`, `cd server && vercel link`).
 
 ### Vercel Bypass Secret
 
@@ -111,9 +111,9 @@ This secret is required by `e2e.yml` for Playwright tests to bypass Vercel Deplo
 
 | Secret                            | Description                                                                                                                    | Where to Find                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Single Vercel Deployment Protection bypass secret shared by **both** the `ichnos-client` and `ichnos-protocol_server` projects | Generated and applied by the provisioning command |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Single Vercel Deployment Protection bypass secret shared by **both** the `ichnos-protocol` and `ichnos-protocol_server` projects | Generated and applied by the provisioning command |
 
-> The E2E workflow uses this one GitHub secret to probe both deployments. The provisioning command sets one identical value on `ichnos-client`, `ichnos-protocol_server` and GitHub in a single run, so the three cannot drift. If any of the three is not confirmed, the run stops without writing Preview variables or redeploying; the recovery is to re-run the command.
+> The E2E workflow uses this one GitHub secret to probe both deployments. The provisioning command sets one identical value on the `ichnos-protocol` and `ichnos-protocol_server` Vercel projects and on GitHub in a single run, so the three cannot drift. If any of the three is not confirmed, the run stops without writing Preview variables or redeploying; the recovery is to re-run the command.
 
 > **Note:** `FIREBASE_API_KEY` is a GitHub Secret (see the E2E secrets table above), not a repository variable.
 
@@ -130,7 +130,7 @@ The E2E provisioning command never generates these; the owner creates them with 
 | Secret                              | Description                                                                                | Where to Find                                                                             |
 | ----------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | `SYNC_PAT`                          | Personal Access Token with `contents: write` scope, used to force-push `main` to `staging` | GitHub → Settings → Developer settings → Personal access tokens (fine-grained or classic) |
-| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` | Deploy Hook URL that builds the client project from `staging`                              | Vercel → `ichnos-client` → Settings → Git → Deploy Hooks (branch `staging`)               |
+| `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` | Deploy Hook URL that builds the client project from `staging`                              | Vercel → `ichnos-protocol` → Settings → Git → Deploy Hooks (branch `staging`)             |
 | `VERCEL_DEPLOY_HOOK_STAGING_SERVER` | Deploy Hook URL that builds the server project from `staging`                              | Vercel → `ichnos-protocol_server` → Settings → Git → Deploy Hooks (branch `staging`)      |
 
 > **Why a PAT and deploy hooks?** Pushes made with the default `GITHUB_TOKEN` do not trigger Vercel's native Git integration. Vercel also stopped building PAT-driven force-pushes from CI, so the workflow calls the two deploy hooks to start the `staging` builds directly.

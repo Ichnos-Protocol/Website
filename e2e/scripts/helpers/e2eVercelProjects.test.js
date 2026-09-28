@@ -50,7 +50,11 @@ function link(dirName, contents) {
 
 function governed(ownerId) {
   return {
-    "ichnos-client": { id: "prj_c", name: "ichnos-client", accountId: ownerId },
+    "ichnos-protocol": {
+      id: "prj_c",
+      name: "ichnos-protocol",
+      accountId: ownerId,
+    },
     "ichnos-protocol_server": {
       id: "prj_s",
       name: "ichnos-protocol_server",
@@ -104,7 +108,7 @@ afterEach(() => {
 describe("EXPECTED_PROJECT_NAMES", () => {
   it("governs the exact client and server project names", () => {
     expect(EXPECTED_PROJECT_NAMES).toEqual({
-      client: "ichnos-client",
+      client: "ichnos-protocol",
       server: "ichnos-protocol_server",
     });
   });
@@ -113,7 +117,7 @@ describe("EXPECTED_PROJECT_NAMES", () => {
 describe("readOptionalLinkedProject", () => {
   it("returns null when the link file is absent", () => {
     expect(
-      readOptionalLinkedProject(join(root, "client"), "ichnos-client"),
+      readOptionalLinkedProject(join(root, "client"), "ichnos-protocol"),
     ).toBeNull();
   });
 
@@ -166,7 +170,7 @@ describe("readOptionalLinkedProject", () => {
       "ichnos-protocolserver",
       "my-server-project",
       "ichnos-protocolServer",
-      "ichnos-client",
+      "ichnos-protocol",
     ].map((projectName) => [
       `projectName '${projectName}'`,
       { projectId: "prj_s", orgId: "team_1", projectName },
@@ -180,7 +184,7 @@ describe("readOptionalLinkedProject", () => {
     ).toThrow(pattern);
   });
 
-  it.each([["ichnos-protocol"], ["ichnos-protocol_server"]])(
+  it.each([["ichnos-client"], ["ichnos-protocol_server"]])(
     "refuses a client link that names %s",
     (projectName) => {
       const client = link("client", {
@@ -193,7 +197,7 @@ describe("readOptionalLinkedProject", () => {
         readOptionalLinkedProject(client, EXPECTED_PROJECT_NAMES.client),
       ).toThrow(
         new RegExp(
-          `Linked Vercel project '${projectName}' does not match the expected client project 'ichnos-client'`,
+          `Linked Vercel project '${projectName}' does not match the expected client project 'ichnos-protocol'`,
         ),
       );
     },
@@ -282,7 +286,7 @@ describe("connectVercelProjects", () => {
       client: {
         projectId: "prj_c",
         orgId: "team_1",
-        projectName: "ichnos-client",
+        projectName: "ichnos-protocol",
       },
       server: {
         projectId: "prj_s",
@@ -414,17 +418,21 @@ describe("connectVercelProjects", () => {
   it.each([
     [
       "projectName",
-      { projectId: "prj_c", orgId: "team_1", projectName: "ichnos-protocol" },
-      /client\/\.vercel\/project\.json: Linked Vercel project 'ichnos-protocol' does not match the expected client project 'ichnos-client'/,
+      { projectId: "prj_c", orgId: "team_1", projectName: "ichnos-client" },
+      /client\/\.vercel\/project\.json: Linked Vercel project 'ichnos-client' does not match the expected client project 'ichnos-protocol'/,
     ],
     [
       "projectId",
-      { projectId: "prj_stale", orgId: "team_1", projectName: "ichnos-client" },
+      {
+        projectId: "prj_stale",
+        orgId: "team_1",
+        projectName: "ichnos-protocol",
+      },
       /client\/\.vercel\/project\.json projectId 'prj_stale' disagrees[\s\S]*'prj_c'/,
     ],
     [
       "orgId",
-      { projectId: "prj_c", orgId: "team_old", projectName: "ichnos-client" },
+      { projectId: "prj_c", orgId: "team_old", projectName: "ichnos-protocol" },
       /client\/\.vercel\/project\.json orgId 'team_old' disagrees[\s\S]*'team_1'/,
     ],
   ])(
@@ -476,7 +484,7 @@ describe("connectVercelProjects with a token for a Northstar account", () => {
       ({ key, path }) => key === PERSONAL && path.startsWith("/v9/"),
     );
     expect(personal.map(({ path }) => path)).toEqual([
-      "/v9/projects/ichnos-client",
+      "/v9/projects/ichnos-protocol",
       "/v9/projects/ichnos-protocol_server",
     ]);
     expect(createTokenTransport.mock.calls.at(-1)[0].teamId).toBeUndefined();

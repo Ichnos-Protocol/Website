@@ -196,7 +196,7 @@ describe("buildTestAccountsRecord", () => {
   it("never names a production project or domain", () => {
     const record = buildTestAccountsRecord(recordInput());
 
-    expect(record).not.toMatch(/ichnos-protocol(?!-test)/);
+    expect(record).not.toMatch(/ichnos-protocol(?!-test|` Vercel project)/);
     expect(record).toMatch(/## Production tier/);
   });
 
@@ -291,7 +291,7 @@ describe("the client Preview Firebase API key row", () => {
 
     expect(github).toContain("GitHub Actions secret");
     expect(vercel).toContain("all-branches Preview environment");
-    expect(vercel).toContain("ichnos-client");
+    expect(vercel).toContain("`ichnos-protocol` Vercel project");
     expect(record).not.toContain(API_KEY_FIXTURE);
   });
 
