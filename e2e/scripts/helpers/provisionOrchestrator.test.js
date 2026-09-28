@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
 import { fileURLToPath, pathToFileURL } from "url";
 
 const execFileSync = vi.fn();
@@ -1381,4 +1381,33 @@ describe("E2E domain check before any write", () => {
       expect(output()).not.toMatch(/\[preflight\] all checks passed/);
     },
   );
+
+  it("stops before any write when a domain response omits the redirect field", async () => {
+    const actual = await vi.importActual("./e2eVercelDomains.js");
+    onTestFinished(() => VERCEL_CONTEXT.api.request.mockReset());
+    readEnvFile.mockReturnValue(completeEnv());
+    mockSuccessfulSync();
+    VERCEL_CONTEXT.api.request.mockImplementation(async (path) => {
+      const host = decodeURIComponent(path.split("/").pop());
+      if (host === HOST) return { name: host, gitBranch: "main" };
+      return { name: host, gitBranch: "main", redirect: null };
+    });
+    assertE2EDomainsFollowMain.mockImplementation(
+      actual.assertE2EDomainsFollowMain,
+    );
+    const output = captureOutput();
+
+    const error = await main({}).catch((err) => err);
+
+    expect(error.message).toContain(HOST);
+    expect(error.message).toContain("omits the redirect field");
+    expect(error.message).toMatch(/Nothing was changed\.$/);
+    expect(VERCEL_CONTEXT.api.request.mock.calls).toEqual([
+      ["/v9/projects/prj_client/domains/e2e-client.ichnos-protocol.com"],
+      [`/v9/projects/prj_server/domains/${HOST}`],
+    ]);
+    expect(VERCEL_CONTEXT.api.registerSecret).not.toHaveBeenCalled();
+    expectNoWrite();
+    expect(output()).not.toMatch(/\[preflight\] all checks passed/);
+  });
 });
