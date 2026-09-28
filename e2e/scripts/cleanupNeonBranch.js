@@ -10,6 +10,10 @@
  * step, so Neon branches don't accumulate past the project's free-tier
  * limit and block future deployments with "Branch limit exceeded".
  *
+ * The Neon branch behind the E2E domains (`preview/` + the E2E git
+ * branch) is never a target, whatever GIT_BRANCH is. Its `preview/…-*`
+ * deployment variants remain eligible.
+ *
  * This script is BEST-EFFORT:
  *   - Missing env vars cause a soft exit (code 0). The workflow continues.
  *   - API failures are logged but do not fail the workflow.
@@ -35,6 +39,7 @@ import {
   listBranches,
   deleteBranch,
   selectBranchesToDelete,
+  protectedE2EBranchName,
 } from "./helpers/cleanupNeonBranch.js";
 
 const LOG_PREFIX = "[cleanup-neon]";
@@ -51,6 +56,14 @@ function parseArgs(argv) {
   return {
     dryRun: argv.includes("--dry-run"),
   };
+}
+
+function logProtectedBranchKept(allBranches, targets, gitBranch) {
+  const protectedName = protectedE2EBranchName();
+  if (`preview/${gitBranch}` !== protectedName) return;
+  if (!allBranches.some((b) => b?.name === protectedName)) return;
+  if (targets.some((b) => b.name === protectedName)) return;
+  log(`Keeping ${protectedName}: it backs the stable E2E domains.`);
 }
 
 async function main() {
@@ -94,6 +107,7 @@ async function main() {
   for (const b of targets) {
     log(`  • ${b.id}  ${b.name}  (created ${b.created_at ?? "?"})`);
   }
+  logProtectedBranchKept(allBranches, targets, gitBranch);
 
   if (targets.length === 0) {
     log("Nothing to delete.");
