@@ -152,6 +152,24 @@ describe("printSummary", () => {
     );
   });
 
+  it("prints an unchanged GitHub variable row under the variables section", () => {
+    printSummary(
+      [],
+      [],
+      [{ name: "E2E_BASE_URL", status: "unchanged", value: "https://x.test" }],
+    );
+
+    const lines = console.log.mock.calls.map((c) => c[0]);
+    const header = lines.findIndex(
+      (l) => typeof l === "string" && l.includes("GitHub Actions Variables"),
+    );
+    const row = lines.indexOf(
+      `    ${"E2E_BASE_URL".padEnd(30)} ${"unchanged".padEnd(10)} https://x.test`,
+    );
+    expect(header).toBeGreaterThanOrEqual(0);
+    expect(row).toBeGreaterThan(header);
+  });
+
   it("renders each result with name, status, and masked value", () => {
     printSummary(
       [{ name: "E2E_ADMIN_EMAIL", status: "ok", masked: "a***@t.com" }],
