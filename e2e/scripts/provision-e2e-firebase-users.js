@@ -44,8 +44,14 @@
  * VERCEL_TOKEN is an explicit operator choice and always wins: the run then
  * spawns no Vercel CLI and needs no `vercel login`. Without a token the
  * default is the `vercel api` subcommand over the `vercel login` session. The
- * scope that owns both projects is discovered through that authenticated API;
- * a .vercel/project.json is an optional cross-check, never a prerequisite.
+ * least-privilege token is one scoped to the ichnos-protocol team with All
+ * Projects. The scope that owns both projects is discovered through that
+ * authenticated API, so no `vercel link` is required. A team-scoped token
+ * checks only its own team: it cannot reach, and therefore cannot write to, a
+ * same-named project in any other scope. A Full Account token or the CLI
+ * session searches the personal scope and every team and requires exactly
+ * one scope to hold both projects. A .vercel/project.json is an optional
+ * cross-check, never a prerequisite.
  * The only manual steps are `gh auth login` and either `vercel login` or the
  * VERCEL_TOKEN export.
  */

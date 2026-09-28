@@ -738,3 +738,294 @@ describe("lookupProject", () => {
     });
   });
 });
+
+describe("discoverVercelScope with a team-scoped token", () => {
+  const SECRET = "vercel-token-secret-42";
+  const FORBIDDEN = {
+    error: { code: "forbidden", message: "Not authorized: team token" },
+  };
+
+  /**
+   * A fake reached only through the real adapter: the unscoped API answers
+   * /v2/user with `user` (a body or an envelope) and /v9/projects/<name> from
+   * `lookups`, where a missing name is a `not_found` envelope. /v2/teams
+   * answers a valid page, so a wrongly entered account-wide search would run.
+   * Every scopedApiFor call is recorded and throws.
+   */
+  function teamToken({ user = FORBIDDEN, lookups = {} } = {}) {
+    const requests = [];
+    const scopedCalls = [];
+    const inner = {
+      async request(path, options) {
+        requests.push({ path, method: options?.method ?? "GET" });
+        if (path === "/v2/user") return user;
+        if (path.startsWith("/v2/teams")) {
+          return { teams: [], pagination: { count: 0, next: null } };
+        }
+        const name = decodeURIComponent(path.replace("/v9/projects/", ""));
+        return lookups[name] ?? { error: { code: "not_found" } };
+      },
+    };
+    const vercel = throughAdapter({
+      unscopedApi: inner,
+      scopedApiFor: (scope) => {
+        scopedCalls.push(scope);
+        throw new Error("scopedApiFor must not be called on the team path");
+      },
+    });
+    return { ...vercel, requests, scopedCalls };
+  }
+
+  function discoverAs(mode, vercel) {
+    return discoverVercelScope({
+      mode,
+      scopedApiFor: vercel.scopedApiFor,
+      unscopedApi: vercel.unscopedApi,
+      names: NAMES,
+    });
+  }
+
+  function expectNoTeamsOrScoped(vercel) {
+    expect(vercel.requests.some((r) => r.path.startsWith("/v2/teams"))).toBe(
+      false,
+    );
+    expect(vercel.scopedCalls).toEqual([]);
+    expect(vercel.requests.every((r) => r.method === "GET")).toBe(true);
+  }
+
+  it("resolves the token's team when both projects share one team_ account", async () => {
+    const vercel = teamToken({ lookups: bothIn("team_x") });
+
+    const result = await discoverAs("token", vercel);
+
+    expect(result).toEqual({
+      scope: {
+        kind: "team",
+        id: "team_x",
+        label: "team_x",
+        cliScope: "team_x",
+      },
+      projects: {
+        client: {
+          projectId: "prj_c_team_x",
+          orgId: "team_x",
+          projectName: "ichnos-protocol",
+        },
+        server: {
+          projectId: "prj_s_team_x",
+          orgId: "team_x",
+          projectName: "ichnos-protocol_server",
+        },
+      },
+    });
+    expect(vercel.requests.map((r) => r.path)).toEqual([
+      "/v2/user",
+      "/v9/projects/ichnos-protocol",
+      "/v9/projects/ichnos-protocol_server",
+    ]);
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it.each([
+    ["client", "ichnos-protocol"],
+    ["server", "ichnos-protocol_server"],
+  ])(
+    "refuses when the %s project is missing in the token's team",
+    async (role, name) => {
+      const lookups = { ...bothIn("team_x") };
+      delete lookups[name];
+      const vercel = teamToken({ lookups });
+
+      const error = await discoverAs("token", vercel).catch((e) => e);
+
+      expect(error.message).toContain(
+        `The ${role} project '${name}' is missing in the Vercel token's team.`,
+      );
+      expect(error.message).toMatch(/Nothing was changed\.$/);
+      expectNoTeamsOrScoped(vercel);
+    },
+  );
+
+  it("refuses projects that belong to different accounts", async () => {
+    const vercel = teamToken({
+      lookups: {
+        "ichnos-protocol": bothIn("team_x")["ichnos-protocol"],
+        "ichnos-protocol_server": bothIn("team_y")["ichnos-protocol_server"],
+      },
+    });
+
+    const error = await discoverAs("token", vercel).catch((e) => e);
+
+    expect(error.message).toMatch(/different accounts/);
+    expect(error.message).toContain("prj_c_team_x (accountId team_x)");
+    expect(error.message).toContain("prj_s_team_y (accountId team_y)");
+    expect(error.message).toMatch(/Nothing was changed\.$/);
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it("refuses a shared accountId that is not a team", async () => {
+    const vercel = teamToken({ lookups: bothIn("user_1") });
+
+    const error = await discoverAs("token", vercel).catch((e) => e);
+
+    expect(error.message).toMatch(/did not resolve to a team/);
+    expect(error.message).toContain("'user_1' is not a team");
+    expect(error.message).toMatch(/Nothing was changed\.$/);
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it("refuses a lookup that returns another name", async () => {
+    const vercel = teamToken({
+      lookups: {
+        ...bothIn("team_x"),
+        "ichnos-protocol": project("ichnos-client", "prj_x", "team_x"),
+      },
+    });
+
+    const error = await discoverAs("token", vercel).catch((e) => e);
+
+    expect(error.message).toMatch(
+      /lookup of 'ichnos-protocol' did not return that exact project/,
+    );
+    expect(error.message).toMatch(/Nothing was changed\.$/);
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it("advises checking the token when the lookups are also forbidden", async () => {
+    const echo = JSON.stringify({
+      error: { code: "forbidden", message: `token ${SECRET} is invalid` },
+    });
+    const requests = [];
+    const vercel = {
+      requests,
+      scopedCalls: [],
+      scopedApiFor: () => {
+        throw new Error("scopedApiFor must not be called");
+      },
+      unscopedApi: createVercelApi({
+        secrets: [SECRET],
+        transport: async (path) => {
+          requests.push({ path, method: "GET" });
+          return { ok: false, status: 403, text: echo, errorText: echo };
+        },
+      }),
+    };
+
+    const error = await discoverAs("token", vercel).catch((e) => e);
+
+    expect(error.message).toMatch(
+      /could read neither GET \/v2\/user nor the governed projects/,
+    );
+    expect(error.message).toMatch(
+      /VERCEL_TOKEN is valid and scoped to the ichnos-protocol team with All Projects/,
+    );
+    expect(error.message).toMatch(/Nothing was changed\.$/);
+    expect(JSON.stringify({ ...error, message: error.message })).not.toContain(
+      SECRET,
+    );
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it.each([
+    ["unauthorized", { error: { code: "unauthorized", message: "no" } }],
+    ["rate_limited", { error: { code: "rate_limited", message: "slow" } }],
+    ["unknown-code", { error: { message: "no code" } }],
+    ["no-user-id", { user: { username: "alice" } }],
+  ])(
+    "keeps today's refusal for a %s /v2/user answer in token mode",
+    async (_label, user) => {
+      const vercel = teamToken({ user, lookups: bothIn("team_x") });
+
+      const error = await discoverAs("token", vercel).catch((e) => e);
+
+      expect(error.message).toMatch(/\/v2\/user/);
+      expect(error.message).not.toMatch(/token's team|could read neither/);
+      expect(vercel.requests.map((r) => r.path)).toEqual(["/v2/user"]);
+      expectNoTeamsOrScoped(vercel);
+    },
+  );
+
+  it.each([
+    ["an unstructured 403", 403, "forbidden"],
+    ["a 5xx", 503, "service unavailable"],
+  ])(
+    "keeps today's refusal for %s from /v2/user in token mode",
+    async (_label, status, text) => {
+      const requests = [];
+      const vercel = {
+        requests,
+        scopedCalls: [],
+        scopedApiFor: () => {
+          throw new Error("scopedApiFor must not be called");
+        },
+        unscopedApi: createVercelApi({
+          transport: async (path) => {
+            requests.push({ path, method: "GET" });
+            return { ok: false, status, text, errorText: text };
+          },
+        }),
+      };
+
+      const error = await discoverAs("token", vercel).catch((e) => e);
+
+      expect(error.status).toBe(status);
+      expect(error.code).toBeUndefined();
+      expect(error.message).toMatch(/GET \/v2\/user failed/);
+      expect(requests.map((r) => r.path)).toEqual(["/v2/user"]);
+      expectNoTeamsOrScoped(vercel);
+    },
+  );
+
+  it("does not fall back in CLI mode on a forbidden /v2/user", async () => {
+    const vercel = teamToken({ lookups: bothIn("team_x") });
+
+    const error = await discoverAs("cli", vercel).catch((e) => e);
+
+    expect(error.code).toBe("forbidden");
+    expect(error.message).toMatch(/GET \/v2\/user failed/);
+    expect(vercel.requests.map((r) => r.path)).toEqual(["/v2/user"]);
+    expectNoTeamsOrScoped(vercel);
+  });
+
+  it("does not fall back when a Full Account token's /v2/teams is forbidden", async () => {
+    const vercel = fakeVercel({ projects: { user_1: bothIn("user_1") } });
+    const forbiddenTeams = {
+      ...vercel,
+      unscopedApi: {
+        async request(path) {
+          if (path === "/v2/user") return vercel.unscopedApi.request(path);
+          vercel.requests.push({ scopeId: null, path, method: "GET" });
+          return FORBIDDEN;
+        },
+      },
+    };
+
+    const error = await discoverAs(
+      "token",
+      throughAdapter(forbiddenTeams),
+    ).catch((e) => e);
+
+    expect(error.code).toBe("forbidden");
+    expect(error.message).toMatch(/GET \/v2\/teams failed/);
+    expect(error.message).not.toMatch(/could read neither/);
+    expect(vercel.requests.some((r) => r.path.startsWith("/v9/"))).toBe(false);
+  });
+
+  it("keeps the account-wide search for a Full Account token", async () => {
+    const vercel = fakeVercel({
+      teams: [[TEAM_A, TEAM_B]],
+      projects: { team_b: bothIn("team_b") },
+    });
+
+    const { scope } = await discoverAs("token", vercel);
+
+    expect(scope).toEqual({
+      kind: "team",
+      id: "team_b",
+      label: "beta",
+      cliScope: "beta",
+    });
+    const userReads = vercel.requests.filter((r) => r.path === "/v2/user");
+    expect(userReads).toHaveLength(1);
+  });
+});

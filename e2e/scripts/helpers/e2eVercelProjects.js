@@ -173,6 +173,7 @@ export async function connectVercelProjects({
     access.mode === "token" ? null : resolveCliAccountScope({ run });
   const context = { access, env, run, accountScope };
   const { scope, projects } = await discoverVercelScope({
+    mode: access.mode,
     unscopedApi: apiFor(context, null),
     scopedApiFor: (candidate) => apiFor(context, candidate),
     names: EXPECTED_PROJECT_NAMES,

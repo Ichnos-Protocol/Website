@@ -516,6 +516,106 @@ describe("connectVercelProjects with a token for a Northstar account", () => {
   });
 });
 
+describe("connectVercelProjects with a team-scoped token", () => {
+  const UNSCOPED = "unscoped-or-personal";
+
+  // A team-scoped token cannot read the user: /v2/user answers a 403
+  // `forbidden` envelope; every other path goes to the governed fake.
+  function forbiddenUser(key) {
+    const governedTransport = fakeTransport(key);
+    return async (path, options) => {
+      if (path !== "/v2/user") return governedTransport(path, options);
+      world.requests.push({ key, path, method: options.method });
+      const text = JSON.stringify({
+        error: { code: "forbidden", message: "Not authorized" },
+      });
+      return { ok: false, status: 403, text, errorText: text };
+    };
+  }
+
+  function connect() {
+    return connectVercelProjects({
+      access: { mode: "token" },
+      ...dirs(),
+      env: { VERCEL_TOKEN: TOKEN },
+    });
+  }
+
+  beforeEach(() => {
+    // The token's team answers unscoped lookups as its own.
+    world.projects[UNSCOPED] = governed("team_1");
+    createTokenTransport.mockImplementation(({ teamId }) =>
+      forbiddenUser(teamId ?? UNSCOPED),
+    );
+  });
+
+  it("resolves the token's team and pins the returned API to it", async () => {
+    const result = await connect();
+
+    expect(result.projects).toEqual({
+      client: {
+        projectId: "prj_c",
+        orgId: "team_1",
+        projectName: "ichnos-protocol",
+      },
+      server: {
+        projectId: "prj_s",
+        orgId: "team_1",
+        projectName: "ichnos-protocol_server",
+      },
+    });
+    expect(createTokenTransport.mock.calls.at(-1)[0]).toEqual({
+      token: TOKEN,
+      teamId: "team_1",
+    });
+    expect(world.requests.map(({ path }) => path)).toEqual([
+      "/v2/user",
+      "/v9/projects/ichnos-protocol",
+      "/v9/projects/ichnos-protocol_server",
+    ]);
+    expect(
+      world.requests.some(({ path }) => path.startsWith("/v2/teams")),
+    ).toBe(false);
+    expect(world.requests.every(({ method }) => method === "GET")).toBe(true);
+    expect(JSON.stringify(result.projects)).not.toContain(TOKEN);
+  });
+
+  it("passes a matching client link file and never writes it", async () => {
+    const path = join(
+      link("client", {
+        projectId: "prj_c",
+        orgId: "team_1",
+        projectName: EXPECTED_PROJECT_NAMES.client,
+      }),
+      ".vercel",
+      "project.json",
+    );
+    const before = [readFileSync(path, "utf8"), statSync(path).mtimeMs];
+
+    await connect();
+
+    expect([readFileSync(path, "utf8"), statSync(path).mtimeMs]).toEqual(
+      before,
+    );
+  });
+
+  it("refuses a client link whose orgId disagrees, before any write", async () => {
+    link("client", {
+      projectId: "prj_c",
+      orgId: "team_old",
+      projectName: EXPECTED_PROJECT_NAMES.client,
+    });
+
+    const error = await connect().catch((err) => err);
+
+    expect(error.message).toMatch(
+      /client\/\.vercel\/project\.json orgId 'team_old' disagrees with the discovered team scope 'team_1', whose value is 'team_1'/,
+    );
+    expect(error.message).not.toContain(TOKEN);
+    expect(world.requests.every(({ method }) => method === "GET")).toBe(true);
+  });
+});
+
 describe("connectVercelProjects token redaction", () => {
   function echoingTransport(status) {
     return async () => {

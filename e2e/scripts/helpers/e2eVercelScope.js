@@ -1,18 +1,28 @@
 /**
- * Finds the one Vercel scope (the signed-in user's personal account or one of
- * their teams) that owns both governed projects. Discovery is read-only: it
- * issues only GET requests, runs before any provider write, and refuses
- * rather than guesses. Zero or several qualifying scopes stop the run.
+ * Finds the one Vercel scope that owns both governed projects. Discovery is
+ * read-only: it issues only GET requests, runs before any provider write, and
+ * refuses rather than guesses. It has two paths.
  *
- * A scope qualifies only when the exact-name lookup of each governed project
- * returns that name, a project id and an accountId equal to the scope's id.
- * The accountId check is the backstop that turns a wrongly scoped probe into
- * an absence, never a false match.
+ * The account-wide search serves a Full Account token and the CLI session:
+ * the signed-in user's personal account and every team are candidates, and
+ * zero or several qualifying scopes stop the run. A scope qualifies only when
+ * the exact-name lookup of each governed project returns that name, a project
+ * id and an accountId equal to the scope's id. The accountId check is the
+ * backstop that turns a wrongly scoped probe into an absence, never a false
+ * match.
+ *
+ * The team-scoped token path serves an explicit token (mode "token") whose
+ * GET /v2/user answers with a structured `forbidden`: a token scoped to one
+ * team cannot read the user. It looks up both governed names through that
+ * token alone and accepts them only with exact names, one shared accountId,
+ * and a team_ id. It checks only the token's own team, because the token
+ * cannot reach, and therefore cannot write to, a same-named project in any
+ * other scope. It never reads /v2/teams.
  *
  * Transport concerns stay with the caller: `unscopedApi` reads the user and
  * their teams, and `scopedApiFor(scope)` returns an API pinned to one scope.
  */
-import { isNotFoundError } from "./e2eVercelApi.js";
+import { isNotFoundError, isTeamId } from "./e2eVercelApi.js";
 
 const TEAM_PAGE_LIMIT = 100;
 export const MAX_TEAM_PAGES = 50;
@@ -126,9 +136,12 @@ export async function listTeamScopes({ api }) {
   );
 }
 
-/** Personal first, then teams by id ascending; each scope id listed once. */
-export async function candidateScopes({ api }) {
-  const personal = await readPersonalScope({ api });
+/**
+ * Personal first, then teams by id ascending; each scope id listed once. A
+ * personal scope already read by the caller is reused, never read twice.
+ */
+export async function candidateScopes({ api, personal: preRead }) {
+  const personal = preRead ?? (await readPersonalScope({ api }));
   const teams = (await listTeamScopes({ api })).sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   );
@@ -227,28 +240,128 @@ function refuseMany(qualifying, names) {
 }
 
 /**
+ * True only when an explicit token's GET /v2/user failed with a structured
+ * `forbidden`. Every other failure (unauthorized, rate limits, 5xx, an
+ * unstructured 403, `unknown`, a body with no user id) has no such code and
+ * refuses on the account-wide path.
+ */
+export function isTeamTokenPath(mode, error) {
+  return mode === "token" && error?.code === "forbidden";
+}
+
+function refuseTokenLookup(error) {
+  const detail = typeof error?.detail === "string" ? ` (${error.detail})` : "";
+  return new Error(
+    `The Vercel token could read neither GET /v2/user nor the governed projects${detail}. ` +
+      "Check that VERCEL_TOKEN is valid and scoped to the ichnos-protocol team with All Projects. Nothing was changed.",
+  );
+}
+
+async function lookupInTokenTeam({ api, role, name }) {
+  let result;
+  try {
+    result = await lookupProject({ api, name });
+  } catch (error) {
+    throw refuseTokenLookup(error);
+  }
+  if (result.absent) {
+    throw new Error(
+      `The ${role} project '${name}' is missing in the Vercel token's team. Nothing was changed.`,
+    );
+  }
+  return result.found;
+}
+
+function assertExactProject(project, name) {
+  if (project.name === name && hasText(project.id)) return;
+  throw new Error(
+    `The Vercel token's lookup of '${name}' did not return that exact project; refusing to guess. Nothing was changed.`,
+  );
+}
+
+function sharedTeamAccount(found) {
+  const projects = Object.values(found);
+  const accounts = new Set(projects.map((project) => project.accountId));
+  if (accounts.size !== 1) {
+    const owners = projects.map((p) => `${p.id} (accountId ${p.accountId})`);
+    throw new Error(
+      `The governed projects belong to different accounts: ${owners.join(" and ")}. Nothing was changed.`,
+    );
+  }
+  const [accountId] = accounts;
+  if (!isTeamId(accountId)) {
+    throw new Error(
+      `The Vercel token did not resolve to a team: the governed projects' shared accountId '${accountId}' is not a team. Nothing was changed.`,
+    );
+  }
+  return accountId;
+}
+
+function normaliseAll(found) {
+  return Object.fromEntries(
+    Object.entries(found).map(([role, project]) => [role, normalise(project)]),
+  );
+}
+
+/**
+ * The team-scoped token path: both governed names looked up through the
+ * unscoped token API, accepted only as exact names sharing one team_ account.
+ */
+export async function discoverTokenTeamScope({ api, names }) {
+  const found = {};
+  for (const [role, name] of Object.entries(names)) {
+    found[role] = await lookupInTokenTeam({ api, role, name });
+    assertExactProject(found[role], name);
+  }
+  const accountId = sharedTeamAccount(found);
+  const scope = {
+    kind: "team",
+    id: accountId,
+    label: accountId,
+    cliScope: accountId,
+  };
+  return { scope, projects: normaliseAll(found) };
+}
+
+async function readPersonalOrTeamPath({ mode, unscopedApi, names }) {
+  try {
+    return { personal: await readPersonalScope({ api: unscopedApi }) };
+  } catch (error) {
+    if (!isTeamTokenPath(mode, error)) throw error;
+    return { team: await discoverTokenTeamScope({ api: unscopedApi, names }) };
+  }
+}
+
+/**
  * The single scope that holds every governed project, with those projects
  * normalised to { projectId, orgId, projectName }. `names` maps each role to
- * its governed project name.
+ * its governed project name; `mode` is the caller's access mode.
  */
 export async function discoverVercelScope({
+  mode,
   scopedApiFor,
   unscopedApi,
   names,
 }) {
-  const scopes = await candidateScopes({ api: unscopedApi });
+  const read = await readPersonalOrTeamPath({ mode, unscopedApi, names });
+  if (read.team) return read.team;
+  const scopes = await candidateScopes({
+    api: unscopedApi,
+    personal: read.personal,
+  });
   const findings = [];
   for (const scope of scopes) {
     findings.push(
       await qualifyScope({ api: scopedApiFor(scope), scope, names }),
     );
   }
+  return selectQualifyingScope(findings, names);
+}
+
+function selectQualifyingScope(findings, names) {
   const qualifying = findings.filter((finding) => finding.qualifies);
   if (qualifying.length === 0) refuseNone(findings, names);
   if (qualifying.length > 1) refuseMany(qualifying, names);
   const [{ scope, found }] = qualifying;
-  const projects = Object.fromEntries(
-    Object.entries(found).map(([role, project]) => [role, normalise(project)]),
-  );
-  return { scope, projects };
+  return { scope, projects: normaliseAll(found) };
 }

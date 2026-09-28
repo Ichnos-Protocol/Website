@@ -99,7 +99,12 @@ It is a **local developer/admin tool** run from your own machine. It is **not** 
 - sets one identical `VERCEL_AUTOMATION_BYPASS_SECRET` on the `ichnos-protocol` and `ichnos-protocol_server` Vercel projects and on GitHub; if any of the three is not confirmed, the run stops before writing any Vercel env var or redeploying
 - writes the all-branches Preview variables (client `VITE_FIREBASE_API_KEY`; server `E2E_*_EMAIL` and `E2E_*_UID`) and redeploys only the previews whose variables changed
 
-Before any write, the command finds the Vercel scope that owns both projects. It lists the signed-in user's personal scope and teams, looks up the exact names `ichnos-protocol` and `ichnos-protocol_server` in each, and requires exactly one scope to contain both. If no scope or more than one scope contains both, the run stops before any write.
+Before any write, the command finds the Vercel scope that owns both projects by one of two paths:
+
+- A token scoped to one team checks only that team. It looks up the exact names `ichnos-protocol` and `ichnos-protocol_server` and requires both to exist and to belong to the same team. The token cannot reach any other scope, so it cannot write to a same-named project elsewhere.
+- A Full Account token or the CLI session searches the whole account. It lists the signed-in user's personal scope and teams, looks up both exact names in each, and requires exactly one scope to contain both.
+
+When discovery cannot decide (a project is missing, the projects sit in different scopes, or several scopes qualify), the run stops before any write.
 
 **Other modes:**
 
@@ -111,7 +116,7 @@ Before any write, the command finds the Vercel scope that owns both projects. It
 - the Firebase test service account in one of the credential sources above
 - Vercel access, by one of two transports:
   - the default: `vercel login`, and the run reaches the Vercel API through the CLI's `vercel api` subcommand
-  - an exported, non-empty `VERCEL_TOKEN`, which always overrides the CLI. The run then spawns no Vercel CLI and does not need `vercel login`. Use it when the installed CLI lacks `vercel api`, or when the CLI of a Northstar account refuses a personal scope
+  - an exported, non-empty `VERCEL_TOKEN`, which always overrides the CLI. The run then spawns no Vercel CLI and does not need `vercel login`. Use it when the installed CLI lacks `vercel api`, or when the CLI of a Northstar account refuses a personal scope. The least-privilege token is one scoped to the `ichnos-protocol` team with **All Projects**
 
 The run discovers the Vercel scope through the authenticated API, so `vercel link` is not required.
 
