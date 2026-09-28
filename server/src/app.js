@@ -18,6 +18,7 @@ import gdprRoutes from "./routes/gdprRoutes.js";
 import consortiumRoutes from "./routes/consortiumRoutes.js";
 import buildStatusPage from "./helpers/buildStatusPage.js";
 import { formatResponse } from "./helpers/formatResponse.js";
+import { buildErrorResponse } from "./helpers/buildErrorResponse.js";
 import { ensureSeeded, seedStatus } from "../scripts/seedE2EOnPreview.js";
 
 const app = express();
@@ -135,18 +136,21 @@ app.use((_req, res) => {
 // service-level refusal is not shaped differently from an auth or validation
 // refusal. `error` carries a machine-readable reason (string, or the issue
 // array validators supply) — never the boolean `true`.
+// A status of 500 or more returns only the generic message and reason,
+// because `err.message` and `err.code` can carry database and vendor detail.
+// The stack is added only in local development, never on Vercel, since
+// Preview runs NODE_ENV=development. The full error still goes to the
+// private server log.
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error("Error:", err);
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  const reason = err.code || err.message || "Internal Server Error";
-
-  res.status(statusCode).json({
-    ...formatResponse(null, message, reason),
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  const { statusCode, body } = buildErrorResponse(err, {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: process.env.VERCEL,
   });
+
+  res.status(statusCode).json(body);
 });
 
 // Start server only in local development (not in Vercel)

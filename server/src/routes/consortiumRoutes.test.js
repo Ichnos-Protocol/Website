@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 
+import { GENERIC_ERROR_MESSAGE } from "../helpers/buildErrorResponse.js";
+
 const mockVerifyIdToken = vi.fn();
 const mockQuery = vi.fn();
 
@@ -213,6 +215,24 @@ describe("Consortium routes", () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    });
+
+    it("sends no stack and the generic message on a 500 in a Vercel development deployment", async () => {
+      vi.stubEnv("VERCEL", "1");
+      vi.stubEnv("NODE_ENV", "development");
+      mockVerifyIdToken.mockResolvedValue(decodedToken);
+      mockQuery.mockRejectedValue(new Error("db exploded"));
+
+      const res = await request(app)
+        .get("/api/consortium/me")
+        .set(authHeader());
+
+      expect(res.status).toBe(500);
+      expect(Object.prototype.hasOwnProperty.call(res.body, "stack")).toBe(
+        false,
+      );
+      expect(res.body.message).toBe(GENERIC_ERROR_MESSAGE);
     });
 
     it("returns a string error reason, not error: true, on an unhandled failure", async () => {
