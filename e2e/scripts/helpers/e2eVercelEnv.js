@@ -84,26 +84,38 @@ function assertCreatedEntry(response, key) {
   );
 }
 
-// Vercel omits gitBranch on an entry that applies to every branch; target and
-// customEnvironmentIds are always present on the env endpoint.
+// An absent customEnvironmentIds is an empty list; a present value must be an
+// array, and anything else returns undefined, which the caller refuses.
+function normalizeCustomEnvironmentIds(raw) {
+  if (raw === undefined) return [];
+  return Array.isArray(raw) ? raw : undefined;
+}
+
+// Vercel omits gitBranch on an entry that applies to every branch. Entries
+// created through POST /v10/projects/{id}/env are listed by
+// GET /v9/projects/{id}/env with no customEnvironmentIds, so an absent
+// property means no custom environment. Returns the custom-environment list.
 function assertKnownScopeShape(entry) {
+  const customEnvironmentIds = normalizeCustomEnvironmentIds(
+    entry?.customEnvironmentIds,
+  );
   const known =
     Array.isArray(entry?.target) &&
-    Array.isArray(entry?.customEnvironmentIds) &&
+    customEnvironmentIds !== undefined &&
     (entry.gitBranch == null || typeof entry.gitBranch === "string");
-  if (known) return;
+  if (known) return customEnvironmentIds;
   throw new Error(
     `Vercel env entry for ${entry?.key ?? "an unnamed key"} has an unrecognised scope shape; refusing to guess. Nothing was written.`,
   );
 }
 
 export function isAllBranchesPreview(entry) {
-  assertKnownScopeShape(entry);
+  const customEnvironmentIds = assertKnownScopeShape(entry);
   return (
     entry.target.includes("preview") &&
     !entry.target.includes("production") &&
     entry.gitBranch == null &&
-    entry.customEnvironmentIds.length === 0
+    customEnvironmentIds.length === 0
   );
 }
 

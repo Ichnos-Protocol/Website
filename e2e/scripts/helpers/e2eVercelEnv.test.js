@@ -21,6 +21,18 @@ function entry(overrides) {
   };
 }
 
+// The shape GET /v9/.../env lists for an entry created through the v10 POST:
+// no gitBranch and no customEnvironmentIds key at all.
+function observedEntry(overrides) {
+  return {
+    id: "env_all",
+    key: KEY,
+    target: ["preview"],
+    type: "encrypted",
+    ...overrides,
+  };
+}
+
 const PRODUCTION = entry({ id: "env_prod", target: ["production"] });
 const STAGING = entry({ id: "env_staging", gitBranch: "staging" });
 const MAIN = entry({ id: "env_main", gitBranch: "main" });
@@ -68,12 +80,32 @@ describe("isAllBranchesPreview", () => {
 
   it("throws on an unknown scope shape", () => {
     expect(() =>
-      isAllBranchesPreview(entry({ customEnvironmentIds: undefined })),
+      isAllBranchesPreview(entry({ customEnvironmentIds: "env_x" })),
     ).toThrow(/unrecognised scope shape/);
     expect(() => isAllBranchesPreview(entry({ target: "preview" }))).toThrow(
       /unrecognised scope shape/,
     );
   });
+
+  it("accepts the listed shape with no customEnvironmentIds key", () => {
+    expect(observedEntry()).not.toHaveProperty("customEnvironmentIds");
+    expect(isAllBranchesPreview(observedEntry())).toBe(true);
+    expect(isAllBranchesPreview(observedEntry({ gitBranch: "main" }))).toBe(
+      false,
+    );
+    expect(
+      isAllBranchesPreview(observedEntry({ target: ["production"] })),
+    ).toBe(false);
+  });
+
+  it.each(["env_x", { id: "env_x" }, null, 3])(
+    "refuses a present non-array customEnvironmentIds of %s",
+    (value) => {
+      expect(() =>
+        isAllBranchesPreview(entry({ customEnvironmentIds: value })),
+      ).toThrow(/unrecognised scope shape/);
+    },
+  );
 });
 
 describe("setPreviewEnv", () => {
@@ -154,7 +186,7 @@ describe("setPreviewEnv", () => {
   });
 
   it("fails before any write on an unknown shape", async () => {
-    const api = fakeApi([entry({ customEnvironmentIds: undefined })]);
+    const api = fakeApi([entry({ customEnvironmentIds: null })]);
 
     await expect(
       findPreviewEntry({ api, projectId: "prj_s", key: KEY }),
@@ -174,6 +206,73 @@ describe("setPreviewEnv", () => {
 
     expect(JSON.stringify(result)).not.toContain("AIzaSecretApiKeyValue");
     expect(api.registerSecret).toHaveBeenCalledWith("AIzaSecretApiKeyValue");
+  });
+});
+
+describe("setPreviewEnv on entries listed with no customEnvironmentIds", () => {
+  const VALUE = "same-uid-value";
+
+  function run(api, value = VALUE) {
+    return setPreviewEnv({ api, projectId: "prj_s", key: KEY, value });
+  }
+
+  // The list starts empty; after a POST it lists the observed field-less
+  // entry, and the decrypt GET returns the written value.
+  function statefulApi() {
+    let stored;
+    const request = vi.fn(async (path, { method = "GET", body } = {}) => {
+      if (method === "POST") {
+        stored = body.value;
+        return CREATED;
+      }
+      if (path.split("?")[0].endsWith("/env")) {
+        return { envs: stored === undefined ? [] : [observedEntry()] };
+      }
+      return { value: stored };
+    });
+    return { request, registerSecret: vi.fn() };
+  }
+
+  it("writes nothing when the value is unchanged", async () => {
+    const api = fakeApi([observedEntry()], { env_all: VALUE });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ name: KEY, status: "unchanged" });
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("reads back its own create as unchanged", async () => {
+    const api = statefulApi();
+
+    const first = await run(api);
+    const second = await run(api);
+
+    expect(first).toMatchObject({ status: "success", operation: "created" });
+    expect(second).toMatchObject({ status: "unchanged" });
+    expect(writeCalls(api)).toHaveLength(1);
+  });
+
+  it("never selects a field-less branch or production entry", async () => {
+    const api = fakeApi(
+      [
+        observedEntry({ id: "env_main", gitBranch: "main" }),
+        observedEntry({ id: "env_prod", target: ["production"] }),
+      ],
+      {},
+      { POST: CREATED },
+    );
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ status: "success", operation: "created" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v10/projects/prj_s/env");
+    expect(writes[0][1].method).toBe("POST");
+    const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+    expect(paths).not.toContain("env_main");
+    expect(paths).not.toContain("env_prod");
   });
 });
 
