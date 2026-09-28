@@ -11,7 +11,9 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from "fs";
 import { basename, extname, resolve } from "path";
 import { parse } from "dotenv";
 
-export const E2E_FIREBASE_PROJECT_ID = "ichnos-protocol-test";
+import { E2E_FIREBASE_PROJECT_ID } from "./e2eFixedConfig.js";
+
+export { E2E_FIREBASE_PROJECT_ID };
 
 const DEFAULT_CREDENTIAL_PATH = "server/.env.e2e";
 const REFUSED_SERVER_ENV_PATH = "server/.env";
