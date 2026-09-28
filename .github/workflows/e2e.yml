@@ -85,7 +85,6 @@ jobs:
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     # For repository_dispatch: only run for SERVER deployments from main.
     # Skip staging branch deployments — staging is a mirror of main

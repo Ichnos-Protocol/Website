@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { printFailedDetails, printSummary } from "./e2eReporting.js";
+import {
+  printBypass,
+  printFailedDetails,
+  printRedeploys,
+  printSummary,
+} from "./e2eReporting.js";
 
 describe("printFailedDetails", () => {
   beforeEach(() => {
@@ -116,6 +121,55 @@ describe("printSummary", () => {
     expect(allOutput).toContain("E2E Credential Sync Summary");
   });
 
+  it("prints a Preview row's scope and a scopeless GitHub row as before", () => {
+    printSummary(
+      [{ name: "E2E_ADMIN_EMAIL", status: "success", masked: "a***@t.com" }],
+      [
+        {
+          name: "E2E_ADMIN_UID",
+          scope: "all-branches",
+          status: "unchanged",
+          masked: "****-uid",
+        },
+        {
+          name: "E2E_ADMIN_UID",
+          scope: "main",
+          status: "success",
+          masked: "****-uid",
+        },
+      ],
+    );
+
+    const lines = console.log.mock.calls.map((c) => c[0]);
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_EMAIL".padEnd(30)} ${"success".padEnd(10)} a***@t.com`,
+    );
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_UID (all-branches)".padEnd(30)} ${"unchanged".padEnd(10)} ****-uid`,
+    );
+    expect(lines).toContain(
+      `    ${"E2E_ADMIN_UID (main)".padEnd(30)} ${"success".padEnd(10)} ****-uid`,
+    );
+  });
+
+  it("prints an unchanged GitHub variable row under the variables section", () => {
+    printSummary(
+      [],
+      [],
+      [{ name: "E2E_BASE_URL", status: "unchanged", value: "https://x.test" }],
+    );
+
+    const lines = console.log.mock.calls.map((c) => c[0]);
+    const header = lines.findIndex(
+      (l) => typeof l === "string" && l.includes("GitHub Actions Variables"),
+    );
+    const row = lines.indexOf(
+      `    ${"E2E_BASE_URL".padEnd(30)} ${"unchanged".padEnd(10)} https://x.test`,
+    );
+    expect(header).toBeGreaterThanOrEqual(0);
+    expect(row).toBeGreaterThan(header);
+  });
+
   it("renders each result with name, status, and masked value", () => {
     printSummary(
       [{ name: "E2E_ADMIN_EMAIL", status: "ok", masked: "a***@t.com" }],
@@ -128,6 +182,28 @@ describe("printSummary", () => {
     expect(resultLine).toBeDefined();
     expect(resultLine[0]).toContain("ok");
     expect(resultLine[0]).toContain("a***@t.com");
+  });
+
+  it("prints the client API key as **** with no tail, and its status", () => {
+    printSummary(
+      [],
+      [
+        {
+          name: "VITE_FIREBASE_API_KEY",
+          masked: "****",
+          status: "unchanged",
+          operation: "unchanged",
+          updatedAt: "2026-09-20T08:15:00.000Z",
+        },
+      ],
+    );
+
+    const resultLine = console.log.mock.calls.find(
+      (c) => typeof c[0] === "string" && c[0].includes("VITE_FIREBASE_API_KEY"),
+    );
+    expect(resultLine[0]).toContain("unchanged");
+    expect(resultLine[0]).toMatch(/\*\*\*\*/);
+    expect(resultLine[0]).not.toMatch(/\*\*\*\*\w/);
   });
 
   it("renders inline error for failed results", () => {
@@ -202,5 +278,164 @@ describe("printSummary with GitHub variables", () => {
     );
     expect(resultLine[0]).toContain("https://x.test");
     expect(resultLine[0]).not.toContain("undefined");
+  });
+});
+
+describe("provider sections", () => {
+  const SECRET = "BypassValueThatMustNeverPrint01";
+
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function printed() {
+    return console.log.mock.calls.map((args) => args.join(" ")).join("\n");
+  }
+
+  it("prints an unchanged Preview entry with its masked value", () => {
+    printSummary(
+      [],
+      [{ name: "E2E_USER_UID", status: "unchanged", masked: "****ab12" }],
+    );
+
+    expect(printed()).toMatch(/E2E_USER_UID\s+unchanged\s+\*\*\*\*ab12/);
+  });
+
+  it("prints each redeploy with project, host and outcome", () => {
+    printRedeploys([
+      {
+        project: "ichnos-protocol_server",
+        host: "e2e-api.ichnos-protocol.com",
+        status: "success",
+      },
+      {
+        project: "ichnos-protocol",
+        host: "e2e-client.ichnos-protocol.com",
+        status: "failed",
+        reason: "no deployment serves e2e-client.ichnos-protocol.com",
+      },
+    ]);
+
+    const text = printed();
+    expect(text).toContain("Redeployments:");
+    expect(text).toMatch(
+      /ichnos-protocol_server\s+e2e-api\.ichnos-protocol\.com\s+success/,
+    );
+    expect(text).toMatch(/failed\s+no deployment serves/);
+  });
+
+  it("says when nothing was redeployed", () => {
+    printRedeploys([]);
+
+    expect(printed()).toMatch(/none: no project's main Preview value changed/);
+  });
+
+  it("prints the bypass as **** with no tail", () => {
+    printBypass({
+      attempted: true,
+      generated: true,
+      complete: false,
+      results: [
+        {
+          project: "ichnos-protocol",
+          heldBefore: false,
+          added: true,
+          confirmed: true,
+          revoked: 0,
+          preserved: 0,
+        },
+        {
+          project: "ichnos-protocol_server",
+          heldBefore: false,
+          added: true,
+          confirmed: false,
+          reason: "the project does not hold the value this run selected",
+          revoked: 0,
+          preserved: 0,
+        },
+      ],
+      githubConfirmed: false,
+      failure: { stage: "add", reason: "a project does not hold the value" },
+    });
+
+    const text = printed();
+    expect(text).toMatch(/ichnos-protocol\s+\*\*\*\* added, confirmed/);
+    expect(text).toMatch(/ichnos-protocol_server\s+\*\*\*\* failed/);
+    expect(text).toMatch(/GitHub secret\s+\*\*\*\* not set/);
+    expect(text).toMatch(/generated by this run/);
+    expect(text).toMatch(/stage: add/);
+    expect(text).not.toContain(SECRET);
+    expect(text).not.toMatch(/\*\*\*\*\w/);
+  });
+
+  it("prints a steady-state run as already held with nothing revoked", () => {
+    const row = { heldBefore: true, added: false, confirmed: true };
+    printBypass({
+      attempted: true,
+      generated: false,
+      steadyState: true,
+      complete: true,
+      results: [
+        { ...row, project: "ichnos-protocol", revoked: 0, preserved: 1 },
+        { ...row, project: "ichnos-protocol_server", revoked: 0, preserved: 0 },
+      ],
+      githubConfirmed: true,
+      failure: null,
+    });
+
+    const text = printed();
+    expect(text).toMatch(
+      /ichnos-protocol\s+\*\*\*\* already held, confirmed, 0 revoked, 1 other kept/,
+    );
+    expect(text).toMatch(/GitHub secret\s+\*\*\*\* set/);
+    expect(text).toMatch(
+      /steady state: reused the value both projects already held/,
+    );
+    expect(text).not.toMatch(/stage:/);
+    expect(text).not.toMatch(/\*\*\*\*\w/);
+  });
+
+  it("prints a revoke failure with its stage", () => {
+    const row = { heldBefore: true, added: false, confirmed: true };
+    printBypass({
+      attempted: true,
+      generated: false,
+      steadyState: false,
+      complete: false,
+      results: [
+        { ...row, project: "ichnos-protocol", revoked: 1, preserved: 0 },
+        {
+          ...row,
+          project: "ichnos-protocol_server",
+          revoked: 0,
+          preserved: 0,
+          revokeFailed: true,
+          reason: "Vercel API PATCH failed (500)",
+        },
+      ],
+      githubConfirmed: true,
+      revocationComplete: false,
+      failure: { stage: "revoke", reason: "an older key was not revoked" },
+    });
+
+    const text = printed();
+    expect(text).toMatch(
+      /ichnos-protocol_server\s+\*\*\*\* failed: Vercel API PATCH failed \(500\)/,
+    );
+    expect(text).toMatch(
+      /ichnos-protocol\s+\*\*\*\* already held, confirmed, 1 revoked/,
+    );
+    expect(text).toMatch(/stage: revoke/);
+    expect(text).not.toMatch(/\*\*\*\*\w/);
+  });
+
+  it("says when the bypass was not converged", () => {
+    printBypass({ attempted: false });
+
+    expect(printed()).toMatch(/not converged by this run/);
   });
 });

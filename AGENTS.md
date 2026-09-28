@@ -159,6 +159,25 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - `e2e.yml` also supports **manual/ad-hoc** runs via `workflow_dispatch`. Both trigger modes resolve target URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords — there is no manual URL input. The same denylist safety gate applies.
 - Browsers: **Chromium only** for `repository_dispatch` CI runs; **full suite** (Chromium, Firefox, WebKit) for `workflow_dispatch` manual runs; Chromium-only locally.
 
+### Test runs: five tickets, at most two full runs
+
+The full run is the Playwright E2E run: `e2e.yml` on a preview deployment of the committed HEAD. It needs a deployment, a seeded database and provisioned accounts, so it has its own ticket, it runs at most twice per phase, and no other ticket dispatches it. The Vitest suites are cheap and keep running before every commit (CLAUDE.md §14.3); they are not full runs. Pinned 2026-09-25 by the owner: every extra round of the old loop came from judging, fixing or re-measuring inside the wrong ticket.
+
+| # | Ticket | Does | Done when | Never |
+| --- | --- | --- | --- | --- |
+| 1 | **Run** | Dispatches `e2e.yml` on the committed HEAD, then downloads its Playwright report, traces and screenshots | Every test has a result: the report lists no test as "did not run" or "interrupted", and the record names the workflow run, the commit it tested and the target URLs. Red results are results. A failed readiness or seed step stops the tests, and that failure is the result | Edits code; re-dispatches because tests failed; judges the results |
+| 2 | **Diagnose** | Reads the report, traces and screenshots, and writes the diagnosis | Every failing test has one row: test, error, class (regression, test out of date after an intended change, flaky: passed on retry, environment: deployment, seed or accounts), cause, owner | Changes code; dispatches a run. It may run one named spec locally to see what the report lacks |
+| 3 | **Plan** | Turns the diagnosis into corrective tickets | Every regression and every out-of-date test maps to exactly one corrective ticket; every other row is a finding with its owner; the corrective tickets exist | Runs tests |
+| 4 | **Correct** | Implements the corrective tickets, one purpose per commit | Every corrective ticket is committed, and the plan records the commit of each | Dispatches the E2E run. It may run the Vitest files it touches and, locally, the one spec it fixes; that result is not evidence |
+| 5 | **Confirm** | Ticket 1 on the corrected HEAD, then ticket 2 against run 1 | No regression, and every test ticket 4 targeted now passes: the phase closes | Starts another cycle on its own |
+
+- **A clean first run closes the phase.** When the diagnosis of run 1 finds nothing to correct, tickets 3 to 5 are skipped.
+- **A confirmation that still fails goes to the owner** with its diagnosis. No agent dispatches a third run on its own.
+- **Verification checks the ticket's own column.** A run ticket is verified for completeness, never for green results; a red test seen while verifying it is the diagnosis's input, never a comment and never a fix.
+- **A commit from outside the run never invalidates its results.** The result names the commit it tested; a later commit by the owner or by another session (a documentation change, a ruling) is listed beside it and is never a reason to re-dispatch, reject or re-plan.
+- **No run-level time limit.** The E2E job carries no `timeout-minutes` cap and Playwright no `globalTimeout` or `maxFailures`. A per-test timeout is an assertion about the application, and a test that times out is a result to diagnose. A hung run is stopped by the owner.
+- **One folder per phase**, under `~/.traycer/yolo_artifacts/website-<phase>/`: `run-1/` (the downloaded report and a meta file: workflow run, commit, target URLs, start, end), `diagnosis-1.md`, `corrections.md` (each corrective ticket, the rows it resolves, its commit), `run-2/`, `diagnosis-2.md`.
+
 ## Git conventions
 
 - Conventional Commits: `type(scope): description`
@@ -177,6 +196,22 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 - Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
 - File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only).
 - Never commit `.env` files or secrets.
+
+## Passwords and secrets: three tiers, no manual steps
+
+| Tier | Where it applies | Password | Written down in |
+| --- | --- | --- | --- |
+| **Test** | the `ichnos-protocol-test` Firebase project, preview deployments, E2E Neon branches | easy, from one pattern: the account's role word, which is the local part of its email without `e2e-`, written twice when shorter than Firebase's minimum of six characters | `secrets/test-accounts.md` (gitignored), by the provisioning script |
+| **Production** | the `ichnos-protocol` Firebase project, the production database, production environment variables | security first: generated, long, unique, never a pattern | no file of the repository, ignored files included; the provider and a password manager hold it |
+| **Demo** (the production exception) | a demo account in production, when one exists | easy, from the same pattern applied to its `demo-<role>` name | `secrets/test-accounts.md` |
+
+The test pattern gives: `e2e-admin` → `adminadmin`, `e2e-user` → `useruser`, `e2e-superadmin` → `superadmin`, `e2e-incomplete` → `incomplete`, `e2e-manage-target` → `manage-target`, and `signup` for the accounts `signUpAs` creates during a run.
+
+- **The test pattern is public, because this repository is.** That is safe only while test accounts exist nowhere but the test project: the provisioning code refuses every Firebase project other than `ichnos-protocol-test`, from any file that supplies the credentials, and no test or E2E account ever exists in a production project.
+- **A demo account is easy because it can do no harm**: no admin claim, demo data only, data that can be reset, and a name that says demo. An account that needs more is production tier.
+- **No manual secret steps.** Nothing asks a person to type or reconcile a password or a secret that a script can produce. The provisioning script generates the test passwords from the pattern, creates or updates the accounts in the test project, writes their UIDs, pushes the GitHub secrets and variables and the Vercel preview variables, sets the Vercel automation bypass secret on both Vercel projects and in GitHub in one run so the values cannot drift, and redeploys the previews that read a changed variable.
+- **One gitignored record.** The script writes `secrets/test-accounts.md`: every test and demo account with email, role, password, UID and project, and every infrastructure secret with where it is applied and when it was last set, each with the date and the command that provisioned it. Production values are never copied into it; the record names where they are held.
+- **The only manual steps left need a signed-in person in a browser**: `gh auth login`, `vercel login`, and the tokens a provider issues only to a signed-in person (a GitHub personal access token, a first Neon API key). A script that needs one stops and names the command; nothing else asks a person to pause.
 
 ## Security best practices
 

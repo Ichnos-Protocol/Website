@@ -463,7 +463,7 @@ The project is deployed on **Vercel** as a monorepo with two separate Vercel pro
 
 | Component | Vercel Project          | Root Directory | Runtime        | Output                |
 | --------- | ----------------------- | -------------- | -------------- | --------------------- |
-| Frontend  | `ichnos-client`         | `client/`      | Vite (static)  | `dist/` (static site) |
+| Frontend  | `ichnos-protocol`       | `client/`      | Vite (static)  | `dist/` (static site) |
 | Backend   | `ichnos-protocolserver` | `server/`      | `@vercel/node` | Serverless function   |
 
 ### How It Works

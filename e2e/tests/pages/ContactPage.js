@@ -42,7 +42,9 @@ export class ContactPage {
   }
 
   get privacyCheckbox() {
-    return this.page.getByRole("checkbox");
+    return this.contactModal.getByRole("checkbox", {
+      name: /I agree to be contacted regarding my enquiry/,
+    });
   }
 
   get addQuestionButton() {

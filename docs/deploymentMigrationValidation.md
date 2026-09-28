@@ -140,7 +140,7 @@ No GitHub Actions workflow deploys production. Production is Vercel's own build 
 | Status | Action |
 |---|---|
 | Both ✅ "Visit Preview" | → Tier 3 |
-| Client ❌ build failed | Click "Inspect" → check build log. Most likely: missing `VITE_FIREBASE_*` env var. Open Vercel → `ichnos-protocol/ichnos-client` → Settings → Environment Variables → Preview environment. Compare against `client/.env.example`. |
+| Client ❌ build failed | Click "Inspect" → check build log. Most likely: missing `VITE_FIREBASE_*` env var. Open Vercel → `ichnos-protocol/ichnos-protocol` → Settings → Environment Variables → Preview environment. Compare against `client/.env.example`. |
 | Server ❌ build failed | Less likely (build is just bundling). If it does fail, check for missing top-level deps in `server/package.json`. |
 
 **Quick env-var sanity check** (run from repo root once):
@@ -244,7 +244,7 @@ The production deployment is Vercel's build of the `release` branch, and `releas
 
 **Fix**:
 
-Vercel → ichnos-client → Settings → Environment Variables → ensure `VITE_API_HOST=api.ichnos-protocol.com` is set on **Production**. PR previews need a value too, so the simplest setup is a single entry with **Environments: Production and Preview** and no custom branch override. The existing `staging`-branch override stays (branch-scoped overrides outrank the default).
+Vercel → ichnos-protocol → Settings → Environment Variables → ensure `VITE_API_HOST=api.ichnos-protocol.com` is set on **Production**. PR previews need a value too, so the simplest setup is a single entry with **Environments: Production and Preview** and no custom branch override. The existing `staging`-branch override stays (branch-scoped overrides outrank the default).
 
 | Scope | Resolved value |
 |---|---|
@@ -252,7 +252,7 @@ Vercel → ichnos-client → Settings → Environment Variables → ensure `VITE
 | Preview (default — `main`, feature branches) | `api.ichnos-protocol.com` |
 | Preview / branch=`staging` | `staging-api.ichnos-protocol.com` (override) |
 
-Env-var changes do not reach an existing deployment. After fixing the value, **Redeploy** the current Production deployment (Vercel → ichnos-client → Deployments → current Production → ⋯ → Redeploy, "Use existing Build Cache" **off**) or merge the next PR into `release`. Either path rebuilds against Production scope.
+Env-var changes do not reach an existing deployment. After fixing the value, **Redeploy** the current Production deployment (Vercel → ichnos-protocol → Deployments → current Production → ⋯ → Redeploy, "Use existing Build Cache" **off**) or merge the next PR into `release`. Either path rebuilds against Production scope.
 
 **Caveat — PR previews hit the production API**: with Preview default pointing at `api.ichnos-protocol.com`, feature-branch PR previews route `/api/*` to production. This is consistent with staging (which already runs against the production DB) but worth knowing. If you ever stand up a dedicated preview-server environment, give it a Preview/`main` branch override.
 
@@ -360,7 +360,7 @@ If you only have time to verify these things first, do them in order:
 | API calls blocked by CORS in browser | 6 | `CORS_ORIGIN` literal string mismatch | Use a regex pattern or add the specific preview hostname |
 | Merge into `release` produces no production deployment | post-merge | Vercel production branch is not `release`, or the Git integration lost the repo after a move | Vercel → project → Settings → Git → set production branch to `release` and confirm the repo connection, on both projects |
 | Production deploy works but DB writes fail | post-merge | Stale `DATABASE_URL` | Re-pull from Neon (new branch slug perhaps) |
-| E2E client readiness step retries 36× with HTTP 401, then times out | 1 (E2E job) | `VERCEL_AUTOMATION_BYPASS_SECRET` stale, or the two Vercel projects hold *different* bypass values | The bypass secret is a single GitHub secret used to probe both `ichnos-client` and `ichnos-protocolserver`. Both Vercel projects must hold the **same** bypass value. Reveal both project bypass values in Vercel (Settings → Deployment Protection → Protection Bypass for Automation), ensure they match, then update the GitHub secret to that shared value. |
+| E2E client readiness step retries 36× with HTTP 401, then times out | 1 (E2E job) | `VERCEL_AUTOMATION_BYPASS_SECRET` stale, or the two Vercel projects hold *different* bypass values | The bypass secret is a single GitHub secret used to probe both `ichnos-protocol` and `ichnos-protocolserver`. Both Vercel projects must hold the **same** bypass value. Reveal both project bypass values in Vercel (Settings → Deployment Protection → Protection Bypass for Automation), ensure they match, then update the GitHub secret to that shared value. |
 | `/api/health` returns `seed.error: password authentication failed for user 'neondb_owner'` | 5 / 7 | Neon Vercel integration not (re)installed on the new team after migration; `DATABASE_URL` env var holds dead credentials | Tier 0, Step 2 — reinstall Neon integration on the team. First delete stale `DATABASE_URL`/`PG*` env vars (the integration cannot overwrite them), then install from the team's Integrations marketplace, then redeploy the server preview. |
 | Neon (or other) integration wizard fails with "Request failed: unknown error" after the env-var cleanup succeeded | 0 | OAuth session cookies hold stale identity from the failed first attempt; refresh alone doesn't clear them | Tier 0, Step 5 — full reset, **including signing out of both Vercel and the vendor**. The sign-out is the unblocker; without it the retry keeps producing the same error. |
 | `DATABASE_URL` appears stale even after the Neon integration reinstall succeeded | 0 / 5 | Preview deployment was not redeployed after env vars were updated; the running preview still holds the build-time snapshot | Tier 0, Step 7 — redeploy the server preview on the PR. Existing builds do not pick up env-var changes. |
@@ -376,7 +376,7 @@ The E2E workflow (`.github/workflows/e2e.yml`) uses a single GitHub Actions secr
 `VERCEL_AUTOMATION_BYPASS_SECRET` to authorize readiness probes against **both**
 the client and the server Vercel projects.
 
-For this to work, the two Vercel projects (`ichnos-client` and
+For this to work, the two Vercel projects (`ichnos-protocol` and
 `ichnos-protocolserver`) must each have the same string configured under
 **Settings → Deployment Protection → "Protection Bypass for Automation"**.
 

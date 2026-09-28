@@ -1,6 +1,6 @@
 # Vercel Project Settings Reference
 
-Complete configuration guide for the Ichnos Protocol Vercel projects (`ichnos-client` and `ichnos-protocolserver`). This document assumes the projects may have been previously configured with different settings (e.g., staging aliases, wrong production branch, or stale environment variables) and walks through a clean setup from scratch.
+Complete configuration guide for the Ichnos Protocol Vercel projects (`ichnos-protocol` and `ichnos-protocolserver`). This document assumes the projects may have been previously configured with different settings (e.g., staging aliases, wrong production branch, or stale environment variables) and walks through a clean setup from scratch.
 
 > **This is the authoritative source** for Vercel project settings. [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) references this file for quick-reference summaries.
 
@@ -23,7 +23,7 @@ Complete configuration guide for the Ichnos Protocol Vercel projects (`ichnos-cl
 
 ## 1. Git Integration
 
-For **both** `ichnos-client` and `ichnos-protocolserver` Vercel projects:
+For **both** `ichnos-protocol` and `ichnos-protocolserver` Vercel projects:
 
 ### Production Branch
 
@@ -41,7 +41,7 @@ The `"git": { "deploymentEnabled": false }` key has been removed from both `clie
 
 ### Repository Dispatch Events
 
-**Repository Dispatch Events** must be enabled on the **`ichnos-protocolserver`** project to trigger `e2e.yml` automatically after a server preview deployment. To enable: Vercel Dashboard → `ichnos-protocolserver` → Settings → Git → enable "Repository Dispatch Events". This causes Vercel to emit a `repository_dispatch` event with type `vercel.deployment.success` to GitHub after each successful deployment. The `e2e.yml` workflow filters on the server project name (`contains(project.name, 'server')`) because the server is the slower deployment — by the time the dispatch fires, the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Enabling this on the client project (`ichnos-client`) is unnecessary — only the server dispatch is needed to trigger E2E tests. Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve E2E targets from the GitHub repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords — there is no manual URL input. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run. The denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) are descriptive only in documentation files; the canonical definitions live in `.github/workflows/e2e.yml` and changes require maintainer-reviewed PRs on that workflow file.
+**Repository Dispatch Events** must be enabled on the **`ichnos-protocolserver`** project to trigger `e2e.yml` automatically after a server preview deployment. To enable: Vercel Dashboard → `ichnos-protocolserver` → Settings → Git → enable "Repository Dispatch Events". This causes Vercel to emit a `repository_dispatch` event with type `vercel.deployment.success` to GitHub after each successful deployment. The `e2e.yml` workflow filters on the server project name (`contains(project.name, 'server')`) because the server is the slower deployment — by the time the dispatch fires, the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Enabling this on the client project (`ichnos-protocol`) is unnecessary — only the server dispatch is needed to trigger E2E tests. Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve E2E targets from the GitHub repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords — there is no manual URL input. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run. The denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) are descriptive only in documentation files; the canonical definitions live in `.github/workflows/e2e.yml` and changes require maintainer-reviewed PRs on that workflow file.
 
 ---
 
@@ -79,9 +79,9 @@ Set in **Vercel Dashboard → ichnos-protocolserver → Settings → Environment
 
 > These vars are read by `server/scripts/seedE2EOnPreview.js` at server startup when `VERCEL_ENV === 'preview'`. The seed script reports status via `seed.mode` in the `/api/health` response (enum: `seeded | skipped | in_progress | failed`). The E2E workflow uses `seed.mode` as its canonical readiness signal: `seeded` and `skipped` are accepted as ready states; `failed` triggers immediate workflow failure.
 
-### `ichnos-client` Environment Variables
+### `ichnos-protocol` Environment Variables
 
-Set in **Vercel Dashboard → ichnos-client → Settings → Environment Variables**:
+Set in **Vercel Dashboard → ichnos-protocol → Settings → Environment Variables**:
 
 | Variable                            | Environments        | Description                  |
 | ----------------------------------- | ------------------- | ---------------------------- |
@@ -116,7 +116,7 @@ These four GitHub repository secrets were read only by the removed production pr
 | -------------------------- | ----------------------------------------------------- |
 | `VERCEL_TOKEN`             | Vercel CLI authentication for promotion               |
 | `VERCEL_ORG_ID`            | Vercel account or team targeted by promotion          |
-| `VERCEL_PROJECT_ID_CLIENT` | `ichnos-client` project targeted by promotion         |
+| `VERCEL_PROJECT_ID_CLIENT` | `ichnos-protocol` project targeted by promotion       |
 | `VERCEL_PROJECT_ID_SERVER` | `ichnos-protocolserver` project targeted by promotion |
 
 > The repository owner may delete them from **GitHub → Settings → Secrets and variables → Actions**, and may revoke the token in Vercel → Settings → Tokens. Leaving them in place changes nothing, and this guide requires neither action. See [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md) §2.
@@ -189,7 +189,7 @@ The `sync-staging.yml` workflow runs only when someone dispatches it by hand (`w
 
 > When a push lands on `staging`, Vercel applies the global Preview variables first, then applies the branch-specific overrides. Only the keys listed above replace their Preview equivalents — everything else (rate limiting, E2E account vars, etc.) inherits from the global Preview scope. No variable duplication is required.
 
-### ichnos-client — Branch-Scoped Overrides
+### ichnos-protocol — Branch-Scoped Overrides
 
 | Variable                            | Scope                           | Value                                                                             |
 | ----------------------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
@@ -209,7 +209,7 @@ The `sync-staging.yml` workflow runs only when someone dispatches it by hand (`w
 `sync-staging.yml` needs three GitHub Actions secrets. The run fails if either deploy-hook secret is empty.
 
 - **`SYNC_PAT`**: Personal Access Token with `contents: write` scope, used to force-push `main` to `staging`.
-- **`VERCEL_DEPLOY_HOOK_STAGING_CLIENT`**: Deploy Hook URL from Vercel → `ichnos-client` → Settings → Git → Deploy Hooks, branch `staging`.
+- **`VERCEL_DEPLOY_HOOK_STAGING_CLIENT`**: Deploy Hook URL from Vercel → `ichnos-protocol` → Settings → Git → Deploy Hooks, branch `staging`.
 - **`VERCEL_DEPLOY_HOOK_STAGING_SERVER`**: Deploy Hook URL from Vercel → `ichnos-protocolserver` → Settings → Git → Deploy Hooks, branch `staging`.
 - The deploy hooks exist because Vercel does not build PAT-driven force-pushes from CI on its own.
 - Create each one in **GitHub → Settings → Secrets and variables → Actions → New repository secret**.
@@ -233,7 +233,7 @@ This change has **zero runtime impact** on staging — the server connects to pr
 ### Staging Verification Checklist
 
 - [ ] **Server overrides** — All 6 variables (`DATABASE_URL`, `SKIP_E2E_SEED`, `CORS_ORIGIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`) set on `ichnos-protocolserver` with scope **Preview + Git branch: `staging`**
-- [ ] **Client overrides** — All 6 `VITE_FIREBASE_*` variables set on `ichnos-client` with scope **Preview + Git branch: `staging`**
+- [ ] **Client overrides** — All 6 `VITE_FIREBASE_*` variables set on `ichnos-protocol` with scope **Preview + Git branch: `staging`**
 - [ ] **`SKIP_E2E_SEED`** — Confirmed set to `true` (prevents seed injection into production DB)
 - [ ] **`CORS_ORIGIN`** — Value matches the staging client preview URL exactly
 - [ ] **`DATABASE_URL`** — Value matches the production Neon connection string (not an ephemeral branch URL)
@@ -252,18 +252,18 @@ This change has **zero runtime impact** on staging — the server connects to pr
 
 Use this checklist when setting up new Vercel projects or verifying existing ones:
 
-- [ ] **Production branch** — Set to `release` on both `ichnos-client` and `ichnos-protocolserver` (§1)
+- [ ] **Production branch** — Set to `release` on both `ichnos-protocol` and `ichnos-protocolserver` (§1)
 - [ ] **Native preview integration** — Confirm `"deploymentEnabled": false` does **not** exist in either `client/vercel.json` or `server/vercel.json`, and that Vercel creates a preview deployment automatically when a PR is opened (§1)
 - [ ] **Server environment variables** — All variables set with correct environment scoping (§2)
 - [ ] **Client environment variables** — All variables set with correct environment scoping (§2)
 - [ ] **CORS_ORIGIN** — Production value matches the frontend production URL; preview value is configured for preview URLs (§2)
 - [ ] **API rewrite** — `client/vercel.json` contains a `/api/:path*` rewrite to the production server URL and a `/(.*) → /index.html` SPA catch-all
-- [ ] **Repository Dispatch Events** — Enabled on `ichnos-protocolserver` in Vercel Git settings; disabled (or left disabled) on `ichnos-client` (§1)
+- [ ] **Repository Dispatch Events** — Enabled on `ichnos-protocolserver` in Vercel Git settings; disabled (or left disabled) on `ichnos-protocol` (§1)
 - [ ] **E2E auto-seed env vars** — Set on ichnos-protocolserver, Preview scope only: `E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`, and optionally `E2E_USER_*`, `E2E_SUPER_ADMIN_*` (§2)
 - [ ] **SKIP_E2E_SEED** — If needed for non-ephemeral preview DB scenarios, set to `true` on ichnos-protocolserver, Preview scope only (§2)
 - [ ] **Old aliases** — Removed if previously configured (§3)
 - [ ] **Local project linking** — `server/.vercel/project.json` exists, its `projectName` field is present (re-link with latest Vercel CLI if missing), and the name is exactly `ichnos-protocolserver` (§5)
 - [ ] **Staging server overrides** — All 6 server branch-scoped overrides set on `ichnos-protocolserver` for `staging` (§6)
-- [ ] **Staging client overrides** — All 6 `VITE_FIREBASE_*` branch-scoped overrides set on `ichnos-client` for `staging` (§6)
+- [ ] **Staging client overrides** — All 6 `VITE_FIREBASE_*` branch-scoped overrides set on `ichnos-protocol` for `staging` (§6)
 - [ ] **Staging sync secrets** — `SYNC_PAT` (with `contents: write` scope), `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` and `VERCEL_DEPLOY_HOOK_STAGING_SERVER` exist as GitHub Actions secrets (§6)
 - [ ] **Staging `/api/health`** — Returns `seed.mode: skipped` after deploying `staging` (§6)

@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from "fs";
-import { join } from "path";
 import { execFileSync } from "child_process";
+
+import { supportsVercelApi } from "./e2eVercelApi.js";
 
 function fail(message, remediation) {
   throw new Error(`${message}\nRemediation: ${remediation}`);
@@ -28,76 +28,24 @@ export function checkVercelAuth() {
   }
 }
 
-function resolveProjectJsonPath(serverDir) {
-  const projectJsonPath = join(serverDir, ".vercel", "project.json");
-  if (!existsSync(projectJsonPath)) {
-    fail(
-      "server/.vercel/project.json not found.",
-      "Run `cd server && vercel link` to link the server project.",
-    );
+/**
+ * How the run reaches the Vercel REST API. A non-empty exported VERCEL_TOKEN
+ * is an explicit operator decision and always wins: the CLI is not probed.
+ * Only when no token is exported is the `vercel api` subcommand over the
+ * `vercel login` session the default. Neither means the run stops here,
+ * naming the missing token. The token value never appears in the result.
+ */
+export function checkVercelApiAccess({
+  supports = supportsVercelApi,
+  env = process.env,
+} = {}) {
+  const token = String(env.VERCEL_TOKEN ?? "").trim();
+  if (token) return { mode: "token", reason: "explicit VERCEL_TOKEN" };
+  if (supports()) {
+    return { mode: "cli", reason: "vercel api supported, no VERCEL_TOKEN" };
   }
-  return projectJsonPath;
-}
-
-function parseProjectJson(projectJsonPath) {
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(projectJsonPath, "utf8"));
-  } catch {
-    fail(
-      "server/.vercel/project.json is malformed.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    fail(
-      "server/.vercel/project.json is malformed.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-  return parsed;
-}
-
-function validateProjectMetadata(projectJson) {
-  if (!projectJson.projectId || !projectJson.orgId) {
-    fail(
-      "server/.vercel/project.json is missing projectId or orgId.",
-      "Run `cd server && vercel link` to re-link the server project.",
-    );
-  }
-}
-
-export function checkVercelProject(serverDir) {
-  const projectJsonPath = resolveProjectJsonPath(serverDir);
-  const projectJson = parseProjectJson(projectJsonPath);
-  validateProjectMetadata(projectJson);
-
-  if (!projectJson.projectName || typeof projectJson.projectName !== "string") {
-    fail(
-      "server/.vercel/project.json does not contain a valid projectName.",
-      "Run `cd server && vercel link` with the latest Vercel CLI to re-link the server project.",
-    );
-  }
-
-  if (projectJson.projectName !== "ichnos-protocol_server") {
-    fail(
-      `Linked Vercel project '${projectJson.projectName}' does not match the expected server project 'ichnos-protocol_server'.`,
-      "Run `cd server && vercel link` and select the 'ichnos-protocol_server' project.",
-    );
-  }
-}
-
-export function checkFirebaseEnv() {
-  const required = [
-    "FIREBASE_PROJECT_ID",
-    "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY",
-  ];
-  const missing = required.filter((k) => !process.env[k]);
-  if (missing.length > 0) {
-    fail(
-      `Missing Firebase Admin SDK env vars: ${missing.join(", ")}.`,
-      "Ensure server/.env contains the Firebase Admin SDK credentials.",
-    );
-  }
+  fail(
+    "The installed Vercel CLI has no `vercel api` subcommand and VERCEL_TOKEN is not set.",
+    "Update the CLI with `npm i -g vercel@latest`, or export VERCEL_TOKEN (a Vercel access token for the team that owns both projects), then re-run.",
+  );
 }
