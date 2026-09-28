@@ -2,9 +2,10 @@
  * E2E Credential Pipeline — Orchestrator. Run from the repository root:
  *
  *   node e2e/scripts/provision-e2e-firebase-users.js [--firebase-env <path>]
- *     Full pipeline: provision the five role accounts in Firebase, read the
- *     E2E project's web config (API key, auth domain, storage bucket) from
- *     Firebase, generate e2e/.env.e2e and secrets/test-accounts.md, sync
+ *     Full pipeline: read the E2E project's web config (API key, auth
+ *     domain, storage bucket) from Firebase, converge the five role accounts
+ *     (writing only the fields that differ and leaving a matching account
+ *     untouched), generate e2e/.env.e2e and secrets/test-accounts.md, sync
  *     GitHub, converge the automation bypass on both Vercel projects (reuse
  *     the value both already share, generate one only when none is shared,
  *     set it in GitHub once both confirm it, and revoke older keys only after
@@ -16,14 +17,15 @@
  *     without touching Firebase. It neither reads the web config nor
  *     converges the bypass. The only mode that requires the file; it writes nothing.
  *
- * The default run is the provisioning and reset operation: every run reapplies
- * the deterministic pattern passwords to the five accounts, so there is no
+ * The default run is the provisioning and reset operation: every run checks
+ * all five accounts against the deterministic pattern passwords, display names
+ * and claims before any write, then writes only what differs, so there is no
  * separate reset command. Any other flag or argument is refused before any work.
  *
  * e2e/.env.e2e is a generated file. The emails, URLs and project come from
  * code (e2eFixedConfig.js), the passwords from the account pattern, the UIDs
  * from Firebase; only the three public web-config values are carried over
- * from an earlier file. It is written whole, after every upsert and before any
+ * from an earlier file. It is written whole, after the account sync and before any
  * sync, with a header naming the date and the command as the operator gave it.
  * secrets/test-accounts.md is written next, only once git confirms the path is
  * ignored, with no secret marked as set by this run; it is rewritten after the
@@ -86,6 +88,7 @@ import {
 import { connectVercelProjects } from "./helpers/e2eVercelProjects.js";
 import { assertE2EDomainsFollowMain } from "./helpers/e2eVercelDomains.js";
 import { fetchWebConfig } from "./helpers/e2eFirebaseWebConfig.js";
+import { syncFirebaseAccounts } from "./helpers/e2eFirebaseAccountSync.js";
 import {
   BYPASS_SECRET_NAME,
   bypassFailures,
@@ -299,7 +302,7 @@ function composeRunEnv(fileEnv, exportedPasswords) {
   return mergeEnvPasswords(withPasswords, exportedPasswords);
 }
 
-// Both files are written after every upsert and before any provider sync, so
+// Both files are written after the account sync and before any provider sync, so
 // they are the recovery source when a sync fails. Nothing is set yet, so the
 // record marks no secret as set by this run: each row carries the prior
 // `gh secret list` metadata or the unknown state.
@@ -408,12 +411,8 @@ function syncGitHubConfig(githubVariables, github, { recoveryHint, run } = {}) {
 
 // The web config comes from Firebase, not from an earlier file: it replaces
 // the carried-over values in the env file, the GitHub variables and secret.
-async function applyWebConfig(maps, credentials, env) {
-  const { getTestApp } = await import("./helpers/firebaseTestSetup.js");
-  const webConfig = await fetchWebConfig({
-    app: getTestApp(credentials),
-    projectId: credentials.projectId,
-  });
+async function applyWebConfig(maps, env, { app, projectId }) {
+  const webConfig = await fetchWebConfig({ app, projectId });
   Object.assign(env, webConfig);
   maps.githubVariables.FIREBASE_AUTH_DOMAIN = webConfig.FIREBASE_AUTH_DOMAIN;
   maps.githubVariables.FIREBASE_STORAGE_BUCKET =
@@ -422,12 +421,23 @@ async function applyWebConfig(maps, credentials, env) {
   console.log("[firebase] web config read from the E2E project");
 }
 
+// The password check signs in with the web API key, so the web config is
+// read before any account is read or written.
 async function provisionFullPipeline(maps, credentials, env, run) {
   console.log("\n=== Firebase Provisioning ===");
-  const { provisionFirebaseUsers } =
-    await import("./helpers/firebaseTestSetup.js");
-  const uidMap = await provisionFirebaseUsers(maps.firebaseCreds, credentials);
-  await applyWebConfig(maps, credentials, env);
+  const { getTestApp } = await import("./helpers/firebaseTestSetup.js");
+  const app = getTestApp(credentials);
+  await applyWebConfig(maps, env, { app, projectId: credentials.projectId });
+  if (!env.FIREBASE_API_KEY) {
+    throw new Error(
+      "Missing web config value: FIREBASE_API_KEY. The account password check needs it; nothing was changed in Firebase.",
+    );
+  }
+  const { uidMap } = await syncFirebaseAccounts({
+    auth: app.auth(),
+    specs: maps.firebaseCreds,
+    apiKey: env.FIREBASE_API_KEY,
+  });
   writeGeneratedFiles({ ...maps, env, uidMap }, run);
   for (const [key, uid] of Object.entries(uidMap)) {
     maps.vercel[key] = uid;

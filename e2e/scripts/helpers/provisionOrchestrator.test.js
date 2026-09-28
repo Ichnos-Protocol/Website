@@ -13,6 +13,7 @@ const readPreservedWebConfig = vi.fn();
 const writeEnvFile = vi.fn();
 const writeTestAccountsRecord = vi.fn();
 const provisionFirebaseUsers = vi.fn();
+const syncFirebaseAccounts = vi.fn();
 const getTestApp = vi.fn(() => ({ auth: () => ({}) }));
 const upsertUser = vi.fn(async (_auth, spec) =>
   spec.uidKey.replace(/^E2E_(\w+)_UID$/, "uid-$1"),
@@ -55,6 +56,7 @@ vi.mock("./e2eVercelProjects.js", async (importOriginal) => ({
 }));
 vi.mock("./e2eVercelDomains.js", () => ({ assertE2EDomainsFollowMain }));
 vi.mock("./e2eFirebaseWebConfig.js", () => ({ fetchWebConfig }));
+vi.mock("./e2eFirebaseAccountSync.js", () => ({ syncFirebaseAccounts }));
 vi.mock("./e2eProviderSync.js", async (importOriginal) => ({
   ...(await importOriginal()),
   syncProviders,
@@ -191,6 +193,7 @@ function expectNothingExternal() {
   expect(execFileSync).not.toHaveBeenCalled();
   expect(spawnSync).not.toHaveBeenCalled();
   expect(provisionFirebaseUsers).not.toHaveBeenCalled();
+  expect(syncFirebaseAccounts).not.toHaveBeenCalled();
   expect(writeEnvFile).not.toHaveBeenCalled();
   expect(writeTestAccountsRecord).not.toHaveBeenCalled();
   expect(listGitHubSecretMetadata).not.toHaveBeenCalled();
@@ -266,7 +269,7 @@ function datedVercel(record) {
 }
 
 function mockSuccessfulSync() {
-  provisionFirebaseUsers.mockResolvedValue({ ...UIDS });
+  syncFirebaseAccounts.mockResolvedValue({ uidMap: { ...UIDS }, results: [] });
   syncToGitHub.mockReturnValue([]);
   syncVariablesToGitHub.mockReturnValue([]);
   syncToVercel.mockReturnValue([]);
@@ -393,7 +396,8 @@ describe("provision orchestrator ordering", () => {
 
     await main({});
 
-    const specs = provisionFirebaseUsers.mock.calls[0][0];
+    const { specs } = syncFirebaseAccounts.mock.calls[0][0];
+    expect(provisionFirebaseUsers).not.toHaveBeenCalled();
     expect(
       Object.fromEntries(specs.map((spec) => [spec.email, spec.password])),
     ).toEqual(
@@ -410,19 +414,19 @@ describe("provision orchestrator ordering", () => {
     }
   });
 
-  it("writes the whole env file after every upsert and before GitHub sync, with the recovery note on failure", async () => {
+  it("writes the whole env file after the account sync and before GitHub sync, with the recovery note on failure", async () => {
     readEnvFile.mockReturnValue(completeEnv());
     vi.stubEnv("E2E_USER_PASSWORD", "useruser");
     let upsertsDone = false;
     let doneAtWrite = null;
-    provisionFirebaseUsers.mockImplementation(async (specs) => {
-      const uids = {};
+    syncFirebaseAccounts.mockImplementation(async ({ specs }) => {
+      const uidMap = {};
       for (const spec of specs) {
         await Promise.resolve();
-        uids[spec.uidKey] = `uid-${spec.uidKey}`;
+        uidMap[spec.uidKey] = `uid-${spec.uidKey}`;
       }
       upsertsDone = true;
-      return uids;
+      return { uidMap, results: [] };
     });
     writeEnvFile.mockImplementation(() => {
       doneAtWrite = upsertsDone;
@@ -489,21 +493,23 @@ describe("provision orchestrator ordering", () => {
 
     expect(config).not.toHaveBeenCalled();
     expect(loadFirebaseCredentials).toHaveBeenCalledTimes(1);
-    expect(provisionFirebaseUsers.mock.calls[0][1]).toEqual(FAKE_CREDENTIALS);
+    expect(getTestApp).toHaveBeenCalledTimes(1);
+    expect(getTestApp).toHaveBeenCalledWith(FAKE_CREDENTIALS);
+    expect(provisionFirebaseUsers).not.toHaveBeenCalled();
     expect(order(loadFirebaseCredentials)).toBeLessThan(
-      order(provisionFirebaseUsers),
+      order(syncFirebaseAccounts),
     );
   });
 });
 
 describe("generated e2e/.env.e2e and test-accounts record", () => {
-  it("writes both files after every upsert and before every provider sync", async () => {
+  it("writes both files after the account sync and before every provider sync", async () => {
     readEnvFile.mockReturnValue(completeEnv());
     mockSuccessfulSync();
 
     await main({});
 
-    expect(order(provisionFirebaseUsers)).toBeLessThan(order(writeEnvFile));
+    expect(order(syncFirebaseAccounts)).toBeLessThan(order(writeEnvFile));
     expect(order(writeEnvFile)).toBeLessThan(order(writeTestAccountsRecord));
     const lastWrite = order(writeTestAccountsRecord);
     for (const sync of [syncVariablesToGitHub, syncToGitHub, syncProviders]) {
@@ -548,7 +554,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(record.project).toBe("ichnos-protocol-test");
   });
 
-  it("starts without e2e/.env.e2e in a full run and stops on the missing web config after writing", async () => {
+  it("starts without e2e/.env.e2e in a full run and stops on the missing web config before any account check", async () => {
     existsSync.mockReturnValue(false);
     readPreservedWebConfig.mockReturnValue({});
     listGitHubSecretMetadata.mockReturnValue({ ...PRIOR_METADATA });
@@ -558,16 +564,15 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     const error = await main({}).catch((err) => err);
 
     expect(readEnvFile).not.toHaveBeenCalled();
-    expect(provisionFirebaseUsers).toHaveBeenCalled();
-    expect(order(provisionFirebaseUsers)).toBeLessThan(order(writeEnvFile));
-    expect(writeEnvFile).toHaveBeenCalledTimes(1);
-    expect(writeTestAccountsRecord).toHaveBeenCalledTimes(1);
-    const record = writeTestAccountsRecord.mock.calls[0][1];
-    expect(record.setNow).toEqual([]);
-    expect(record.secretMetadata).toEqual(PRIOR_METADATA);
+    expect(fetchWebConfig).toHaveBeenCalledTimes(1);
+    expect(syncFirebaseAccounts).not.toHaveBeenCalled();
+    expect(provisionFirebaseUsers).not.toHaveBeenCalled();
+    expect(writeEnvFile).not.toHaveBeenCalled();
+    expect(writeTestAccountsRecord).not.toHaveBeenCalled();
     expect(error.message).toMatch(
-      /Missing GitHub config value\(s\): FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET, FIREBASE_API_KEY/,
+      /Missing web config value: FIREBASE_API_KEY\./,
     );
+    expect(error.message).not.toContain(WEB_CONFIG.FIREBASE_API_KEY);
     expect(syncToGitHub).not.toHaveBeenCalled();
     expect(syncVariablesToGitHub).not.toHaveBeenCalled();
     expect(syncToVercel).not.toHaveBeenCalled();
@@ -698,9 +703,9 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expectNothingExternal();
   });
 
-  it("writes nothing when an upsert rejects", async () => {
+  it("writes nothing when the account sync rejects", async () => {
     readEnvFile.mockReturnValue(completeEnv());
-    provisionFirebaseUsers.mockRejectedValue(new Error("quota"));
+    syncFirebaseAccounts.mockRejectedValue(new Error("quota"));
 
     await expect(main({})).rejects.toThrowError("quota");
 
@@ -708,7 +713,7 @@ describe("generated e2e/.env.e2e and test-accounts record", () => {
     expect(writeTestAccountsRecord).not.toHaveBeenCalled();
     expect(syncToGitHub).not.toHaveBeenCalled();
     expect(syncVariablesToGitHub).not.toHaveBeenCalled();
-    expect(fetchWebConfig).not.toHaveBeenCalled();
+    expect(order(fetchWebConfig)).toBeLessThan(order(syncFirebaseAccounts));
     expect(syncProviders).not.toHaveBeenCalled();
   });
 
@@ -894,15 +899,17 @@ describe("web config and provider sync", () => {
     FIREBASE_STORAGE_BUCKET: "fresh.firebasestorage.app",
   };
 
-  it("orders upserts, web config, env file, record, GitHub, then providers", async () => {
+  it("orders web config, account sync, env file, record, GitHub, then providers", async () => {
     readEnvFile.mockReturnValue(completeEnv());
     mockSuccessfulSync();
+    fetchWebConfig.mockResolvedValue({ ...FRESH_WEB_CONFIG });
 
     await main({});
 
     const sequence = [
-      provisionFirebaseUsers,
+      getTestApp,
       fetchWebConfig,
+      syncFirebaseAccounts,
       writeEnvFile,
       writeTestAccountsRecord,
       syncVariablesToGitHub,
@@ -910,8 +917,16 @@ describe("web config and provider sync", () => {
       syncProviders,
     ].map(order);
     expect(sequence).toEqual([...sequence].sort((a, b) => a - b));
+    // The web config is read before any account is read or written.
+    expect(fetchWebConfig.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      order(syncFirebaseAccounts),
+    );
+    expect(syncFirebaseAccounts.mock.calls[0][0].apiKey).toBe(
+      FRESH_WEB_CONFIG.FIREBASE_API_KEY,
+    );
+    expect(provisionFirebaseUsers).not.toHaveBeenCalled();
     expect(order(connectVercelProjects)).toBeLessThan(
-      order(provisionFirebaseUsers),
+      order(syncFirebaseAccounts),
     );
   });
 
@@ -939,7 +954,7 @@ describe("web config and provider sync", () => {
     }
     // syncProviders owns the Vercel env writes and every redeploy.
     for (const write of [
-      provisionFirebaseUsers,
+      syncFirebaseAccounts,
       writeEnvFile,
       syncVariablesToGitHub,
       syncToGitHub,
@@ -1312,6 +1327,7 @@ describe("E2E domain check before any write", () => {
     expect(getTestApp).not.toHaveBeenCalled();
     expect(upsertUser).not.toHaveBeenCalled();
     expect(provisionFirebaseUsers).not.toHaveBeenCalled();
+    expect(syncFirebaseAccounts).not.toHaveBeenCalled();
     expect(fetchWebConfig).not.toHaveBeenCalled();
     expect(writeEnvFile).not.toHaveBeenCalled();
     expect(writeTestAccountsRecord).not.toHaveBeenCalled();
@@ -1335,7 +1351,7 @@ describe("E2E domain check before any write", () => {
       order(assertE2EDomainsFollowMain),
     );
     expect(order(assertE2EDomainsFollowMain)).toBeLessThan(
-      order(provisionFirebaseUsers),
+      order(syncFirebaseAccounts),
     );
   });
 
