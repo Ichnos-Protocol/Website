@@ -1,6 +1,18 @@
 # production-E2E_epic.md: E2E evidence that matches what ships
 
-**Version 0.2, 2026-09-29. Status: draft. The rulings in section 2 are proposals; the owner's approval of this version makes them rulings.**
+**Version 0.3, 2026-09-29. Status: executed in part, as one pull request without Traycer tickets.**
+
+**Execution, 2026-09-29.** The owner cut the epic to the parts that matter and had them done as one pull request on `feature/production-e2e`.
+
+- Done: PE1; PE2; PE3a; from PE3b, only the move of `/api/health` ahead of the global limiter (D5); PE5's workflow step, provisioning record and docs; PE6, with the same corrections in `DEPLOYMENT.md`, `README.md`, `docs/deploymentMigrationValidation.md` and `CLAUDE.md` §11.
+- PE5's three cleanup files (`e2e/scripts/cleanupNeonBranch.js`, its helper and its test) stay until this pull request is merged. Until then every dispatched E2E run uses `main`'s copy of `e2e.yml`, which still calls the script, so deleting it here would fail each run of this branch at that step. They are deleted in the first change after the merge, together with the header note in `e2e/scripts/helpers/e2eFixedConfig.js` that names them.
+- PE5's owner setting (G2) is still open. Until the owner turns it on, nothing deletes preview branches, which is no change: the removed workflow step had failed with 401 since 2026-03-18.
+- Deferred: the rest of PE3b (answering `/api/health` without waiting for the seed) and PE4 (the production smoke check). Until PE4 exists, the release check stays manual.
+- PE2's acceptance is limited to what one merge can prove: a staging sync dispatched during the merge's automatic `main` run leaves that run running to completion, and the sync's skipped E2E runs end at once instead of waiting for it. The other two queue cases rest on GitHub's documented behaviour.
+- The E2E job keeps no `timeout-minutes`, per the pinned "No run-level time limit" rule in `AGENTS.md`. With `cancel-in-progress: false`, a hung run now holds the queue until the owner stops it.
+- The decisions behind the executed parts (D1, D2, D4, D5, D6 and D7) are rulings. D3 waits with PE4.
+
+The rest of this document is the plan as it stood at v0.2.
 
 **Changes from v0.1.** Traycer's review found four errors, and all four hold:
 
