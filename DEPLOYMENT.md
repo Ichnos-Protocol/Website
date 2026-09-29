@@ -108,9 +108,9 @@ For detailed Vercel settings including environment variable tables, production b
 Production deployments come from Vercel's native Git integration building the `release` branch. GitHub Actions and the branch rulesets gate what reaches `release`; no workflow deploys to production. Do **not** use `vercel --prod` for routine releases.
 
 1. Create a `feature/<name>` branch from `main` and open a PR targeting `main`.
-2. CI, preview deployments, and E2E tests run automatically.
-3. After all required checks pass, merge the PR into `main`.
-4. Open a PR from `main` to `release`. The `Release Policy Check` must pass.
+2. CI and preview deployments run automatically.
+3. After the two required CI checks pass, merge the PR into `main`. Vercel deploys `main`, and the E2E run starts automatically on that deployment.
+4. Once `main`'s E2E run has passed, open a PR from `main` to `release`. The `Release Policy Check` must pass.
 5. Merge into `release`. Vercel builds `release` and deploys it to production for both projects. There is no GitHub Actions run and no approval step: the required PR into `release` is the human gate.
 
 See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) for the full pipeline setup and details. For GitHub repository settings (secrets, environments, branch protections), see [`GITHUB_SETTINGS.md`](GITHUB_SETTINGS.md). For Vercel project settings, see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md).
@@ -267,7 +267,7 @@ After each deployment cycle:
 
 - [ ] **CI checks**: `Client — Lint & Test` and `Server — Lint & Test` are green on the PR
 - [ ] **Preview deployments**: Vercel native preview deployments completed successfully for both client and server; preview URLs are accessible in the Vercel dashboard
-- [ ] **E2E trigger**: `repository_dispatch (vercel.deployment.success)` event fired and `E2E Tests (Playwright)` check is green on the PR
+- [ ] **E2E run**: after the merge, the `repository_dispatch (vercel.deployment.success)` event of `main`'s server deployment started `e2e.yml`, and `E2E Tests (Playwright)` is green on the `main` commit
 - [ ] **Production deploy**: After merging to `release`, confirm in the Vercel dashboard that each project (`ichnos-protocol`, `ichnos-protocolserver`) has one production deployment for the `release` commit. No GitHub Actions run is expected.
 - [ ] **App smoke test**: Auth (sign up, log in, log out), Chat (send message, receive AI response), Contact form (submit inquiry, verify it appears in admin dashboard), Admin dashboard (update a request status), Cron jobs (visible in Vercel Dashboard → Cron Jobs tab)
 

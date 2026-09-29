@@ -41,7 +41,36 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting for public endpoints.
+// Health check endpoint (JSON, for monitoring tools and the client's API
+// sanity check). Registered before the rate limiters: a limiter runs inside
+// the function, so here it would prevent no invocation and only add a
+// database write to every health request.
+// On preview deployments, this endpoint drives the E2E seed: it awaits the
+// seed promise so the Vercel function stays alive until seeding completes.
+// Without this, Vercel kills the function after sending the response, and
+// any fire-and-forget seed work is lost.
+app.get("/api/health", async (_req, res) => {
+  // Trigger (or join) the seed — only runs once, subsequent calls are no-ops.
+  // The await keeps the Vercel function alive for the full seed duration.
+  await ensureSeeded();
+
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+    vercelEnv: process.env.VERCEL_ENV || "local",
+    node: process.version,
+    seed: {
+      seeded: seedStatus.seeded,
+      error: seedStatus.error,
+      attempts: seedStatus.attempts,
+      mode: seedStatus.mode,
+    },
+  });
+});
+
+// Rate limiting for every /api route except /api/health (registered above).
 // Counters live in Postgres (PgRateLimitStore) so every serverless instance
 // shares them. Each limiter needs its own store instance and prefix.
 // Preview deployments use a higher limit to avoid E2E test failures —
@@ -80,32 +109,6 @@ app.get("/", (_req, res) => {
     nodeVersion: process.version,
   });
   res.status(200).send(html);
-});
-
-// Health check endpoint (JSON, for monitoring tools).
-// On preview deployments, this endpoint drives the E2E seed: it awaits the
-// seed promise so the Vercel function stays alive until seeding completes.
-// Without this, Vercel kills the function after sending the response, and
-// any fire-and-forget seed work is lost.
-app.get("/api/health", async (_req, res) => {
-  // Trigger (or join) the seed — only runs once, subsequent calls are no-ops.
-  // The await keeps the Vercel function alive for the full seed duration.
-  await ensureSeeded();
-
-  res.status(200).json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || "development",
-    vercelEnv: process.env.VERCEL_ENV || "local",
-    node: process.version,
-    seed: {
-      seeded: seedStatus.seeded,
-      error: seedStatus.error,
-      attempts: seedStatus.attempts,
-      mode: seedStatus.mode,
-    },
-  });
 });
 
 // API routes

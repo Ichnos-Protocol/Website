@@ -12,9 +12,9 @@ The GitHub repository requires the following settings to support the 3-branch li
 
 | Area                      | What                                                                                                                                                                                                                                                                                                 | Why                                                                                                                                       |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Repository Secrets**    | 8 secrets for CI/E2E (7 P10 E2E configuration secrets + `VERCEL_AUTOMATION_BYPASS_SECRET`, all required), set by the E2E provisioning command. `SYNC_PAT` + 2 deploy-hook URLs for staging sync and 2 optional Neon secrets for preview-branch cleanup are provider-issued and set once by the owner | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
+| **Repository Secrets**    | 8 secrets for CI/E2E (7 P10 E2E configuration secrets + `VERCEL_AUTOMATION_BYPASS_SECRET`, all required), set by the E2E provisioning command. `SYNC_PAT` + 2 deploy-hook URLs for staging sync are provider-issued and set once by the owner | These are the only secrets the four workflows read. No workflow needs Vercel API access; production is Vercel's native build of `release` |
 | **Environments**          | `production` environment optional — no workflow references it                                                                                                                                                                                                                                        | The production gate is the required pull request into `release`, not an environment approval                                              |
-| **Branch Protections**    | `main` (5 required checks + PR required) and `release` (1 required check + PR required)                                                                                                                                                                                                              | Enforces the CI → Preview → E2E → merge pipeline and the `main`-only release policy                                                       |
+| **Branch Protections**    | `main` (2 required checks + PR required) and `release` (1 required check + PR required)                                                                                                                                                                                                              | Enforces CI before every merge into `main` and the `main`-only release policy; E2E runs after the merge, on `main`                        |
 | **Old Rule Cleanup**      | Remove stale branch protections and rulesets from previous configurations                                                                                                                                                                                                                            | Stale rules (e.g., for `e2e-testing` or different check names) can block merges or silently bypass the pipeline                           |
 | **Staging Sync Secrets**  | `SYNC_PAT`, `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`                                                                                                                                                                                                                 | `sync-staging.yml` pushes `main` to `staging` with the PAT, then calls both deploy hooks; it fails if either hook is empty                |
 | **Auto-Merge** (optional) | Allow auto-merge at the repository level                                                                                                                                                                                                                                                             | Enables automatic merge of `main → release` PRs once the `Release Policy Check` passes                                                    |
@@ -39,7 +39,7 @@ If this repository was previously configured with different branch protections (
 ### Step 3 — Verify no orphan required status checks on `main`
 
 1. Open the existing `main` branch protection rule (or ruleset).
-2. Under **Required status checks**, remove any check names that do not match the 5 checks listed in §4 below.
+2. Under **Required status checks**, remove any check names that do not match the 2 checks listed in §4 below.
 3. Old check names (e.g., `build`, `test`, `ci`, `deploy-preview`) will block all PRs if left in place because no workflow produces them.
 
 > **If you previously had `Preflight — Secret Validation`, `Deploy Client Preview`, or `Deploy Server Preview` as required checks on `main`, these must be removed — no workflow produces these check names anymore. These were from the legacy CLI-driven preview deployment model.**
@@ -53,7 +53,7 @@ If this repository was previously configured with different branch protections (
 
 ## 2. Repository Secrets
 
-This section is the inventory of the secrets the workflows read. The E2E secrets are written by the provisioning command below; the provider-issued ones (staging sync, Neon cleanup) have their own subsections further down.
+This section is the inventory of the secrets the workflows read. The E2E secrets are written by the provisioning command below; the provider-issued ones (staging sync) have their own subsection further down.
 
 ### E2E Test Account Secrets
 
@@ -88,8 +88,8 @@ The run sets these seven password and API-key secrets, plus `VERCEL_AUTOMATION_B
 | `FIREBASE_PROJECT_ID`           | Firebase project ID of the E2E project                     |
 | `FIREBASE_AUTH_DOMAIN`          | Firebase auth domain of the E2E project                    |
 | `FIREBASE_STORAGE_BUCKET`       | Firebase storage bucket of the E2E project                 |
-| `E2E_BASE_URL`                  | Stable E2E client URL (ephemeral preview, never `staging`) |
-| `E2E_API_BASE_URL`              | Stable E2E API URL (ephemeral preview, never `staging`)    |
+| `E2E_BASE_URL`                  | Stable E2E client URL (follows `main`, never `staging`)    |
+| `E2E_API_BASE_URL`              | Stable E2E API URL (follows `main`, never `staging`)       |
 | `E2E_ADMIN_EMAIL`               | Admin test account email                                   |
 | `E2E_ADMIN_UID`                 | Admin test account Firebase UID                            |
 | `E2E_USER_EMAIL`                | Regular user test account email                            |
@@ -135,20 +135,9 @@ The E2E provisioning command never generates these; the owner creates them with 
 
 > **Why a PAT and deploy hooks?** Pushes made with the default `GITHUB_TOKEN` do not trigger Vercel's native Git integration. Vercel also stopped building PAT-driven force-pushes from CI, so the workflow calls the two deploy hooks to start the `staging` builds directly.
 
-### Neon Preview-Branch Cleanup Secrets
+### Neon Preview Branches: No Secrets
 
-These two optional secrets are read by the `Delete Neon preview branch` step in `e2e.yml`. The step runs with `if: always()` at the end of every E2E workflow run and deletes `preview/{gitBranch}*` Neon branches via the Neon API so they do not accumulate past the project's branch-count limit. Without these secrets the step soft-skips (exit 0) and cleanup falls back to the manual Neon console or Neon's retention policy — the workflow itself still runs normally.
-
-Like the staging sync secrets, these are provider-issued: the E2E provisioning command never generates them, and `secrets/test-accounts.md` lists them by name, tier, where they are applied and when they were last set, never their values.
-
-| Secret            | Description                                 | Where to Find                                                   |
-| ----------------- | ------------------------------------------- | --------------------------------------------------------------- |
-| `NEON_API_KEY`    | Neon personal or organization API key       | Neon Console → Account Settings → API Keys → Create new API key |
-| `NEON_PROJECT_ID` | Neon project ID (e.g. `wispy-bar-12345678`) | Neon Console → Project → Settings → General → Project ID        |
-
-> **Minimum scope:** The API key needs permission to list and delete branches on the target project. A project-scoped key is preferred over an account-wide key. The key is read only by the `Delete Neon preview branch` step — it is never exposed to test code or the Playwright runner.
->
-> **Safety:** The cleanup script (`e2e/scripts/cleanupNeonBranch.js`) refuses to touch `primary` branches, `protected` branches, or any branch literally named `main` / `production` / `staging`. It only targets names matching `preview/{gitBranch}` or `preview/{gitBranch}-*`. See `e2e/scripts/helpers/cleanupNeonBranch.test.js` for the pinned safety contract.
+No workflow touches Neon, so no Neon secret is needed. Once the owner turns it on, the Neon integration's **Automatically delete obsolete Neon branches** setting deletes a `preview/<git-branch>` branch after its git branch is deleted; see [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) §6. The former `NEON_API_KEY` and `NEON_PROJECT_ID` secrets are read by nothing, and deleting them from **Settings → Secrets and variables → Actions** is an owner action.
 
 ---
 
@@ -171,15 +160,15 @@ Configure branch protection rules in **Settings → Branches** (or **Settings �
 | Setting                                          | Value                                                                                                                                |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Require a pull request before merging            | Yes                                                                                                                                  |
-| Required status checks                           | `Client — Lint & Test`, `Server — Lint & Test`, `<your-client-vercel-check>`, `<your-server-vercel-check>`, `E2E Tests (Playwright)` |
+| Required status checks                           | `Client — Lint & Test`, `Server — Lint & Test`                                                                                       |
 | Require branches to be up to date before merging | Recommended                                                                                                                          |
 | Include administrators                           | Recommended (see §6 for trade-offs)                                                                                                  |
 
 > **Required checks explained:**
 >
-> - **`Client — Lint & Test`** and **`Server — Lint & Test`**: Produced by `ci.yml`. Run linting, unit tests, and client build verification.
-> - **Vercel deployment checks** (e.g., `Vercel – ichnos-protocol` and `Vercel – ichnos-protocol-server`): Produced by Vercel's native Git integration. These checks confirm that preview deployments build and deploy successfully. **The exact check names are determined by your Vercel project names and may differ from the examples shown here.** To find the correct names: open a recent PR, scroll to the status checks section, and copy the exact Vercel check context strings. Use those exact strings when configuring required status checks — a mismatch will block all merges.
-> - **`E2E Tests (Playwright)`**: Produced by `e2e.yml`, triggered by `repository_dispatch: vercel.deployment.success` events after the **server** Vercel project completes a preview deployment (Repository Dispatch Events are only enabled on the server project). The server is the slower deployment — by the time the dispatch fires, the server is live and the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Tests run against the stable E2E URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords. Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve targets from these variables — the `workflow_dispatch` mode does not accept manual URL inputs. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run; denylist updates require maintainer-reviewed PRs. The gate is fail-closed — missing/empty denylist constants or unparseable URLs abort the workflow. API readiness is determined by `seed.mode` from `/api/health`: `seeded` or `skipped` → ready; `failed` → immediate failure. See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) §3 for full details.
+> - **`Client — Lint & Test`** and **`Server — Lint & Test`**: Produced by `ci.yml`. Run linting, unit tests, and client build verification. They are the only required checks on `main`.
+> - **Vercel deployment checks** (e.g., `Vercel – ichnos-protocol`): Produced by Vercel's native Git integration on every pull request. They are informative and not required.
+> - **`E2E Tests (Playwright)`**: Not required, because it runs after the merge. It is produced by `e2e.yml`, triggered by `repository_dispatch: vercel.deployment.success` events, and the job runs only for the **server** project's deployment of `main`; every other event ends as a skipped job. The server is the slower deployment — by the time the dispatch fires, the server is live and the client is already ready. Note that the dispatch signals that the server deployment is live, not that E2E seeding is complete; the `e2e.yml` workflow polls `/api/health` for the `seed.mode` readiness signal to confirm seeding status before running tests. Tests run against the stable E2E URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords. Both trigger modes (`repository_dispatch` and `workflow_dispatch`) resolve targets from these variables — the `workflow_dispatch` mode does not accept manual URL inputs. A production-host denylist gate (canonical in `e2e.yml` workflow constants) validates all target URLs before tests run; denylist updates require maintainer-reviewed PRs. The gate is fail-closed — missing/empty denylist constants or unparseable URLs abort the workflow. API readiness is determined by `seed.mode` from `/api/health`: `seeded` or `skipped` → ready; `failed` → immediate failure. See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) §3 for full details.
 
 ### `release` branch
 
@@ -191,7 +180,7 @@ Configure branch protection rules in **Settings → Branches** (or **Settings �
 
 > **This is the human gate for production.** Vercel deploys `release` to production as soon as a PR is merged into it, so the PR requirement and `Release Policy Check` (head branch must be `main`) are the last checkpoints before users see a change.
 
-> **Important:** GitHub Actions check names are frozen in workflow file headers (the `name:` field of each job). Do not rename jobs in workflow YAML without updating the corresponding branch protection rules here. `E2E Tests (Playwright)` is produced by `e2e.yml`. Vercel check names are determined by your Vercel project names — always copy the exact context string from a recent PR's checks tab before configuring branch protection rules.
+> **Important:** GitHub Actions check names are frozen in workflow file headers (the `name:` field of each job). Do not rename jobs in workflow YAML without updating the corresponding branch protection rules here.
 
 ### `staging` branch
 
@@ -202,9 +191,9 @@ The `staging` branch does **not** have a branch protection rule — this is inte
 - It is a parallel manual-QA lane, not in the `main → release` promotion chain.
 - Do not create a branch protection rule for `staging`. A protection rule would block the force-push from `sync-staging.yml`.
 
-> **Production-backed environment (accepted risk):** The `staging` Vercel preview uses **production Firebase** and **production Neon DB** credentials via branch-scoped environment variable overrides (configured in Vercel, not GitHub). Manual QA actions performed on `staging` write directly to the production database — this is explicitly accepted to enable realistic QA. `SKIP_E2E_SEED=true` is set on `staging` to prevent automated E2E seed injection.
+> **Production-backed sign-in, copied data:** The `staging` Vercel preview uses **production Firebase** credentials via branch-scoped environment variable overrides (configured in Vercel, not GitHub). Its database is its own Neon copy of production, `preview/staging`, created by the Neon integration; no override points it at the production database. Manual QA actions performed on `staging` write to that copy. `SKIP_E2E_SEED=true` is set on `staging` to prevent automated E2E seed injection.
 >
-> **E2E target isolation:** `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) must point to **ephemeral preview** targets — never to the `staging` branch URL. The staging manual-QA environment and E2E test targets are intentionally separate. Repointing E2E URLs at `staging` would run automated tests against production data.
+> **E2E target isolation:** `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) must point to the stable E2E URLs, which follow `main`, and never to the `staging` branch URL. The staging manual-QA environment and E2E test targets are intentionally separate. Repointing E2E URLs at `staging` would run automated tests against production Firebase and staging's copy of production data.
 >
 > See [`DEPLOYMENT_GITHUB_ACTIONS.md`](DEPLOYMENT_GITHUB_ACTIONS.md) and [`VERCEL_SETTINGS.md`](VERCEL_SETTINGS.md) for full setup details.
 
@@ -239,8 +228,8 @@ These rows are verification targets to check after the provisioning command has 
 | `FIREBASE_PROJECT_ID` variable                          | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
 | `FIREBASE_AUTH_DOMAIN` variable                         | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
 | `FIREBASE_STORAGE_BUCKET` variable                      | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
-| `E2E_BASE_URL` variable                                 | Set to an ephemeral preview URL, never `staging` | Settings → Secrets and variables → Actions → Variables |
-| `E2E_API_BASE_URL` variable                             | Set to an ephemeral preview URL, never `staging` | Settings → Secrets and variables → Actions → Variables |
+| `E2E_BASE_URL` variable                                 | Set to the stable E2E client URL, never `staging` | Settings → Secrets and variables → Actions → Variables |
+| `E2E_API_BASE_URL` variable                             | Set to the stable E2E API URL, never `staging`   | Settings → Secrets and variables → Actions → Variables |
 | `E2E_ADMIN_EMAIL` variable                              | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
 | `E2E_ADMIN_UID` variable                                | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
 | `E2E_USER_EMAIL` variable                               | Set, non-empty                                   | Settings → Secrets and variables → Actions → Variables |
@@ -259,10 +248,8 @@ These rows are verification targets to check after the provisioning command has 
 | `E2E_MANAGE_ADMIN_TARGET_PASSWORD` secret               | Set, non-empty                                   | Settings → Secrets → Actions                           |
 | `E2E_INCOMPLETE_USER_PASSWORD` secret                   | Set, non-empty                                   | Settings → Secrets → Actions                           |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` secret                | Set, non-empty                                   | Settings → Secrets → Actions                           |
-| `NEON_API_KEY` secret (optional, E2E branch cleanup)    | Set, non-empty                                   | Settings → Secrets → Actions                           |
-| `NEON_PROJECT_ID` secret (optional, E2E branch cleanup) | Set, non-empty                                   | Settings → Secrets → Actions                           |
 | `production` environment                                | Optional (no workflow depends on it)             | Settings → Environments                                |
-| `main` branch protection                                | PR required + 5 status checks                    | Settings → Branches (or Rules → Rulesets)              |
+| `main` branch protection                                | PR required + 2 status checks                    | Settings → Branches (or Rules → Rulesets)              |
 | `release` branch protection                             | PR required + `Release Policy Check`             | Settings → Branches (or Rules → Rulesets)              |
 | Include administrators (`main`)                         | Enabled                                          | Settings → Branches → `main` rule                      |
 | Include administrators (`release`)                      | Enabled                                          | Settings → Branches → `release` rule                   |
@@ -310,11 +297,8 @@ Use this checklist when setting up a new repository or verifying an existing one
   - [ ] `SYNC_PAT`
   - [ ] `VERCEL_DEPLOY_HOOK_STAGING_CLIENT`
   - [ ] `VERCEL_DEPLOY_HOOK_STAGING_SERVER`
-- [ ] **Secrets (Neon preview cleanup)** — Owner creates both in the Neon Console and sets them, if ephemeral preview branches are desired (§2)
-  - [ ] `NEON_API_KEY`
-  - [ ] `NEON_PROJECT_ID`
 - [ ] **Environment (optional)** — `production` environment may exist; no workflow depends on it (§3)
-- [ ] **Branch protection: `main`** — 5 required status checks configured: `Client — Lint & Test`, `Server — Lint & Test`, the two Vercel deployment checks (copy exact names from a recent PR's check list), `E2E Tests (Playwright)` (§4)
+- [ ] **Branch protection: `main`** — 2 required status checks configured: `Client — Lint & Test`, `Server — Lint & Test` (§4)
 - [ ] **Branch protection: `release`** — `Release Policy Check` required + PR required (§4)
 - [ ] **No branch protection on `staging`** — Confirmed intentionally unprotected (§4)
 - [ ] **Admin bypass** — "Include administrators" enabled on both branches (§6)

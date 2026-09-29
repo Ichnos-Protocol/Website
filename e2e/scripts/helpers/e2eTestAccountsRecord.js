@@ -30,8 +30,6 @@ export const INFRASTRUCTURE_SECRETS = [
   e2eSecret("E2E_SUPER_ADMIN_PASSWORD"),
   e2eSecret("E2E_MANAGE_ADMIN_TARGET_PASSWORD"),
   e2eSecret("VERCEL_AUTOMATION_BYPASS_SECRET"),
-  e2eSecret("NEON_API_KEY", "Production"),
-  e2eSecret("NEON_PROJECT_ID", "Production"),
   {
     name: "SYNC_PAT",
     appliedWhere: SYNC_WORKFLOW,

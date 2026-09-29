@@ -100,21 +100,7 @@ After all integrations are reinstalled:
 
 Integration-managed env vars (`DATABASE_URL`, `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, `POSTGRES_*`, etc.) are **runtime values** consumed by the deployed server on Vercel. They are **not** referenced by any GitHub Actions workflow — the workflows only test against the already-deployed preview. Do not duplicate these into GitHub Secrets.
 
-The only Neon-related GitHub Actions secrets that exist are:
-
-| GitHub Secret | Purpose | Affected by Vercel team migration? |
-|---|---|---|
-| `NEON_API_KEY` | Calling the Neon API from `e2e.yml`'s cleanup step to delete the ephemeral preview branch | **No** — keys are scoped to the Neon project, not to Vercel |
-| `NEON_PROJECT_ID` | Identifies which Neon project to clean up in | **No** — Neon project itself didn't move |
-
-Sanity-check both (don't blindly rotate):
-
-```bash
-curl -H "Authorization: Bearer $NEON_API_KEY" \
-  https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID
-```
-
-200 = both fine. 401 = key revoked, regenerate. 404 = project ID wrong.
+No GitHub Actions workflow uses a Neon secret. Preview branches are deleted, once their git branch is deleted, by the Neon integration's **Automatically delete obsolete Neon branches** setting, which the owner turns on in the Neon console's Vercel integration settings (see [`VERCEL_SETTINGS.md`](../VERCEL_SETTINGS.md) §6). After a migration, confirm it is on. The former `NEON_API_KEY` and `NEON_PROJECT_ID` secrets are read by nothing.
 
 Then proceed to Tier 1.
 
@@ -332,7 +318,7 @@ If you only have time to verify these things first, do them in order:
 1. **Firebase Auth authorized domains** — add the new Vercel team's preview-URL pattern. This is the #1 thing that breaks after a Vercel team migration. **5-minute fix in Firebase Console.**
 2. **Server env vars on the new Vercel team** — `FIREBASE_*`, `DATABASE_URL`, `XAI_API_KEY`, `CORS_ORIGIN`. If they were copied during project transfer, you're already good — but verify with `vercel env ls preview --cwd server`.
 3. **Vercel production branch** — both projects must have `release` as the production branch (Vercel → project → Settings → Git). Production is Vercel's native build of `release`; no GitHub Actions secret takes part in it.
-4. **GitHub Actions secrets that don't migrate** — `SYNC_PAT`, `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` and `VERCEL_DEPLOY_HOOK_STAGING_SERVER` for the manually dispatched staging sync, plus the E2E secrets (`VERCEL_AUTOMATION_BYPASS_SECRET`, `NEON_API_KEY`, `NEON_PROJECT_ID`, the `E2E_*` credentials). Repo migrations preserve workflows and code but `Settings → Secrets and variables → Actions` starts empty on the new repo. Audit every secret referenced in `.github/workflows/*.yml` and replace any that were owner-scoped (PATs especially) — see Tier 8b.
+4. **GitHub Actions secrets that don't migrate** — `SYNC_PAT`, `VERCEL_DEPLOY_HOOK_STAGING_CLIENT` and `VERCEL_DEPLOY_HOOK_STAGING_SERVER` for the manually dispatched staging sync, plus the E2E secrets (`VERCEL_AUTOMATION_BYPASS_SECRET`, the `E2E_*` credentials). Repo migrations preserve workflows and code but `Settings → Secrets and variables → Actions` starts empty on the new repo. Audit every secret referenced in `.github/workflows/*.yml` and replace any that were owner-scoped (PATs especially) — see Tier 8b.
 5. **Vercel webhook filter dropping CI-driven pushes** — the most expensive trap. The sync push lands on GitHub, but Vercel never builds it from the git event. Disconnect/reconnect of the Git integration does **not** fix this; the deploy hooks at the end of `sync-staging.yml` do. If staging-client keeps serving an old build after a successful manual sync, check the deploy-hook secrets. See Tier 8c.
 6. **Client `VITE_API_HOST` on Production scope** — the `release` build reads Production scope, so that is what serves production traffic. Set `VITE_API_HOST=api.ichnos-protocol.com` on a combined **Production and Preview** entry with no custom branch override, so PR previews resolve too. The existing `staging`-branch override stays. Tier 8a explains the build-time-snapshot reasoning.
 7. **Dead env vars from the old team** — e.g. `VITE_BASE_URL` from a prior deployment pattern. Audit `client/.env.example` and `server/.env.example` against the live Vercel env vars; delete anything in Vercel that isn't in the example files.

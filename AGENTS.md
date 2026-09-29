@@ -150,18 +150,19 @@ The September 2026 cleanup epic (consortium deadline withdrawal, price reconcili
 
 - E2E tests live in `e2e/tests/` at the repository root (separate from client/server).
 - **Local**: Start client + server locally, run `cd e2e && npx playwright test`.
-- **CI**: E2E is triggered by `repository_dispatch (vercel.deployment.success)` from the **server** Vercel project (`ichnos-protocol_server`) only. Repository Dispatch Events are enabled on the server project; the client project does not emit dispatches.
-  - **Filter**: The workflow guards on `contains(github.event.client_payload.project.name || '', 'server')` — a safety check since only the server emits dispatches.
+- **CI**: E2E runs after each server deployment of `main`, triggered by `repository_dispatch (vercel.deployment.success)`. Both Vercel projects emit that event for every deployment of every branch, production included.
+  - **Filter**: The job runs only when `contains(github.event.client_payload.project.name || '', 'server')` holds and `client_payload.git.ref` is `main`, because the target URLs follow `main`. Every other event ends as a skipped job, and the E2E status is not a required check.
+  - **Queue**: One job-level concurrency group, `e2e-stable-domains`, with `cancel-in-progress: false`. Runs wait instead of cancelling each other, and a newer pending run replaces an older pending one. A skipped event is expected not to join the group. GitHub's documentation does not state it, so the first staging sync during a `main` run is the check: its skipped runs must end at once instead of waiting for the `main` run.
   - **Target URLs**: Stable E2E URLs from the repository variables `E2E_BASE_URL` (client) and `E2E_API_BASE_URL` (API), with secrets for the Firebase API key and the passwords — not per-deployment hash URLs.
   - **Client readiness**: The workflow polls `E2E_BASE_URL` (a repository variable) to verify the client is live before running Playwright.
   - **Seed readiness**: The workflow polls `/api/health` for `seed.mode` — `seeded` and `skipped` are accepted as ready states, `failed` is terminal, `in_progress` triggers retry.
   - **Safety gate**: A fail-closed production-host denylist (exact hostname match, lowercase normalized, port removed) validates all target URLs before tests execute. Denylist constants are canonical in `e2e.yml`.
 - `e2e.yml` also supports **manual/ad-hoc** runs via `workflow_dispatch`. Both trigger modes resolve target URLs from the repository variables `E2E_BASE_URL` / `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords — there is no manual URL input. The same denylist safety gate applies.
-- Browsers: **Chromium only** for `repository_dispatch` CI runs; **full suite** (Chromium, Firefox, WebKit) for `workflow_dispatch` manual runs; Chromium-only locally.
+- Browsers: **Chromium only** for `repository_dispatch` CI runs and by default for `workflow_dispatch` manual runs; the **full suite** (Chromium, Firefox, WebKit) when a manual run selects the `full` browser profile; Chromium-only locally.
 
 ### Test runs: five tickets, at most two full runs
 
-The full run is the Playwright E2E run: `e2e.yml` on a preview deployment of the committed HEAD. It needs a deployment, a seeded database and provisioned accounts, so it has its own ticket, it runs at most twice per phase, and no other ticket dispatches it. The Vitest suites are cheap and keep running before every commit (CLAUDE.md §14.3); they are not full runs. Pinned 2026-09-25 by the owner: every extra round of the old loop came from judging, fixing or re-measuring inside the wrong ticket.
+The full run is the Playwright E2E run: `e2e.yml` dispatched on the committed HEAD, which runs that commit's tests against the stable E2E deployments of `main`. It needs a deployment, a seeded database and provisioned accounts, so it has its own ticket, it runs at most twice per phase, and no other ticket dispatches it. The Vitest suites are cheap and keep running before every commit (CLAUDE.md §14.3); they are not full runs. Pinned 2026-09-25 by the owner: every extra round of the old loop came from judging, fixing or re-measuring inside the wrong ticket.
 
 | # | Ticket | Does | Done when | Never |
 | --- | --- | --- | --- | --- |
@@ -171,12 +172,13 @@ The full run is the Playwright E2E run: `e2e.yml` on a preview deployment of the
 | 4 | **Correct** | Implements the corrective tickets, one purpose per commit | Every corrective ticket is committed, and the plan records the commit of each | Dispatches the E2E run. It may run the Vitest files it touches and, locally, the one spec it fixes; that result is not evidence |
 | 5 | **Confirm** | Ticket 1 on the corrected HEAD, then ticket 2 against run 1 | No regression, and every test ticket 4 targeted now passes: the phase closes | Starts another cycle on its own |
 
+- **Dispatch into an idle queue.** A run ticket dispatches only when the `e2e-stable-domains` group has no running or pending job, and records that check in its meta file, because a newer pending run replaces an older one.
 - **A clean first run closes the phase.** When the diagnosis of run 1 finds nothing to correct, tickets 3 to 5 are skipped.
 - **A confirmation that still fails goes to the owner** with its diagnosis. No agent dispatches a third run on its own.
 - **Verification checks the ticket's own column.** A run ticket is verified for completeness, never for green results; a red test seen while verifying it is the diagnosis's input, never a comment and never a fix.
 - **A commit from outside the run never invalidates its results.** The result names the commit it tested; a later commit by the owner or by another session (a documentation change, a ruling) is listed beside it and is never a reason to re-dispatch, reject or re-plan.
 - **No run-level time limit.** The E2E job carries no `timeout-minutes` cap and Playwright no `globalTimeout` or `maxFailures`. A per-test timeout is an assertion about the application, and a test that times out is a result to diagnose. A hung run is stopped by the owner.
-- **One folder per phase**, under `~/.traycer/yolo_artifacts/website-<phase>/`: `run-1/` (the downloaded report and a meta file: workflow run, commit, target URLs, start, end), `diagnosis-1.md`, `corrections.md` (each corrective ticket, the rows it resolves, its commit), `run-2/`, `diagnosis-2.md`.
+- **One folder per phase**, under `~/.traycer/yolo_artifacts/website-<phase>/`: `run-1/` (the downloaded report and a meta file: workflow run, commit, target URLs, start, end, and the idle-queue check made before dispatch), `diagnosis-1.md`, `corrections.md` (each corrective ticket, the rows it resolves, its commit), `run-2/`, `diagnosis-2.md`.
 
 ## Git conventions
 
@@ -193,7 +195,7 @@ The full run is the Playwright E2E run: `e2e.yml` on a preview deployment of the
 - Firebase ID tokens verified server-side on every protected request.
 - Never use `dangerouslySetInnerHTML`.
 - CORS restricted to frontend origin only.
-- Rate limiting on public endpoints: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers `/api/` and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
+- Rate limiting on the API: `express-rate-limit` backed by the Postgres store `PgRateLimitStore` (`rate_limit_hits` table via `rateLimitRepository.js`), shared across serverless instances. A global limiter covers every `/api/` path except `/api/health`, which is registered before it, and a separate 20-per-15-minutes limiter covers `/api/auth`. On a database error the store fails open and logs the message.
 - File uploads: no user-facing upload exists. If one is added, validate type and size on client and server (max 10MB, PDF/DOCX/PNG/JPG only).
 - Never commit `.env` files or secrets.
 
@@ -211,7 +213,7 @@ The test pattern gives: `e2e-admin` → `adminadmin`, `e2e-user` → `useruser`,
 - **A demo account is easy because it can do no harm**: no admin claim, demo data only, data that can be reset, and a name that says demo. An account that needs more is production tier.
 - **No manual secret steps.** Nothing asks a person to type or reconcile a password or a secret that a script can produce. The provisioning script generates the test passwords from the pattern, creates or updates the accounts in the test project, writes their UIDs, pushes the GitHub secrets and variables and the Vercel preview variables, sets the Vercel automation bypass secret on both Vercel projects and in GitHub in one run so the values cannot drift, and redeploys the previews that read a changed variable.
 - **One gitignored record.** The script writes `secrets/test-accounts.md`: every test and demo account with email, role, password, UID and project, and every infrastructure secret with where it is applied and when it was last set, each with the date and the command that provisioned it. Production values are never copied into it; the record names where they are held.
-- **The only manual steps left need a signed-in person in a browser**: `gh auth login`, `vercel login`, and the tokens a provider issues only to a signed-in person (a GitHub personal access token, a first Neon API key). A script that needs one stops and names the command; nothing else asks a person to pause.
+- **The only manual steps left need a signed-in person in a browser**: `gh auth login`, `vercel login`, and the tokens a provider issues only to a signed-in person (a GitHub personal access token). A script that needs one stops and names the command; nothing else asks a person to pause.
 
 ## Security best practices
 
@@ -258,12 +260,12 @@ The test pattern gives: `e2e-admin` → `adminadmin`, `e2e-user` → `useruser`,
 - **Frontend** (`client/`): Vite static build → `dist/`. SPA rewrites to `index.html`.
 - **Backend** (`server/`): Express app wrapped as a Vercel serverless function via `server/api/index.js` using `@vercel/node`.
 - **Vercel Git integration handles preview deployments** automatically on every branch push and PR — no GitHub Actions workflow is involved in creating previews.
-- **Enforced pipeline order**: CI → Vercel Preview (native) → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) → PR into `release` → Vercel native production build of `release`.
-- `repository_dispatch (vercel.deployment.success)` events from the **server** Vercel project (`ichnos-protocol_server`) trigger `e2e.yml`. The workflow uses project-name filtering (`contains(project.name, 'server')`) and targets stable E2E URLs from the repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords.
+- **Pipeline order**: CI on the pull request into `main` (the two required checks) → merge → Vercel deploys `main` → E2E (Playwright via `repository_dispatch (vercel.deployment.success)`) on `main` → PR into `release` once `main`'s E2E run has passed → Vercel native production build of `release`.
+- Both Vercel projects send `repository_dispatch (vercel.deployment.success)` for every deployment. `e2e.yml` runs only for the **server** project's deployment of `main` (`contains(project.name, 'server')` and `git.ref == 'main'`) and targets stable E2E URLs from the repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL`, with secrets for the Firebase API key and the passwords.
 - Production is Vercel's own build of the `release` branch, for both projects (the production branch is `release`). The human gate is the required pull request into `release`, enforced by the ruleset and `release-policy-check.yml` (the head branch must be `main`). No GitHub Actions run takes part in the production deployment.
 - Environment variables set in Vercel project settings, never committed.
 - `server/api/index.js` only re-exports the Express app. All setup stays in `server/src/app.js`.
-- **Staging manual-QA lane**: The `staging` branch produces a Vercel Preview deployment that uses **production Firebase** and **production Neon DB** via branch-scoped env overrides. `SKIP_E2E_SEED=true` prevents automated seed injection. Manual QA actions on `staging` write to the production database — this is explicitly accepted.
+- **Staging manual-QA lane**: The `staging` branch produces a Vercel Preview deployment that signs in against **production Firebase** via branch-scoped env overrides. Its client sends `/api` to `staging-api.ichnos-protocol.com`, and its server's only `DATABASE_URL` is the Neon integration's copy of production for branch `staging` (`preview/staging`), branched on 2026-09-28 and not refreshed since. `SKIP_E2E_SEED=true` keeps the E2E seed and migrations away. Manual QA writes land in that copy, not in production.
 - `sync-staging.yml` runs only on manual `workflow_dispatch`. It force-pushes `main` to `staging` with `SYNC_PAT` (not `GITHUB_TOKEN`), then calls the two Vercel staging deploy hooks (`VERCEL_DEPLOY_HOOK_STAGING_CLIENT`, `VERCEL_DEPLOY_HOOK_STAGING_SERVER`) to build the new `staging` tip.
 
 ## CI/CD best practices
@@ -297,32 +299,32 @@ The test pattern gives: `e2e-admin` → `adminadmin`, `e2e-user` → `useruser`,
 - This allows reviewing every deployment on preview before it reaches users.
 - **Fork PR trust boundary**: Vercel's Git integration does not expose environment variables to builds from forks by default, preventing secret exfiltration via attacker-controlled code.
 - See `DEPLOYMENT_GITHUB_ACTIONS.md` for setup instructions.
-- The `staging` branch is a manually synced parallel manual-QA lane that sits outside the automated pipeline. It uses production credentials for real-user QA. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
+- The `staging` branch is a manually synced parallel manual-QA lane that sits outside the automated pipeline. It signs in with production Firebase accounts for real-user QA and reads and writes its own Neon copy of production. See `DEPLOYMENT_GITHUB_ACTIONS.md` for full details.
 
 ### Neon preview branches for E2E
 
-- Vercel's native Neon integration automatically creates a Neon preview branch for each Vercel preview deployment. No GitHub Actions step provisions branches.
-- `e2e.yml` deletes them: its final `Delete Neon preview branch` step runs `node e2e/scripts/cleanupNeonBranch.js` under `if: always()`, which calls the Neon API with the `NEON_API_KEY` and `NEON_PROJECT_ID` repository secrets. The step is best-effort and skips when those secrets are absent.
+- The Neon integration is the Neon-managed one (Neon's connectable-account integration, not the Vercel-native one). It creates a Neon branch `preview/<git-branch>` from production when a git branch gets its first preview deployment, and writes that branch's `DATABASE_URL` as a branch-scoped Preview variable. No GitHub Actions step provisions branches.
+- The integration also deletes them once the owner turns on its **Automatically delete obsolete Neon branches** setting (`VERCEL_SETTINGS.md` §6): it then deletes a `preview/<git-branch>` branch after its git branch is deleted, the next time any preview deployment is created. `preview/main` and `preview/staging` stay, because `main` and `staging` are never deleted. No workflow and no secret takes part.
 - E2E test data is seeded automatically by the server on preview startup. When `VERCEL_ENV === 'preview'` and E2E account env vars are present (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`), the server runs idempotent seed queries using its own `DATABASE_URL` (injected by the Neon-Vercel integration).
-- Apart from that branch cleanup, GitHub Actions does not touch the database: no direct DB connections, no seed tokens. Seeding stays server-side.
+- GitHub Actions does not touch the database: no direct DB connections, no seed tokens, no branch cleanup. Seeding stays server-side.
 - E2E account env vars (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_UID`, etc.) must be set as Vercel server environment variables scoped to **Preview** only.
 - Seeding can be suppressed by setting `SKIP_E2E_SEED=true` as a Vercel server Preview env var; `/api/health` then reports `seed.mode=skipped`.
 - `/api/health` exposes `seed.mode` (enum: `seeded | skipped | in_progress | failed`) as the canonical readiness signal for CI orchestration. The backward-compatible fields (`seed.seeded`, `seed.error`, `seed.attempts`) are retained alongside it.
 - For local/manual seeding outside Vercel, use `node server/scripts/seedE2EData.js`.
-- The `staging` branch does **not** use an ephemeral Neon branch — it connects directly to the production Neon database via a branch-scoped `DATABASE_URL` override. Any Neon ephemeral branch auto-created for the `staging` preview is unused and expires automatically.
+- The `staging` branch reads and writes its own Neon branch, `preview/staging`, like any other preview. No `DATABASE_URL` override points it at the production database.
 
 ### E2E URL targeting in GitHub Actions
 
-- E2E tests are triggered by `repository_dispatch (vercel.deployment.success)` from the **server** Vercel project (`ichnos-protocol_server`) via `e2e.yml`, not as a dependent job inside another workflow.
-- The workflow uses **project-name filtering** (`contains(project.name, 'server')`) as the event guard — not hostname pattern matching.
+- E2E tests are triggered by `repository_dispatch (vercel.deployment.success)` via `e2e.yml`, not as a dependent job inside another workflow. The job runs only for the **server** Vercel project's (`ichnos-protocol_server`) deployments of `main`.
+- The workflow uses **project-name and branch filtering** (`contains(project.name, 'server')` and `git.ref == 'main'`) as the event guard, not hostname pattern matching.
 - Tests target stable E2E URLs from the repository variables `E2E_BASE_URL` and `E2E_API_BASE_URL` (variables, not secrets), with secrets for the Firebase API key and the passwords — not per-deployment hash URLs.
 - Detection does not use Vercel project ID secrets or hostname matching.
 - Both `repository_dispatch` and `workflow_dispatch` modes resolve targets from the same repository variables and secrets — no manual URL input is accepted.
 - Production-host denylist constants (`PRODUCTION_HOSTS_CLIENT`, `PRODUCTION_HOSTS_API`) are canonical in the `e2e.yml` workflow `env` block. Updates require maintainer-reviewed PRs on the workflow file. Docs are descriptive only and must not introduce alternate policy sources.
 - The denylist gate is fail-closed: empty/missing constants or unparseable URLs abort the run. Hostname matching is exact-match after lowercase normalization and port removal.
 - API readiness is `seed.mode`-based: the workflow polls `/api/health` and accepts `seeded` or `skipped` as ready; `failed` triggers immediate failure.
-- E2E tests must target the **client** staging URL only, never the server.
-- `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) point to **ephemeral preview** targets — never to the `staging` branch URL. The `staging` environment is a separate manual-QA lane with its own distinct URL and production credentials.
+- E2E tests must target the stable E2E **client** URL only, never the server.
+- `E2E_BASE_URL` and `E2E_API_BASE_URL` (repository variables) point to the stable E2E domains, which follow `main`, and never to the `staging` branch URL. The `staging` environment is a separate manual-QA lane with its own URLs, its own Neon copy and production Firebase.
 
 ### Secret-conditional steps
 
