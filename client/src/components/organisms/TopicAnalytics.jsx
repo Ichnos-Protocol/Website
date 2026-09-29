@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import Table from 'react-bootstrap/Table';
-import Button from 'react-bootstrap/Button';
-import Spinner from 'react-bootstrap/Spinner';
-import Alert from 'react-bootstrap/Alert';
+import { useState } from "react";
+import Table from "react-bootstrap/Table";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
+import Alert from "react-bootstrap/Alert";
 
 import {
   useGetTopicsQuery,
   useAnalyzeTopicsMutation,
-} from '../../features/admin/adminApi';
+} from "../../features/admin/adminApi";
 
 export default function TopicAnalytics() {
   const { data: topicsResponse, isLoading } = useGetTopicsQuery();
@@ -23,11 +23,11 @@ export default function TopicAnalytics() {
       const result = await analyzeTopics().unwrap();
       const d = result.data;
       setFeedback({
-        type: 'success',
+        type: "success",
         message: `Processed ${d.processed} questions, skipped ${d.skipped}.`,
       });
     } catch {
-      setFeedback({ type: 'danger', message: 'Topic analysis failed.' });
+      setFeedback({ type: "danger", message: "Topic analysis failed." });
     }
   }
 
@@ -41,12 +41,16 @@ export default function TopicAnalytics() {
           disabled={isAnalyzing}
           onClick={handleRecompute}
         >
-          {isAnalyzing ? 'Analyzing...' : 'Recompute Topics'}
+          {isAnalyzing ? "Analyzing..." : "Recompute Topics"}
         </Button>
       </div>
 
       {feedback && (
-        <Alert variant={feedback.type} dismissible onClose={() => setFeedback(null)}>
+        <Alert
+          variant={feedback.type}
+          dismissible
+          onClose={() => setFeedback(null)}
+        >
           {feedback.message}
         </Alert>
       )}
@@ -69,7 +73,9 @@ export default function TopicAnalytics() {
               <tr key={t.topic}>
                 <td>{t.topic}</td>
                 <td>{t.count}</td>
-                <td>{t.avg_confidence ? Number(t.avg_confidence).toFixed(2) : '-'}</td>
+                <td>
+                  {t.avg_confidence ? Number(t.avg_confidence).toFixed(2) : "-"}
+                </td>
               </tr>
             ))}
             {topics.length === 0 && (

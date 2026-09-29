@@ -1,6 +1,6 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, within, cleanup } from '../../test-utils';
-import AudiencePanels from './AudiencePanels';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, within, cleanup } from "../../test-utils";
+import AudiencePanels from "./AudiencePanels";
 import {
   ASSESSMENT_PANELS,
   PRICING,
@@ -8,7 +8,7 @@ import {
   getCurrentPrice,
   getPassportDateLabel,
   interpolate,
-} from '../../constants/readinessAssessmentContent';
+} from "../../constants/readinessAssessmentContent";
 
 /*
  * Section 8 items 8, 9 and 12 in their rendered form.
@@ -51,12 +51,12 @@ const CLOSED_PRICING = Object.fromEntries(
   ]),
 );
 
-describe('AudiencePanels', () => {
-  it('renders the panels in the source order of the constant', () => {
+describe("AudiencePanels", () => {
+  it("renders the panels in the source order of the constant", () => {
     renderWithProviders(<AudiencePanels />);
     const rendered = screen
       .getAllByTestId(/^audience-panel-/)
-      .map((panel) => panel.getAttribute('data-testid'));
+      .map((panel) => panel.getAttribute("data-testid"));
     expect(rendered).toEqual(
       ASSESSMENT_PANELS.map((panel) => `audience-panel-${panel.id}`),
     );
@@ -66,7 +66,7 @@ describe('AudiencePanels', () => {
     it(`renders the ${panel.id} panel copy from the constants`, () => {
       renderWithProviders(<AudiencePanels />);
       expect(
-        screen.getByRole('heading', { level: 2, name: panel.title }),
+        screen.getByRole("heading", { level: 2, name: panel.title }),
       ).toBeInTheDocument();
 
       const card = screen.getByTestId(`audience-panel-${panel.id}`);
@@ -101,43 +101,43 @@ describe('AudiencePanels', () => {
             formatPrice(getCurrentPrice(tierId, currency)),
           );
         });
-        expect(priceLine.textContent).not.toContain('{');
+        expect(priceLine.textContent).not.toContain("{");
       });
     });
   });
 
-  it('resolves the passport date from the regulatory-dates source', () => {
+  it("resolves the passport date from the regulatory-dates source", () => {
     renderWithProviders(<AudiencePanels />);
     const dated = ASSESSMENT_PANELS.find((panel) =>
-      panel.body.includes('{passportDate}'),
+      panel.body.includes("{passportDate}"),
     );
     const card = screen.getByTestId(`audience-panel-${dated.id}`);
 
     expect(card).toHaveTextContent(getPassportDateLabel());
-    expect(card.textContent).not.toContain('{passportDate}');
+    expect(card.textContent).not.toContain("{passportDate}");
   });
 
-  it('renders no currency symbol', () => {
+  it("renders no currency symbol", () => {
     const { container } = renderWithProviders(<AudiencePanels />);
     expect(container.textContent).not.toMatch(/[\u20AC$\u00A3\u00A5]/);
   });
 
-  it('gives the price lines no badge treatment', () => {
+  it("gives the price lines no badge treatment", () => {
     const { container } = renderWithProviders(<AudiencePanels />);
     expect(
-      container.querySelector('.badge, .pillar-badge, .card-header'),
+      container.querySelector(".badge, .pillar-badge, .card-header"),
     ).toBeNull();
 
     ASSESSMENT_PANELS.forEach((panel) => {
       panel.priceLines.forEach((line, index) => {
         expect(
           screen.getByTestId(`readiness-price-${panel.id}-${index}`),
-        ).toHaveClass('readiness-price-line');
+        ).toHaveClass("readiness-price-line");
       });
     });
   });
 
-  it('renders the standard figures once the founding window is closed', () => {
+  it("renders the standard figures once the founding window is closed", () => {
     renderWithProviders(<AudiencePanels pricing={CLOSED_PRICING} />);
     ASSESSMENT_PANELS.forEach((panel) => {
       panel.priceLines.forEach((line, index) => {
@@ -156,14 +156,14 @@ describe('AudiencePanels', () => {
     });
   });
 
-  it('leaves the exported PRICING unmutated by the closed fixture', () => {
+  it("leaves the exported PRICING unmutated by the closed fixture", () => {
     renderWithProviders(<AudiencePanels pricing={CLOSED_PRICING} />);
     Object.values(PRICING).forEach((tier) => {
       expect(tier.foundingOpen).toBe(true);
     });
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<AudiencePanels />);
     const results = await axe(container);

@@ -21,7 +21,13 @@ export default function ContactForm() {
 
   return (
     <>
-      <Modal show={isOpen} onHide={handleClose} centered size="lg" data-testid="contact-modal">
+      <Modal
+        show={isOpen}
+        onHide={handleClose}
+        centered
+        size="lg"
+        data-testid="contact-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             {requestId ? "Add a Follow-up Question" : "Submit an Inquiry"}

@@ -1,7 +1,7 @@
-import { CREDENTIALS } from '../../constants/credentials';
-import { CX_LABEL_ASSETS } from '../../constants/catenaXStatus';
+import { CREDENTIALS } from "../../constants/credentials";
+import { CX_LABEL_ASSETS } from "../../constants/catenaXStatus";
 
-const LABEL_SIZE_MODIFIERS = { advisor: '--advisor', member: '--member' };
+const LABEL_SIZE_MODIFIERS = { advisor: "--advisor", member: "--member" };
 
 // Pure: both official marks carry a sizing modifier. The 16:9 advisor SVG
 // bakes in ~54% clear space while the member SVG is tight-cropped, so an
@@ -9,7 +9,7 @@ const LABEL_SIZE_MODIFIERS = { advisor: '--advisor', member: '--member' };
 // equalise the visible mark height (source §5.2). Keyed on cxLabel only —
 // never on the asset filename. Unknown values get the bare base class.
 function composeImgClass(cxLabel) {
-  const base = 'footer-label-img';
+  const base = "footer-label-img";
   const suffix = LABEL_SIZE_MODIFIERS[cxLabel];
   return suffix ? `${base} ${base}${suffix}` : base;
 }

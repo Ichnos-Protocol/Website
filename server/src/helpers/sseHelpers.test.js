@@ -58,10 +58,7 @@ describe("sseHelpers", () => {
         "text/event-stream",
       );
       expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "no-cache");
-      expect(res.setHeader).toHaveBeenCalledWith(
-        "Connection",
-        "keep-alive",
-      );
+      expect(res.setHeader).toHaveBeenCalledWith("Connection", "keep-alive");
       expect(res.flushHeaders).toHaveBeenCalled();
     });
   });

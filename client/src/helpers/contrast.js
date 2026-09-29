@@ -4,13 +4,13 @@
  */
 
 export function hexToRgb(hex) {
-  const normalized = hex.replace('#', '');
+  const normalized = hex.replace("#", "");
   const expanded =
     normalized.length === 3
       ? normalized
-          .split('')
+          .split("")
           .map((c) => c + c)
-          .join('')
+          .join("")
       : normalized;
   return {
     r: parseInt(expanded.slice(0, 2), 16),

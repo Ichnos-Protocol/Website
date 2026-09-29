@@ -39,8 +39,14 @@ export function waitForFinish(res) {
   if (res.destroyed) return Promise.resolve(false);
 
   return new Promise((resolve) => {
-    const onFinish = () => { res.off("close", onClose); resolve(true); };
-    const onClose = () => { res.off("finish", onFinish); resolve(false); };
+    const onFinish = () => {
+      res.off("close", onClose);
+      resolve(true);
+    };
+    const onClose = () => {
+      res.off("finish", onFinish);
+      resolve(false);
+    };
     res.once("finish", onFinish);
     res.once("close", onClose);
   });

@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import Alert from 'react-bootstrap/Alert';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
+import { useState } from "react";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
 
 import {
   useGetConsortiumRegistrantsQuery,
   useUpdateConsortiumRegistrantMutation,
   useLazyExportConsortiumRegistrantsQuery,
-} from '../../features/admin/adminApi';
+} from "../../features/admin/adminApi";
 import {
   buildExportParams,
   buildToolbarActions,
@@ -17,14 +17,14 @@ import {
   CONSORTIUM_FILTERS,
   EMPTY_FILTERS,
   REGISTRANT_TEXT,
-} from '../../helpers/consortiumRegistrants';
-import ConsortiumRegistrantsTable from '../molecules/ConsortiumRegistrantsTable';
-import ConsortiumRegistrantDetail from '../molecules/ConsortiumRegistrantDetail';
+} from "../../helpers/consortiumRegistrants";
+import ConsortiumRegistrantsTable from "../molecules/ConsortiumRegistrantsTable";
+import ConsortiumRegistrantDetail from "../molecules/ConsortiumRegistrantDetail";
 
 export default function ConsortiumRegistrations() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [groupEmail, setGroupEmail] = useState('');
+  const [groupEmail, setGroupEmail] = useState("");
   const [feedback, setFeedback] = useState(null);
   const { data, isLoading, error } = useGetConsortiumRegistrantsQuery(filters);
   const [updateRegistrant] = useUpdateConsortiumRegistrantMutation();
@@ -40,9 +40,9 @@ export default function ConsortiumRegistrations() {
     notify();
     try {
       await action();
-      if (successKey) notify('success', successKey);
+      if (successKey) notify("success", successKey);
     } catch {
-      notify('danger', failureKey);
+      notify("danger", failureKey);
     }
   }
 
@@ -52,19 +52,19 @@ export default function ConsortiumRegistrations() {
   }
   function handleCopyEmails() {
     const copy = () => navigator.clipboard.writeText(toEmailList(rows));
-    return attempt(copy, 'copySuccess', 'copyFailure');
+    return attempt(copy, "copySuccess", "copyFailure");
   }
   function handleSave(payload) {
     const save = () => updateRegistrant(payload).unwrap();
-    return attempt(save, 'saveSuccess', 'saveFailure');
+    return attempt(save, "saveSuccess", "saveFailure");
   }
   function handleExport(target) {
     const group = groupEmail.trim();
-    if (target.needsGroup && !group) return notify('danger', 'missingGroup');
+    if (target.needsGroup && !group) return notify("danger", "missingGroup");
     const params = buildExportParams(target, filters, group);
     const run = async () =>
       downloadCsv(await triggerExport(params).unwrap(), target.filename);
-    return attempt(run, null, 'exportFailure');
+    return attempt(run, null, "exportFailure");
   }
 
   return (

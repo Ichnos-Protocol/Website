@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
 import {
   ADVISOR_CARD_NOTE,
@@ -13,51 +13,65 @@ import {
   computeCatenaXQualifierText,
   computeCatenaXFullTitle,
   getCatenaXQualifierText,
+  getCatenaXFounderLine,
   getCatenaXFullTitle,
-} from './catenaXStatus';
+} from "./catenaXStatus";
 
-describe('catenaXStatus (granted state — real module)', () => {
-  it('ships with the qualification flag on', () => {
+describe("catenaXStatus (granted state — real module)", () => {
+  it("ships with the qualification flag on", () => {
     expect(CATENA_X_QUALIFICATION_GRANTED).toBe(true);
   });
 
-  it('exposes the stable qualifier class name', () => {
-    expect(CATENA_X_QUALIFIER_CLASS).toBe('catenax-qualifier-pending');
+  it("exposes the stable qualifier class name", () => {
+    expect(CATENA_X_QUALIFIER_CLASS).toBe("catenax-qualifier-pending");
   });
 
-  it('returns an empty qualifier suffix once granted', () => {
+  it("returns an empty qualifier suffix once granted", () => {
     const granted = getCatenaXQualifierText();
     expect(granted).toBe(computeCatenaXQualifierText(true));
-    expect(granted).toBe('');
+    expect(granted).toBe("");
   });
 
-  it('reduces the full title to the base credential', () => {
+  it("reduces the full title to the base credential", () => {
     expect(getCatenaXFullTitle()).toBe(CATENA_X_TITLE_BASE);
   });
 });
 
-describe('catenaXStatus (granted state — real computation)', () => {
-  it('drops the qualifier once the flag is granted', () => {
-    expect(computeCatenaXQualifierText(true)).toBe('');
+describe("catenaXStatus (granted state — real computation)", () => {
+  it("drops the qualifier once the flag is granted", () => {
+    expect(computeCatenaXQualifierText(true)).toBe("");
   });
 
-  it('reduces the full title to the base credential when granted', () => {
+  it("reduces the full title to the base credential when granted", () => {
     expect(computeCatenaXFullTitle(true)).toBe(CATENA_X_TITLE_BASE);
   });
 
-  it('keeps the qualifier appended while pending (flip relationship)', () => {
-    expect(computeCatenaXQualifierText(false)).not.toBe('');
+  it("keeps the qualifier appended while pending (flip relationship)", () => {
+    expect(computeCatenaXQualifierText(false)).not.toBe("");
     expect(computeCatenaXFullTitle(false)).toBe(
       CATENA_X_TITLE_BASE + computeCatenaXQualifierText(false),
     );
   });
 });
 
-describe('catenaXStatus (tier-3 exact strings)', () => {
-  it('matches the §2.1 trademark notice character for character', () => {
+describe("catenaXStatus (founder line)", () => {
+  // september-fixes P7: corporate surfaces attribute the title to the founder.
+  it('prefixes the full title with "Founded by a "', () => {
+    expect(getCatenaXFounderLine()).toBe(
+      "Founded by a " + getCatenaXFullTitle(),
+    );
+  });
+
+  it("yields the base title in the granted state", () => {
+    expect(getCatenaXFounderLine()).toBe("Founded by a " + CATENA_X_TITLE_BASE);
+  });
+});
+
+describe("catenaXStatus (tier-3 exact strings)", () => {
+  it("matches the §2.1 trademark notice character for character", () => {
     // The only legitimate place to restate this literal (§7.3 item 13) — comparing the constant to itself would assert nothing. The DOM-equals-constant half lives in Footer.test.jsx (T7).
     expect(TRADEMARK_NOTICE).toBe(
-      'Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association and a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.',
+      "Catena-X® is a registered trademark of Catena-X Automotive Network e.V. Ichnos Protocol Pte. Ltd. is an ordinary member of the association. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor. References to Catena-X standards and committees describe factual participation and do not imply certification of Ichnos products or endorsement by the association or its bodies.",
     );
   });
 
@@ -67,38 +81,39 @@ describe('catenaXStatus (tier-3 exact strings)', () => {
   // about a credential, and the expiry is deliberately omitted so the public
   // copy stays renewal-agnostic — the renewal (`renew by 2027-07-06`) is
   // tracked in the ops calendar instead.
-  it('matches the advisor card note character for character', () => {
+  it("matches the advisor card note character for character", () => {
     expect(ADVISOR_CARD_NOTE).toBe(
-      'Qualified Advisor, Attestation ID 868. Advising Asian manufacturers from Singapore, on site across ASEAN.',
+      "Francesco Maltoni holds Qualified Advisor attestation 868. Advising Asian manufacturers from Singapore, on site across ASEAN.",
     );
   });
 });
 
-describe('catenaXStatus (tier-3 exact label filenames)', () => {
+describe("catenaXStatus (tier-3 exact label filenames)", () => {
   // Item 15 widens tier 3 from three exact strings to six: each of these four
   // paths is an independent Logo Use Agreement exposure, since a wrong filename
   // either serves an unofficial asset or 404s the official one. This file is
   // the only legitimate place to restate the literals (§7.3) — asserting a
   // constant against itself, or against CX_LABEL_ASSETS, would assert nothing.
-  it('points at the official Qualified Advisor label files (cropped display derivatives)', () => {
-    // The `_cropped` files are viewBox-trimmed renders of the official
-    // `_16x9.svg` masters (kept alongside in /brand): artwork untouched,
-    // empty canvas removed, clear space re-supplied in CSS. Recorded
-    // 2026-08-12 — font-parity fix.
+  it("points at the official Qualified Advisor label files (unmodified 16:9 positive, cropped negative)", () => {
+    // september-fixes P7: the positive is the official `_16x9.svg`
+    // delivery, unmodified, so its mandated clear space stays uncropped
+    // on the founder profile. The negative remains the viewBox-trimmed
+    // `_cropped` derivative (artwork untouched, clear space re-supplied in
+    // CSS), recorded 2026-08-12 as a font-parity fix.
     expect(CATENA_X_LABEL_ASSET).toBe(
-      '/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_cropped.svg',
+      "/brand/CX_Logo_Qualified-Advisor_CLR_RGB_pos_16x9.svg",
     );
     expect(CATENA_X_LABEL_ASSET_NEG).toBe(
-      '/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg',
+      "/brand/CX_Logo_Qualified-Advisor_RGB_neg_cropped.svg",
     );
   });
 
-  it('points at the official ordinary-member label files', () => {
+  it("points at the official ordinary-member label files", () => {
     expect(CATENA_X_MEMBER_LABEL_ASSET).toBe(
-      '/brand/Association_member_Logo_RGB_pos.svg',
+      "/brand/Association_member_Logo_RGB_pos.svg",
     );
     expect(CATENA_X_MEMBER_LABEL_ASSET_NEG).toBe(
-      '/brand/Association_member_Logo_RGB_neg.svg',
+      "/brand/Association_member_Logo_RGB_neg.svg",
     );
   });
 });

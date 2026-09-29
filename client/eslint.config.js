@@ -44,4 +44,28 @@ export default defineConfig([
       "vitest/no-focused-tests": "error",
     },
   },
+  // 200-line cap on application modules; prose rule in CLAUDE.md §5.1.
+  {
+    files: ["src/**/*.{js,jsx}"],
+    rules: { "max-lines": ["error", { max: 200 }] },
+  },
+  // Test files grow with the cases they cover.
+  {
+    files: [
+      "src/**/*.{test,mock}.{js,jsx}",
+      "src/**/*.spec.{js,jsx}",
+      "src/setupTests.js",
+    ],
+    rules: { "max-lines": "off" },
+  },
+  // Content-exempt: length follows copy or declarative data, not logic.
+  // Content-exempt is not grandfathered.
+  {
+    files: [
+      "src/constants/readinessAssessmentContent.js",
+      "src/constants/vocabulary.js",
+      "src/constants/services.js",
+    ],
+    rules: { "max-lines": "off" },
+  },
 ]);

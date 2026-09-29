@@ -103,10 +103,7 @@ function chunkMarkdownByHeadings(markdownText, maxWords = 300) {
     const wordCount = countWords(content);
 
     if (wordCount > maxWords) {
-      const subChunks = splitTokensIntoSubchunks(
-        section.tokens,
-        maxWords,
-      );
+      const subChunks = splitTokensIntoSubchunks(section.tokens, maxWords);
       for (let i = 0; i < subChunks.length; i++) {
         if (countWords(subChunks[i]) < MIN_WORDS) continue;
         chunks.push({

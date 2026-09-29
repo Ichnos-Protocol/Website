@@ -38,9 +38,11 @@ export async function addQuestion(req, res, next) {
     const { question } = req.body;
 
     if (!question || typeof question !== "string" || !question.trim()) {
-      return res
-        .status(400)
-        .json({ data: null, error: "Invalid question: must be a non-empty string", message: null });
+      return res.status(400).json({
+        data: null,
+        error: "Invalid question: must be a non-empty string",
+        message: null,
+      });
     }
 
     const requestId = parseInt(id, 10);
@@ -51,11 +53,7 @@ export async function addQuestion(req, res, next) {
         .json({ data: null, error: "Invalid request ID", message: null });
     }
 
-    const result = await contactService.addQuestion(
-      uid,
-      requestId,
-      question,
-    );
+    const result = await contactService.addQuestion(uid, requestId, question);
 
     res.status(201).json(formatResponse(result, "Question added"));
   } catch (error) {

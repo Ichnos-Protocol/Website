@@ -73,7 +73,10 @@ export async function sendMessage(req, res, next) {
     }
 
     if (interrupted) {
-      console.info("[STREAM_INTERRUPTED]", { uid, answeredLength: fullAnswer.length });
+      console.info("[STREAM_INTERRUPTED]", {
+        uid,
+        answeredLength: fullAnswer.length,
+      });
       return endSSE(res);
     }
 
@@ -116,9 +119,7 @@ export async function getChatHistory(req, res, next) {
 
     const history = await chatService.getChatHistory(uid);
 
-    res
-      .status(200)
-      .json(formatResponse(history, "Chat history retrieved"));
+    res.status(200).json(formatResponse(history, "Chat history retrieved"));
   } catch (error) {
     next(error);
   }

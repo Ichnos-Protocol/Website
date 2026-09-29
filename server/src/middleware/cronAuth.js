@@ -12,9 +12,7 @@ import admin from "./admin.js";
 export default function cronOrAdmin(req, res, next) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7)
-    : null;
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   if (cronSecret && token === cronSecret) {
     return next();

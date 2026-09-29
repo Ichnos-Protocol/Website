@@ -60,9 +60,19 @@ export async function seedTestDatabase({
 
   try {
     await upsertUser(pool, userUid, "E2E", "User", process.env.E2E_USER_EMAIL);
-    await upsertUser(pool, adminUid, "E2E", "Admin", process.env.E2E_ADMIN_EMAIL);
     await upsertUser(
-      pool, superAdminUid, "E2E", "SuperAdmin", process.env.E2E_SUPER_ADMIN_EMAIL,
+      pool,
+      adminUid,
+      "E2E",
+      "Admin",
+      process.env.E2E_ADMIN_EMAIL,
+    );
+    await upsertUser(
+      pool,
+      superAdminUid,
+      "E2E",
+      "SuperAdmin",
+      process.env.E2E_SUPER_ADMIN_EMAIL,
     );
 
     await upsertContactRequest(pool, adminUid);

@@ -17,19 +17,33 @@ export class AdminPage {
     const apiResponses = [];
     const listener = async (res) => {
       const url = res.url();
-      if (url.includes('/api/') || url.includes('identitytoolkit') || url.includes('securetoken')) {
-        const body = await res.text().catch(() => '<unreadable>');
-        apiResponses.push({ url: url.slice(0, 120), status: res.status(), body: body.slice(0, 300) });
+      if (
+        url.includes("/api/") ||
+        url.includes("identitytoolkit") ||
+        url.includes("securetoken")
+      ) {
+        const body = await res.text().catch(() => "<unreadable>");
+        apiResponses.push({
+          url: url.slice(0, 120),
+          status: res.status(),
+          body: body.slice(0, 300),
+        });
       }
     };
-    this.page.on('response', listener);
+    this.page.on("response", listener);
 
     try {
-      await this.requestsTab.waitFor({ state: 'visible', timeout: DASHBOARD_READY_TIMEOUT });
+      await this.requestsTab.waitFor({
+        state: "visible",
+        timeout: DASHBOARD_READY_TIMEOUT,
+      });
     } catch (err) {
       const currentUrl = this.page.url();
-      const pageTitle = await this.page.title().catch(() => '<unknown>');
-      const bodyText = await this.page.locator('body').innerText({ timeout: 3_000 }).catch(() => '<unreadable>');
+      const pageTitle = await this.page.title().catch(() => "<unknown>");
+      const bodyText = await this.page
+        .locator("body")
+        .innerText({ timeout: 3_000 })
+        .catch(() => "<unreadable>");
       console.error(
         `[waitForDashboardReady] Admin dashboard did not render within ${DASHBOARD_READY_TIMEOUT}ms.\n` +
           `  Current URL: ${currentUrl}\n` +
@@ -39,99 +53,98 @@ export class AdminPage {
       );
       throw err;
     } finally {
-      this.page.removeListener('response', listener);
+      this.page.removeListener("response", listener);
     }
   }
 
   get requestsTab() {
-    return this.page.getByRole('tab', { name: 'Requests' });
+    return this.page.getByRole("tab", { name: "Requests" });
   }
 
   get analyticsTab() {
-    return this.page.getByRole('tab', { name: 'Analytics' });
+    return this.page.getByRole("tab", { name: "Analytics" });
   }
 
   get settingsTab() {
-    return this.page.getByRole('tab', { name: 'Settings' });
+    return this.page.getByRole("tab", { name: "Settings" });
   }
 
   get consortiumTab() {
-    return this.page.getByRole('tab', { name: 'Consortium' });
+    return this.page.getByRole("tab", { name: "Consortium" });
   }
 
   get recomputeTopicsButton() {
-    return this.page.getByRole('button', { name: 'Recompute Topics' });
+    return this.page.getByRole("button", { name: "Recompute Topics" });
   }
 
   get analyzingButton() {
-    return this.page.getByRole('button', { name: 'Analyzing...' });
+    return this.page.getByRole("button", { name: "Analyzing..." });
   }
 
   get exportCsvButton() {
-    return this.page.getByRole('button', { name: 'Export CSV' });
+    return this.page.getByRole("button", { name: "Export CSV" });
   }
 
   get adminEmailInput() {
-    return this.page.getByPlaceholder('Admin email');
+    return this.page.getByPlaceholder("Admin email");
   }
 
   get addAdminButton() {
-    return this.page.getByRole('button', { name: 'Add Admin' });
+    return this.page.getByRole("button", { name: "Add Admin" });
   }
 
   get removeAdminButton() {
-    return this.page.getByRole('button', { name: 'Remove Admin' });
+    return this.page.getByRole("button", { name: "Remove Admin" });
   }
 
   get timelineDrawer() {
-    return this.page.getByTestId('timeline-drawer');
+    return this.page.getByTestId("timeline-drawer");
   }
 
   get chatDrawer() {
-    return this.page.getByTestId('chat-drawer');
+    return this.page.getByTestId("chat-drawer");
   }
 
   get chatOnlyLeadsLink() {
-    return this.page.locator('.nav-link', { hasText: 'Chat-only Leads' });
+    return this.page.locator(".nav-link", { hasText: "Chat-only Leads" });
   }
 
   get laneRow() {
     return this.page
-      .locator('[role="button"]', { hasText: 'Inquiries:' })
+      .locator('[role="button"]', { hasText: "Inquiries:" })
       .first();
   }
 
   laneRowForUser(identifier) {
-    return this.page
-      .locator('[role="button"]', { hasText: identifier });
+    return this.page.locator('[role="button"]', { hasText: identifier });
   }
 
   get topicRows() {
-    return this.page.locator('table tbody tr');
+    return this.page.locator("table tbody tr");
   }
 
   get saveButton() {
-    return this.page.getByRole('button', { name: 'Save' });
+    return this.page.getByRole("button", { name: "Save" });
   }
 
   get deleteButton() {
-    return this.page.getByRole('button', { name: 'Delete' });
+    return this.page.getByRole("button", { name: "Delete" });
   }
 
   get alert() {
-    return this.page.getByRole('alert');
+    return this.page.getByRole("alert");
   }
 
   get statusSelect() {
-    return this.page.getByLabel('Status');
+    return this.page.getByLabel("Status");
   }
 
   get adminNotesInput() {
-    return this.page.getByLabel('Admin Notes');
+    return this.page.getByLabel("Admin Notes");
   }
 
   async navigateToAnalytics() {
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
     await this.analyticsTab.click({ timeout: 20000 });
   }
 
@@ -176,6 +189,6 @@ export class AdminPage {
   }
 
   timelineListItems() {
-    return this.timelineDrawer.getByRole('listitem');
+    return this.timelineDrawer.getByRole("listitem");
   }
 }

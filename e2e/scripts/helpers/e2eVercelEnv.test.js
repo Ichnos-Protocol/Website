@@ -1,0 +1,918 @@
+import { describe, it, expect, vi } from "vitest";
+
+import { createVercelApi } from "./e2eVercelApi.js";
+import {
+  findPreviewEntry,
+  isAllBranchesPreview,
+  normalizeUpdatedAt,
+  PREVIEW_SCOPES,
+  setPreviewEnv,
+  setPreviewEnvScopes,
+} from "./e2eVercelEnv.js";
+
+const KEY = "E2E_USER_UID";
+const CREATED = { created: { id: "env_new", key: KEY } };
+
+function entry(overrides) {
+  return {
+    id: "env_all",
+    key: KEY,
+    target: ["preview"],
+    customEnvironmentIds: [],
+    ...overrides,
+  };
+}
+
+// The shape GET /v9/.../env lists for an entry created through the v10 POST:
+// no gitBranch and no customEnvironmentIds key at all.
+function observedEntry(overrides) {
+  return {
+    id: "env_all",
+    key: KEY,
+    target: ["preview"],
+    type: "encrypted",
+    ...overrides,
+  };
+}
+
+const PRODUCTION = entry({ id: "env_prod", target: ["production"] });
+const STAGING = entry({ id: "env_staging", gitBranch: "staging" });
+const MAIN = entry({ id: "env_main", gitBranch: "main" });
+const CUSTOM = entry({ id: "env_custom", customEnvironmentIds: ["env_x"] });
+const OVERRIDES = [PRODUCTION, STAGING, MAIN, CUSTOM];
+
+// envs is one page, or { first, <cursor>: page } for a paginated list. A
+// decrypted entry is a value, or the whole GET body when it is an object.
+// written maps a write method (POST, PATCH) to its response body.
+function fakeApi(envs, decrypted = {}, written = {}) {
+  const pages = Array.isArray(envs) ? { first: { envs } } : envs;
+  const request = vi.fn(async (path, { method = "GET" } = {}) => {
+    if (method !== "GET") return written[method] ?? {};
+    const [base, query] = path.split("?");
+    if (base.endsWith("/env")) {
+      return pages[new URLSearchParams(query).get("until") ?? "first"];
+    }
+    const id = base.split("/").pop();
+    const body = decrypted[id];
+    return body && typeof body === "object" ? body : { value: body };
+  });
+  return { request, registerSecret: vi.fn() };
+}
+
+function listCalls(api) {
+  return api.request.mock.calls
+    .map(([path]) => path)
+    .filter((path) => path.split("?")[0].endsWith("/env"));
+}
+
+function writeCalls(api) {
+  return api.request.mock.calls.filter(([, opts]) => opts?.method);
+}
+
+describe("isAllBranchesPreview", () => {
+  it("selects only the all-branches Preview entry", () => {
+    expect(isAllBranchesPreview(entry())).toBe(true);
+    for (const override of OVERRIDES) {
+      expect(isAllBranchesPreview(override)).toBe(false);
+    }
+    expect(
+      isAllBranchesPreview(entry({ target: ["preview", "production"] })),
+    ).toBe(false);
+  });
+
+  it("throws on an unknown scope shape", () => {
+    expect(() =>
+      isAllBranchesPreview(entry({ customEnvironmentIds: "env_x" })),
+    ).toThrow(/unrecognised scope shape/);
+    expect(() => isAllBranchesPreview(entry({ target: "preview" }))).toThrow(
+      /unrecognised scope shape/,
+    );
+  });
+
+  it("accepts the listed shape with no customEnvironmentIds key", () => {
+    expect(observedEntry()).not.toHaveProperty("customEnvironmentIds");
+    expect(isAllBranchesPreview(observedEntry())).toBe(true);
+    expect(isAllBranchesPreview(observedEntry({ gitBranch: "main" }))).toBe(
+      false,
+    );
+    expect(
+      isAllBranchesPreview(observedEntry({ target: ["production"] })),
+    ).toBe(false);
+  });
+
+  it.each(["env_x", { id: "env_x" }, null, 3])(
+    "refuses a present non-array customEnvironmentIds of %s",
+    (value) => {
+      expect(() =>
+        isAllBranchesPreview(entry({ customEnvironmentIds: value })),
+      ).toThrow(/unrecognised scope shape/);
+    },
+  );
+});
+
+describe("setPreviewEnv", () => {
+  it("never selects or touches production or branch-scoped entries", async () => {
+    const api = fakeApi([...OVERRIDES, entry()], { env_all: "old" });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "new-uid-value",
+    });
+
+    expect(result.status).toBe("success");
+    const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+    for (const id of ["env_prod", "env_staging", "env_main", "env_custom"]) {
+      expect(paths).not.toContain(id);
+    }
+    const [[path, opts]] = writeCalls(api);
+    expect(path).toBe("/v9/projects/prj_s/env/env_all");
+    expect(opts).toEqual({ method: "PATCH", body: { value: "new-uid-value" } });
+  });
+
+  it("writes nothing when the value is unchanged", async () => {
+    const api = fakeApi([entry()], { env_all: "same-uid-value" });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "same-uid-value",
+    });
+
+    expect(result).toMatchObject({ name: KEY, status: "unchanged" });
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("creates an all-branches Preview entry with no branch scope", async () => {
+    const api = fakeApi(OVERRIDES, {}, { POST: CREATED });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_c",
+      key: KEY,
+      value: "created-uid-value",
+    });
+
+    expect(result.status).toBe("success");
+    const [[path, opts]] = writeCalls(api);
+    expect(path).toBe("/v10/projects/prj_c/env");
+    expect(opts.method).toBe("POST");
+    expect(opts.body).toEqual({
+      key: KEY,
+      value: "created-uid-value",
+      type: "encrypted",
+      target: ["preview"],
+    });
+    expect(opts.body).not.toHaveProperty("gitBranch");
+    expect(opts.body).not.toHaveProperty("customEnvironmentIds");
+  });
+
+  it("fails before any write on two all-branches candidates", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" })]);
+
+    await expect(
+      findPreviewEntry({ api, projectId: "prj_s", key: KEY }),
+    ).rejects.toThrowError(
+      /2 all-branches Preview entries exist for E2E_USER_UID/,
+    );
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "v",
+    });
+    expect(result.status).toBe("failed");
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("fails before any write on an unknown shape", async () => {
+    const api = fakeApi([entry({ customEnvironmentIds: null })]);
+
+    await expect(
+      findPreviewEntry({ api, projectId: "prj_s", key: KEY }),
+    ).rejects.toThrowError(/unrecognised scope shape/);
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("masks the value in its result", async () => {
+    const api = fakeApi([entry()], { env_all: "old" });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: "VITE_FIREBASE_API_KEY",
+      value: "AIzaSecretApiKeyValue",
+    });
+
+    expect(JSON.stringify(result)).not.toContain("AIzaSecretApiKeyValue");
+    expect(api.registerSecret).toHaveBeenCalledWith("AIzaSecretApiKeyValue");
+  });
+});
+
+describe("setPreviewEnv on entries listed with no customEnvironmentIds", () => {
+  const VALUE = "same-uid-value";
+
+  function run(api, value = VALUE) {
+    return setPreviewEnv({ api, projectId: "prj_s", key: KEY, value });
+  }
+
+  // The list starts empty; after a POST it lists the observed field-less
+  // entry, and the decrypt GET returns the written value.
+  function statefulApi() {
+    let stored;
+    const request = vi.fn(async (path, { method = "GET", body } = {}) => {
+      if (method === "POST") {
+        stored = body.value;
+        return CREATED;
+      }
+      if (path.split("?")[0].endsWith("/env")) {
+        return { envs: stored === undefined ? [] : [observedEntry()] };
+      }
+      return { value: stored };
+    });
+    return { request, registerSecret: vi.fn() };
+  }
+
+  it("writes nothing when the value is unchanged", async () => {
+    const api = fakeApi([observedEntry()], { env_all: VALUE });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ name: KEY, status: "unchanged" });
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("reads back its own create as unchanged", async () => {
+    const api = statefulApi();
+
+    const first = await run(api);
+    const second = await run(api);
+
+    expect(first).toMatchObject({ status: "success", operation: "created" });
+    expect(second).toMatchObject({ status: "unchanged" });
+    expect(writeCalls(api)).toHaveLength(1);
+  });
+
+  it("never selects a field-less branch or production entry", async () => {
+    const api = fakeApi(
+      [
+        observedEntry({ id: "env_main", gitBranch: "main" }),
+        observedEntry({ id: "env_prod", target: ["production"] }),
+      ],
+      {},
+      { POST: CREATED },
+    );
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ status: "success", operation: "created" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v10/projects/prj_s/env");
+    expect(writes[0][1].method).toBe("POST");
+    const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+    expect(paths).not.toContain("env_main");
+    expect(paths).not.toContain("env_prod");
+  });
+});
+
+describe("setPreviewEnv outcome metadata", () => {
+  const API_KEY = "AIzaSecretApiKeyValue";
+  const EPOCH_MS = 1758784500000;
+  const EPOCH_ISO = new Date(EPOCH_MS).toISOString();
+
+  function run(api, key = KEY, value = "uid-value") {
+    return setPreviewEnv({ api, projectId: "prj_s", key, value });
+  }
+
+  it("reports a create as created, with no timestamp when none is returned", async () => {
+    const result = await run(fakeApi([], {}, { POST: CREATED }));
+
+    expect(result).toMatchObject({ status: "success", operation: "created" });
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it.each([
+    [
+      "an object",
+      { created: { id: "env_new", key: KEY, updatedAt: EPOCH_MS } },
+    ],
+    [
+      "an array",
+      { created: [{ id: "env_new", key: KEY, updatedAt: String(EPOCH_MS) }] },
+    ],
+  ])(
+    "keeps the create response's updatedAt when created is %s",
+    async (_, body) => {
+      const result = await run(fakeApi([], {}, { POST: body }));
+
+      expect(result).toEqual({
+        name: KEY,
+        scope: "all-branches",
+        masked: expect.any(String),
+        status: "success",
+        operation: "created",
+        updatedAt: EPOCH_ISO,
+      });
+    },
+  );
+
+  it("reports a changed value as updated, with no timestamp when none is returned", async () => {
+    const api = fakeApi([entry({ updatedAt: EPOCH_MS })], {
+      env_all: { value: "old", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ status: "success", operation: "updated" });
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("keeps the update response's updatedAt and no other provider field", async () => {
+    const patched = {
+      id: "env_all",
+      key: KEY,
+      value: "uid-value",
+      gitBranch: null,
+      target: ["preview"],
+      updatedAt: EPOCH_MS,
+    };
+    const api = fakeApi(
+      [entry()],
+      { env_all: { value: "old" } },
+      { PATCH: patched },
+    );
+
+    const result = await run(api);
+
+    expect(result).toEqual({
+      name: KEY,
+      scope: "all-branches",
+      masked: expect.any(String),
+      status: "success",
+      operation: "updated",
+      updatedAt: EPOCH_ISO,
+    });
+    expect(JSON.stringify(result)).not.toContain("env_all");
+  });
+
+  it("drops an ambiguous write-response timestamp", async () => {
+    const api = fakeApi(
+      [],
+      {},
+      {
+        POST: { created: { id: "env_new", key: KEY, updatedAt: "9/20/2026" } },
+      },
+    );
+
+    expect(await run(api)).not.toHaveProperty("updatedAt");
+  });
+
+  it("reports an unchanged value with the decrypted entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: 1 })], {
+      env_all: { value: "uid-value", updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      status: "unchanged",
+      operation: "unchanged",
+      updatedAt: EPOCH_ISO,
+    });
+  });
+
+  it("falls back to the listed entry's updatedAt", async () => {
+    const api = fakeApi([entry({ updatedAt: String(EPOCH_MS) })], {
+      env_all: "uid-value",
+    });
+
+    expect((await run(api)).updatedAt).toBe(EPOCH_ISO);
+  });
+
+  it("leaves the timestamp undefined when neither carries one", async () => {
+    const api = fakeApi([entry()], { env_all: "uid-value" });
+
+    const result = await run(api);
+
+    expect(result.operation).toBe("unchanged");
+    expect(result.updatedAt).toBeUndefined();
+  });
+
+  // Without a timestamp, clientApiKeyProvenance leaves the record row unknown.
+  it.each(["9/20/2026", "Sep 20 2026", "2026-09-20T08:15:00"])(
+    "leaves an unchanged value undated for the ambiguous %s",
+    async (raw) => {
+      const api = fakeApi([entry()], {
+        env_all: { value: "uid-value", updatedAt: raw },
+      });
+
+      const result = await run(api);
+
+      expect(result.operation).toBe("unchanged");
+      expect(result.updatedAt).toBeUndefined();
+    },
+  );
+
+  it("carries no operation or timestamp on a failure", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" })]);
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result).not.toHaveProperty("updatedAt");
+  });
+
+  it("masks a secret-named key fully and leaks no id, value or branch", async () => {
+    const listed = entry({ key: "VITE_FIREBASE_API_KEY", gitBranch: null });
+    const api = fakeApi([listed], {
+      env_all: { value: API_KEY, updatedAt: EPOCH_MS },
+    });
+
+    const result = await run(api, "VITE_FIREBASE_API_KEY", API_KEY);
+    const serialized = JSON.stringify(result);
+
+    expect(result.masked).toBe("****");
+    expect(serialized).not.toContain(API_KEY);
+    expect(serialized).not.toContain(API_KEY.slice(-4));
+    expect(serialized).not.toContain("env_all");
+    expect(result).not.toHaveProperty("value");
+    expect(result).not.toHaveProperty("id");
+    expect(result).not.toHaveProperty("gitBranch");
+  });
+});
+
+describe("setPreviewEnv create confirmation", () => {
+  const VALUE = "created-uid-value";
+
+  it.each([
+    ["an empty body", {}],
+    ["an empty created entry", { created: {} }],
+    ["an entry for another key", { created: { id: "env_1", key: "OTHER" } }],
+    ["an empty created array", { created: [] }],
+    ["an empty id", { created: { id: "", key: KEY } }],
+    ["a numeric id", { created: { id: 1, key: KEY } }],
+    ["a created array entry", { created: [[{ id: "env_1", key: KEY }]] }],
+  ])("fails closed on %s", async (_label, body) => {
+    const api = fakeApi([], {}, { POST: body });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_c",
+      key: KEY,
+      value: VALUE,
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).toMatch(/returned no created entry/);
+    expect(result.error).toContain(KEY);
+    expect(JSON.stringify(result)).not.toContain(VALUE);
+  });
+
+  it("keeps a secret-named key fully masked on a refused create", async () => {
+    const secret = "AIzaSecretApiKeyValue";
+    const api = fakeApi([], {}, { POST: {} });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_c",
+      key: "VITE_FIREBASE_API_KEY",
+      value: secret,
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.masked).toBe("****");
+    expect(JSON.stringify(result)).not.toContain(secret.slice(-4));
+  });
+});
+
+describe("setPreviewEnv over the adapter's envelope guard", () => {
+  const VALUE = "enveloped-uid-value";
+  const ENVELOPE = { error: { code: "forbidden", message: "Not authorized" } };
+
+  // A zero-exit transport, the way `vercel api` prints an error body.
+  function adapterApi({ list = { envs: [] }, decrypted, post, patch }) {
+    const transport = vi.fn(async (path, { method }) => {
+      let body;
+      if (method === "POST") body = post;
+      else if (method === "PATCH") body = patch;
+      else if (path.split("?")[0].endsWith("/env")) body = list;
+      else body = decrypted;
+      return { ok: true, status: 0, text: JSON.stringify(body) };
+    });
+    return { api: createVercelApi({ transport }), transport };
+  }
+
+  function methods(transport) {
+    return transport.mock.calls.map(([, options]) => options.method);
+  }
+
+  function run(api) {
+    return setPreviewEnv({ api, projectId: "prj_s", key: KEY, value: VALUE });
+  }
+
+  it("fails with no write when the env list is an envelope", async () => {
+    const { api, transport } = adapterApi({ list: ENVELOPE, post: CREATED });
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(/forbidden/);
+    expect(methods(transport)).not.toContain("POST");
+    expect(methods(transport)).not.toContain("PATCH");
+  });
+
+  it("fails when the create answers an envelope", async () => {
+    const { api } = adapterApi({ post: ENVELOPE });
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).not.toContain(VALUE);
+  });
+
+  it("fails when the update answers an envelope", async () => {
+    const { api, transport } = adapterApi({
+      list: { envs: [entry()] },
+      decrypted: { value: "old" },
+      patch: ENVELOPE,
+    });
+
+    const result = await run(api);
+
+    expect(methods(transport)).toContain("PATCH");
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).not.toContain(VALUE);
+  });
+
+  it("still reports a confirmed create through the adapter", async () => {
+    const { api } = adapterApi({
+      post: { created: { id: "env_new", key: KEY, updatedAt: 1758784500000 } },
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      status: "success",
+      operation: "created",
+      updatedAt: new Date(1758784500000).toISOString(),
+    });
+  });
+});
+
+describe("normalizeUpdatedAt", () => {
+  const ISO = "2026-09-20T08:15:00.000Z";
+  const MS = Date.parse(ISO);
+
+  it("reads a number or an all-digit string as epoch milliseconds", () => {
+    expect(normalizeUpdatedAt(MS)).toBe(ISO);
+    expect(normalizeUpdatedAt(String(MS))).toBe(ISO);
+  });
+
+  it("keeps an ISO 8601 string with a zone, as UTC ISO", () => {
+    expect(normalizeUpdatedAt(ISO)).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T08:15:00Z")).toBe(ISO);
+    expect(normalizeUpdatedAt("2026-09-20T10:15:00.000+02:00")).toBe(ISO);
+  });
+
+  it.each([undefined, null, "", "  ", "not a date", NaN, Infinity, {}])(
+    "yields undefined for %s",
+    (raw) => {
+      expect(normalizeUpdatedAt(raw)).toBeUndefined();
+    },
+  );
+
+  // Each of these parses in Node's Date, so permissive parsing would have
+  // turned it into a trusted provenance date.
+  it.each([
+    "9/20/2026",
+    "20/09/2026 08:15",
+    "Sep 20 2026",
+    "Sun, 20 Sep 2026 08:15:00 GMT",
+    "2026-09-20",
+    "2026-09-20T08:15:00",
+    "2026-09-20 08:15:00Z",
+    "2026-02-30T08:15:00Z",
+    " 2026-09-20T08:15:00Z",
+  ])("yields undefined for the ambiguous or non-standard %s", (raw) => {
+    expect(normalizeUpdatedAt(raw)).toBeUndefined();
+  });
+});
+
+describe("findPreviewEntry pagination", () => {
+  it("finds the target on a later page and updates it, not creates", async () => {
+    const api = fakeApi(
+      {
+        first: { envs: OVERRIDES, pagination: { next: 222 } },
+        222: { envs: [entry()], pagination: { next: null } },
+      },
+      { env_all: "old" },
+    );
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "new-uid-value",
+    });
+
+    expect(listCalls(api)).toEqual([
+      "/v9/projects/prj_s/env?limit=100",
+      "/v9/projects/prj_s/env?limit=100&until=222",
+    ]);
+    expect(result.status).toBe("success");
+    const [[path, opts]] = writeCalls(api);
+    expect(path).toBe("/v9/projects/prj_s/env/env_all");
+    expect(opts.method).toBe("PATCH");
+  });
+
+  it("refuses duplicate all-branches candidates split across pages", async () => {
+    const api = fakeApi({
+      first: { envs: [entry()], pagination: { next: 333 } },
+      333: { envs: [entry({ id: "env_all_2" })], pagination: {} },
+    });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "v",
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(
+      /2 all-branches Preview entries exist for E2E_USER_UID/,
+    );
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("fails closed with no write when the page cap is reached", async () => {
+    const request = vi.fn(async () => ({
+      envs: [],
+      pagination: { next: 1 },
+    }));
+    const api = { request, registerSecret: vi.fn() };
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "v",
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(/exceeds 50 pages; refusing to decide/);
+    expect(request).toHaveBeenCalledTimes(50);
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+});
+
+describe("setPreviewEnv on the main Preview scope", () => {
+  const MAIN_SCOPE = PREVIEW_SCOPES[1];
+  const CREATED_MAIN = {
+    created: { id: "env_main_new", key: KEY, gitBranch: "main" },
+  };
+  const OTHERS = [
+    PRODUCTION,
+    STAGING,
+    CUSTOM,
+    entry({ id: "env_feature", gitBranch: "feature/x" }),
+  ];
+
+  function run(api, value = "main-uid-value", key = KEY) {
+    return setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key,
+      value,
+      scope: MAIN_SCOPE,
+    });
+  }
+
+  it("names both scopes, all-branches first", () => {
+    expect(PREVIEW_SCOPES.map((s) => s.name)).toEqual(["all-branches", "main"]);
+    expect(MAIN_SCOPE.gitBranch).toBe("main");
+    expect(Object.isFrozen(PREVIEW_SCOPES)).toBe(true);
+  });
+
+  it("writes nothing when the main value is unchanged", async () => {
+    const api = fakeApi([entry(), MAIN], {
+      env_all: "other",
+      env_main: "main-uid-value",
+    });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({
+      name: KEY,
+      scope: "main",
+      status: "unchanged",
+    });
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it("patches only the main entry's id when its value differs", async () => {
+    const api = fakeApi([entry(), MAIN], { env_all: "x", env_main: "old" });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ scope: "main", operation: "updated" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v9/projects/prj_s/env/env_main");
+    expect(writes[0][1]).toEqual({
+      method: "PATCH",
+      body: { value: "main-uid-value" },
+    });
+    const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+    expect(paths).not.toContain("env_all");
+  });
+
+  it("creates a missing main entry with target preview and gitBranch main", async () => {
+    const api = fakeApi([entry()], {}, { POST: CREATED_MAIN });
+
+    const result = await run(api);
+
+    expect(result).toMatchObject({ scope: "main", operation: "created" });
+    const [[path, opts]] = writeCalls(api);
+    expect(path).toBe("/v10/projects/prj_s/env");
+    expect(opts.body).toEqual({
+      key: KEY,
+      value: "main-uid-value",
+      type: "encrypted",
+      target: ["preview"],
+      gitBranch: "main",
+    });
+    expect(opts.body).not.toHaveProperty("customEnvironmentIds");
+  });
+
+  it("fails before any write on two main entries", async () => {
+    const api = fakeApi([MAIN, entry({ id: "env_main_2", gitBranch: "main" })]);
+
+    const result = await run(api);
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toMatch(
+      /2 main Preview entries exist for E2E_USER_UID/,
+    );
+    expect(writeCalls(api)).toHaveLength(0);
+  });
+
+  it.each(PREVIEW_SCOPES)(
+    "never reads, patches or recreates another scope's entry on $name",
+    async (scope) => {
+      const created = scope.gitBranch ? CREATED_MAIN : CREATED;
+      const api = fakeApi(OTHERS, {}, { POST: created });
+
+      const result = await setPreviewEnv({
+        api,
+        projectId: "prj_s",
+        key: KEY,
+        value: "v",
+        scope,
+      });
+
+      expect(result).toMatchObject({ scope: scope.name, operation: "created" });
+      const paths = api.request.mock.calls.map(([path]) => path).join("\n");
+      for (const id of [
+        "env_prod",
+        "env_staging",
+        "env_custom",
+        "env_feature",
+      ]) {
+        expect(paths).not.toContain(id);
+      }
+      const writes = writeCalls(api);
+      expect(writes).toHaveLength(1);
+      expect(writes[0][1].method).toBe("POST");
+      expect(writes[0][1].body.gitBranch).toBe(scope.gitBranch ?? undefined);
+    },
+  );
+
+  it.each(
+    PREVIEW_SCOPES.flatMap((scope) =>
+      [
+        ["undefined", {}],
+        ["null", { value: null }],
+        ["a number", { value: 3 }],
+        ["an object", { value: { v: 1 } }],
+      ].map(([label, body]) => [scope.name, label, body, scope]),
+    ),
+  )(
+    "fails with no write on the %s scope when the decrypted value is %s",
+    async (_name, _label, body, scope) => {
+      const id = scope.gitBranch ? "env_main" : "env_all";
+      const api = fakeApi([entry(), MAIN], { [id]: { ...body, updatedAt: 1 } });
+
+      const result = await setPreviewEnv({
+        api,
+        projectId: "prj_s",
+        key: KEY,
+        value: "v",
+        scope,
+      });
+
+      expect(result.status).toBe("failed");
+      expect(result.scope).toBe(scope.name);
+      expect(result.error).toContain(KEY);
+      expect(result.error).toContain(`${scope.name} Preview`);
+      expect(result.error).toMatch(/Nothing was written/);
+      expect(writeCalls(api)).toHaveLength(0);
+    },
+  );
+
+  it.each([
+    ["no branch", { created: { id: "env_1", key: KEY } }],
+    ["a null branch", { created: { id: "env_1", key: KEY, gitBranch: null } }],
+    [
+      "another branch",
+      { created: { id: "env_1", key: KEY, gitBranch: "staging" } },
+    ],
+  ])("fails a main create whose response reports %s", async (_label, body) => {
+    const result = await run(fakeApi([], {}, { POST: body }));
+
+    expect(result.status).toBe("failed");
+    expect(result).not.toHaveProperty("operation");
+    expect(result.error).toMatch(/main Preview scope reported another scope/);
+    expect(result.error).toContain(KEY);
+  });
+
+  it("fails an all-branches create whose response reports gitBranch main", async () => {
+    const api = fakeApi([], {}, { POST: CREATED_MAIN });
+
+    const result = await setPreviewEnv({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "v",
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.scope).toBe("all-branches");
+    expect(result.error).toMatch(
+      /all-branches Preview scope reported another scope/,
+    );
+  });
+
+  it("masks a secret-named key fully on both scopes", async () => {
+    const secret = "AIzaSecretApiKeyValue";
+    const key = "VITE_FIREBASE_API_KEY";
+    const listed = [
+      entry({ key }),
+      entry({ id: "env_main", key, gitBranch: "main" }),
+    ];
+    const api = fakeApi(listed, {
+      env_all: { value: "old", updatedAt: 1 },
+      env_main: { value: "old", updatedAt: 1 },
+    });
+
+    const results = await setPreviewEnvScopes({
+      api,
+      projectId: "prj_s",
+      key,
+      value: secret,
+    });
+
+    expect(results.map((r) => r.scope)).toEqual(["all-branches", "main"]);
+    for (const result of results) {
+      const serialized = JSON.stringify(result);
+      expect(result.masked).toBe("****");
+      expect(serialized).not.toContain(secret.slice(-4));
+      expect(serialized).not.toContain("env_");
+      expect(result).not.toHaveProperty("value");
+      expect(result).not.toHaveProperty("id");
+      expect(result).not.toHaveProperty("gitBranch");
+    }
+  });
+});
+
+describe("setPreviewEnvScopes", () => {
+  it("sets both scopes in order and keeps each independent", async () => {
+    const api = fakeApi([entry(), entry({ id: "env_all_2" }), MAIN], {
+      env_main: "old",
+    });
+
+    const results = await setPreviewEnvScopes({
+      api,
+      projectId: "prj_s",
+      key: KEY,
+      value: "new",
+    });
+
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({
+      scope: "all-branches",
+      status: "failed",
+    });
+    expect(results[1]).toMatchObject({ scope: "main", operation: "updated" });
+    const writes = writeCalls(api);
+    expect(writes).toHaveLength(1);
+    expect(writes[0][0]).toBe("/v9/projects/prj_s/env/env_main");
+  });
+});

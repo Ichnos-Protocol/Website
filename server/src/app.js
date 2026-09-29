@@ -9,6 +9,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import PgRateLimitStore from "./middleware/pgRateLimitStore.js";
 import authRoutes from "./routes/authRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
@@ -17,6 +18,7 @@ import gdprRoutes from "./routes/gdprRoutes.js";
 import consortiumRoutes from "./routes/consortiumRoutes.js";
 import buildStatusPage from "./helpers/buildStatusPage.js";
 import { formatResponse } from "./helpers/formatResponse.js";
+import { buildErrorResponse } from "./helpers/buildErrorResponse.js";
 import { ensureSeeded, seedStatus } from "../scripts/seedE2EOnPreview.js";
 
 const app = express();
@@ -40,15 +42,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting for public endpoints.
+// Counters live in Postgres (PgRateLimitStore) so every serverless instance
+// shares them. Each limiter needs its own store instance and prefix.
 // Preview deployments use a higher limit to avoid E2E test failures —
 // preview URLs are protected by Vercel Deployment Protection anyway.
 const isPreview = process.env.VERCEL_ENV === "preview";
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const PREVIEW_RATE_LIMIT_MAX = 1000;
+const AUTH_RATE_LIMIT_MAX = 20;
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isPreview ? 1000 : 100,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: isPreview ? PREVIEW_RATE_LIMIT_MAX : 100,
   message: "Too many requests from this IP, please try again later.",
+  store: new PgRateLimitStore({ prefix: "global:" }),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
 });
 app.use("/api/", limiter);
+
+// Tighter limit for the auth endpoints, counted on top of the global one.
+const authLimiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: isPreview ? PREVIEW_RATE_LIMIT_MAX : AUTH_RATE_LIMIT_MAX,
+  message:
+    "Too many authentication requests from this IP, please try again later.",
+  store: new PgRateLimitStore({ prefix: "auth:" }),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
 
 // Root status page
 app.get("/", (_req, res) => {
@@ -88,6 +109,7 @@ app.get("/api/health", async (_req, res) => {
 });
 
 // API routes
+app.use("/api/auth", authLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/chat", chatRoutes);
@@ -100,7 +122,11 @@ app.use((_req, res) => {
   res
     .status(404)
     .json(
-      formatResponse(null, "The requested resource does not exist", "Not Found"),
+      formatResponse(
+        null,
+        "The requested resource does not exist",
+        "Not Found",
+      ),
     );
 });
 
@@ -110,18 +136,21 @@ app.use((_req, res) => {
 // service-level refusal is not shaped differently from an auth or validation
 // refusal. `error` carries a machine-readable reason (string, or the issue
 // array validators supply) — never the boolean `true`.
+// A status of 500 or more returns only the generic message and reason,
+// because `err.message` and `err.code` can carry database and vendor detail.
+// The stack is added only in local development, never on Vercel, since
+// Preview runs NODE_ENV=development. The full error still goes to the
+// private server log.
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error("Error:", err);
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  const reason = err.code || err.message || "Internal Server Error";
-
-  res.status(statusCode).json({
-    ...formatResponse(null, message, reason),
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  const { statusCode, body } = buildErrorResponse(err, {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: process.env.VERCEL,
   });
+
+  res.status(statusCode).json(body);
 });
 
 // Start server only in local development (not in Vercel)

@@ -19,6 +19,7 @@ import {
   getCurrentPrice,
 } from "./readinessAssessmentContent";
 import { ROUTE_READINESS_ASSESSMENT } from "./routes";
+import { getCatenaXFounderLine } from "./catenaXStatus";
 
 /*
  * Readiness assessment meta (spec section 7.1). The price in the description
@@ -113,5 +114,15 @@ describe("ALL_META", () => {
       CONSORTIUM_TIERS_META,
       PRIVACY_META,
     ]);
+  });
+});
+
+// september-fixes P7: the default Open Graph alt attributes the Qualified
+// Advisor title to the founder. DEFAULT_OG_IMAGE_ALT is module-private, so
+// the assertion goes through an exported meta that falls back to it.
+describe("default Open Graph image alt", () => {
+  it("carries the founder line on LANDING_META", () => {
+    expect(LANDING_META.og.imageAlt).toContain(getCatenaXFounderLine());
+    expect(LANDING_META.twitter.imageAlt).toContain(getCatenaXFounderLine());
   });
 });

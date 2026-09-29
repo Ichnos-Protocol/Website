@@ -1,0 +1,5 @@
+knowledge-base/
+scripts/python/
+coverage/
+.vercel/
+migrations/

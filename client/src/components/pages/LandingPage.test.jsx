@@ -1,14 +1,10 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, waitFor } from '../../test-utils';
-import LandingPage from './LandingPage';
-import { LANDING_META } from '../../constants/seoMeta';
-import { PAGE_STRUCTURED_DATA } from '../../constants/structuredData';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, waitFor } from "../../test-utils";
+import LandingPage from "./LandingPage";
+import { LANDING_META } from "../../constants/seoMeta";
+import { PAGE_STRUCTURED_DATA } from "../../constants/structuredData";
 
-vi.mock('../../hooks/useReducedMotion', () => ({
-  useReducedMotion: vi.fn(() => true),
-}));
-
-vi.mock('../../hooks/useScrollToSection', () => ({
+vi.mock("../../hooks/useScrollToSection", () => ({
   useScrollToSection: vi.fn(),
 }));
 
@@ -16,35 +12,39 @@ vi.mock('../../hooks/useScrollToSection', () => ({
 // section count reflects exactly one landmark per organism. ServicesSnapshot
 // is rendered for real so the test catches any regression that nests pillar
 // <section> elements inside it.
-vi.mock('../organisms/Hero', () => ({
+vi.mock("../organisms/Hero", () => ({
   default: () => <section data-testid="hero">Hero</section>,
 }));
 
-vi.mock('../organisms/CredentialStrip', () => ({
+vi.mock("../organisms/CredentialStrip", () => ({
   default: () => (
     <section data-testid="credential-strip">CredentialStrip</section>
   ),
 }));
 
-vi.mock('../organisms/WhyIchnosSection', () => ({
+vi.mock("../organisms/WhyIchnosSection", () => ({
   default: () => <section data-testid="why-ichnos">WhyIchnosSection</section>,
 }));
 
-vi.mock('../organisms/PassportTeaser', () => ({
-  default: () => <section data-testid="passport-teaser">PassportTeaser</section>,
+vi.mock("../organisms/PassportTeaser", () => ({
+  default: () => (
+    <section data-testid="passport-teaser">PassportTeaser</section>
+  ),
 }));
 
-vi.mock('../organisms/ContactSection', () => ({
-  default: () => <section data-testid="contact-section">ContactSection</section>,
+vi.mock("../organisms/ContactSection", () => ({
+  default: () => (
+    <section data-testid="contact-section">ContactSection</section>
+  ),
 }));
 
-import { useScrollToSection } from '../../hooks/useScrollToSection';
+import { useScrollToSection } from "../../hooks/useScrollToSection";
 
 // v4 §4 homepage order: narrative before evidence. Edit this list — not a
 // restated sequence in a test title — when the section order changes.
 const SECTION_ORDER = [
   '[data-testid="hero"]',
-  'section#services',
+  "section#services",
   '[data-testid="why-ichnos"]',
   '[data-testid="credential-strip"]',
   '[data-testid="passport-teaser"]',
@@ -57,104 +57,100 @@ function precedes(first, second) {
   );
 }
 
-describe('LandingPage', () => {
+describe("LandingPage", () => {
   beforeEach(() => {
     renderWithProviders(<LandingPage />);
   });
 
-  it('sets document title', async () => {
+  it("sets document title", async () => {
     await waitFor(() => {
       expect(document.title).toBe(LANDING_META.title);
     });
   });
 
-  it('sets meta description', async () => {
+  it("sets meta description", async () => {
     await waitFor(() => {
       const meta = document.querySelector(
         'meta[name="description"][data-rh="true"]',
       );
-      expect(meta).toHaveAttribute('content', LANDING_META.description);
+      expect(meta).toHaveAttribute("content", LANDING_META.description);
     });
   });
 
-  it('sets meta keywords', async () => {
+  it("sets meta keywords", async () => {
     await waitFor(() => {
       const meta = document.querySelector(
         'meta[name="keywords"][data-rh="true"]',
       );
-      expect(meta).toHaveAttribute('content', LANDING_META.keywords);
+      expect(meta).toHaveAttribute("content", LANDING_META.keywords);
     });
   });
 
-  it('sets canonical link', async () => {
+  it("sets canonical link", async () => {
     await waitFor(() => {
       const link = document.querySelector(
         'link[rel="canonical"][data-rh="true"]',
       );
-      expect(link).toHaveAttribute('href', LANDING_META.canonical);
+      expect(link).toHaveAttribute("href", LANDING_META.canonical);
     });
   });
 
-  it('sets all og meta tags', async () => {
+  it("sets all og meta tags", async () => {
     await waitFor(() => {
       expect(
         document.querySelector('meta[property="og:title"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.og.title);
+      ).toHaveAttribute("content", LANDING_META.og.title);
       expect(
         document.querySelector(
           'meta[property="og:description"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', LANDING_META.og.description);
+      ).toHaveAttribute("content", LANDING_META.og.description);
       expect(
         document.querySelector('meta[property="og:type"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.og.type);
+      ).toHaveAttribute("content", LANDING_META.og.type);
       expect(
         document.querySelector('meta[property="og:url"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.og.url);
+      ).toHaveAttribute("content", LANDING_META.og.url);
       expect(
-        document.querySelector(
-          'meta[property="og:site_name"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', LANDING_META.og.siteName);
+        document.querySelector('meta[property="og:site_name"][data-rh="true"]'),
+      ).toHaveAttribute("content", LANDING_META.og.siteName);
       expect(
         document.querySelector('meta[property="og:locale"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.og.locale);
+      ).toHaveAttribute("content", LANDING_META.og.locale);
       expect(
         document.querySelector('meta[property="og:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.og.image);
+      ).toHaveAttribute("content", LANDING_META.og.image);
       expect(
-        document.querySelector(
-          'meta[property="og:image:alt"][data-rh="true"]',
-        ),
-      ).toHaveAttribute('content', LANDING_META.og.imageAlt);
+        document.querySelector('meta[property="og:image:alt"][data-rh="true"]'),
+      ).toHaveAttribute("content", LANDING_META.og.imageAlt);
     });
   });
 
-  it('sets all twitter meta tags', async () => {
+  it("sets all twitter meta tags", async () => {
     await waitFor(() => {
       expect(
         document.querySelector('meta[name="twitter:card"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.twitter.card);
+      ).toHaveAttribute("content", LANDING_META.twitter.card);
       expect(
         document.querySelector('meta[name="twitter:title"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.twitter.title);
+      ).toHaveAttribute("content", LANDING_META.twitter.title);
       expect(
         document.querySelector(
           'meta[name="twitter:description"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', LANDING_META.twitter.description);
+      ).toHaveAttribute("content", LANDING_META.twitter.description);
       expect(
         document.querySelector('meta[name="twitter:image"][data-rh="true"]'),
-      ).toHaveAttribute('content', LANDING_META.twitter.image);
+      ).toHaveAttribute("content", LANDING_META.twitter.image);
       expect(
         document.querySelector(
           'meta[name="twitter:image:alt"][data-rh="true"]',
         ),
-      ).toHaveAttribute('content', LANDING_META.twitter.imageAlt);
+      ).toHaveAttribute("content", LANDING_META.twitter.imageAlt);
     });
   });
 
-  it('emits JSON-LD schemas from PAGE_STRUCTURED_DATA.landing', async () => {
+  it("emits JSON-LD schemas from PAGE_STRUCTURED_DATA.landing", async () => {
     await waitFor(() => {
       const scripts = document.querySelectorAll(
         'script[type="application/ld+json"][data-rh="true"]',
@@ -166,37 +162,39 @@ describe('LandingPage', () => {
     });
   });
 
-  it('renders Hero component', () => {
-    expect(screen.getByTestId('hero')).toBeInTheDocument();
+  it("renders Hero component", () => {
+    expect(screen.getByTestId("hero")).toBeInTheDocument();
   });
 
-  it('renders WhyIchnosSection component', () => {
-    expect(screen.getByTestId('why-ichnos')).toBeInTheDocument();
+  it("renders WhyIchnosSection component", () => {
+    expect(screen.getByTestId("why-ichnos")).toBeInTheDocument();
   });
 
-  it('renders the real ServicesSnapshot services section', () => {
-    expect(document.querySelector('section#services')).toBeInTheDocument();
+  it("renders the real ServicesSnapshot services section", () => {
+    expect(document.querySelector("section#services")).toBeInTheDocument();
   });
 
-  it('renders exactly six homepage sections with no nested services-group sections', () => {
+  it("renders exactly six homepage sections with no nested services-group sections", () => {
     const { container } = renderWithProviders(<LandingPage />);
-    expect(container.querySelectorAll('section')).toHaveLength(6);
-    expect(container.querySelectorAll('section.services-group')).toHaveLength(0);
+    expect(container.querySelectorAll("section")).toHaveLength(6);
+    expect(container.querySelectorAll("section.services-group")).toHaveLength(
+      0,
+    );
   });
 
-  it('renders CredentialStrip component', () => {
-    expect(screen.getByTestId('credential-strip')).toBeInTheDocument();
+  it("renders CredentialStrip component", () => {
+    expect(screen.getByTestId("credential-strip")).toBeInTheDocument();
   });
 
-  it('renders PassportTeaser component', () => {
-    expect(screen.getByTestId('passport-teaser')).toBeInTheDocument();
+  it("renders PassportTeaser component", () => {
+    expect(screen.getByTestId("passport-teaser")).toBeInTheDocument();
   });
 
-  it('renders ContactSection component', () => {
-    expect(screen.getByTestId('contact-section')).toBeInTheDocument();
+  it("renders ContactSection component", () => {
+    expect(screen.getByTestId("contact-section")).toBeInTheDocument();
   });
 
-  it('renders the homepage sections in SECTION_ORDER', () => {
+  it("renders the homepage sections in SECTION_ORDER", () => {
     const sections = SECTION_ORDER.map((selector) =>
       document.querySelector(selector),
     );
@@ -208,11 +206,11 @@ describe('LandingPage', () => {
     expect(pairs).toEqual(Array(SECTION_ORDER.length - 1).fill(true));
   });
 
-  it('calls useScrollToSection hook', () => {
+  it("calls useScrollToSection hook", () => {
     expect(useScrollToSection).toHaveBeenCalled();
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     const { container } = renderWithProviders(<LandingPage />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();

@@ -192,6 +192,12 @@ export const SERVICE_PILLARS = [
   { id: "circularity", label: "Circularity", anchor: "circularity" },
 ];
 
+// Label for the services page's closing booking CTA. The destination is never
+// stated here: it is BOOKING_URL by construction inside BookingButton.
+export const SERVICES_CTA = {
+  label: "Book an introductory call",
+};
+
 // Returns the services belonging to a single pillar, preserving SERVICES_LIST
 // order.
 export function getServicesByPillar(pillarId) {

@@ -11,10 +11,15 @@ import {
   CONSORTIUM_CONSENT_LABEL,
   CONSORTIUM_INTEREST_LABEL,
   CONSORTIUM_PREFERRED_START_OPTIONS,
+  CONSORTIUM_REGION_OPTIONS,
 } from "../../constants/consortiumContent";
 
 const ASAP_LABEL = CONSORTIUM_PREFERRED_START_OPTIONS.find(
   (option) => option.value === "asap",
+).label;
+
+const ASEAN_LABEL = CONSORTIUM_REGION_OPTIONS.find(
+  (option) => option.value === "asean",
 ).label;
 
 const AUTH_STATE = {
@@ -41,6 +46,7 @@ const CONTACT_STATE = {
 export const REGISTERED_ROW = {
   consortium_interest: true,
   consortium_position: "supplier",
+  consortium_region: "asean",
   consortium_chain_role: "electrode",
   consortium_product_line: "Anode coating line",
   consortium_customer_request: "A cell maker asked for a carbon footprint.",
@@ -89,6 +95,7 @@ export async function fillConsortium(user) {
     screen.getByLabelText(CONSORTIUM_CHAIN_ROLE_LABEL),
     "module_pack",
   );
+  await user.click(screen.getByRole("radio", { name: ASEAN_LABEL }));
   await user.type(
     screen.getByLabelText(CONSORTIUM_PRODUCT_LINE_LABEL),
     "48V pack line",

@@ -48,6 +48,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Run tests
         env:
           VITE_FIREBASE_API_KEY: ci-stub
@@ -57,7 +60,7 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
           VITE_FIREBASE_APP_ID: 1:000000000000:web:ci-stub
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm test
+        run: npm run test:coverage
 
       - name: Build
         env:
@@ -95,6 +98,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Run tests
-        run: npm test
+        run: npm run test:coverage
 

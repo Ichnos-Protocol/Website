@@ -1,6 +1,8 @@
 # website_readiness_assessment_page.md — Data readiness assessment page
 
-**Version 1.13, 2026-09-23 · Status: normative · shipped, second owner review pass**
+**Version 1.14, 2026-09-23 · Status: normative · shipped, September fixes P2**
+
+*(1.14, September fixes P2. **(a) §4.3 item 2 loses its calendar-relative clause**, because it depended on a year that nothing in the toolchain can flag. The replacement states the same ranking without naming a period. **(b) §8 item 7(b) gains `RELATIVE_TIME_PATTERN`**, so the page sweep now catches the class, not only literal dates.)*
 
 *(1.13, second owner review of the rendered page. **(a) §4.2.2 rewritten again.** The v1.12 heading was called jibberish and it was: "Your data is needed before the deadline, not on it" is a slogan, not a claim. The replacement states the obligation plainly, and the closing line now names the consequence that actually bites, which is the customer filling the gaps in ways that may not survive scrutiny. **(b) §4.2.0 heading and body replaced** with the owner's wording. "Who this applies to" was ambiguous about what "this" was. **(c) Four sections gain headings:** §4.3 "Scope of the assessment", §4.4 "Timeline", §4.5 "Prerequisites", §4.8 "FAQ". Four constants reshape from bare arrays to `{ heading, items | steps | lines | entries }`, matching the §4.6 shape from v1.12. **(d) The mid CTA becomes "Book an introductory call"**, so the page does not show the hero's label twice.)*
 
@@ -423,6 +425,8 @@ Four deliverables, rendered as a grid, 2x2 at desktop, single column at 390px.
 
 **Heading added 2026-09-23: `Scope of the assessment`.** v1.0 fenced no heading here, so the grid arrived with no label and the reader had to infer that four cards were the deliverable list. `ASSESSMENT_DELIVERABLES` reshapes from a bare array to `{ heading, items }`.
 
+**Fenced-copy amendment, 2026-09-23 (September fixes P2).** Item 2's closing clause is replaced. The retired sentence was "Not every gap is worth closing this year, and the report says which ones are not." It is a relative calendar phrase: it goes false on a calendar that nothing in the toolchain watches, and it passed the §8 item 7 guard only because that guard looked for dates rather than relative phrases. The replacement states the same ranking without naming a period, and the guard is widened in the same commit to catch the class.
+
 ```
 1. "Data point register"
    "Every data point the passport requires for your product category, mapped
@@ -432,8 +436,8 @@ Four deliverables, rendered as a grid, 2x2 at desktop, single column at 390px.
 2. "Gap analysis with severity"
    "Each missing or unusable data point rated by what it blocks: passport
    issuance, a customer's footprint calculation, a due diligence answer, or
-   nothing yet. Not every gap is worth closing this year, and the report says
-   which ones are not."
+   nothing yet. The report says which gaps to close first and which can
+   wait."
 
 3. "Supplier data map"
    "For each gap that originates outside your company, which tier it sits in,
@@ -845,7 +849,7 @@ The file is 224 lines today and grandfathered over the 200-line cap. P8 takes it
 4. Both CTA bands render `BookingButton` whose href equals the imported `BOOKING_URL` exactly, with no appended query parameters. `BOOKING_URL` is asserted to be an `https` URL on a Google Calendar booking host (`calendar.app.google` or `calendar.google.com`), which catches a leftover Calendly link without exact matching the operational URL.
 5. All five FAQ answers are present in the initial DOM.
 6. **Zero label assets in the page subtree** (rule 1), asserted as a not-contains against the imported asset constants.
-7. **Dates, amended v1.9, scoped v1.10, simplified v1.12.** Two assertions. (a) Panel B is the sole carrier of the passport-date token and its rendered value equals the interpolated `regulatoryDates.js` value. (b) Across the **whole page subtree**, after stripping that one token: no bare four-digit year, no written month-and-year, no ISO date.
+7. **Dates, amended v1.9, scoped v1.10, simplified v1.12, extended v1.14.** Two assertions. (a) Panel B is the sole carrier of the passport-date token and its rendered value equals the interpolated `regulatoryDates.js` value. (b) Across the **whole page subtree**, after stripping that one token: no bare four-digit year, no written month-and-year, no ISO date, and no relative calendar phrase (`RELATIVE_TIME_PATTERN` from `constants/dateGuards.js`: `this|next|last` followed by `year|quarter|month|week`).
 
    v1.10's scope (c) and the published-work subtree exclusion are both **gone**, because §4.7.1 is gone (§4.7). The guard is now stronger than at any point in its history: one scope, no carve-out, covering every section including ones added later. The §4.2.2 rewrite was checked against it, which is why the new closing line states a consequence of starting later rather than naming a quarter.
 

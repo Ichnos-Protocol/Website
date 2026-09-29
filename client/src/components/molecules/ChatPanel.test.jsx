@@ -8,8 +8,10 @@ import { configureStore } from "@reduxjs/toolkit";
 import chatReducer from "../../features/chat/chatSlice";
 import authReducer from "../../features/auth/authSlice";
 
-const WELCOME_TEXT = "Hi — ask me about Catena-X onboarding for ASEAN-made batteries, EU Battery Passport data flows, EU 2023/1542 compliance, or battery-systems advisory.";
-const DISCLAIMER_TEXT = "Responses are AI-generated. We follow up personally on every conversation that becomes a lead.";
+const WELCOME_TEXT =
+  "Hi — ask me about Catena-X onboarding for ASEAN-made batteries, EU Battery Passport data flows, EU 2023/1542 compliance, or battery-systems advisory.";
+const DISCLAIMER_TEXT =
+  "Responses are AI-generated. We follow up personally on every conversation that becomes a lead.";
 
 const mockSendStreamMessage = vi.fn().mockResolvedValue("completed");
 const mockTriggerHistory = vi.fn().mockReturnValue({
@@ -135,33 +137,47 @@ describe("ChatPanel UI contract", () => {
     await user.click(screen.getByTestId("chat-send-btn"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("chat-bubble-user")).toHaveTextContent("My question");
+      expect(screen.getByTestId("chat-bubble-user")).toHaveTextContent(
+        "My question",
+      );
     });
   });
 
   it("applies the correct wrapper modifier class for mode=modal and mode=inline", () => {
     const inlineStore = createStore();
-    const { unmount } = renderPanel(inlineStore, { mode: "inline", persistState: false });
+    const { unmount } = renderPanel(inlineStore, {
+      mode: "inline",
+      persistState: false,
+    });
     expect(screen.getByTestId("chat-panel")).toHaveClass("chat-panel--inline");
-    expect(screen.getByTestId("chat-panel")).not.toHaveClass("chat-panel--modal");
+    expect(screen.getByTestId("chat-panel")).not.toHaveClass(
+      "chat-panel--modal",
+    );
     unmount();
 
     const modalStore = createStore();
     renderPanel(modalStore, { mode: "modal", persistState: true });
     expect(screen.getByTestId("chat-panel")).toHaveClass("chat-panel--modal");
-    expect(screen.getByTestId("chat-panel")).not.toHaveClass("chat-panel--inline");
+    expect(screen.getByTestId("chat-panel")).not.toHaveClass(
+      "chat-panel--inline",
+    );
   });
 
   it("resets local conversation between mount cycles when persistState=false", async () => {
     const user = userEvent.setup();
     const store = createStore();
-    const { unmount } = renderPanel(store, { mode: "inline", persistState: false });
+    const { unmount } = renderPanel(store, {
+      mode: "inline",
+      persistState: false,
+    });
 
     await user.type(screen.getByTestId("chat-input"), "Local message");
     await user.click(screen.getByTestId("chat-send-btn"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("chat-bubble-user")).toHaveTextContent("Local message");
+      expect(screen.getByTestId("chat-bubble-user")).toHaveTextContent(
+        "Local message",
+      );
     });
 
     unmount();

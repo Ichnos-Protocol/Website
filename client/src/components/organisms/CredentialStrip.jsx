@@ -1,7 +1,7 @@
-import Container from 'react-bootstrap/Container';
+import Container from "react-bootstrap/Container";
 
-import { CREDENTIALS } from '../../constants/credentials';
-import CredentialLabel from '../molecules/CredentialLabel';
+import { CREDENTIALS } from "../../constants/credentials";
+import CredentialLabel from "../molecules/CredentialLabel";
 
 export default function CredentialStrip() {
   return (

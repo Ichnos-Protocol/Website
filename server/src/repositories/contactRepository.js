@@ -36,7 +36,10 @@ export async function createContactRequest(userId, consentData, db = pool) {
         : await db.query(INSERT_INQUIRY_SQL, params);
     return rows[0] || null;
   } catch (error) {
-    console.error("contactRepository.createContactRequest failed:", error.message);
+    console.error(
+      "contactRepository.createContactRequest failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -49,7 +52,10 @@ export async function getRequestsByUserId(userId) {
     );
     return rows;
   } catch (error) {
-    console.error("contactRepository.getRequestsByUserId failed:", error.message);
+    console.error(
+      "contactRepository.getRequestsByUserId failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -109,7 +115,10 @@ export async function getAllRequestsWithUserInfo() {
     );
     return rows;
   } catch (error) {
-    console.error("contactRepository.getAllRequestsWithUserInfo failed:", error.message);
+    console.error(
+      "contactRepository.getAllRequestsWithUserInfo failed:",
+      error.message,
+    );
     throw error;
   }
 }

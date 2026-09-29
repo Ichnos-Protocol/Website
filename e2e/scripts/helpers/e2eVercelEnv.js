@@ -1,0 +1,293 @@
+/**
+ * One Vercel environment variable on two managed Preview scopes: the
+ * all-branches scope (no git branch) and the branch `main` scope, each with no
+ * custom environment and not Production. `staging`, any other branch,
+ * Production and custom environments are never selected, read or written. An
+ * unchanged value is not written; a stored value that cannot be read back as
+ * a string is a failure, never a blind rewrite. A result carries its scope
+ * name and non-secret outcome metadata only: the operation and the provider's
+ * updatedAt wherever the read, create or update response supplies one. A key
+ * whose name marks it as a secret is fully masked at the source, so no
+ * consumer can print a tail of its value.
+ */
+import { maskValue } from "./e2eEnvFile.js";
+import { E2E_GIT_BRANCH } from "./e2eFixedConfig.js";
+
+/** The managed Preview scopes, in write order: all-branches first. */
+export const PREVIEW_SCOPES = Object.freeze([
+  Object.freeze({ name: "all-branches", gitBranch: null }),
+  Object.freeze({ name: "main", gitBranch: E2E_GIT_BRANCH }),
+]);
+
+// The all-branches scope matches no branch; the main scope exactly "main".
+function matchesBranch(entry, scope) {
+  return scope.gitBranch == null
+    ? entry.gitBranch == null
+    : entry.gitBranch === scope.gitBranch;
+}
+
+const SECRET_KEY_NAME = /API_KEY|PASSWORD|SECRET|TOKEN/;
+
+function maskFor(key, value) {
+  return SECRET_KEY_NAME.test(key) ? "****" : maskValue(value);
+}
+
+// ISO 8601 date-time with an explicit zone. A zoneless or locale-style string
+// is ambiguous, so it is refused rather than handed to permissive Date parsing.
+const ISO_8601 =
+  /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d)(?:\.\d{1,9})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+function parseIso8601(raw) {
+  const match = ISO_8601.exec(raw);
+  if (!match) return undefined;
+  const [year, month, day] = match.slice(1, 4).map(Number);
+  const calendar = new Date(Date.UTC(year, month - 1, day));
+  const realDay =
+    calendar.getUTCFullYear() === year &&
+    calendar.getUTCMonth() === month - 1 &&
+    calendar.getUTCDate() === day;
+  return realDay ? new Date(raw) : undefined;
+}
+
+/**
+ * The provider timestamp as ISO, or undefined. A finite number or all-digit
+ * string is epoch milliseconds; another string must be ISO 8601 with a zone.
+ */
+export function normalizeUpdatedAt(raw) {
+  let date;
+  if (typeof raw === "number" && Number.isFinite(raw)) date = new Date(raw);
+  else if (typeof raw === "string" && /^\d+$/.test(raw)) {
+    date = new Date(Number(raw));
+  } else if (typeof raw === "string") date = parseIso8601(raw);
+  if (!date || !Number.isFinite(date.getTime())) return undefined;
+  return date.toISOString();
+}
+
+// Only the normalized timestamp leaves a write response; ids, values,
+// branches and every other provider field are dropped here.
+function writeOutcome(operation, raw) {
+  const updatedAt = normalizeUpdatedAt(raw);
+  return {
+    status: "success",
+    operation,
+    ...(updatedAt ? { updatedAt } : {}),
+  };
+}
+
+// The v10 create response wraps the entry in created, as an object or array.
+function createdEntry(response) {
+  const created = response?.created;
+  return Array.isArray(created) ? created[0] : created;
+}
+
+function createdUpdatedAt(response) {
+  return createdEntry(response)?.updatedAt ?? response?.updatedAt;
+}
+
+function isNamedEntry(entry, key) {
+  return (
+    entry !== null &&
+    typeof entry === "object" &&
+    !Array.isArray(entry) &&
+    entry.key === key &&
+    typeof entry.id === "string" &&
+    entry.id.length > 0
+  );
+}
+
+// A write is reported only when the response names the created entry: a
+// plain object for the requested key with a non-empty id, reporting the scope
+// that was asked for.
+function assertCreatedEntry(response, key, scope) {
+  const entry = createdEntry(response);
+  if (!isNamedEntry(entry, key)) {
+    throw new Error(
+      `Vercel env create for ${key} returned no created entry; refusing to report a write. Nothing is confirmed.`,
+    );
+  }
+  if (matchesBranch(entry, scope)) return;
+  throw new Error(
+    `Vercel env create for ${key} on the ${scope.name} Preview scope reported another scope; refusing to report a write. Nothing is confirmed.`,
+  );
+}
+
+// An absent customEnvironmentIds is an empty list; a present value must be an
+// array, and anything else returns undefined, which the caller refuses.
+function normalizeCustomEnvironmentIds(raw) {
+  if (raw === undefined) return [];
+  return Array.isArray(raw) ? raw : undefined;
+}
+
+// Vercel omits gitBranch on an entry that applies to every branch. Entries
+// created through POST /v10/projects/{id}/env are listed by
+// GET /v9/projects/{id}/env with no customEnvironmentIds, so an absent
+// property means no custom environment. Returns the custom-environment list.
+function assertKnownScopeShape(entry) {
+  const customEnvironmentIds = normalizeCustomEnvironmentIds(
+    entry?.customEnvironmentIds,
+  );
+  const known =
+    Array.isArray(entry?.target) &&
+    customEnvironmentIds !== undefined &&
+    (entry.gitBranch == null || typeof entry.gitBranch === "string");
+  if (known) return customEnvironmentIds;
+  throw new Error(
+    `Vercel env entry for ${entry?.key ?? "an unnamed key"} has an unrecognised scope shape; refusing to guess. Nothing was written.`,
+  );
+}
+
+/** True when entry is a Preview entry on exactly the given managed scope. */
+export function matchesPreviewScope(entry, scope) {
+  const customEnvironmentIds = assertKnownScopeShape(entry);
+  return (
+    entry.target.includes("preview") &&
+    !entry.target.includes("production") &&
+    matchesBranch(entry, scope) &&
+    customEnvironmentIds.length === 0
+  );
+}
+
+export function isAllBranchesPreview(entry) {
+  return matchesPreviewScope(entry, PREVIEW_SCOPES[0]);
+}
+
+function envPath(projectId, version, suffix = "") {
+  return `/${version}/projects/${encodeURIComponent(projectId)}/env${suffix}`;
+}
+
+// The env list is paginated; a lookup that reaches the cap without a final
+// page refuses to decide, since a later page could hold the entry.
+const ENV_PAGE_LIMIT = 100;
+const MAX_ENV_PAGES = 50;
+
+function envListPage(projectId, until) {
+  const query = `limit=${ENV_PAGE_LIMIT}${until ? `&until=${until}` : ""}`;
+  return `${envPath(projectId, "v9")}?${query}`;
+}
+
+/** Every env entry named key, across all pages of the project's env list. */
+async function listEntriesForKey(api, projectId, key) {
+  const matches = [];
+  let until;
+  for (let page = 0; page < MAX_ENV_PAGES; page += 1) {
+    const { envs = [], pagination } = await api.request(
+      envListPage(projectId, until),
+    );
+    matches.push(...envs.filter((entry) => entry?.key === key));
+    until = pagination?.next;
+    if (!until) return matches;
+  }
+  throw new Error(
+    `The Vercel env list for ${key} exceeds ${MAX_ENV_PAGES} pages; refusing to decide. Nothing was written.`,
+  );
+}
+
+/**
+ * The single Preview entry for key on scope (all-branches by default) across
+ * every page, or null; throws on two.
+ */
+export async function findPreviewEntry({
+  api,
+  projectId,
+  key,
+  scope = PREVIEW_SCOPES[0],
+}) {
+  const entries = await listEntriesForKey(api, projectId, key);
+  const candidates = entries.filter((entry) =>
+    matchesPreviewScope(entry, scope),
+  );
+  if (candidates.length > 1) {
+    throw new Error(
+      `${candidates.length} ${scope.name} Preview entries exist for ${key}; refusing to choose. Nothing was written.`,
+    );
+  }
+  return candidates[0] ?? null;
+}
+
+// The all-branches body carries no gitBranch and no customEnvironmentIds.
+function createBody(key, value, scope) {
+  const body = { key, value, type: "encrypted", target: ["preview"] };
+  if (scope.gitBranch == null) return body;
+  return { ...body, gitBranch: scope.gitBranch };
+}
+
+async function createPreviewEntry({ api, projectId, key, value, scope }) {
+  const response = await api.request(envPath(projectId, "v10"), {
+    method: "POST",
+    body: createBody(key, value, scope),
+  });
+  assertCreatedEntry(response, key, scope);
+  return writeOutcome("created", createdUpdatedAt(response));
+}
+
+function assertReadableValue(current, key, scope) {
+  if (typeof current?.value === "string") return;
+  throw new Error(
+    `The stored ${scope.name} Preview value for ${key} could not be read back as a string; refusing to rewrite it blind. Nothing was written.`,
+  );
+}
+
+// An unchanged value takes its timestamp from the decrypted or listed entry;
+// a write takes it from the PATCH response, when the provider supplies one.
+async function updatePreviewEntry({
+  api,
+  projectId,
+  key,
+  entry,
+  value,
+  scope,
+}) {
+  const id = encodeURIComponent(entry.id);
+  const current = await api.request(envPath(projectId, "v1", `/${id}`));
+  assertReadableValue(current, key, scope);
+  if (current.value === value) {
+    return {
+      status: "unchanged",
+      operation: "unchanged",
+      updatedAt: normalizeUpdatedAt(current?.updatedAt ?? entry?.updatedAt),
+    };
+  }
+  const response = await api.request(envPath(projectId, "v9", `/${id}`), {
+    method: "PATCH",
+    body: { value },
+  });
+  return writeOutcome("updated", response?.updatedAt);
+}
+
+/**
+ * Creates or updates key on one managed Preview scope, all-branches by
+ * default. Returns the shape printSummary/printFailedDetails read, carrying
+ * the scope name; a failure is a result, not a throw.
+ */
+export async function setPreviewEnv({
+  api,
+  projectId,
+  key,
+  value,
+  scope = PREVIEW_SCOPES[0],
+}) {
+  const result = { name: key, scope: scope.name, masked: maskFor(key, value) };
+  try {
+    api.registerSecret(value);
+    const entry = await findPreviewEntry({ api, projectId, key, scope });
+    const args = { api, projectId, key, value, scope };
+    const outcome = entry
+      ? await updatePreviewEntry({ ...args, entry })
+      : await createPreviewEntry(args);
+    return { ...result, ...outcome };
+  } catch (err) {
+    return { ...result, status: "failed", error: err.message };
+  }
+}
+
+/**
+ * Sets key on every managed Preview scope, all-branches first. Each scope is
+ * independent: a refusal in one does not stop the other.
+ */
+export async function setPreviewEnvScopes({ api, projectId, key, value }) {
+  const results = [];
+  for (const scope of PREVIEW_SCOPES) {
+    results.push(await setPreviewEnv({ api, projectId, key, value, scope }));
+  }
+  return results;
+}

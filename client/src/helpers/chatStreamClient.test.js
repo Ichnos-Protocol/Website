@@ -239,8 +239,7 @@ describe("chatStreamClient", () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 429,
-        json: () =>
-          Promise.resolve({ error: "Rate limit exceeded" }),
+        json: () => Promise.resolve({ error: "Rate limit exceeded" }),
       });
 
       const error = await streamChatMessage("q", "tok", {
@@ -258,8 +257,7 @@ describe("chatStreamClient", () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 401,
-        json: () =>
-          Promise.resolve({ error: "Unauthorized" }),
+        json: () => Promise.resolve({ error: "Unauthorized" }),
       });
 
       const error = await streamChatMessage("q", "tok", {

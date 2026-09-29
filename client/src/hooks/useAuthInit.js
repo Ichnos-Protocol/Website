@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { onAuthStateChanged } from "firebase/auth";
 
-import { auth } from '../config/firebase';
-import { authApi } from '../features/auth/authApi';
-import { ROUTE_ADMIN } from '../constants/routes';
+import { auth } from "../config/firebase";
+import { authApi } from "../features/auth/authApi";
+import { ROUTE_ADMIN } from "../constants/routes";
 import {
   setUser,
   setAdmin,
@@ -12,13 +12,13 @@ import {
   setLoading,
   setProfileState,
   openAuthModal,
-} from '../features/auth/authSlice';
+} from "../features/auth/authSlice";
 import {
   isCompletionRequired,
   markCompletionShown,
   wasCompletionShown,
   clearCompletionShown,
-} from '../helpers/profileCompletion';
+} from "../helpers/profileCompletion";
 
 export const useAuthInit = () => {
   const dispatch = useDispatch();
@@ -50,7 +50,7 @@ export const useAuthInit = () => {
               isCompletionRequired(profile) &&
               !wasCompletionShown()
             ) {
-              dispatch(openAuthModal('complete-profile'));
+              dispatch(openAuthModal("complete-profile"));
               markCompletionShown();
             }
           } else {

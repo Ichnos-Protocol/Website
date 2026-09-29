@@ -1,17 +1,17 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import Dropdown from 'react-bootstrap/Dropdown';
-import { signOut } from 'firebase/auth';
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import Dropdown from "react-bootstrap/Dropdown";
+import { signOut } from "firebase/auth";
 
-import { auth } from '../../config/firebase';
-import { logout } from '../../features/auth/authSlice';
+import { auth } from "../../config/firebase";
+import { logout } from "../../features/auth/authSlice";
 import {
   ROUTE_ADMIN,
   ROUTE_CONTACT,
   ROUTE_PRIVACY,
-} from '../../constants/routes';
-import { getUserInitial, getUserDisplayName } from '../../helpers/userInitial';
-import Icon from '../atoms/Icon';
+} from "../../constants/routes";
+import { getUserInitial, getUserDisplayName } from "../../helpers/userInitial";
+import Icon from "../atoms/Icon";
 
 export default function UserMenu() {
   const dispatch = useDispatch();
@@ -21,7 +21,7 @@ export default function UserMenu() {
   const handleLogout = async () => {
     await signOut(auth);
     dispatch(logout());
-    navigate('/');
+    navigate("/");
   };
 
   return (

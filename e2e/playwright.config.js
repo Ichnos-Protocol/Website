@@ -1,4 +1,19 @@
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
+import { config as loadEnv } from "dotenv";
+
+// Local runs read the gitignored e2e/.env.e2e. CI has no such file and
+// supplies everything through the workflow env; dotenv never overwrites
+// variables already set, so CI values always win.
+const LOCAL_ENV_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  ".env.e2e",
+);
+if (existsSync(LOCAL_ENV_PATH)) {
+  loadEnv({ path: LOCAL_ENV_PATH });
+}
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
 const IS_CI = !!process.env.CI;

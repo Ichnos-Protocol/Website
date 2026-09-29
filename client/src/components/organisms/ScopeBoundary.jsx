@@ -1,4 +1,4 @@
-import { ASSESSMENT_SCOPE_BOUNDARY } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_SCOPE_BOUNDARY } from "../../constants/readinessAssessmentContent";
 
 // Section 4.6. A heading plus four plain strings in source order. The order
 // is normative: never sort, slice or filter the lines here.

@@ -17,7 +17,7 @@ describe("buildStatusPage", () => {
   it("includes the logo src from a valid https origin", () => {
     const html = buildStatusPage(defaults);
     expect(html).toContain(
-      'src="https://example.com/brand/ichnos_mark_white.svg"'
+      'src="https://example.com/brand/ichnos_mark_white.svg"',
     );
   });
 
@@ -54,7 +54,10 @@ describe("buildStatusPage", () => {
   });
 
   it("escapes HTML-special characters in env", () => {
-    const html = buildStatusPage({ ...defaults, env: "<script>alert(1)</script>" });
+    const html = buildStatusPage({
+      ...defaults,
+      env: "<script>alert(1)</script>",
+    });
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
   });

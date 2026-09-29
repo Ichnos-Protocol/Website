@@ -33,6 +33,7 @@ const answers = {
   dataExtract: "not_yet",
   dataNeeds: "Cell-level carbon footprint",
   preferredStart: "asap",
+  region: "asean",
   source: "landing_page",
   consentTimestamp: "2026-02-16T12:00:00Z",
   consentVersion: "v1",
@@ -73,6 +74,7 @@ describeIf("consortium registration (integration)", () => {
         consortium_data_extract        VARCHAR(20),
         consortium_data_needs          TEXT,
         consortium_preferred_start     VARCHAR(20),
+        consortium_region              VARCHAR(10),
         consortium_source              VARCHAR(40),
         consortium_consent_timestamp   TIMESTAMP,
         consortium_consent_version     VARCHAR(20),
@@ -107,7 +109,9 @@ describeIf("consortium registration (integration)", () => {
     await pool.query("DELETE FROM contact_requests");
     await pool.query("DELETE FROM user_profiles");
     await pool.query("DELETE FROM users");
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["test-uid"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "test-uid",
+    ]);
     await pool.query(
       "INSERT INTO user_profiles (user_id, name, surname, email) VALUES ($1, $2, $3, $4)",
       ["test-uid", "Alice", "Smith", "alice@test.com"],
@@ -122,8 +126,16 @@ describeIf("consortium registration (integration)", () => {
   });
 
   it("allows only one consortium row per user", async () => {
-    const first = await createContactRequest("test-uid", consortiumConsent, pool);
-    const second = await createContactRequest("test-uid", consortiumConsent, pool);
+    const first = await createContactRequest(
+      "test-uid",
+      consortiumConsent,
+      pool,
+    );
+    const second = await createContactRequest(
+      "test-uid",
+      consortiumConsent,
+      pool,
+    );
 
     expect(first.kind).toBe("consortium");
     expect(second).toBeNull();
@@ -170,7 +182,9 @@ describeIf("consortium registration (integration)", () => {
     expect(second.consortium_interest).toBe(true);
     expect(second.consortium_source).toBe("landing_page");
     expect(second.consortium_status).toBe("registered");
-    expect(second.consortium_registered_at).toEqual(first.consortium_registered_at);
+    expect(second.consortium_registered_at).toEqual(
+      first.consortium_registered_at,
+    );
   });
 
   it("scrubs free text and leaves the structured answers intact", async () => {
@@ -190,6 +204,7 @@ describeIf("consortium registration (integration)", () => {
     expect(profile.consortium_chain_role).toBe("cathode_material");
     expect(profile.consortium_data_extract).toBe("not_yet");
     expect(profile.consortium_preferred_start).toBe("asap");
+    expect(profile.consortium_region).toBe("asean");
     expect(profile.consortium_tier).toBe("pilot");
     expect(profile.consortium_status).toBe("registered");
 
@@ -201,6 +216,8 @@ describeIf("consortium registration (integration)", () => {
   });
 
   it("is a no-op when scrubbing an unknown user", async () => {
-    await expect(scrubConsortiumText("no-such-uid", pool)).resolves.toBeUndefined();
+    await expect(
+      scrubConsortiumText("no-such-uid", pool),
+    ).resolves.toBeUndefined();
   });
 });

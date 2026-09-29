@@ -14,13 +14,31 @@
  *   - `protected` branches are never deleted
  *   - Branches named exactly `main`, `production`, or `staging` are
  *     never deleted, regardless of other fields
+ *   - The branch named `preview/${E2E_GIT_BRANCH}` is never deleted,
+ *     whatever `gitBranch` is and whatever its `primary`/`protected`
+ *     fields say: it backs the stable E2E domains. The protection is
+ *     exact-name only, so `preview/${E2E_GIT_BRANCH}-*` deployment
+ *     variants remain deletable
  *   - Only branches whose name equals `preview/{gitBranch}` or starts
  *     with `preview/{gitBranch}-` are returned
  */
 
+import { E2E_GIT_BRANCH } from "./e2eFixedConfig.js";
+
 const NEON_API_BASE = "https://console.neon.tech/api/v2";
 
 const NEVER_DELETE_NAMES = new Set(["main", "production", "staging"]);
+
+/**
+ * The Neon branch the stable E2E domains read. Both domains follow git
+ * branch `E2E_GIT_BRANCH`, so the Vercel ↔ Neon integration backs them
+ * with `preview/{E2E_GIT_BRANCH}`.
+ *
+ * @returns {string} the exact Neon branch name that is never deleted
+ */
+export function protectedE2EBranchName() {
+  return `preview/${E2E_GIT_BRANCH}`;
+}
 
 /**
  * Filter a list of Neon branch objects down to those that should be
@@ -29,14 +47,17 @@ const NEVER_DELETE_NAMES = new Set(["main", "production", "staging"]);
  * @param {Array<object>} branches - raw Neon branch objects
  * @param {string} gitBranch - git branch name (e.g. "main", "feature/foo")
  * @returns {Array<object>} subset of `branches` that passed every safety
- *   check and matched the preview-branch naming pattern
+ *   check and matched the preview-branch naming pattern; never includes
+ *   the exact branch named by `protectedE2EBranchName()`
  */
 export function selectBranchesToDelete(branches, gitBranch) {
   if (!Array.isArray(branches) || !gitBranch) return [];
   const exact = `preview/${gitBranch}`;
   const prefix = `preview/${gitBranch}-`;
+  const protectedName = protectedE2EBranchName();
   return branches.filter((b) => {
     if (!b || typeof b.name !== "string") return false;
+    if (b.name === protectedName) return false;
     if (b.primary === true) return false;
     if (b.protected === true) return false;
     if (NEVER_DELETE_NAMES.has(b.name)) return false;
@@ -49,16 +70,13 @@ export function selectBranchesToDelete(branches, gitBranch) {
  * Throws on non-2xx responses so the caller can surface the error.
  */
 export async function listBranches(fetchFn, { apiKey, projectId }) {
-  const res = await fetchFn(
-    `${NEON_API_BASE}/projects/${projectId}/branches`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-      },
+  const res = await fetchFn(`${NEON_API_BASE}/projects/${projectId}/branches`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
     },
-  );
+  });
   if (!res.ok) {
     const body = await safeReadText(res);
     throw new Error(
@@ -73,10 +91,7 @@ export async function listBranches(fetchFn, { apiKey, projectId }) {
  * DELETE /projects/{projectId}/branches/{branchId}.
  * A 404 is treated as "already gone" (idempotent success).
  */
-export async function deleteBranch(
-  fetchFn,
-  { apiKey, projectId, branchId },
-) {
+export async function deleteBranch(fetchFn, { apiKey, projectId, branchId }) {
   const res = await fetchFn(
     `${NEON_API_BASE}/projects/${projectId}/branches/${branchId}`,
     {

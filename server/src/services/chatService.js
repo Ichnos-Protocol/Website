@@ -43,8 +43,13 @@ export function extractKeywords(text) {
   return unique.slice(0, 10);
 }
 
-export async function callXaiApi(messages, timeoutMs, { model = "grok-3-mini", temperature = 0.7 } = {}) {
-  const endpoint = process.env.XAI_API_ENDPOINT || "https://api.x.ai/v1/chat/completions";
+export async function callXaiApi(
+  messages,
+  timeoutMs,
+  { model = "grok-3-mini", temperature = 0.7 } = {},
+) {
+  const endpoint =
+    process.env.XAI_API_ENDPOINT || "https://api.x.ai/v1/chat/completions";
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -78,7 +83,11 @@ export async function callXaiApi(messages, timeoutMs, { model = "grok-3-mini", t
 
 async function classifyTopics(questionId, message) {
   try {
-    const raw = await callXaiApi(buildTopicMessages(message), TOPIC_TIMEOUT_MS, { temperature: 0.3 });
+    const raw = await callXaiApi(
+      buildTopicMessages(message),
+      TOPIC_TIMEOUT_MS,
+      { temperature: 0.3 },
+    );
     const topics = parseTopicKeywords(raw);
 
     for (const topic of topics) {
@@ -102,7 +111,10 @@ export async function prepareChat(userId, message) {
   }
 
   const keywords = extractKeywords(message);
-  const documents = await knowledgeRepository.queryKnowledgeBase(keywords, null);
+  const documents = await knowledgeRepository.queryKnowledgeBase(
+    keywords,
+    null,
+  );
   const userContent = buildUserContent(buildContextString(documents), message);
 
   const messages = [
@@ -121,7 +133,10 @@ export async function persistChat(userId, message, answer) {
     contactRequestId: null,
   };
 
-  const question = await questionRepository.createQuestion(userId, questionData);
+  const question = await questionRepository.createQuestion(
+    userId,
+    questionData,
+  );
   const messageId = question.id;
 
   runTailWork(userId, messageId, message);
@@ -139,6 +154,9 @@ function runTailWork(userId, questionId, message) {
 export async function getChatHistory(userId) {
   const rows = await questionRepository.getChatHistoryByUserId(userId);
   return rows.map(({ id, question, answer, created_at }) => ({
-    id, question, answer, created_at,
+    id,
+    question,
+    answer,
+    created_at,
   }));
 }

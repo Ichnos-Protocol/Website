@@ -1,9 +1,9 @@
-import Form from 'react-bootstrap/Form';
-import Button from '../atoms/Button';
+import Form from "react-bootstrap/Form";
+import Button from "../atoms/Button";
 
 export default function ChatInputArea({ value, onChange, onSend, disabled }) {
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSend();
     }

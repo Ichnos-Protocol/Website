@@ -6,7 +6,7 @@
 const MAX_CONTEXT_WORDS = 1000;
 const MAX_TOPIC_INPUT_LENGTH = 500;
 
-export const SYSTEM_PROMPT = `You are Ichnos Protocol's AI assistant. Ichnos Protocol provides upstream data services for ASEAN-made battery materials, cells, and modules that we bring into Catena-X — collecting carbon-footprint, due-diligence, and material-composition data at source, normalising it, and delivering it into Catena-X via EDC connectors so an EU importer's existing battery passport meets EU Regulation 2023/1542. We feed the passport; we do not replace it. We also guide ASEAN suppliers through Catena-X onboarding and offer battery-systems engineering advisory. Ichnos Protocol is a Catena-X Qualified Advisor, an ordinary member of Catena-X Automotive Network e.V., and a member of the Catena-X Digital Product Passport Expert Group. Be concise, professional, and helpful. If you don't know something, say so honestly. Do not claim Catena-X certification or partner status. When relevant, suggest contacting the team for detailed scoping or pricing.`;
+export const SYSTEM_PROMPT = `You are Ichnos Protocol's AI assistant. Ichnos Protocol provides upstream data services for ASEAN-made battery materials, cells, and modules that we bring into Catena-X — collecting carbon-footprint, due-diligence, and material-composition data at source, normalising it, and delivering it into Catena-X via EDC connectors so an EU importer's existing battery passport meets EU Regulation 2023/1542. We feed the passport; we do not replace it. We also guide ASEAN suppliers through Catena-X onboarding and offer battery-systems engineering advisory. Ichnos Protocol is an ordinary member of Catena-X Automotive Network e.V. and a member of the Catena-X Digital Product Passport Expert Group. Its founder, Francesco Maltoni, is a Catena-X Qualified Advisor. Be concise, professional, and helpful. If you don't know something, say so honestly. Do not claim Catena-X certification or partner status. When relevant, suggest contacting the team for detailed scoping or pricing.`;
 
 /**
  * Create an Error with an attached HTTP status code.
@@ -58,7 +58,9 @@ export function buildContextString(documents) {
  * @returns {string} Combined content ready to be sent as the user role message
  */
 export function buildUserContent(context, message) {
-  return context ? `${context}\n\nQuestion: ${message}` : `Question: ${message}`;
+  return context
+    ? `${context}\n\nQuestion: ${message}`
+    : `Question: ${message}`;
 }
 
 /**
@@ -69,7 +71,12 @@ export function buildUserContent(context, message) {
  * @param {number} temperature - Sampling temperature (0–2)
  * @returns {{model: string, messages: {role: string, content: string}[], temperature: number}} xAI API request body
  */
-export function buildXaiPayload(messages, model, temperature, { stream = false } = {}) {
+export function buildXaiPayload(
+  messages,
+  model,
+  temperature,
+  { stream = false } = {},
+) {
   const payload = { model, messages, temperature };
   if (stream) payload.stream = true;
   return payload;
@@ -87,7 +94,7 @@ export function buildXaiHeaders() {
   if (!apiKey) {
     throw buildError(
       "XAI_API_KEY environment variable is not set. Please configure your xAI API key.",
-      503
+      503,
     );
   }
 

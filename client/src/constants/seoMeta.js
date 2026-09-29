@@ -5,7 +5,7 @@
 // Canonical domain is ichnos-protocol.com (hyphenated). The unhyphenated
 // variant is intentionally NOT used anywhere — see DEPLOYMENT_GITHUB_ACTIONS.md.
 
-import { getCatenaXFullTitle } from "./catenaXStatus";
+import { getCatenaXFounderLine, getCatenaXFullTitle } from "./catenaXStatus";
 import { COMPANY_INFO } from "./companyInfo";
 import {
   ROUTE_CONSORTIUM,
@@ -30,9 +30,16 @@ const SITE_NAME = "Ichnos Protocol";
 const LOCALE = "en_US";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 // Positioning line single-sourced from companyInfo.js (2026-08-12).
-const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol: ${COMPANY_INFO.tagline} ${getCatenaXFullTitle()}.`;
+const DEFAULT_OG_IMAGE_ALT = `Ichnos Protocol: ${COMPANY_INFO.tagline} ${getCatenaXFounderLine()}.`;
 
-function buildMeta({ path, title, description, keywords, ogImage, ogImageAlt }) {
+function buildMeta({
+  path,
+  title,
+  description,
+  keywords,
+  ogImage,
+  ogImageAlt,
+}) {
   const url = `${BASE_URL}${path}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
   const imageAlt = ogImageAlt || DEFAULT_OG_IMAGE_ALT;
@@ -82,9 +89,9 @@ export const SERVICES_META = buildMeta({
 export const TEAM_META = buildMeta({
   path: ROUTE_TEAM,
   title: "Team — Ichnos Protocol",
-  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}) and Ihsan Ahmad (AI, quantitative modelling).`,
+  description: `Dr.-Ing. Francesco Maltoni (ex-FEV lead battery expert, ${getCatenaXFullTitle()}).`,
   keywords:
-    "Francesco Maltoni, Ihsan Ahmad, FEV battery expert, Catena-X Qualified Advisor, battery passport, ASEAN battery advisory",
+    "Francesco Maltoni, FEV battery expert, Catena-X Qualified Advisor, battery passport, ASEAN battery advisory",
 });
 
 export const PASSPORT_META = buildMeta({

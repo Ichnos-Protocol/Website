@@ -1,15 +1,15 @@
-import Table from 'react-bootstrap/Table';
-import Button from 'react-bootstrap/Button';
-import Alert from 'react-bootstrap/Alert';
-import Spinner from 'react-bootstrap/Spinner';
+import Table from "react-bootstrap/Table";
+import Button from "react-bootstrap/Button";
+import Alert from "react-bootstrap/Alert";
+import Spinner from "react-bootstrap/Spinner";
 
 import {
   toCell,
   formatRegisteredAt,
   REGISTRANT_TEXT,
-} from '../../helpers/consortiumRegistrants';
+} from "../../helpers/consortiumRegistrants";
 
-const EMPTY_TABLE_TEXT = 'No consortium registrants';
+const EMPTY_TABLE_TEXT = "No consortium registrants";
 const TABLE_COLUMN_COUNT = 9;
 
 export default function ConsortiumRegistrantsTable({
@@ -46,7 +46,7 @@ export default function ConsortiumRegistrantsTable({
       <tbody>
         {rows.map((row) => (
           <tr key={row.userId}>
-            <td>{toCell([row.name, row.surname].filter(Boolean).join(' '))}</td>
+            <td>{toCell([row.name, row.surname].filter(Boolean).join(" "))}</td>
             <td>{toCell(row.company)}</td>
             <td>{toCell(row.consortiumPosition)}</td>
             <td>{toCell(row.consortiumChainRole)}</td>

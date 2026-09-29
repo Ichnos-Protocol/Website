@@ -1,9 +1,13 @@
-import { Link } from 'react-router-dom';
-import Card from 'react-bootstrap/Card';
+import { Link } from "react-router-dom";
+import Card from "react-bootstrap/Card";
 
-import { ROUTE_SERVICES } from '../../constants/routes';
+import { ROUTE_SERVICES } from "../../constants/routes";
 
-export default function ServiceCard({ title, description, linkTo = ROUTE_SERVICES }) {
+export default function ServiceCard({
+  title,
+  description,
+  linkTo = ROUTE_SERVICES,
+}) {
   return (
     <Card className="service-card h-100 border-0">
       <Card.Body className="d-flex flex-column p-4">

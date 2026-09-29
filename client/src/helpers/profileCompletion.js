@@ -1,15 +1,15 @@
-const SESSION_KEY = 'auth_completion_shown';
+const SESSION_KEY = "auth_completion_shown";
 
 export function isCompletionRequired(profileState) {
   return profileState?.isProfileComplete === false;
 }
 
 export function markCompletionShown() {
-  sessionStorage.setItem(SESSION_KEY, 'true');
+  sessionStorage.setItem(SESSION_KEY, "true");
 }
 
 export function wasCompletionShown() {
-  return sessionStorage.getItem(SESSION_KEY) === 'true';
+  return sessionStorage.getItem(SESSION_KEY) === "true";
 }
 
 export function clearCompletionShown() {

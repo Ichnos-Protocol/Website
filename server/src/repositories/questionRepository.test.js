@@ -48,10 +48,13 @@ describe("questionRepository", () => {
         contactRequestId: 5,
       });
 
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        ["uid-1", "Q", "A", "form", 5],
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [
+        "uid-1",
+        "Q",
+        "A",
+        "form",
+        5,
+      ]);
     });
   });
 
@@ -114,7 +117,10 @@ describe("questionRepository", () => {
 
   describe("getTopicsByQuestionId", () => {
     it("returns topics for a question", async () => {
-      const rows = [{ id: 1, topic: "battery" }, { id: 2, topic: "passport" }];
+      const rows = [
+        { id: 1, topic: "battery" },
+        { id: 2, topic: "passport" },
+      ];
       mockQuery.mockResolvedValue({ rows });
 
       const result = await getTopicsByQuestionId(1);
@@ -126,17 +132,21 @@ describe("questionRepository", () => {
     it("redacts emails, phones, and URLs from question and answer", async () => {
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{
-            question: "Contact me at john@example.com or +1234567890",
-            answer: "Visit https://example.com for details",
-          }],
+          rows: [
+            {
+              question: "Contact me at john@example.com or +1234567890",
+              answer: "Visit https://example.com for details",
+            },
+          ],
         })
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            question: "Contact me at [REDACTED_EMAIL] or [REDACTED_PHONE]",
-            answer: "Visit [REDACTED_URL] for details",
-          }],
+          rows: [
+            {
+              id: 1,
+              question: "Contact me at [REDACTED_EMAIL] or [REDACTED_PHONE]",
+              answer: "Visit [REDACTED_URL] for details",
+            },
+          ],
         });
 
       const result = await scrubQuestionPII(1);
@@ -165,11 +175,11 @@ describe("questionRepository", () => {
       const result = await scrubQuestionPII(1);
 
       expect(result.question).toContain("[REDACTED_EMAIL]");
-      expect(mockQuery).toHaveBeenNthCalledWith(
-        2,
-        expect.any(String),
-        [1, "Email: [REDACTED_EMAIL]", null],
-      );
+      expect(mockQuery).toHaveBeenNthCalledWith(2, expect.any(String), [
+        1,
+        "Email: [REDACTED_EMAIL]",
+        null,
+      ]);
     });
   });
 
@@ -206,9 +216,9 @@ describe("questionRepository", () => {
       mockQuery.mockRejectedValue(new Error("invalid input"));
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      await expect(
-        createTopic(1, { topic: "battery" }),
-      ).rejects.toThrow("invalid input");
+      await expect(createTopic(1, { topic: "battery" })).rejects.toThrow(
+        "invalid input",
+      );
       expect(spy).toHaveBeenCalledWith(
         "questionRepository.createTopic failed:",
         "invalid input",

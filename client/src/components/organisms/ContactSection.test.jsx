@@ -1,31 +1,31 @@
-import { axe } from 'vitest-axe';
-import { renderWithProviders, screen, cleanup } from '../../test-utils';
+import { axe } from "vitest-axe";
+import { renderWithProviders, screen, cleanup } from "../../test-utils";
 
 const { mockChatPanel } = vi.hoisted(() => ({
   mockChatPanel: vi.fn(() => <div data-testid="chat-panel" />),
 }));
 
-vi.mock('../molecules/ChatPanel', () => ({
+vi.mock("../molecules/ChatPanel", () => ({
   default: (props) => mockChatPanel(props),
 }));
 
-import { ROUTE_CONTACT } from '../../constants/routes';
-import ContactSection from './ContactSection';
+import { ROUTE_CONTACT } from "../../constants/routes";
+import ContactSection from "./ContactSection";
 import {
   CONTACT_INFO,
   CONTACT_SECTION_CONTENT,
   BOOKING_URL,
-} from '../../constants/companyInfo';
+} from "../../constants/companyInfo";
 
-describe('ContactSection', () => {
+describe("ContactSection", () => {
   beforeEach(() => {
     mockChatPanel.mockClear();
   });
 
-  it('renders heading, subhead, and address line', () => {
+  it("renders heading, subhead, and address line", () => {
     renderWithProviders(<ContactSection />);
     expect(
-      screen.getByRole('heading', { name: CONTACT_SECTION_CONTENT.heading }),
+      screen.getByRole("heading", { name: CONTACT_SECTION_CONTENT.heading }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(CONTACT_SECTION_CONTENT.subhead),
@@ -35,57 +35,57 @@ describe('ContactSection', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the four touchpoint links with correct hrefs', () => {
+  it("renders the four touchpoint links with correct hrefs", () => {
     renderWithProviders(<ContactSection />);
     expect(
-      screen.getByRole('link', { name: CONTACT_INFO.email }),
-    ).toHaveAttribute('href', `mailto:${CONTACT_INFO.email}`);
+      screen.getByRole("link", { name: CONTACT_INFO.email }),
+    ).toHaveAttribute("href", `mailto:${CONTACT_INFO.email}`);
     expect(
-      screen.getByRole('link', {
+      screen.getByRole("link", {
         name: CONTACT_SECTION_CONTENT.links.linkedInCompany,
       }),
-    ).toHaveAttribute('href', CONTACT_INFO.linkedInCompany);
+    ).toHaveAttribute("href", CONTACT_INFO.linkedInCompany);
     expect(
-      screen.getByRole('link', {
+      screen.getByRole("link", {
         name: CONTACT_SECTION_CONTENT.links.linkedInFounder,
       }),
-    ).toHaveAttribute('href', CONTACT_INFO.linkedInFounder);
+    ).toHaveAttribute("href", CONTACT_INFO.linkedInFounder);
     expect(
-      screen.getByRole('link', {
+      screen.getByRole("link", {
         name: CONTACT_SECTION_CONTENT.links.bookCall,
       }),
-    ).toHaveAttribute('href', BOOKING_URL);
+    ).toHaveAttribute("href", BOOKING_URL);
   });
 
-  it('mounts ChatPanel inline with persistState=false by default', () => {
+  it("mounts ChatPanel inline with persistState=false by default", () => {
     renderWithProviders(<ContactSection />);
     expect(mockChatPanel).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'inline', persistState: false }),
+      expect.objectContaining({ mode: "inline", persistState: false }),
     );
   });
 
-  it('forwards persistChat=true to ChatPanel as persistState=true', () => {
+  it("forwards persistChat=true to ChatPanel as persistState=true", () => {
     renderWithProviders(<ContactSection persistChat={true} />);
     expect(mockChatPanel).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'inline', persistState: true }),
+      expect.objectContaining({ mode: "inline", persistState: true }),
     );
   });
 
   it('does not render "Open the full contact page →" link by default', () => {
     renderWithProviders(<ContactSection />);
     expect(
-      screen.queryByTestId('contact-section-full-link'),
+      screen.queryByTestId("contact-section-full-link"),
     ).not.toBeInTheDocument();
   });
 
   it('renders "Open the full contact page →" link when showFullContactLink=true', () => {
     renderWithProviders(<ContactSection showFullContactLink={true} />);
-    const link = screen.getByTestId('contact-section-full-link');
-    expect(link).toHaveAttribute('href', ROUTE_CONTACT);
-    expect(link).toHaveTextContent('Open the full contact page →');
+    const link = screen.getByTestId("contact-section-full-link");
+    expect(link).toHaveAttribute("href", ROUTE_CONTACT);
+    expect(link).toHaveTextContent("Open the full contact page →");
   });
 
-  it('has no accessibility violations', async () => {
+  it("has no accessibility violations", async () => {
     cleanup();
     const { container } = renderWithProviders(<ContactSection />);
     const results = await axe(container);

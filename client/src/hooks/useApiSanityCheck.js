@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
-import { checkApiHealth } from '../helpers/apiHealthCheck';
+import { checkApiHealth } from "../helpers/apiHealthCheck";
 
 export function useApiSanityCheck() {
   const [warning, setWarning] = useState(null);

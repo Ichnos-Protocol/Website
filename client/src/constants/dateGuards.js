@@ -15,10 +15,11 @@ const MONTHS =
     " ",
   );
 
-// The (19|20) prefix plus word boundaries is what keeps "MS 2818" (the
-// readiness assessment FAQ) and "CX-0160" (the readiness assessment inputs)
-// out of the match. formatPrice output is comma-grouped, so no four-digit run
-// reaches the DOM from a price either.
+// The (19|20) prefix plus word boundaries is what keeps identifiers of the
+// same shape out of the match: "MS 2818", which the readiness assessment FAQ
+// renders, and CX-numbered Catena-X standards such as "CX-0160". formatPrice
+// output is comma-grouped, so no four-digit run reaches the DOM from a price
+// either.
 export const YEAR_PATTERN = /\b(19|20)\d{2}\b/;
 
 // Deliberately not narrowed to (19|20): a month name already disambiguates,
@@ -29,6 +30,6 @@ export const MONTH_YEAR_PATTERN = new RegExp(
 
 export const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}/;
 
-// Consumed by the consortium sweeps now, and by the readiness page in P2.
+// Consumed by the consortium page sweeps and the readiness page sweep.
 export const RELATIVE_TIME_PATTERN =
   /\b(this|next|last)\s+(year|quarter|month|week)\b/i;

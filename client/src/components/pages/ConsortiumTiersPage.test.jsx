@@ -7,9 +7,13 @@ import {
   screen,
   cleanup,
   waitFor,
+  within,
 } from "../../test-utils";
 import { CONSORTIUM_TIER_DESCRIPTIONS } from "../../constants/consortiumContent";
-import { ROUTE_CONSORTIUM_TIERS } from "../../constants/routes";
+import {
+  ROUTE_CONSORTIUM_TIERS,
+  ROUTE_READINESS_ASSESSMENT,
+} from "../../constants/routes";
 import {
   YEAR_PATTERN,
   MONTH_YEAR_PATTERN,
@@ -20,7 +24,7 @@ import ConsortiumTiersPage from "./ConsortiumTiersPage";
 
 const OFFER = {
   tiers: [
-    { tierId: "readiness", priceLabel: "price for readiness" },
+    { tierId: "readiness", priceLabel: null },
     { tierId: "pilot", priceLabel: "price for pilot" },
     { tierId: "legacy_unknown", priceLabel: "price for unknown" },
   ],
@@ -34,7 +38,7 @@ const GATE_TEXT = /registered consortium participants/;
 const MERGED_TEXTS = [
   READINESS.title,
   READINESS.description,
-  "price for readiness",
+  "price for pilot",
   "recurring fee line",
   "term note line",
   "capacity note line",
@@ -52,9 +56,6 @@ vi.mock("../../features/consortium/consortiumApi", () => ({
   ],
 }));
 vi.mock("../../config/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("../../hooks/useReducedMotion", () => ({
-  useReducedMotion: () => true,
-}));
 
 function renderPage() {
   return renderWithProviders(<ConsortiumTiersPage />, {
@@ -92,6 +93,21 @@ describe("ConsortiumTiersPage", () => {
     renderPage();
     expect(screen.queryByText("price for unknown")).toBeNull();
     expect(screen.getAllByRole("button", { name: /^Choose / })).toHaveLength(2);
+  });
+
+  // The readiness price lives on its own page: the card links there and
+  // carries no figure. Scoped to the readiness card, because the pilot card
+  // legitimately names CX-0160.
+  it("links the readiness card to the assessment page, with no figure", () => {
+    renderPage();
+    const card = screen.getByText(READINESS.description).closest(".card");
+    const links = within(card).getAllByRole("link");
+
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAccessibleName(READINESS.priceLinkLabel);
+    expect(links[0]).toHaveAttribute("href", ROUTE_READINESS_ASSESSMENT);
+    expect(links[0]).not.toHaveAttribute("target");
+    expect(subtreeText(card)).not.toMatch(/\d/);
   });
 
   it("saves the selected tier and confirms it", async () => {

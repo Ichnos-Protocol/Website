@@ -46,12 +46,12 @@ vi.mock("../config/database.js", () => ({
   },
 }));
 
-const { submitContactRequest, getMyRequests, addQuestion } = await import(
-  "./contactService.js"
-);
+const { submitContactRequest, getMyRequests, addQuestion } =
+  await import("./contactService.js");
 
 const consortiumAnswers = {
   position: "supplier",
+  region: "asean",
   chainRole: "cathode_material",
   productLine: "NMC cathode powders",
   dataExtract: "not_yet",
@@ -150,7 +150,10 @@ describe("contactService", () => {
     };
 
     it("creates a consortium row and returns the profile", async () => {
-      const profile = { consortium_interest: true, consortium_status: "registered" };
+      const profile = {
+        consortium_interest: true,
+        consortium_status: "registered",
+      };
       mockUpdateConsortiumProfile.mockResolvedValue(profile);
       mockCreateContactRequest.mockResolvedValue({
         id: 7,
@@ -166,13 +169,21 @@ describe("contactService", () => {
         mockClient,
       );
       expect(result.id).toBe(7);
+      expect(mockUpdateConsortiumProfile).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({ region: "asean" }),
+        mockClient,
+      );
       expect(result.consortium).toEqual(profile);
       expect(result.questions).toEqual([]);
       expect(mockCreateQuestion).not.toHaveBeenCalled();
     });
 
     it("treats a swallowed insert as an edit of the existing registration", async () => {
-      const profile = { consortium_interest: true, consortium_position: "anchor" };
+      const profile = {
+        consortium_interest: true,
+        consortium_position: "anchor",
+      };
       mockGetConsortiumProfile.mockResolvedValue({ consortium_interest: true });
       mockUpdateConsortiumProfile.mockResolvedValue(profile);
       mockCreateContactRequest.mockResolvedValue(null);
@@ -210,7 +221,9 @@ describe("contactService", () => {
     });
 
     it("writes the profile before the request and the request before questions", async () => {
-      mockUpdateConsortiumProfile.mockResolvedValue({ consortium_interest: true });
+      mockUpdateConsortiumProfile.mockResolvedValue({
+        consortium_interest: true,
+      });
       mockCreateContactRequest.mockResolvedValue({ id: 9, user_id: "uid-1" });
       mockCreateQuestion.mockResolvedValue({ id: 90 });
 
@@ -219,7 +232,8 @@ describe("contactService", () => {
         questions: [{ text: "Q1" }],
       });
 
-      const profileOrder = mockUpdateConsortiumProfile.mock.invocationCallOrder[0];
+      const profileOrder =
+        mockUpdateConsortiumProfile.mock.invocationCallOrder[0];
       const requestOrder = mockCreateContactRequest.mock.invocationCallOrder[0];
       const questionOrder = mockCreateQuestion.mock.invocationCallOrder[0];
       expect(profileOrder).toBeLessThan(requestOrder);
@@ -227,7 +241,9 @@ describe("contactService", () => {
     });
 
     it("rolls back and skips the activity bump when a question write fails", async () => {
-      mockUpdateConsortiumProfile.mockResolvedValue({ consortium_interest: true });
+      mockUpdateConsortiumProfile.mockResolvedValue({
+        consortium_interest: true,
+      });
       mockCreateContactRequest.mockResolvedValue({ id: 10, user_id: "uid-1" });
       mockCreateQuestion.mockRejectedValue(new Error("insert failed"));
 

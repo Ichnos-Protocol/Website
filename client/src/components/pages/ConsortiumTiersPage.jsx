@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Alert from "react-bootstrap/Alert";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
@@ -14,7 +15,6 @@ import {
   useGetTiersQuery,
   useSetTierMutation,
 } from "../../features/consortium/consortiumApi";
-import PageTransition from "../templates/PageTransition";
 import SeoHead from "../molecules/SeoHead";
 import ConsortiumTiersError from "../molecules/ConsortiumTiersError";
 import AdvisoryPageHero from "../organisms/AdvisoryPageHero";
@@ -70,6 +70,11 @@ export default function ConsortiumTiersPage() {
                   <Card.Title>{tier.title}</Card.Title>
                   <Card.Text>{tier.description}</Card.Text>
                   {tier.priceLabel && <p>{tier.priceLabel}</p>}
+                  {tier.priceLink && (
+                    <p>
+                      <Link to={tier.priceLink}>{tier.priceLinkLabel}</Link>
+                    </p>
+                  )}
                   <Button
                     aria-label={`Choose ${tier.title}`}
                     onClick={() => handleSelect(tier.tierId)}
@@ -101,10 +106,8 @@ export default function ConsortiumTiersPage() {
         schemas={PAGE_STRUCTURED_DATA.consortiumTiers}
       />
 
-      <PageTransition>
-        <AdvisoryPageHero title={PAGE_TITLE} subtitle={PAGE_SUBTITLE} />
-        <Container className="py-5">{content}</Container>
-      </PageTransition>
+      <AdvisoryPageHero title={PAGE_TITLE} subtitle={PAGE_SUBTITLE} />
+      <Container className="py-5">{content}</Container>
     </div>
   );
 }

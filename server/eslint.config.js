@@ -42,4 +42,35 @@ export default [
       "vitest/no-focused-tests": "error",
     },
   },
+  // 200-line cap on application modules; prose rule in CLAUDE.md §5.1.
+  // The scripts listed here are in scope because src/app.js reaches them:
+  // it imports seedE2EOnPreview.js, which imports the three helpers, and
+  // previewMigrations.js imports runMigrations.js.
+  {
+    files: [
+      "src/**/*.js",
+      "api/**/*.js",
+      "scripts/seedE2EOnPreview.js",
+      "scripts/runMigrations.js",
+      "scripts/helpers/previewDbConnection.js",
+      "scripts/helpers/e2eSeedQueries.js",
+      "scripts/helpers/previewMigrations.js",
+    ],
+    rules: { "max-lines": ["error", { max: 200 }] },
+  },
+  // Test files grow with the cases they cover.
+  {
+    files: ["**/*.{test,spec,mock}.js"],
+    rules: { "max-lines": "off" },
+  },
+  // grandfathered: split only when next changed for another reason
+  {
+    files: [
+      "src/repositories/adminRepository.js",
+      "src/repositories/userRepository.js",
+      "src/controllers/adminController.js",
+      "src/services/adminService.js",
+    ],
+    rules: { "max-lines": "off" },
+  },
 ];

@@ -1,4 +1,4 @@
-import { ASSESSMENT_PROCESS } from '../../constants/readinessAssessmentContent';
+import { ASSESSMENT_PROCESS } from "../../constants/readinessAssessmentContent";
 
 // Section 4.4. The three steps render in ASSESSMENT_PROCESS source order as
 // an ordered list.

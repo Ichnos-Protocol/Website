@@ -1,40 +1,23 @@
-import { spawnSync } from "child_process";
-import { maskValue } from "./e2eEnvFile.js";
+import { setPreviewEnvScopes } from "./e2eVercelEnv.js";
 
-export function syncToVercel(credentials, serverDir) {
+/**
+ * Sets each non-empty name on both managed Preview scopes of the project,
+ * all-branches and branch `main`, through the Vercel REST API. `context` is
+ * { api, project } from connectVercelProjects; the result is the flat list of
+ * per-scope rows printSummary reads.
+ */
+export async function syncToVercel(credentials, { api, project }) {
   const results = [];
-
-  for (const [varName, varValue] of Object.entries(credentials)) {
-    if (!varValue) continue;
-
-    const spawnOpts = { input: varValue, encoding: "utf8", cwd: serverDir, shell: true };
-
-    let result = spawnSync(
-      "vercel",
-      ["env", "update", varName, "preview", "--yes"],
-      spawnOpts,
+  for (const [key, value] of Object.entries(credentials)) {
+    if (!value) continue;
+    results.push(
+      ...(await setPreviewEnvScopes({
+        api,
+        projectId: project.projectId,
+        key,
+        value,
+      })),
     );
-
-    if (result.status !== 0) {
-      result = spawnSync(
-        "vercel",
-        ["env", "add", varName, "preview", "--yes"],
-        spawnOpts,
-      );
-    }
-
-    results.push({
-      name: varName,
-      status: result.status === 0 ? "success" : "failed",
-      masked: maskValue(varValue),
-      ...(result.status !== 0 && {
-        error:
-          result.stderr ||
-          result.error?.message ||
-          "Unknown error: process exited with non-zero status",
-      }),
-    });
   }
-
   return results;
 }

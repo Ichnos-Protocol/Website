@@ -55,7 +55,9 @@ describeIf("contactRepository (integration)", () => {
     await pool.query("DELETE FROM contact_requests");
     await pool.query("DELETE FROM user_profiles");
     await pool.query("DELETE FROM users");
-    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", ["test-uid"]);
+    await pool.query("INSERT INTO users (firebase_uid) VALUES ($1)", [
+      "test-uid",
+    ]);
   });
 
   afterAll(async () => {

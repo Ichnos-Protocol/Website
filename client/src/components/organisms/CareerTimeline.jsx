@@ -1,10 +1,10 @@
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Badge from 'react-bootstrap/Badge';
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Badge from "react-bootstrap/Badge";
 
-const SECTION_TITLE = 'Career Highlights';
+const SECTION_TITLE = "Career Highlights";
 const SECTION_SUBTITLE =
-  'A journey from academic research to industry leadership and entrepreneurship.';
+  "A journey from academic research to industry leadership and entrepreneurship.";
 
 const TimelineItem = ({ year, title, organization, description, isLast }) => (
   <div className="timeline-item d-flex mb-0">
@@ -13,7 +13,9 @@ const TimelineItem = ({ year, title, organization, description, isLast }) => (
       {!isLast && <div className="timeline-connector flex-grow-1" />}
     </div>
     <div className="timeline-content pb-4 ps-3 flex-grow-1">
-      <Badge bg="" className="timeline-year mb-2">{year}</Badge>
+      <Badge bg="" className="timeline-year mb-2">
+        {year}
+      </Badge>
       <h3 className="h6 fw-semibold mb-1">{title}</h3>
       <p className="small mb-1 text-accent">{organization}</p>
       <p className="small mb-0 section-subtext">{description}</p>
@@ -23,12 +25,8 @@ const TimelineItem = ({ year, title, organization, description, isLast }) => (
 
 const TimelineHeading = () => (
   <>
-    <h2 className="text-center mb-2 section-heading">
-      {SECTION_TITLE}
-    </h2>
-    <p className="text-center mb-5 section-subtext">
-      {SECTION_SUBTITLE}
-    </p>
+    <h2 className="text-center mb-2 section-heading">{SECTION_TITLE}</h2>
+    <p className="text-center mb-5 section-subtext">{SECTION_SUBTITLE}</p>
   </>
 );
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { existsSync, readFileSync } from "fs";
 import { execFileSync } from "child_process";
 
@@ -11,14 +11,8 @@ vi.mock("child_process", () => ({
   execFileSync: vi.fn(),
 }));
 
-const {
-  checkGhAuth,
-  checkVercelAuth,
-  checkVercelProject,
-  checkFirebaseEnv,
-} = await import("./e2ePreflightChecks.js");
-
-const SERVER_DIR = "/fake/server";
+const checks = await import("./e2ePreflightChecks.js");
+const { checkGhAuth, checkVercelApiAccess, checkVercelAuth } = checks;
 
 describe("checkGhAuth", () => {
   it("passes when gh auth status succeeds", () => {
@@ -44,166 +38,99 @@ describe("checkVercelAuth", () => {
     execFileSync.mockImplementation(() => {
       throw new Error("not logged in");
     });
-    expect(() => checkVercelAuth()).toThrow(
-      /Vercel CLI is not authenticated/,
-    );
+    expect(() => checkVercelAuth()).toThrow(/Vercel CLI is not authenticated/);
   });
 });
 
-describe("checkVercelProject", () => {
-  beforeEach(() => {
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "ichnos-protocol_server" }),
-    );
+describe("checkVercelApiAccess", () => {
+  const TOKEN_ACCESS = { mode: "token", reason: "explicit VERCEL_TOKEN" };
+  const CLI_ACCESS = {
+    mode: "cli",
+    reason: "vercel api supported, no VERCEL_TOKEN",
+  };
+
+  it("prefers an exported VERCEL_TOKEN without probing the CLI", () => {
+    const supports = vi.fn(() => true);
+
+    const access = checkVercelApiAccess({
+      supports,
+      env: { VERCEL_TOKEN: "tok_secret_value" },
+    });
+
+    expect(access).toEqual(TOKEN_ACCESS);
+    expect(supports).not.toHaveBeenCalled();
+    expect(JSON.stringify(access)).not.toContain("tok_secret_value");
   });
 
-  it("passes with valid project.json and matching project name", () => {
-    expect(() => checkVercelProject(SERVER_DIR)).not.toThrow();
+  it("uses the token when the CLI lacks `vercel api`", () => {
+    expect(
+      checkVercelApiAccess({
+        supports: () => false,
+        env: { VERCEL_TOKEN: "tok" },
+      }),
+    ).toEqual(TOKEN_ACCESS);
   });
 
-  it("throws when project.json does not exist", () => {
-    existsSync.mockReturnValue(false);
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json not found/,
-    );
-  });
+  it.each([
+    ["absent", {}],
+    ["empty", { VERCEL_TOKEN: "" }],
+    ["whitespace", { VERCEL_TOKEN: "   " }],
+  ])(
+    "uses the CLI when the token is %s and `vercel api` is supported",
+    (_label, env) => {
+      expect(checkVercelApiAccess({ supports: () => true, env })).toEqual(
+        CLI_ACCESS,
+      );
+    },
+  );
 
-  it("throws when project.json is malformed JSON", () => {
-    readFileSync.mockReturnValue("not-json{");
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json is malformed/,
-    );
-  });
+  it("stops naming VERCEL_TOKEN when neither is available, with no call made", () => {
+    execFileSync.mockClear();
 
-  it("throws actionable error when project.json contains valid JSON null", () => {
-    readFileSync.mockReturnValue("null");
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /project\.json is malformed/,
-    );
-  });
-
-  it("throws when projectId is missing", () => {
-    readFileSync.mockReturnValue(JSON.stringify({ orgId: "org_456", projectName: "ichnos-protocol_server" }));
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /missing projectId or orgId/,
-    );
-  });
-
-  it("throws when orgId is missing", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", projectName: "ichnos-protocol_server" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /missing projectId or orgId/,
-    );
-  });
-
-  it("throws when projectName is absent", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(/does not contain a valid projectName/);
-  });
-
-  it("throws when projectName is a truthy non-string value", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: 12345 }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not contain a valid projectName/,
-    );
-  });
-
-  it("throws when projectName does not match expected identity", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "wrong-project" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is the stale deleted 'ichnos-protocolserver'", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "ichnos-protocolserver" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is a substring match like my-server-project", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "my-server-project" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName has wrong casing", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "ichnos-protocolServer" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is a client project", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "ichnos-client" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not match the expected server project/,
-    );
-  });
-
-  it("throws when projectName is empty string", () => {
-    readFileSync.mockReturnValue(
-      JSON.stringify({ projectId: "prj_123", orgId: "org_456", projectName: "" }),
-    );
-    expect(() => checkVercelProject(SERVER_DIR)).toThrow(
-      /does not contain a valid projectName/,
-    );
+    expect(() =>
+      checkVercelApiAccess({
+        supports: () => false,
+        env: { VERCEL_TOKEN: " " },
+      }),
+    ).toThrow(/VERCEL_TOKEN is not set[\s\S]*npm i -g vercel@latest/);
+    expect(execFileSync).not.toHaveBeenCalled();
   });
 });
 
-describe("checkFirebaseEnv", () => {
-  const requiredVars = [
-    "FIREBASE_PROJECT_ID",
-    "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY",
-  ];
-  const originalEnv = process.env;
+describe("session checks name their login command", () => {
+  it.each([
+    [() => checkGhAuth(), /gh auth login/],
+    [() => checkVercelAuth(), /vercel login/],
+  ])("stops with the remediation and makes no write call", (check, pattern) => {
+    execFileSync.mockReset();
+    execFileSync.mockImplementation(() => {
+      throw new Error("not logged in");
+    });
 
-  beforeEach(() => {
-    process.env = { ...originalEnv };
+    expect(check).toThrow(pattern);
+    expect(execFileSync).toHaveBeenCalledTimes(1);
+    const [, args] = execFileSync.mock.calls[0];
+    expect(["status", "whoami"]).toContain(args.at(-1));
   });
+});
 
-  afterEach(() => {
-    process.env = originalEnv;
-  });
+describe("no link-file check", () => {
+  it("exports no .vercel link check and reads no file to pass", () => {
+    existsSync.mockClear();
+    readFileSync.mockClear();
+    execFileSync.mockReset();
+    execFileSync.mockReturnValue("");
 
-  it("passes when all Firebase env vars are set", () => {
-    for (const key of requiredVars) process.env[key] = "value";
-    expect(() => checkFirebaseEnv()).not.toThrow();
-  });
+    expect(Object.keys(checks).sort()).toEqual([
+      "checkGhAuth",
+      "checkVercelApiAccess",
+      "checkVercelAuth",
+    ]);
+    checkGhAuth();
+    checkVercelAuth();
+    checkVercelApiAccess({ supports: () => true, env: {} });
 
-  it("throws when all Firebase env vars are missing", () => {
-    for (const key of requiredVars) delete process.env[key];
-    expect(() => checkFirebaseEnv()).toThrow(
-      /Missing Firebase Admin SDK env vars/,
-    );
-  });
-
-  it("lists each missing var in the error message", () => {
-    delete process.env.FIREBASE_PROJECT_ID;
-    process.env.FIREBASE_CLIENT_EMAIL = "val";
-    delete process.env.FIREBASE_PRIVATE_KEY;
-    expect(() => checkFirebaseEnv()).toThrow(
-      /FIREBASE_PROJECT_ID.*FIREBASE_PRIVATE_KEY/,
-    );
+    expect(readFileSync).not.toHaveBeenCalled();
+    expect(existsSync).not.toHaveBeenCalled();
   });
 });

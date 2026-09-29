@@ -4,27 +4,29 @@ export class AuthPage {
   }
 
   get navbarLoginButton() {
-    return this.page.getByTestId('navbar').getByRole('button', { name: 'Login' });
+    return this.page
+      .getByTestId("navbar")
+      .getByRole("button", { name: "Login" });
   }
 
   get authModal() {
-    return this.page.getByTestId('auth-modal');
+    return this.page.getByTestId("auth-modal");
   }
 
   get welcomeBackText() {
-    return this.page.getByText('Welcome Back');
+    return this.page.getByText("Welcome Back");
   }
 
   get createAccountText() {
-    return this.page.getByText('Create Account');
+    return this.page.getByText("Create Account");
   }
 
   get emailInput() {
-    return this.page.getByLabel('Email');
+    return this.page.getByLabel("Email");
   }
 
   get passwordInput() {
-    return this.page.getByLabel('Password');
+    return this.page.getByLabel("Password");
   }
 
   get submitButton() {
@@ -34,43 +36,43 @@ export class AuthPage {
   get userMenuToggle() {
     // .first() avoids strict-mode violation — both desktop Navbar and
     // MobileNavOverlay render a UserMenu with this test ID.
-    return this.page.getByTestId('user-menu-toggle').first();
+    return this.page.getByTestId("user-menu-toggle").first();
   }
 
   get signUpTab() {
-    return this.page.getByText('Sign Up');
+    return this.page.getByText("Sign Up");
   }
 
   get authSubmitSpinner() {
-    return this.page.getByTestId('auth-submit-spinner');
+    return this.page.getByTestId("auth-submit-spinner");
   }
 
   get logoutText() {
-    return this.page.getByText('Logout');
+    return this.page.getByText("Logout");
   }
 
   get nameInput() {
-    return this.page.getByLabel('Name', { exact: true });
+    return this.page.getByLabel("Name", { exact: true });
   }
 
   get surnameInput() {
-    return this.page.getByLabel('Surname');
+    return this.page.getByLabel("Surname");
   }
 
   get companyInput() {
-    return this.page.getByLabel('Company (optional)');
+    return this.page.getByLabel("Company (optional)");
   }
 
   get phoneInput() {
-    return this.page.getByLabel('Phone (optional)');
+    return this.page.getByLabel("Phone (optional)");
   }
 
   get linkedinInput() {
-    return this.page.getByLabel('LinkedIn (optional)');
+    return this.page.getByLabel("LinkedIn (optional)");
   }
 
   get alert() {
-    return this.page.getByTestId('auth-modal').getByRole('alert');
+    return this.page.getByTestId("auth-modal").getByRole("alert");
   }
 
   get privacyNotice() {
@@ -78,11 +80,15 @@ export class AuthPage {
   }
 
   get modalCloseButton() {
-    return this.page.getByTestId('auth-modal').getByRole('button', { name: 'Close' });
+    return this.page
+      .getByTestId("auth-modal")
+      .getByRole("button", { name: "Close" });
   }
 
   get modalLoginButton() {
-    return this.page.getByTestId('auth-modal').getByRole('button', { name: 'Login' });
+    return this.page
+      .getByTestId("auth-modal")
+      .getByRole("button", { name: "Login" });
   }
 
   async openLoginModal() {
@@ -102,7 +108,15 @@ export class AuthPage {
     await this.passwordInput.fill(password);
   }
 
-  async fillSignupForm({ name, surname, email, password, company, phone, linkedin }) {
+  async fillSignupForm({
+    name,
+    surname,
+    email,
+    password,
+    company,
+    phone,
+    linkedin,
+  }) {
     await this.nameInput.fill(name);
     await this.surnameInput.fill(surname);
     await this.emailInput.fill(email);

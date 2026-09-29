@@ -1,7 +1,7 @@
-import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children, redirectTo = '/' }) {
+export default function ProtectedRoute({ children, redirectTo = "/" }) {
   const { isAuthenticated, loading } = useSelector((state) => state.auth);
 
   if (loading) return null;

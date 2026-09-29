@@ -5,6 +5,7 @@ import { renderWithProviders, screen, cleanup } from "../../test-utils";
 import ConsortiumFields from "./ConsortiumFields";
 import {
   CONSORTIUM_POSITION_LABEL,
+  CONSORTIUM_REGION_LABEL,
   CONSORTIUM_CHAIN_ROLE_LABEL,
   CONSORTIUM_PRODUCT_LINE_LABEL,
   CONSORTIUM_CUSTOMER_REQUEST_LABEL,
@@ -16,10 +17,12 @@ import {
   CONSORTIUM_CHAIN_ROLE_OPTIONS,
   CONSORTIUM_DATA_EXTRACT_OPTIONS,
   CONSORTIUM_PREFERRED_START_OPTIONS,
+  CONSORTIUM_REGION_OPTIONS,
 } from "../../constants/consortiumContent";
 
 const EMPTY = {
   position: "",
+  region: "",
   chainRole: "",
   productLine: "",
   customerRequest: "",
@@ -31,6 +34,7 @@ const EMPTY = {
 
 const ALL_LABELS = [
   CONSORTIUM_POSITION_LABEL,
+  CONSORTIUM_REGION_LABEL,
   CONSORTIUM_CHAIN_ROLE_LABEL,
   CONSORTIUM_PRODUCT_LINE_LABEL,
   CONSORTIUM_CUSTOMER_REQUEST_LABEL,
@@ -48,6 +52,7 @@ const SELECT_ENUMS = [
 const RADIO_ENUM = [
   ...CONSORTIUM_DATA_EXTRACT_OPTIONS,
   ...CONSORTIUM_PREFERRED_START_OPTIONS,
+  ...CONSORTIUM_REGION_OPTIONS,
 ];
 
 function renderFields(overrides = {}) {
@@ -64,7 +69,7 @@ describe("ConsortiumFields", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders all eight field labels when show is true", () => {
+  it("renders all nine field labels when show is true", () => {
     renderFields();
     for (const label of ALL_LABELS) {
       expect(screen.getByText(label)).toBeInTheDocument();

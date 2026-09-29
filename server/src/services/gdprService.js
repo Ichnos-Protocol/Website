@@ -18,18 +18,14 @@ export function scrubPII(text) {
 
 export async function exportUserData(userId) {
   const userData = await userRepository.getUserById(userId);
-  const contactRequests =
-    await contactRepository.getRequestsByUserId(userId);
-  const questions =
-    await questionRepository.getQuestionsByUserId(userId);
+  const contactRequests = await contactRepository.getRequestsByUserId(userId);
+  const questions = await questionRepository.getQuestionsByUserId(userId);
 
   const consortium = await userRepository.getConsortiumProfile(userId);
 
   const allTopics = [];
   for (const question of questions) {
-    const topics = await questionRepository.getTopicsByQuestionId(
-      question.id,
-    );
+    const topics = await questionRepository.getTopicsByQuestionId(question.id);
     allTopics.push(...topics);
   }
 
@@ -56,8 +52,7 @@ export async function exportUserData(userId) {
 }
 
 export async function deleteUserAccount(userId) {
-  const questions =
-    await questionRepository.getQuestionsByUserId(userId);
+  const questions = await questionRepository.getQuestionsByUserId(userId);
 
   for (const question of questions) {
     const scrubbedQuestion = scrubPII(question.question);

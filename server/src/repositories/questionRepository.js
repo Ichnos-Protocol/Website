@@ -11,7 +11,13 @@ export async function createQuestion(userId, questionData, db = pool) {
     const { question, answer, source, contactRequestId } = questionData;
 
     const cols = "user_id, question, answer, source, contact_request_id";
-    const params = [userId, question, answer || null, source, contactRequestId || null];
+    const params = [
+      userId,
+      question,
+      answer || null,
+      source,
+      contactRequestId || null,
+    ];
     const ph = params.map((_, i) => `$${i + 1}`).join(", ");
 
     const { rows } = await db.query(
@@ -33,7 +39,10 @@ export async function getQuestionsByUserId(userId) {
     );
     return rows;
   } catch (error) {
-    console.error("questionRepository.getQuestionsByUserId failed:", error.message);
+    console.error(
+      "questionRepository.getQuestionsByUserId failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -48,7 +57,10 @@ export async function getChatHistoryByUserId(userId) {
     );
     return rows;
   } catch (error) {
-    console.error("questionRepository.getChatHistoryByUserId failed:", error.message);
+    console.error(
+      "questionRepository.getChatHistoryByUserId failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -62,7 +74,10 @@ export async function getDailyChatCount(userId, date) {
     );
     return rows[0].count;
   } catch (error) {
-    console.error("questionRepository.getDailyChatCount failed:", error.message);
+    console.error(
+      "questionRepository.getDailyChatCount failed:",
+      error.message,
+    );
     throw error;
   }
 }
@@ -91,7 +106,10 @@ export async function getTopicsByQuestionId(questionId) {
     );
     return rows;
   } catch (error) {
-    console.error("questionRepository.getTopicsByQuestionId failed:", error.message);
+    console.error(
+      "questionRepository.getTopicsByQuestionId failed:",
+      error.message,
+    );
     throw error;
   }
 }

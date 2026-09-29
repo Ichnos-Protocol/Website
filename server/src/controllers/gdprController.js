@@ -14,10 +14,7 @@ export async function downloadData(req, res, next) {
     const jsonString = await gdprService.exportUserData(uid);
 
     res.setHeader("Content-Type", "application/json");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=my-data.json",
-    );
+    res.setHeader("Content-Disposition", "attachment; filename=my-data.json");
     res.status(200).send(jsonString);
   } catch (error) {
     next(error);
@@ -30,9 +27,7 @@ export async function deleteAccount(req, res, next) {
 
     await gdprService.deleteUserAccount(uid);
 
-    res
-      .status(200)
-      .json(formatResponse({ deleted: true }, "Account deleted"));
+    res.status(200).json(formatResponse({ deleted: true }, "Account deleted"));
   } catch (error) {
     next(error);
   }

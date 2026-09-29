@@ -9,8 +9,21 @@ const userRepository = await import("../repositories/userRepository.js");
 const { getMyConsortium, getPermittedTiers, selectTier } =
   await import("./consortiumService.js");
 
-function registeredAs(position) {
-  return { consortium_interest: true, consortium_position: position };
+function registeredAs(position, region) {
+  const row = { consortium_interest: true, consortium_position: position };
+
+  if (region !== undefined) row.consortium_region = region;
+  return row;
+}
+
+// Every label and fee line that carries a figure, i.e. all but null labels,
+// "on request" and the pass-through licence line.
+function pricedStrings(result) {
+  const labels = result.tiers
+    .map((t) => t.priceLabel)
+    .filter((label) => label !== null && label !== "on request");
+  const fees = result.recurringFees.filter((fee) => /\d/.test(fee));
+  return [...labels, ...fees];
 }
 
 describe("consortiumService", () => {
@@ -92,6 +105,83 @@ describe("consortiumService", () => {
 
       const notSure = result.tiers.find((t) => t.tierId === "not_sure");
       expect(notSure.priceLabel).toBeNull();
+    });
+  });
+
+  describe("getPermittedTiers currency", () => {
+    it("prices an EU registrant in EUR", async () => {
+      userRepository.getConsortiumProfile.mockResolvedValue(
+        registeredAs("anchor", "eu"),
+      );
+
+      const result = await getPermittedTiers("uid-1");
+      const priced = pricedStrings(result);
+
+      expect(priced.length).toBeGreaterThan(0);
+      for (const text of priced) expect(text).toMatch(/EUR /);
+      for (const text of priced) expect(text).not.toMatch(/SGD|USD/);
+    });
+
+    it.each([
+      ["asean", "asean"],
+      ["other", "other"],
+      ["no region", undefined],
+      ["a null region", null],
+    ])("prices a registrant with %s in SGD", async (_label, region) => {
+      userRepository.getConsortiumProfile.mockResolvedValue(
+        registeredAs("anchor", region),
+      );
+
+      const result = await getPermittedTiers("uid-1");
+      const priced = pricedStrings(result);
+
+      expect(priced.length).toBeGreaterThan(0);
+      for (const text of priced) expect(text).toMatch(/SGD /);
+      for (const text of priced) expect(text).not.toMatch(/EUR|USD/);
+    });
+
+    it("gives readiness and not_sure a null label", async () => {
+      userRepository.getConsortiumProfile.mockResolvedValue(
+        registeredAs("anchor", "eu"),
+      );
+
+      const result = await getPermittedTiers("uid-1");
+      const byId = Object.fromEntries(
+        result.tiers.map((t) => [t.tierId, t.priceLabel]),
+      );
+
+      expect(byId.readiness).toBeNull();
+      expect(byId.not_sure).toBeNull();
+    });
+
+    it("labels member as on request", async () => {
+      userRepository.getConsortiumProfile.mockResolvedValue(
+        registeredAs("institute", "eu"),
+      );
+
+      const result = await getPermittedTiers("uid-1");
+      const member = result.tiers.find((t) => t.tierId === "member");
+
+      expect(member.priceLabel).toBe("on request");
+    });
+
+    it("keeps the payload shape and adds no currency key", async () => {
+      userRepository.getConsortiumProfile.mockResolvedValue(
+        registeredAs("anchor", "eu"),
+      );
+
+      const result = await getPermittedTiers("uid-1");
+
+      expect(Object.keys(result).sort()).toEqual([
+        "capacityNote",
+        "recurringFees",
+        "termNote",
+        "tiers",
+      ]);
+      expect(result).not.toHaveProperty("currency");
+      for (const entry of result.tiers) {
+        expect(Object.keys(entry).sort()).toEqual(["priceLabel", "tierId"]);
+      }
     });
   });
 

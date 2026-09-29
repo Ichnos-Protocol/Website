@@ -266,8 +266,12 @@ testing) were overloaded onto a single URL.
 | E2E (automated) | `main` previews | Ephemeral (Neon branch) | Yes |
 | Manual QA | `staging` | Production | No (`SKIP_E2E_SEED=true`) |
 
-Auto-sync staging from main after each deployment so it always has the latest
-code but uses production data for realistic manual testing.
+Sync staging from main by **manual dispatch** when you want to QA the latest
+`main` against production data. Do not sync automatically on each deployment:
+an automatic sync fired from the E2E trigger cancelled E2E runs (see G6). The
+sync workflow force-pushes `main` to `staging`, then POSTs to a Vercel deploy
+hook per project so the `staging` build happens even when Vercel's webhook
+filter drops the CI-driven push (see C10).
 
 ### B5. Pre-Flight Checklist Before Any Pipeline Change
 
@@ -412,6 +416,12 @@ const envPath = path.resolve(__dirname, '../../.env.e2e');
 ```
 
 ### C8. Vercel CLI `promote` Ignores `VERCEL_ORG_ID` — Use `--scope` or the Token's Default
+
+> **Historical.** This project no longer runs `vercel promote`. The promotion
+> workflow was removed in P9; production is Vercel's native build of the
+> `release` branch, and no GitHub Actions secret takes part in it. The lesson
+> still applies to any future CI job that calls the Vercel CLI with a bare
+> deployment ID.
 
 **What went wrong**: After migrating Vercel projects from a personal account to
 a team, the first production promotion failed at the `vercel promote` step:
@@ -562,11 +572,14 @@ trigger a build. Treat them like API tokens: don't paste in chat or
 screenshots, never commit them, rotate on suspected exposure (Vercel
 can't regenerate; revoke and create a new one, then update the secret).
 
-**Repeat for every branch that needs builds** — staging *and* main, in our
-case. Production promotion via `vercel promote` reads "the latest READY
-preview on main", so main previews fall under the same filter. Without
-the Deploy Hook on main too, production stays stuck on the pre-migration
-build even after staging starts updating correctly.
+**Add a hook for every branch that CI pushes to** — in this project that is
+only `staging`, and `sync-staging.yml` runs only on manual dispatch. `main`
+and `release` are updated by user pushes and PR merges, which Vercel builds
+natively.
+
+*Historical:* while production used `vercel promote` on "the latest READY
+preview on main", `main` needed deploy hooks too, or production stayed on
+the pre-migration build. That workflow was removed in P9.
 
 ---
 
@@ -731,52 +744,50 @@ Staging passed every check because the staging-branch override filled the
 variable correctly. There is no automatic propagation between scopes — and
 the `staging` override does not apply to other Preview branches.
 
-**The deeper trap — `vercel promote` does NOT rebuild**: a first-pass fix of
-adding `VITE_API_HOST=api.ichnos-protocol.com` to **Production scope** and
-clicking "Redeploy" worked — for one workflow cycle. The next merge to release
-regressed straight back to 502. Reason: `vercel promote <deployment-id>`
-**re-aliases an existing preview build** to be the production deployment, it
-does not rebuild. Vercel snapshots env-var values into the deployment at
-build time. The preview was built on the `main` branch, with **Preview**-scope
-env vars (no `staging` override applies on `main`). If Preview-default is
-empty, the snapshot is `""`, the rewrite resolves to `https:///api/health`,
-DNS-fails, 502 — regardless of what's set on Production scope.
+Vercel snapshots env-var values into the deployment at **build time**. The
+scope a build reads depends on how the build was made:
 
 | Vercel action | Env-var scope read at build time |
 |---|---|
 | PR / push to non-prod branch → auto preview | **Preview** scope |
 | Push to production branch (auto-deploy) | **Production** scope |
 | Manual "Redeploy" on a Production deployment | **Production** scope |
-| `vercel promote <id>` (our workflow) | **Whatever the original build used** — i.e. Preview |
+| `vercel promote <id>` | **Whatever the original build used** |
 
-Our workflow uses path 4. The Production scope is therefore **never read** in
-the normal promotion cycle.
+Production today is Vercel's native build of the `release` branch (path 2),
+so it reads **Production** scope.
 
-**The simple rule** — two layers:
+**The simple rule**:
 
-1. **For the `vercel promote` workflow model, Preview-default is what serves
-   production traffic.** Set every client env var that production needs on a
-   combined **Production and Preview** entry (single variable, both scopes
-   selected, no custom branch override). The `staging` branch override stays
-   because branch-scoped values outrank the default.
+1. **Set every client env var that production needs on Production scope.**
+   PR previews need the same values, so use a combined **Production and
+   Preview** entry (single variable, both scopes selected, no custom branch
+   override). The `staging` branch override stays because branch-scoped
+   values outrank the default.
 
-2. **Smoke-test both origins after every promotion**:
+2. **Smoke-test both origins after every production deploy of `release`**:
    ```bash
-   curl -s https://ichnos-protocol.com/api/health     # client + rewrite (validates Preview-default scope)
+   curl -s https://ichnos-protocol.com/api/health     # client + rewrite (validates the build-time VITE_API_HOST)
    curl -s https://api.ichnos-protocol.com/api/health # server direct
    ```
    The first call is the one that catches scope misconfiguration. Without it,
    you only know the server is up — not that the client can find it.
 
-3. **Triage shortcut, not a fix**: if production is down and you need it up
-   in 2 minutes, manually Redeploy the active Production deployment with
-   "Use existing Build Cache" **off**. That uses Production-scope env vars at
-   build time and works as a one-off. But the next workflow promotion will
-   regress unless rule 1 is also done. So always follow up.
+3. **Env-var edits do not reach a running deployment.** After fixing a value,
+   Redeploy the active Production deployment with "Use existing Build Cache"
+   **off**, or merge the next PR into `release`.
 
-This whole class (Tier 8a in `docs/deploymentMigrationValidation.md`) is
-silent until the moment you promote, and the obvious fix (Production scope)
-masks the deeper problem for one cycle.
+*Historical — the `vercel promote` trap.* Before P9 a workflow promoted the
+latest `main` preview with `vercel promote <deployment-id>` (path 4), which
+re-aliases a preview build without rebuilding. Production then ran the
+`main` preview's **Preview-default** snapshot, and Production scope was never
+read. A first-pass fix on Production scope plus a manual Redeploy worked for
+one cycle, then the next promotion regressed to 502. The workaround was to
+set the variable on Preview-default as well. The promotion workflow is gone;
+do not reintroduce `vercel promote` without re-reading this.
+
+This class of failure (Tier 8a in `docs/deploymentMigrationValidation.md`)
+stays silent until the first production build that reads the missing scope.
 
 ---
 

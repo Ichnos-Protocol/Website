@@ -2,7 +2,7 @@
  * Auth Service
  *
  * Business logic for authentication operations including
- * profile synchronization, token verification, and user management.
+ * profile synchronization and user management.
  */
 import firebaseAdmin from "../config/firebase.js";
 import * as userRepository from "../repositories/userRepository.js";
@@ -80,13 +80,6 @@ export async function syncProfile(firebaseUid, profileData) {
     isAdmin,
     profileState,
   };
-}
-
-export async function verifyToken(idToken) {
-  const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
-  const customClaims = decoded || {};
-
-  return { decoded, customClaims };
 }
 
 export async function getUser(firebaseUid) {

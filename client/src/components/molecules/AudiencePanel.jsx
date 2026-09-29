@@ -1,6 +1,6 @@
-import Card from 'react-bootstrap/Card';
+import Card from "react-bootstrap/Card";
 
-import { interpolate } from '../../constants/readinessAssessmentContent';
+import { interpolate } from "../../constants/readinessAssessmentContent";
 
 // One audience card, rendered once per entry in ASSESSMENT_PANELS. The
 // organism owns the section and the grid; everything inside the card lives

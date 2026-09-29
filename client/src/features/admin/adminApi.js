@@ -1,114 +1,114 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import { API_BASE_URL } from '../../constants/api';
+import { API_BASE_URL } from "../../constants/api";
 
 function buildQueryString(params = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
+    if (value !== undefined && value !== null && value !== "") {
       search.set(key, value);
     }
   });
   const qs = search.toString();
-  return qs ? `?${qs}` : '';
+  return qs ? `?${qs}` : "";
 }
 
 export const adminApi = createApi({
-  reducerPath: 'adminApi',
+  reducerPath: "adminApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: async (headers) => {
-      const { auth } = await import('../../config/firebase');
+      const { auth } = await import("../../config/firebase");
       const user = auth.currentUser;
 
       if (user) {
         const token = await user.getIdToken();
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
       return headers;
     },
   }),
   tagTypes: [
-    'AdminUsers',
-    'AdminRequests',
-    'ChatLeads',
-    'Topics',
-    'ConsortiumRegistrants',
+    "AdminUsers",
+    "AdminRequests",
+    "ChatLeads",
+    "Topics",
+    "ConsortiumRegistrants",
   ],
   endpoints: (builder) => ({
     getUsers: builder.query({
-      query: () => '/api/admin/users',
-      providesTags: ['AdminUsers'],
+      query: () => "/api/admin/users",
+      providesTags: ["AdminUsers"],
     }),
     getRequests: builder.query({
       query: (userId) => `/api/admin/requests/${userId}`,
-      providesTags: ['AdminRequests'],
+      providesTags: ["AdminRequests"],
       transformResponse: (response) => ({
         ...response,
         data: response.data?.map((r) => ({
           ...r,
-          questionPreview: r.question_preview ?? r.questionPreview ?? '',
-          adminNotes: r.admin_notes ?? r.adminNotes ?? '',
+          questionPreview: r.question_preview ?? r.questionPreview ?? "",
+          adminNotes: r.admin_notes ?? r.adminNotes ?? "",
         })),
       }),
     }),
     getChatLeads: builder.query({
-      query: () => '/api/admin/chat-leads',
-      providesTags: ['ChatLeads'],
+      query: () => "/api/admin/chat-leads",
+      providesTags: ["ChatLeads"],
     }),
     getChatLeadDetail: builder.query({
       query: (userId) => `/api/admin/chat-leads/${userId}`,
-      providesTags: ['ChatLeads'],
+      providesTags: ["ChatLeads"],
     }),
     updateRequest: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/api/admin/request/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body,
       }),
-      invalidatesTags: ['AdminRequests'],
+      invalidatesTags: ["AdminRequests"],
     }),
     deleteRequest: builder.mutation({
       query: (id) => ({
         url: `/api/admin/request/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['AdminRequests'],
+      invalidatesTags: ["AdminRequests"],
     }),
     analyzeTopics: builder.mutation({
       query: (body) => ({
-        url: '/api/admin/analyze-topics',
-        method: 'POST',
+        url: "/api/admin/analyze-topics",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Topics'],
+      invalidatesTags: ["Topics"],
     }),
     getTopics: builder.query({
-      query: () => '/api/admin/topics',
-      providesTags: ['Topics'],
+      query: () => "/api/admin/topics",
+      providesTags: ["Topics"],
     }),
     exportCSV: builder.query({
       query: () => ({
-        url: '/api/admin/export',
+        url: "/api/admin/export",
         responseHandler: (response) => response.text(),
       }),
     }),
     getConsortiumRegistrants: builder.query({
       query: ({ tier, source, status } = {}) =>
         `/api/admin/consortium${buildQueryString({ tier, source, status })}`,
-      providesTags: ['ConsortiumRegistrants'],
+      providesTags: ["ConsortiumRegistrants"],
     }),
     updateConsortiumRegistrant: builder.mutation({
       query: ({ userId, status, adminNotes }) => ({
         url: `/api/admin/consortium/${userId}`,
-        method: 'PUT',
+        method: "PUT",
         body: {
           ...(status !== undefined ? { status } : {}),
           ...(adminNotes !== undefined ? { adminNotes } : {}),
         },
       }),
-      invalidatesTags: ['ConsortiumRegistrants'],
+      invalidatesTags: ["ConsortiumRegistrants"],
     }),
     exportConsortiumRegistrants: builder.query({
       query: ({ format, group, tier, source, status } = {}) => ({
@@ -124,11 +124,11 @@ export const adminApi = createApi({
     }),
     manageAdmins: builder.mutation({
       query: (body) => ({
-        url: '/api/admin/manage-admins',
-        method: 'POST',
+        url: "/api/admin/manage-admins",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['AdminUsers'],
+      invalidatesTags: ["AdminUsers"],
     }),
   }),
 });

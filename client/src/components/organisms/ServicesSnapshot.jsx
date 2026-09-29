@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Element } from 'react-scroll';
-import Container from 'react-bootstrap/Container';
+import { Link } from "react-router-dom";
+import { Element } from "react-scroll";
+import Container from "react-bootstrap/Container";
 
-import { ROUTE_SERVICES } from '../../constants/routes';
-import { SERVICE_PILLARS, getServicesByPillar } from '../../constants/services';
-import ServicesGroup from './ServicesGroup';
+import { ROUTE_SERVICES } from "../../constants/routes";
+import { SERVICE_PILLARS, getServicesByPillar } from "../../constants/services";
+import ServicesGroup from "./ServicesGroup";
 
 export default function ServicesSnapshot() {
   return (

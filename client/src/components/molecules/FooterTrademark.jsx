@@ -1,4 +1,4 @@
-import { TRADEMARK_NOTICE } from '../../constants/catenaXStatus';
+import { TRADEMARK_NOTICE } from "../../constants/catenaXStatus";
 
 export default function FooterTrademark() {
   return (

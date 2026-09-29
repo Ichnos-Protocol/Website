@@ -1,7 +1,7 @@
-import Form from 'react-bootstrap/Form';
-import Spinner from 'react-bootstrap/Spinner';
+import Form from "react-bootstrap/Form";
+import Spinner from "react-bootstrap/Spinner";
 
-import Button from '../atoms/Button';
+import Button from "../atoms/Button";
 
 export default function ProfileCompletionForm({
   completionFields,
@@ -21,7 +21,7 @@ export default function ProfileCompletionForm({
         <Form.Control
           type="text"
           value={completionFields.name}
-          onChange={update('name')}
+          onChange={update("name")}
           required
         />
       </Form.Group>
@@ -30,18 +30,13 @@ export default function ProfileCompletionForm({
         <Form.Control
           type="text"
           value={completionFields.surname}
-          onChange={update('surname')}
+          onChange={update("surname")}
           required
         />
       </Form.Group>
       <Form.Group className="mb-3" controlId="completion-email">
         <Form.Label>Email</Form.Label>
-        <Form.Control
-          type="email"
-          value={canonicalEmail}
-          disabled
-          readOnly
-        />
+        <Form.Control type="email" value={canonicalEmail} disabled readOnly />
       </Form.Group>
 
       <div className="d-flex gap-2 mt-3">
@@ -61,11 +56,7 @@ export default function ProfileCompletionForm({
           )}
           Continue
         </Button>
-        <Button
-          type="button"
-          variant="outline-secondary"
-          onClick={onLogout}
-        >
+        <Button type="button" variant="outline-secondary" onClick={onLogout}>
           Logout
         </Button>
       </div>

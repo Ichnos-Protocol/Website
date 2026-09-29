@@ -3,7 +3,13 @@
  * via the Firebase Auth REST API. Only checks credential sets that
  * are fully configured (email + password present).
  */
-import { ADMIN, USER, SUPER_ADMIN, MANAGE_ADMIN_TARGET, isConfigured } from "./credentials.js";
+import {
+  ADMIN,
+  USER,
+  SUPER_ADMIN,
+  MANAGE_ADMIN_TARGET,
+  isConfigured,
+} from "./credentials.js";
 
 const SIGN_IN_URL =
   "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
@@ -21,7 +27,7 @@ async function validateAccount(label, email, password, apiKey) {
     const code = body?.error?.message || res.statusText;
     throw new Error(
       `[global-setup] Firebase sign-in FAILED for ${label} (${email}): ${code}\n` +
-        "  Run: cd server && node scripts/provision-e2e-firebase-users.js",
+        "  Run from the repository root: node e2e/scripts/provision-e2e-firebase-users.js",
     );
   }
 
@@ -36,7 +42,7 @@ export async function validateFirebaseCredentials() {
       throw new Error(
         "[global-setup] FIREBASE_API_KEY is not set. " +
           "This secret must be configured for the E2E workflow.\n" +
-          "  Provision accounts: cd server && node scripts/provision-e2e-firebase-users.js",
+          "  Provision accounts from the repository root: node e2e/scripts/provision-e2e-firebase-users.js",
       );
     }
     console.log(

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 
+import { GENERIC_ERROR_MESSAGE } from "../helpers/buildErrorResponse.js";
+
 const mockVerifyIdToken = vi.fn();
 const mockQuery = vi.fn();
 
@@ -34,6 +36,19 @@ vi.mock("../repositories/knowledgeRepository.js", () => ({
 }));
 
 globalThis.fetch = vi.fn();
+
+// Keep limiter traffic off the shared mockQuery queue: both rate limiters
+// hit the repository on every /api/ request. Plain functions, not vi.fn(),
+// so a mock reset cannot strip the implementation.
+vi.mock("../repositories/rateLimitRepository.js", () => ({
+  incrementHit: async () => ({
+    hits: 1,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  decrementHit: async () => null,
+  resetKey: async () => true,
+  getHit: async () => null,
+}));
 
 const { default: app } = await import("../app.js");
 
@@ -200,6 +215,24 @@ describe("Consortium routes", () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    });
+
+    it("sends no stack and the generic message on a 500 in a Vercel development deployment", async () => {
+      vi.stubEnv("VERCEL", "1");
+      vi.stubEnv("NODE_ENV", "development");
+      mockVerifyIdToken.mockResolvedValue(decodedToken);
+      mockQuery.mockRejectedValue(new Error("db exploded"));
+
+      const res = await request(app)
+        .get("/api/consortium/me")
+        .set(authHeader());
+
+      expect(res.status).toBe(500);
+      expect(Object.prototype.hasOwnProperty.call(res.body, "stack")).toBe(
+        false,
+      );
+      expect(res.body.message).toBe(GENERIC_ERROR_MESSAGE);
     });
 
     it("returns a string error reason, not error: true, on an unhandled failure", async () => {

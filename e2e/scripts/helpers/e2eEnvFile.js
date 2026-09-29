@@ -1,8 +1,15 @@
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { parse } from "dotenv";
 
-const UID_KEY_PATTERN = /^(E2E_(?:ADMIN|USER|INCOMPLETE_USER|SUPER_ADMIN|MANAGE_ADMIN_TARGET)_UID)=[^#]*?(#.*)?$/;
+import { envFileNames } from "./e2eCredentials.js";
+
 const PASSWORD_KEY_PATTERN = /^E2E_\w+_PASSWORD$/;
+// Not derivable from code: carried over from an earlier file (P2c supplies them).
+const PRESERVED_WEB_CONFIG_NAMES = [
+  "FIREBASE_API_KEY",
+  "FIREBASE_AUTH_DOMAIN",
+  "FIREBASE_STORAGE_BUCKET",
+];
 
 export function readEnvFile(filePath) {
   const content = readFileSync(filePath, "utf8");
@@ -10,33 +17,67 @@ export function readEnvFile(filePath) {
 }
 
 /**
- * Merge process.env E2E_*_PASSWORD values into a file-parsed env object.
- * Shell-exported passwords take precedence over file values.
+ * Snapshot the non-empty E2E_*_PASSWORD values exported in the shell.
+ * Taken once at startup so later process.env writes cannot become overrides.
  */
-export function mergeEnvPasswords(fileEnv) {
-  const merged = { ...fileEnv };
-  for (const key of Object.keys(process.env)) {
-    if (PASSWORD_KEY_PATTERN.test(key) && process.env[key]) {
-      merged[key] = process.env[key];
+export function captureExportedPasswords(source = process.env) {
+  const snapshot = {};
+  for (const key of Object.keys(source)) {
+    if (PASSWORD_KEY_PATTERN.test(key) && source[key]) {
+      snapshot[key] = source[key];
     }
+  }
+  return snapshot;
+}
+
+/**
+ * Merge an explicit startup snapshot of exported E2E_*_PASSWORD values into a
+ * file-parsed env object. Snapshot values take precedence over file values.
+ */
+export function mergeEnvPasswords(fileEnv, exportedPasswords = {}) {
+  const merged = { ...fileEnv };
+  for (const [key, value] of Object.entries(exportedPasswords)) {
+    if (PASSWORD_KEY_PATTERN.test(key) && value) merged[key] = value;
   }
   return merged;
 }
 
-export function writeUidsToEnvFile(filePath, uidMap) {
-  const content = readFileSync(filePath, "utf8");
-  const lines = content.split("\n");
+/** The public web-config values an earlier file supplied; {} without a file. */
+export function readPreservedWebConfig(filePath) {
+  if (!existsSync(filePath)) return {};
+  const env = readEnvFile(filePath);
+  return Object.fromEntries(
+    PRESERVED_WEB_CONFIG_NAMES.filter((name) => env[name]).map((name) => [
+      name,
+      env[name],
+    ]),
+  );
+}
 
-  const updated = lines.map((line) => {
-    const match = line.match(UID_KEY_PATTERN);
-    if (match && uidMap[match[1]] !== undefined) {
-      const comment = match[2] ? ` ${match[2]}` : "";
-      return `${match[1]}=${uidMap[match[1]]}${comment}`;
-    }
-    return line;
-  });
+/** YYYY-MM-DD of the given instant, in UTC. */
+export function utcDate(now) {
+  return now.toISOString().slice(0, 10);
+}
 
-  writeFileSync(filePath, updated.join("\n"), "utf8");
+/**
+ * The whole generated e2e/.env.e2e: a header naming the UTC date and the exact
+ * command, then one NAME=value line per envFileNames() entry, in that order.
+ */
+export function buildEnvFileContent(values, { command, now }) {
+  const header = [
+    `# Generated on ${utcDate(now)} (UTC) by: ${command}`,
+    "# Generated file: do not edit by hand. Re-run the command above to change it.",
+  ];
+  const lines = envFileNames().map((name) => `${name}=${values[name] ?? ""}`);
+  return `${[...header, ...lines].join("\n")}\n`;
+}
+
+export function writeEnvFile(filePath, values, { command, now }) {
+  writeFileSync(
+    filePath,
+    buildEnvFileContent(values, { command, now }),
+    "utf8",
+  );
 }
 
 export function maskValue(value) {

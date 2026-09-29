@@ -4,7 +4,9 @@ import {
   selectBranchesToDelete,
   listBranches,
   deleteBranch,
+  protectedE2EBranchName,
 } from "./cleanupNeonBranch.js";
+import { E2E_GIT_BRANCH } from "./e2eFixedConfig.js";
 
 describe("selectBranchesToDelete", () => {
   const baseBranches = [
@@ -12,6 +14,7 @@ describe("selectBranchesToDelete", () => {
     { id: "br-prod", name: "production", protected: true },
     { id: "br-staging", name: "staging" },
     { id: "br-preview-main", name: "preview/main" },
+    { id: "br-preview-main-suffix", name: "preview/main-abc123" },
     { id: "br-preview-feat", name: "preview/feature/foo" },
     { id: "br-preview-feat-2", name: "preview/feature/foo-abc123" },
     { id: "br-preview-other", name: "preview/feature/bar" },
@@ -38,16 +41,16 @@ describe("selectBranchesToDelete", () => {
 
   it("never returns primary branches even if they match the pattern", () => {
     const branches = [
-      { id: "br-primary", name: "preview/main", primary: true },
+      { id: "br-primary", name: "preview/feature-x", primary: true },
     ];
-    expect(selectBranchesToDelete(branches, "main")).toEqual([]);
+    expect(selectBranchesToDelete(branches, "feature-x")).toEqual([]);
   });
 
   it("never returns protected branches even if they match the pattern", () => {
     const branches = [
-      { id: "br-protected", name: "preview/main", protected: true },
+      { id: "br-protected", name: "preview/feature-x", protected: true },
     ];
-    expect(selectBranchesToDelete(branches, "main")).toEqual([]);
+    expect(selectBranchesToDelete(branches, "feature-x")).toEqual([]);
   });
 
   it("never returns branches literally named main/production/staging", () => {
@@ -61,9 +64,25 @@ describe("selectBranchesToDelete", () => {
     expect(selectBranchesToDelete(branches, "staging")).toEqual([]);
   });
 
-  it("returns preview/main when gitBranch is main", () => {
+  it("never returns the exact E2E branch preview/main when gitBranch is main", () => {
     const result = selectBranchesToDelete(baseBranches, "main");
-    expect(result.map((b) => b.id)).toEqual(["br-preview-main"]);
+    expect(result.map((b) => b.id)).not.toContain("br-preview-main");
+  });
+
+  it("does not select exact preview/main even without primary or protected set", () => {
+    const branches = [{ id: "br-preview-main", name: "preview/main" }];
+    expect(selectBranchesToDelete(branches, "main")).toEqual([]);
+  });
+
+  it("still selects preview/main-<suffix> variants when gitBranch is main", () => {
+    const result = selectBranchesToDelete(baseBranches, "main");
+    expect(result.map((b) => b.id)).toEqual(["br-preview-main-suffix"]);
+  });
+
+  it("still selects preview/feature-x when gitBranch is feature-x", () => {
+    const branches = [{ id: "br-feature-x", name: "preview/feature-x" }];
+    const result = selectBranchesToDelete(branches, "feature-x");
+    expect(result.map((b) => b.id)).toEqual(["br-feature-x"]);
   });
 
   it("returns empty array when gitBranch is falsy", () => {
@@ -80,13 +99,19 @@ describe("selectBranchesToDelete", () => {
 
   it("skips malformed branch entries (missing name)", () => {
     const branches = [
-      { id: "br-ok", name: "preview/main" },
+      { id: "br-ok", name: "preview/feature-x" },
       { id: "br-bad" },
       null,
       { id: "br-bad2", name: 42 },
     ];
-    const result = selectBranchesToDelete(branches, "main");
+    const result = selectBranchesToDelete(branches, "feature-x");
     expect(result.map((b) => b.id)).toEqual(["br-ok"]);
+  });
+});
+
+describe("protectedE2EBranchName", () => {
+  it("is derived from E2E_GIT_BRANCH", () => {
+    expect(protectedE2EBranchName()).toBe(`preview/${E2E_GIT_BRANCH}`);
   });
 });
 

@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
-import { renderWithProviders, screen } from '../../test-utils';
-import { ROUTE_PRIVACY } from '../../constants/routes';
-import CookieConsentBanner from './CookieConsentBanner';
+import { renderWithProviders, screen } from "../../test-utils";
+import { ROUTE_PRIVACY } from "../../constants/routes";
+import CookieConsentBanner from "./CookieConsentBanner";
 
-describe('CookieConsentBanner', () => {
-  it('renders the cookie consent banner', () => {
+describe("CookieConsentBanner", () => {
+  it("renders the cookie consent banner", () => {
     renderWithProviders(<CookieConsentBanner />);
 
     expect(
@@ -13,19 +13,19 @@ describe('CookieConsentBanner', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows accept button', () => {
+  it("shows accept button", () => {
     renderWithProviders(<CookieConsentBanner />);
 
     expect(
-      screen.getByRole('button', { name: /accept cookies/i }),
+      screen.getByRole("button", { name: /accept cookies/i }),
     ).toBeInTheDocument();
   });
 
-  it('shows privacy policy link', () => {
+  it("shows privacy policy link", () => {
     renderWithProviders(<CookieConsentBanner />);
 
-    const link = screen.getByText('Privacy Policy');
+    const link = screen.getByText("Privacy Policy");
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', ROUTE_PRIVACY);
+    expect(link).toHaveAttribute("href", ROUTE_PRIVACY);
   });
 });

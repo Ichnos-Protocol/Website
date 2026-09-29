@@ -169,7 +169,9 @@ describe("READINESS_ASSESSMENT_SERVICE_SCHEMA claims and fields", () => {
   it("serves a strict subset of the organization's markets", () => {
     const { areaServed } = READINESS_ASSESSMENT_SERVICE_SCHEMA;
     expect(areaServed.length).toBeGreaterThan(0);
-    expect(areaServed.length).toBeLessThan(ORGANIZATION_SCHEMA.areaServed.length);
+    expect(areaServed.length).toBeLessThan(
+      ORGANIZATION_SCHEMA.areaServed.length,
+    );
     areaServed.forEach((market) => {
       expect(ORGANIZATION_SCHEMA.areaServed).toContain(market);
     });

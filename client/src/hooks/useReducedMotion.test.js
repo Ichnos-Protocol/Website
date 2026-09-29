@@ -1,11 +1,11 @@
-import { renderHook, act } from '@testing-library/react';
-import { useReducedMotion } from './useReducedMotion';
+import { renderHook, act } from "@testing-library/react";
+import { useReducedMotion } from "./useReducedMotion";
 
 function mockMatchMedia(matches) {
   const listeners = [];
   const mql = {
     matches,
-    media: '(prefers-reduced-motion: reduce)',
+    media: "(prefers-reduced-motion: reduce)",
     addEventListener: vi.fn((_, handler) => listeners.push(handler)),
     removeEventListener: vi.fn((_, handler) => {
       const idx = listeners.indexOf(handler);
@@ -17,22 +17,22 @@ function mockMatchMedia(matches) {
   return { mql, listeners };
 }
 
-describe('useReducedMotion', () => {
+describe("useReducedMotion", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('returns false when prefers-reduced-motion is not set', () => {
+  it("returns false when prefers-reduced-motion is not set", () => {
     mockMatchMedia(false);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);
   });
 
-  it('returns true when prefers-reduced-motion: reduce is active', () => {
+  it("returns true when prefers-reduced-motion: reduce is active", () => {
     mockMatchMedia(true);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(true);
   });
 
-  it('updates state when media query changes', () => {
+  it("updates state when media query changes", () => {
     const { listeners } = mockMatchMedia(false);
     const { result } = renderHook(() => useReducedMotion());
 
@@ -45,14 +45,20 @@ describe('useReducedMotion', () => {
     expect(result.current).toBe(true);
   });
 
-  it('removes event listener on unmount', () => {
+  it("removes event listener on unmount", () => {
     const { mql } = mockMatchMedia(false);
     const { unmount } = renderHook(() => useReducedMotion());
 
-    expect(mql.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(mql.addEventListener).toHaveBeenCalledWith(
+      "change",
+      expect.any(Function),
+    );
 
     unmount();
 
-    expect(mql.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(mql.removeEventListener).toHaveBeenCalledWith(
+      "change",
+      expect.any(Function),
+    );
   });
 });

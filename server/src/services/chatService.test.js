@@ -25,9 +25,7 @@ vi.mock("../repositories/userRepository.js", () => ({
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
-const { getChatHistory, extractKeywords } = await import(
-  "./chatService.js"
-);
+const { getChatHistory, extractKeywords } = await import("./chatService.js");
 
 describe("chatService", () => {
   const originalEnv = { ...process.env };
