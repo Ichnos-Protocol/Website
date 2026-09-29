@@ -43,9 +43,19 @@ export default [
     },
   },
   // 200-line cap on application modules; prose rule in CLAUDE.md §5.1.
-  // seedE2EOnPreview.js is in scope because src/app.js imports it.
+  // The scripts listed here are in scope because src/app.js reaches them:
+  // it imports seedE2EOnPreview.js, which imports the three helpers, and
+  // previewMigrations.js imports runMigrations.js.
   {
-    files: ["src/**/*.js", "api/**/*.js", "scripts/seedE2EOnPreview.js"],
+    files: [
+      "src/**/*.js",
+      "api/**/*.js",
+      "scripts/seedE2EOnPreview.js",
+      "scripts/runMigrations.js",
+      "scripts/helpers/previewDbConnection.js",
+      "scripts/helpers/e2eSeedQueries.js",
+      "scripts/helpers/previewMigrations.js",
+    ],
     rules: { "max-lines": ["error", { max: 200 }] },
   },
   // Test files grow with the cases they cover.
@@ -60,7 +70,6 @@ export default [
       "src/repositories/userRepository.js",
       "src/controllers/adminController.js",
       "src/services/adminService.js",
-      "scripts/seedE2EOnPreview.js",
     ],
     rules: { "max-lines": "off" },
   },
