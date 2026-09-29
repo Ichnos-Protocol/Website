@@ -47,7 +47,9 @@ function recordInput(overrides = {}) {
     command: COMMAND,
     date: DATE,
     setNow: ["FIREBASE_API_KEY", "E2E_ADMIN_PASSWORD"],
-    secretMetadata: { NEON_API_KEY: "2026-08-01T09:00:00Z" },
+    secretMetadata: {
+      VERCEL_DEPLOY_HOOK_STAGING_CLIENT: "2026-08-01T09:00:00Z",
+    },
     ...overrides,
   };
 }
@@ -177,7 +179,9 @@ describe("buildTestAccountsRecord", () => {
   it("shows gh updatedAt for a secret this run did not set, and unknown without metadata", () => {
     const record = buildTestAccountsRecord(recordInput());
 
-    expect(lineFor(record, "NEON_API_KEY")).toContain("2026-08-01T09:00:00Z");
+    expect(lineFor(record, "VERCEL_DEPLOY_HOOK_STAGING_CLIENT")).toContain(
+      "2026-08-01T09:00:00Z",
+    );
     expect(lineFor(record, "SYNC_PAT")).toContain(
       "unknown — not set by this run",
     );
@@ -190,7 +194,15 @@ describe("buildTestAccountsRecord", () => {
       "unknown — not set by this run",
     );
     expect(lineFor(record, "E2E_ADMIN_PASSWORD")).not.toContain(COMMAND);
-    expect(lineFor(record, "NEON_API_KEY")).toContain("2026-08-01T09:00:00Z");
+    expect(lineFor(record, "VERCEL_DEPLOY_HOOK_STAGING_CLIENT")).toContain(
+      "2026-08-01T09:00:00Z",
+    );
+  });
+
+  it("lists no Neon secret, because no workflow deletes Neon branches", () => {
+    const record = buildTestAccountsRecord(recordInput());
+
+    expect(record).not.toContain("NEON_");
   });
 
   it("never names a production project or domain", () => {
