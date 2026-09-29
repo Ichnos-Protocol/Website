@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 
 const mockQuery = vi.fn();
@@ -9,6 +9,11 @@ const mockPoolConstructor = vi.fn(function () {
 });
 
 vi.mock("pg", () => ({ default: { Pool: mockPoolConstructor } }));
+
+// The runner is mocked, not the gate, so the real ref check in
+// previewMigrations.js decides whether it is called.
+const mockRunMigrations = vi.fn();
+vi.mock("./runMigrations.js", () => ({ runMigrations: mockRunMigrations }));
 
 vi.mock("../src/config/firebase.js", () => ({
   default: {
@@ -68,6 +73,7 @@ describe("seedE2EOnPreview", () => {
     delete process.env.E2E_SUPER_ADMIN_EMAIL;
     delete process.env.E2E_SUPER_ADMIN_UID;
     delete process.env.SKIP_E2E_SEED;
+    delete process.env.VERCEL_GIT_COMMIT_REF;
   });
 
   it("skips seeding when VERCEL_ENV is production", async () => {
@@ -228,6 +234,130 @@ describe("seedE2EOnPreview", () => {
   });
 });
 
+function mockSuccessfulSeed() {
+  mockQuery
+    .mockResolvedValueOnce({ rows: [{ ok: 1 }] }) // SELECT 1 connectivity test
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [{ id: 1 }] })
+    .mockResolvedValueOnce({ rows: [] });
+}
+
+describe("seedE2EOnPreview — main preview migrations", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    resetSeedState();
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_GIT_COMMIT_REF = "main";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost/test";
+    process.env.E2E_ADMIN_EMAIL = "admin@test.com";
+    process.env.E2E_ADMIN_UID = "admin-uid";
+    delete process.env.E2E_USER_EMAIL;
+    delete process.env.E2E_USER_UID;
+    delete process.env.E2E_INCOMPLETE_USER_EMAIL;
+    delete process.env.E2E_INCOMPLETE_USER_UID;
+    delete process.env.E2E_SUPER_ADMIN_EMAIL;
+    delete process.env.E2E_SUPER_ADMIN_UID;
+    delete process.env.SKIP_E2E_SEED;
+  });
+
+  afterEach(() => {
+    delete process.env.VERCEL_GIT_COMMIT_REF;
+  });
+
+  it("migrates after the connection test and before the first seed query", async () => {
+    mockSuccessfulSeed();
+
+    await seedE2EOnPreview();
+
+    expect(mockRunMigrations).toHaveBeenCalledTimes(1);
+    expect(mockRunMigrations).toHaveBeenCalledWith(process.env.DATABASE_URL, {
+      ssl: { rejectUnauthorized: false },
+    });
+    const [migrateOrder] = mockRunMigrations.mock.invocationCallOrder;
+    const [connectOrder, firstSeedOrder] = mockQuery.mock.invocationCallOrder;
+    expect(migrateOrder).toBeGreaterThan(connectOrder);
+    expect(migrateOrder).toBeLessThan(firstSeedOrder);
+    expect(seedStatus.mode).toBe("seeded");
+  });
+
+  it("never migrates when SKIP_E2E_SEED=true", async () => {
+    process.env.SKIP_E2E_SEED = "true";
+
+    await seedE2EOnPreview();
+
+    expect(mockRunMigrations).not.toHaveBeenCalled();
+  });
+
+  it("never migrates when VERCEL_ENV is production", async () => {
+    process.env.VERCEL_ENV = "production";
+
+    await seedE2EOnPreview();
+
+    expect(mockRunMigrations).not.toHaveBeenCalled();
+  });
+
+  it("never migrates when VERCEL_ENV is unset", async () => {
+    delete process.env.VERCEL_ENV;
+
+    await seedE2EOnPreview();
+
+    expect(mockRunMigrations).not.toHaveBeenCalled();
+  });
+
+  it.each(["staging", "feature/new-page", undefined])(
+    "seeds without migrating for ref %s",
+    async (ref) => {
+      if (ref) process.env.VERCEL_GIT_COMMIT_REF = ref;
+      else delete process.env.VERCEL_GIT_COMMIT_REF;
+      mockSuccessfulSeed();
+
+      await seedE2EOnPreview();
+
+      expect(mockRunMigrations).not.toHaveBeenCalled();
+      expect(mockQuery).toHaveBeenCalledTimes(6);
+      expect(seedStatus.mode).toBe("seeded");
+    },
+  );
+
+  it("fails without seed queries on a non-transient migration error", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ok: 1 }] });
+    mockRunMigrations.mockRejectedValueOnce(
+      new Error('syntax error at or near "TABLE"'),
+    );
+
+    await seedE2EOnPreview();
+
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    expect(mockRunMigrations).toHaveBeenCalledTimes(1);
+    expect(seedStatus.attempts).toBe(1);
+    expect(seedStatus.mode).toBe("failed");
+    expect(seedStatus.seeded).toBe(false);
+    expect(seedStatus.error).toBe('syntax error at or near "TABLE"');
+    expect(mockPoolEnd).toHaveBeenCalled();
+  });
+
+  it("retries a transient migration error, then seeds", async () => {
+    vi.useFakeTimers();
+    mockQuery.mockResolvedValueOnce({ rows: [{ ok: 1 }] });
+    mockSuccessfulSeed();
+    mockRunMigrations
+      .mockRejectedValueOnce(new Error("Connection terminated unexpectedly"))
+      .mockResolvedValueOnce(undefined);
+
+    const promise = seedE2EOnPreview();
+    await vi.advanceTimersByTimeAsync(5000);
+    await promise;
+
+    expect(mockRunMigrations).toHaveBeenCalledTimes(2);
+    expect(seedStatus.mode).toBe("seeded");
+    expect(seedStatus.attempts).toBe(2);
+
+    vi.useRealTimers();
+  });
+});
+
 describe("GET /api/health — seed contract", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -243,6 +373,7 @@ describe("GET /api/health — seed contract", () => {
     delete process.env.E2E_SUPER_ADMIN_EMAIL;
     delete process.env.E2E_SUPER_ADMIN_UID;
     delete process.env.SKIP_E2E_SEED;
+    delete process.env.VERCEL_GIT_COMMIT_REF;
   });
 
   it("includes seed.seeded, seed.error, seed.attempts, seed.mode on success", async () => {

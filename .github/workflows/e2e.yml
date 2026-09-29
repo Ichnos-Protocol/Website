@@ -86,16 +86,20 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
 
-    # For repository_dispatch: only run for SERVER deployments from main.
-    # Skip staging branch deployments — staging is a mirror of main
-    # (force-pushed by sync-staging.yml) and must not trigger duplicate
-    # E2E runs or overwrite the commit status set by the original main run.
+    # For repository_dispatch: run for every SERVER deployment except
+    # staging, so main and feature branches both run. That run produces
+    # the E2E Tests (Playwright) check required on pull requests into main.
+    # Client-project events are skipped. Staging is skipped because it is
+    # a mirror of main (force-pushed by sync-staging.yml): it would
+    # duplicate runs and overwrite the original commit status.
+    # Vercel sends the branch as client_payload.git.ref, the same field
+    # the Resolve commit SHA step reads; the two must change together.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'repository_dispatch' &&
         contains(github.event.client_payload.project.name || '', 'server') &&
-        (github.event.client_payload.deployment.meta.githubCommitRef || github.event.client_payload.branch || '') != 'staging'
+        (github.event.client_payload.git.ref || '') != 'staging'
       )
 
     # E2E configuration: non-secret names come from repository variables,
@@ -137,10 +141,11 @@ jobs:
         id: deploy
         # Event values reach the shell only through env, never as script
         # text. Dispatch SHA and ref are validated before any output write.
+        # git.ref is also read by the job if: staging filter; change both.
         env:
           EVENT_NAME: ${{ github.event_name }}
-          PAYLOAD_SHA: ${{ github.event.client_payload.deployment.meta.githubCommitSha || github.event.client_payload.commitSha || '' }}
-          PAYLOAD_REF: ${{ github.event.client_payload.deployment.meta.githubCommitRef || github.event.client_payload.branch || '' }}
+          PAYLOAD_SHA: ${{ github.event.client_payload.git.sha || '' }}
+          PAYLOAD_REF: ${{ github.event.client_payload.git.ref || '' }}
           PAYLOAD_URL: ${{ github.event.client_payload.url }}
           MANUAL_REF: ${{ github.ref_name }}
         run: |

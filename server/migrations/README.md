@@ -61,6 +61,35 @@ Environment resolution, in order:
    1. PostgreSQL rolls back the failing file's transaction; files applied
    before it stay applied and recorded.
 
+## Preview Deployments
+
+The `main` preview migrates its own database. On the first `/api/health`
+request after a cold start, `server/scripts/seedE2EOnPreview.js` connects to
+the long-lived `preview/main` Neon branch, applies every unrecorded migration
+through this runner, and only then seeds the E2E accounts. The gate is
+`VERCEL_GIT_COMMIT_REF === "main"`, in
+`server/scripts/helpers/previewMigrations.js`.
+
+- Staging and feature previews never apply migrations. They log one line
+  naming their ref and go straight to the seed.
+- Production is unchanged: only the owner applies migrations, by running
+  `npm run migrate` from `server/`.
+- A failed migration sets `seed.mode` to `failed` in the `/api/health`
+  response and no seed query runs. A connection-level error (timeout,
+  terminated connection) is retried like any other seed attempt.
+
+Concurrent cold starts are safe. Each file's transaction takes
+`pg_advisory_xact_lock` right after `BEGIN`, then re-checks
+`schema_migrations` for the file before running it; a file another instance
+recorded in the meantime is skipped. The lock is transaction-scoped because
+Neon's pooled endpoint runs in transaction mode and would not keep a
+session-level lock.
+
+The SQL files reach the serverless function through
+`"includeFiles": "migrations/**"` on the `api/index.js` build in
+`server/vercel.json`. If they are missing from the bundle, the runner throws
+and the seed reports `failed`.
+
 ## Operator Verification
 
 After the runner finishes, inspect the tracking table:

@@ -91,7 +91,8 @@ test.describe("Consortium Journey", { tag: ["@consortium"] }, () => {
     // The Firebase-proxy and auto-dismiss guards are idempotent, so re-entering
     // loginAs on this same page is safe.
     await loginAsAdmin(page);
-    await waitForAuthedAppReady(page, "/admin");
+    // AdminLayout has no user menu; waitForDashboardReady() proves admin auth.
+    await waitForAppReady(page, "/admin");
     await admin.waitForDashboardReady();
     await admin.navigateToConsortium();
 
