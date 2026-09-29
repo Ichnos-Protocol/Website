@@ -291,10 +291,11 @@ All endpoints are prefixed with `/api`.
 
 Six routers are mounted in `server/src/app.js`: `/api/auth`, `/api/contact`, `/api/chat`, `/api/admin`, `/api/gdpr`, `/api/consortium`.
 
-**Every endpoint on this server requires a verified Firebase ID token.** There is no public API surface. Rate limiting applies to `/api/` as a whole (100 requests / 15 minutes), and a second limiter on `/api/auth` caps those endpoints at 20 requests / 15 minutes. Preview deployments raise both caps to 1000.
+**Every `/api` endpoint requires authentication, except `GET /api/health`.** The routers take a verified Firebase ID token, and the four `cronOrAdmin` endpoints also accept the Vercel cron secret. `GET /api/health` is the only public API endpoint: it takes no input, reads no database in production and returns status fields only. Outside `/api`, `GET /` serves a static status page. Rate limiting applies to every other `/api/` path (100 requests / 15 minutes); `/api/health` is registered before the limiter, because a limiter runs inside the function and would only add a database write to each health request. A second limiter on `/api/auth` caps those endpoints at 20 requests / 15 minutes. Preview deployments raise both caps to 1000.
 
 | Method | Endpoint                          | Auth       | Description                          |
 | ------ | --------------------------------- | ---------- | ------------------------------------ |
+| GET    | `/api/health`                     | none       | Status and E2E seed state; not rate-limited |
 | GET    | `/api/auth/me`                    | auth       | Current user profile (camelCase)     |
 | POST   | `/api/auth/sync-profile`          | auth       | Upsert profile from token `uid` (§7) |
 | PUT    | `/api/auth/profile`               | auth       | Update profile fields                |

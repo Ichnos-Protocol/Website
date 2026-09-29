@@ -67,3 +67,28 @@ describe("auth rate limiter", () => {
     expect(mockQuery).not.toHaveBeenCalled();
   });
 });
+
+describe("/api/health and the global rate limiter", () => {
+  beforeEach(() => {
+    hitCounts.clear();
+    mockQuery.mockReset();
+  });
+
+  it("answers /api/health without counting it or sending a RateLimit header", async () => {
+    const res = await request(app).get("/api/health");
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("ok");
+    expect(res.headers.ratelimit).toBeUndefined();
+    expect([...hitCounts.keys()]).toEqual([]);
+  });
+
+  it("still counts every other /api route under the global prefix", async () => {
+    const res = await request(app).get("/api/contact/my-requests");
+
+    expect(res.headers.ratelimit).toBeDefined();
+    expect([...hitCounts.keys()].some((key) => key.startsWith("global:"))).toBe(
+      true,
+    );
+  });
+});
