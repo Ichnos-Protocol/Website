@@ -131,8 +131,10 @@ export class AdminPage {
     return this.page.getByRole("button", { name: "Delete" });
   }
 
+  // Every admin feedback alert renders inside AdminLayout's <main>. The
+  // app-wide API warning banner renders outside it, so it never matches.
   get alert() {
-    return this.page.getByRole("alert");
+    return this.page.getByRole("main").getByRole("alert");
   }
 
   get statusSelect() {
