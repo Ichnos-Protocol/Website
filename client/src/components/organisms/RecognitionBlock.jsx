@@ -56,8 +56,9 @@ export default function RecognitionBlock({ memberId }) {
 
   return (
     <section className="py-4" data-testid="recognition-block">
-      <Row>
-        <Col xs={12} md={10} lg={8}>
+      {/* Same centred column as CareerTimeline, which sits directly above. */}
+      <Row className="justify-content-center">
+        <Col xs={12} md={8} lg={6}>
           <h3 className="h5 fw-semibold mb-3">Recognition</h3>
           {subsections.map((subsection) => (
             <div key={subsection.id}>

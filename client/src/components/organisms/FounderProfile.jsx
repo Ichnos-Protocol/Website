@@ -83,10 +83,46 @@ const FounderSkills = ({ chips }) => {
   );
 };
 
-const FounderBio = ({ name, title, bio, chips }) => (
+// The member's email and LinkedIn links, on one line under the title.
+const FounderContactLinks = ({ email, linkedIn, name }) => {
+  if (!email && !linkedIn) return null;
+  return (
+    <p className="mb-3 d-flex flex-wrap gap-3">
+      {email && (
+        <a
+          href={`mailto:${email}`}
+          aria-label={`Email ${name}`}
+          className="text-decoration-none"
+        >
+          <Icon name="envelope" className="me-2" />
+          {email}
+        </a>
+      )}
+      {linkedIn && (
+        <a
+          href={linkedIn}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name} on LinkedIn`}
+          className="text-decoration-none"
+        >
+          <Icon name="linkedin" className="me-2" />
+          LinkedIn
+        </a>
+      )}
+    </p>
+  );
+};
+
+const FounderBio = ({ name, title, email, linkedIn, bio, chips }) => (
   <Col xs={12} md={8}>
     <h2 className="h3 fw-bold mb-1">{name}</h2>
-    <p className="mb-3 text-accent fw-medium">{title}</p>
+    <p
+      className={`${email || linkedIn ? "mb-1" : "mb-3"} text-accent fw-medium`}
+    >
+      {title}
+    </p>
+    <FounderContactLinks email={email} linkedIn={linkedIn} name={name} />
     {bio.map((paragraph, index) => (
       <p key={index} className="mb-3 founder-bio">
         {renderBioParagraph(paragraph)}
@@ -108,12 +144,17 @@ export default function FounderProfile({ member }) {
         <FounderBio
           name={member.name}
           title={member.title}
+          email={member.email}
+          linkedIn={member.linkedIn}
           bio={member.bio}
           chips={member.skillsChips}
         />
       </Row>
       {member.showTimeline === true && (
-        <CareerTimeline timeline={member.timeline} />
+        <CareerTimeline
+          timeline={member.timeline}
+          subtitle={member.timelineSubtitle}
+        />
       )}
       <RecognitionBlock memberId={member.id} />
     </section>

@@ -37,8 +37,20 @@ describe("TEAM_MEMBERS", () => {
   it("titles Frank Tan as Partner without a Catena-X label", () => {
     const frank = TEAM_MEMBERS.find((m) => m.id === "frank");
     expect(frank.name).toBe("Frank Tan");
-    expect(frank.title).toBe("Partner");
+    expect(frank.title).toBe("Partner, Business Development");
     expect(frank.cxLabel).toBeUndefined();
+  });
+
+  it("gives Frank Tan his own career timeline, oldest first, ending at Ichnos Protocol", () => {
+    const frank = TEAM_MEMBERS.find((m) => m.id === "frank");
+    expect(frank.showTimeline).toBe(true);
+    expect(frank.timeline).toHaveLength(10);
+    expect(frank.timeline[0].organization).toBe("United Overseas Bank (UOB)");
+    const last = frank.timeline[frank.timeline.length - 1];
+    expect(last.title).toBe("Partner, Business Development");
+    expect(last.year).toBe("2026 – Present");
+    expect(frank.timelineSubtitle).toBeTruthy();
+    expect(new Set(frank.timeline.map((e) => e.id)).size).toBe(10);
   });
 });
 
