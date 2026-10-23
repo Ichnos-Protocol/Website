@@ -137,7 +137,7 @@ export const CAREER_TIMELINE_FRANK = [
     id: "oneconnect",
     year: "2023 – 2024",
     title: "Chief Business Solutions, International Group",
-    organization: "OneConnect Financial Technology",
+    organization: "OneConnect Financial Technology (OCFT)",
     description:
       "Business solutions for the international group of OneConnect, the fintech arm of Ping An Group.",
   },
@@ -152,7 +152,7 @@ export const CAREER_TIMELINE_FRANK = [
   {
     id: "ichnos-partner",
     year: "2026 – Present",
-    title: "Partner",
+    title: "Partner, Business Development",
     organization: "Ichnos Protocol Pte. Ltd.",
     description:
       "Business development for the battery advisory practice and its digital Battery Passport platform.",

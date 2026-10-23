@@ -109,7 +109,7 @@ export const PARTNER_PERSON_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "Frank Tan",
-  jobTitle: "Partner",
+  jobTitle: "Partner, Business Development",
   email: "frank@ichnos-protocol.com",
   description:
     "Partner focused on business development, with three decades in audit, banking and multinational technology companies across Southeast Asia.",
