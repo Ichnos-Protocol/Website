@@ -2,10 +2,6 @@
  * The fixed, public E2E configuration: the five role accounts with their
  * emails, the E2E project ID and the deployed E2E URLs. None of it is secret;
  * the provisioning script generates e2e/.env.e2e from it.
- *
- * This module imports nothing. cleanupNeonBranch.js loads it from an
- * `if: always()` workflow step that can run before `npm ci`, so it must
- * resolve without installed E2E dependencies.
  */
 
 export const E2E_FIREBASE_PROJECT_ID = "ichnos-protocol-test";

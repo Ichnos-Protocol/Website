@@ -28,6 +28,21 @@ describe("CareerTimeline", () => {
     },
   ];
 
+  it("shows the default subtitle, or the subtitle the member passes", () => {
+    renderWithProviders(<CareerTimeline timeline={TIMELINE} />);
+    expect(
+      screen.getByText(/^A journey from academic research/),
+    ).toBeInTheDocument();
+    cleanup();
+    renderWithProviders(
+      <CareerTimeline timeline={TIMELINE} subtitle="Member subtitle." />,
+    );
+    expect(screen.getByText("Member subtitle.")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/^A journey from academic research/),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders every entry from the given timeline prop", () => {
     const { container } = renderWithProviders(
       <CareerTimeline timeline={TIMELINE} />,

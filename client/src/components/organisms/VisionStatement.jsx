@@ -16,9 +16,11 @@ export default function VisionStatement() {
         <Col xs={12} md={8} lg={6} className="text-center">
           <div className="vision-container p-4 p-md-5 rounded-3">
             <Icon name="quote" className="vision-quote-icon mb-3" />
-            <blockquote className="mb-4">
-              <p className="vision-quote mb-0">{VISION_STATEMENT.quote}</p>
-            </blockquote>
+            {VISION_STATEMENT.quotes.map((quote) => (
+              <blockquote key={quote} className="mb-4">
+                <p className="vision-quote mb-0">{quote}</p>
+              </blockquote>
+            ))}
             <footer className="vision-attribution">
               &mdash; {VISION_STATEMENT.attribution}
             </footer>

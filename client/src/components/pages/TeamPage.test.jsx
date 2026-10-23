@@ -130,10 +130,10 @@ describe("TeamPage", () => {
       );
     });
     // Literal count: the guard against the bundle drifting silently.
-    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(3);
+    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(4);
     expect(
       PAGE_STRUCTURED_DATA.team.filter((s) => s["@type"] === "Person"),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it("renders page title", () => {
@@ -145,12 +145,45 @@ describe("TeamPage", () => {
   });
 
   it("renders one FounderProfile per team member with correct names", () => {
-    expect(TEAM_MEMBERS).toHaveLength(1);
+    expect(TEAM_MEMBERS).toHaveLength(2);
     TEAM_MEMBERS.forEach((member) => {
       expect(
         screen.getByRole("heading", { level: 2, name: member.name }),
       ).toBeInTheDocument();
     });
+  });
+
+  it("renders Frank Tan's profile as Partner with his photo", () => {
+    const section = screen
+      .getByRole("heading", { level: 2, name: "Frank Tan" })
+      .closest("section");
+    expect(section).toHaveTextContent("Partner");
+    expect(section.querySelector("img")).toHaveAttribute(
+      "src",
+      "/frank-tan.jpg",
+    );
+  });
+
+  it("links each profile to its member's LinkedIn page in a new tab", () => {
+    TEAM_MEMBERS.forEach((member) => {
+      const link = screen.getByRole("link", {
+        name: `${member.name} on LinkedIn`,
+      });
+      expect(link).toHaveAttribute("href", member.linkedIn);
+      expect(link).toHaveAttribute("target", "_blank");
+    });
+    expect(TEAM_MEMBERS[1].linkedIn).toBe(
+      "https://www.linkedin.com/in/frank-tan-596b3532/",
+    );
+  });
+
+  it("links each profile to its member's email address", () => {
+    TEAM_MEMBERS.forEach((member) => {
+      expect(
+        screen.getByRole("link", { name: `Email ${member.name}` }),
+      ).toHaveAttribute("href", `mailto:${member.email}`);
+    });
+    expect(TEAM_MEMBERS[1].email).toBe("frank@ichnos-protocol.com");
   });
 
   it("renders Francesco's Catena-X credential skill chip", () => {
