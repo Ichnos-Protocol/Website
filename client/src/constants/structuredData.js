@@ -105,6 +105,24 @@ export const FOUNDER_PERSON_SCHEMA = {
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
 
+// No sameAs: Frank Tan has no public profile link to cite.
+export const PARTNER_PERSON_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Frank Tan",
+  jobTitle: "Partner",
+  description:
+    "Partner focused on business development, with three decades in audit, banking and multinational technology companies across Southeast Asia.",
+  worksFor: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },
+  knowsAbout: [
+    "Business Development",
+    "Sales and Strategic Engagement",
+    "Project Delivery",
+    "Digital Banking and Fintech Solutions",
+    "Internal Audit and Risk Assessment",
+  ],
+};
+
 function breadcrumb(items) {
   return {
     "@context": "https://schema.org",
@@ -136,6 +154,7 @@ export const PAGE_STRUCTURED_DATA = {
       { name: "Team", path: ROUTE_TEAM },
     ]),
     FOUNDER_PERSON_SCHEMA,
+    PARTNER_PERSON_SCHEMA,
   ],
   passport: [
     ORGANIZATION_SCHEMA,

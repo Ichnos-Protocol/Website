@@ -130,10 +130,10 @@ describe("TeamPage", () => {
       );
     });
     // Literal count: the guard against the bundle drifting silently.
-    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(3);
+    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(4);
     expect(
       PAGE_STRUCTURED_DATA.team.filter((s) => s["@type"] === "Person"),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it("renders page title", () => {
@@ -145,12 +145,23 @@ describe("TeamPage", () => {
   });
 
   it("renders one FounderProfile per team member with correct names", () => {
-    expect(TEAM_MEMBERS).toHaveLength(1);
+    expect(TEAM_MEMBERS).toHaveLength(2);
     TEAM_MEMBERS.forEach((member) => {
       expect(
         screen.getByRole("heading", { level: 2, name: member.name }),
       ).toBeInTheDocument();
     });
+  });
+
+  it("renders Frank Tan's profile as Partner with his photo", () => {
+    const section = screen
+      .getByRole("heading", { level: 2, name: "Frank Tan" })
+      .closest("section");
+    expect(section).toHaveTextContent("Partner");
+    expect(section.querySelector("img")).toHaveAttribute(
+      "src",
+      "/frank-tan.jpg",
+    );
   });
 
   it("renders Francesco's Catena-X credential skill chip", () => {
