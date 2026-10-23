@@ -1,5 +1,6 @@
 // Team content guard, spec P6 and D7.
-// P6 reduces the team to its one member and adds the closing booking band.
+// P6 reduced the team to its founder and added the closing booking band;
+// Frank Tan joined as partner on 2026-10-23.
 // D7 keeps the page title "Team" and the plural practitioner subtitle.
 // No departed member's name may be written in this file, so there is no
 // negative-literal assertion: the positive id list below is the guard.
@@ -21,26 +22,36 @@ const PAGE_KEYS = [
 ];
 
 describe("TEAM_MEMBERS", () => {
-  it("lists exactly the one current member", () => {
-    expect(TEAM_MEMBERS).toHaveLength(1);
-    expect(TEAM_MEMBERS.map((m) => m.id)).toEqual(["francesco"]);
+  it("lists the founder first, then the partner", () => {
+    expect(TEAM_MEMBERS.map((m) => m.id)).toEqual(["francesco", "frank"]);
   });
 
-  it("keeps the surviving entry's bio, skills chips and photo", () => {
-    const [member] = TEAM_MEMBERS;
-    expect(member.bio.length).toBeGreaterThan(0);
-    expect(member.skillsChips.length).toBeGreaterThan(0);
-    expect(member.photo).toBeTruthy();
+  it("gives every member a bio, skills chips and a photo", () => {
+    TEAM_MEMBERS.forEach((member) => {
+      expect(member.bio.length).toBeGreaterThan(0);
+      expect(member.skillsChips.length).toBeGreaterThan(0);
+      expect(member.photo).toBeTruthy();
+    });
+  });
+
+  it("titles Frank Tan as Partner without a Catena-X label", () => {
+    const frank = TEAM_MEMBERS.find((m) => m.id === "frank");
+    expect(frank.name).toBe("Frank Tan");
+    expect(frank.title).toBe("Partner");
+    expect(frank.cxLabel).toBeUndefined();
   });
 });
 
 describe("PAGE_STRUCTURED_DATA.team", () => {
-  it("holds three schemas with exactly one Person", () => {
-    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(3);
+  it("holds four schemas with one Person per team member", () => {
+    expect(PAGE_STRUCTURED_DATA.team).toHaveLength(4);
     const people = PAGE_STRUCTURED_DATA.team.filter(
       (schema) => schema["@type"] === "Person",
     );
-    expect(people).toHaveLength(1);
+    expect(people.map((p) => p.name)).toEqual([
+      "Dr.-Ing. Francesco Maltoni",
+      "Frank Tan",
+    ]);
   });
 
   it("leaves every page key in place", () => {

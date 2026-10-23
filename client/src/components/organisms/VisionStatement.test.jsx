@@ -11,9 +11,16 @@ describe("VisionStatement", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the vision quote and attribution", () => {
+  it("renders both vision quotes, the compliance quote first, and the attribution", () => {
     renderWithProviders(<VisionStatement />);
-    expect(screen.getByText(VISION_STATEMENT.quote)).toBeInTheDocument();
+    const [first, second] = VISION_STATEMENT.quotes.map((quote) =>
+      screen.getByText(quote),
+    );
+    expect(first).toHaveTextContent(/^Compliance and traceability/);
+    expect(second).toHaveTextContent(/^Batteries should live/);
+    expect(
+      first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       screen.getByText(new RegExp(VISION_STATEMENT.attribution)),
     ).toBeInTheDocument();

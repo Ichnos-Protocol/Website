@@ -35,14 +35,39 @@ export const TEAM_MEMBERS = [
     showTimeline: true,
     timeline: CAREER_TIMELINE_FRANCESCO,
   },
+  // Frank holds no Catena-X qualification, so his entry has no `cxLabel`:
+  // the advisor label stays the page's only linked label.
+  {
+    id: "frank",
+    name: "Frank Tan",
+    title: "Partner",
+    photo: "/frank-tan.jpg",
+    bio: [
+      "Frank Tan is a partner at Ichnos Protocol and focuses on business development. An Accounting and Finance graduate, he has spent three decades in audit, banking and multinational technology companies, in roles spanning business development, sales and strategic engagement, project delivery and general management. He joined Ichnos Protocol to take on the challenge of building a business from the ground up, as the world moves towards digitalization, electrification and renewable energy.",
+      "His technology career includes Techtanium, a technology firm spun off from DCITS Group; OCFT International, the international fintech arm of Ping An Group; Sunline, a leader in digital banking solutions; FIS, a US-based global solutions provider; and NCR, a US-based global consumer technology provider. Across these organisations he held roles from Solution Sales, Regional Head of Sales and Regional Head of Project Management to Chief Business Solutions and Chief Commercial roles.",
+      "Before moving into technology, Frank spent almost a decade in internal audit and risk assessment at two leading Southeast Asian banking groups.",
+    ],
+    skillsChips: [
+      "Business development",
+      "Sales & strategic engagement",
+      "Project delivery & general management",
+      "Digital banking & fintech solutions",
+      "Internal audit & risk assessment",
+    ],
+    showTimeline: false,
+  },
 ];
 
 // Label for the closing booking band on the team page (spec P6).
-export const TEAM_CTA = { label: "Book a call with me" };
+export const TEAM_CTA = { label: "Book a call with us" };
 
+// The quotes render in this order inside one vision box, above one shared
+// attribution.
 export const VISION_STATEMENT = {
-  quote:
+  quotes: [
+    "Compliance and traceability are not only an upfront cost, but an investment into a more efficient and resilient value chain.",
     "Batteries should live as long as possible. Remanufacturing and repurposing are not just environmentally responsible — they are economically smart.",
+  ],
   attribution: "Dr.-Ing. Francesco Maltoni",
 };
 
