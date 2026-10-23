@@ -177,6 +177,15 @@ describe("TeamPage", () => {
     );
   });
 
+  it("links each profile to its member's email address", () => {
+    TEAM_MEMBERS.forEach((member) => {
+      expect(
+        screen.getByRole("link", { name: `Email ${member.name}` }),
+      ).toHaveAttribute("href", `mailto:${member.email}`);
+    });
+    expect(TEAM_MEMBERS[1].email).toBe("frank@ichnos-protocol.com");
+  });
+
   it("renders Francesco's Catena-X credential skill chip", () => {
     expect(
       screen.getByText(TEAM_MEMBERS[0].skillsChips[2]),

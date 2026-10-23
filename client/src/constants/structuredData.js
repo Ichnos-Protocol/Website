@@ -110,6 +110,7 @@ export const PARTNER_PERSON_SCHEMA = {
   "@type": "Person",
   name: "Frank Tan",
   jobTitle: "Partner",
+  email: "frank@ichnos-protocol.com",
   description:
     "Partner focused on business development, with three decades in audit, banking and multinational technology companies across Southeast Asia.",
   worksFor: { "@type": "Organization", name: SEO_SITE_NAME, url: SEO_BASE_URL },

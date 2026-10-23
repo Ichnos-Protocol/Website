@@ -22,6 +22,7 @@ export const TEAM_MEMBERS = [
     name: "Dr.-Ing. Francesco Maltoni",
     title: "Founder",
     photo: "/founder.png",
+    email: CONTACT_INFO.email,
     linkedIn: CONTACT_INFO.linkedInFounder,
     cxLabel: "advisor",
     bio: [
@@ -47,6 +48,7 @@ export const TEAM_MEMBERS = [
     name: "Frank Tan",
     title: "Partner",
     photo: "/frank-tan.jpg",
+    email: "frank@ichnos-protocol.com",
     linkedIn: "https://www.linkedin.com/in/frank-tan-596b3532/",
     bio: [
       "Frank Tan is a partner at Ichnos Protocol and focuses on business development. An Accounting and Finance graduate, he has spent three decades in audit, banking and multinational technology companies, in roles spanning business development, sales and strategic engagement, project delivery and general management. He joined Ichnos Protocol to take on the challenge of building a business from the ground up, as the world moves towards digitalization, electrification and renewable energy.",
