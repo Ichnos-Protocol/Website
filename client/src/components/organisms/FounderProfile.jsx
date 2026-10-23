@@ -83,10 +83,31 @@ const FounderSkills = ({ chips }) => {
   );
 };
 
-const FounderBio = ({ name, title, bio, chips }) => (
+const FounderLinkedIn = ({ href, name }) => {
+  if (!href) return null;
+  return (
+    <p className="mb-3">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${name} on LinkedIn`}
+        className="text-decoration-none"
+      >
+        <Icon name="linkedin" className="me-2" />
+        LinkedIn
+      </a>
+    </p>
+  );
+};
+
+const FounderBio = ({ name, title, linkedIn, bio, chips }) => (
   <Col xs={12} md={8}>
     <h2 className="h3 fw-bold mb-1">{name}</h2>
-    <p className="mb-3 text-accent fw-medium">{title}</p>
+    <p className={`${linkedIn ? "mb-1" : "mb-3"} text-accent fw-medium`}>
+      {title}
+    </p>
+    <FounderLinkedIn href={linkedIn} name={name} />
     {bio.map((paragraph, index) => (
       <p key={index} className="mb-3 founder-bio">
         {renderBioParagraph(paragraph)}
@@ -108,12 +129,16 @@ export default function FounderProfile({ member }) {
         <FounderBio
           name={member.name}
           title={member.title}
+          linkedIn={member.linkedIn}
           bio={member.bio}
           chips={member.skillsChips}
         />
       </Row>
       {member.showTimeline === true && (
-        <CareerTimeline timeline={member.timeline} />
+        <CareerTimeline
+          timeline={member.timeline}
+          subtitle={member.timelineSubtitle}
+        />
       )}
       <RecognitionBlock memberId={member.id} />
     </section>

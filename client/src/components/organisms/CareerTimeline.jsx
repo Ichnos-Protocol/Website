@@ -3,7 +3,7 @@ import Col from "react-bootstrap/Col";
 import Badge from "react-bootstrap/Badge";
 
 const SECTION_TITLE = "Career Highlights";
-const SECTION_SUBTITLE =
+const DEFAULT_SUBTITLE =
   "A journey from academic research to industry leadership and entrepreneurship.";
 
 const TimelineItem = ({ year, title, organization, description, isLast }) => (
@@ -23,10 +23,10 @@ const TimelineItem = ({ year, title, organization, description, isLast }) => (
   </div>
 );
 
-const TimelineHeading = () => (
+const TimelineHeading = ({ subtitle }) => (
   <>
     <h2 className="text-center mb-2 section-heading">{SECTION_TITLE}</h2>
-    <p className="text-center mb-5 section-subtext">{SECTION_SUBTITLE}</p>
+    <p className="text-center mb-5 section-subtext">{subtitle}</p>
   </>
 );
 
@@ -45,10 +45,13 @@ const TimelineList = ({ timeline }) => (
   </div>
 );
 
-export default function CareerTimeline({ timeline }) {
+export default function CareerTimeline({
+  timeline,
+  subtitle = DEFAULT_SUBTITLE,
+}) {
   return (
     <section className="py-5">
-      <TimelineHeading />
+      <TimelineHeading subtitle={subtitle} />
       <Row className="justify-content-center">
         <Col xs={12} md={8} lg={6}>
           <TimelineList timeline={timeline} />

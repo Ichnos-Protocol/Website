@@ -105,7 +105,6 @@ export const FOUNDER_PERSON_SCHEMA = {
   sameAs: ["https://www.linkedin.com/in/maltonif/"],
 };
 
-// No sameAs: Frank Tan has no public profile link to cite.
 export const PARTNER_PERSON_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Person",
@@ -121,6 +120,7 @@ export const PARTNER_PERSON_SCHEMA = {
     "Digital Banking and Fintech Solutions",
     "Internal Audit and Risk Assessment",
   ],
+  sameAs: ["https://www.linkedin.com/in/frank-tan-596b3532/"],
 };
 
 function breadcrumb(items) {

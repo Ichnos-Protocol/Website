@@ -74,3 +74,87 @@ export const CAREER_TIMELINE_FRANCESCO = [
       "Founded as a battery advisory practice that also builds a digital Battery Passport platform aligned with EU Regulation 2023/1542 and Malaysian MS 2818.",
   },
 ];
+
+// From Frank Tan's LinkedIn profile export (2026-10-23). The descriptions
+// restate his titles and his own bio; nothing beyond them is claimed.
+export const CAREER_TIMELINE_FRANK = [
+  {
+    id: "uob",
+    year: "1995 – 2002",
+    title: "Team Lead, Audit & Inspection",
+    organization: "United Overseas Bank (UOB)",
+    description:
+      "Internal audit and inspection at one of Southeast Asia's leading banking groups.",
+  },
+  {
+    id: "cimb",
+    year: "2002 – 2003",
+    title: "Team Lead, Strategic Risk & Compliance",
+    organization: "CIMB Investment Bank",
+    description:
+      "Strategic risk and compliance at the investment banking arm of CIMB Group.",
+  },
+  {
+    id: "infopro",
+    year: "2003 – 2010",
+    title: "Head, Global Strategic Business Development, Sales & Marketing",
+    organization: "INFOPRO",
+    description:
+      "Led global strategic business development, sales and marketing: his move from banking into technology.",
+  },
+  {
+    id: "sungard",
+    year: "2010 – 2011",
+    title: "Country Sales Manager, Global Trading",
+    organization: "SunGard (now part of FIS)",
+    description: "Country sales for SunGard's global trading solutions.",
+  },
+  {
+    id: "ncr",
+    year: "2011 – 2016",
+    title: "Solution Sales Director, Payments, Asia",
+    organization: "NCR Corporation (NCR Alaric)",
+    description:
+      "Solution sales for NCR Alaric's payments products across Asia.",
+  },
+  {
+    id: "cash-technology",
+    year: "2016 – 2018",
+    title: "Country Sales Director",
+    organization: "Cash Services & Cash Technology",
+    description:
+      "Country sales leadership for cash services and cash technology.",
+  },
+  {
+    id: "sunline",
+    year: "2018 – 2022",
+    title: "Regional Director, Professional Services & Solution Sales",
+    organization: "Sunline International",
+    description:
+      "Regional professional services and solution sales for digital banking solutions.",
+  },
+  {
+    id: "oneconnect",
+    year: "2023 – 2024",
+    title: "Chief Business Solutions, International Group",
+    organization: "OneConnect Financial Technology",
+    description:
+      "Business solutions for the international group of OneConnect, the fintech arm of Ping An Group.",
+  },
+  {
+    id: "dcits",
+    year: "2025 – 2026",
+    title: "Chief Commercial, Techtanium & DCITS International",
+    organization: "DCITS Group",
+    description:
+      "Commercial leadership for Techtanium and DCITS International.",
+  },
+  {
+    id: "ichnos-partner",
+    year: "2026 – Present",
+    title: "Partner",
+    organization: "Ichnos Protocol Pte. Ltd.",
+    description:
+      "Business development for the battery advisory practice and its digital Battery Passport platform.",
+  },
+];
